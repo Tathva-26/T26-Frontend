@@ -1,4 +1,9 @@
-import Image from "next/image";
+import TechConclave from "@/pageComponents/TechConclave";
 
-export default function Home() {
+export default function Page() {
+  return (
+    <main>
+      <TechConclave />
+    </main>
+  );
 }
