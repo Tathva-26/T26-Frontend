@@ -162,13 +162,13 @@ export default function RobowarsHero() {
 
           {/* Left Column: "ROBO" + "FIGHT" (Figma: #62:199, right-aligned) */}
           <div className="text-right">
-            {/* "ROBO" — Figma: Calm Serif → Cinzel, 99.81px, 400, leading 0.95em */}
-            <h1 className="font-cinzel font-normal text-white uppercase leading-[0.95em]
+            {/* "ROBO" — Figma: Calm Serif, 99.81px, 400, leading 0.95em */}
+            <h1 className="font-calm-serif font-normal text-white uppercase leading-[0.95em]
               text-[40px] sm:text-[60px] md:text-[80px] lg:text-[100px]">
               ROBO
             </h1>
-            {/* "FIGHT" — Figma: Akira Expanded → Archivo Black, 70px, 800, leading 1.15em */}
-            <p className="font-archivo-black font-normal text-white uppercase leading-[1.15em] tracking-[0.04em]
+            {/* "FIGHT" — Figma: Akira Expanded, 70px, 800, leading 1.15em */}
+            <p className="font-akira-expanded font-normal text-white uppercase leading-[1.15em] tracking-[0.04em]
               text-[32px] sm:text-[46px] md:text-[58px] lg:text-[70px]">
               FIGHT
             </p>
@@ -176,13 +176,13 @@ export default function RobowarsHero() {
 
           {/* Right Column: "WARS" + "ON" (Figma: #62:201, left-aligned) */}
           <div className="text-left">
-            {/* "WARS" — Figma: Calm Serif → Cinzel, 99.81px, 400, leading 1.15em */}
-            <p className="font-cinzel font-normal text-white uppercase leading-[1.15em]
+            {/* "WARS" — Figma: Calm Serif, 99.81px, 400, leading 1.15em */}
+            <p className="font-calm-serif font-normal text-white uppercase leading-[1.15em]
               text-[40px] sm:text-[60px] md:text-[80px] lg:text-[100px]">
               WARS
             </p>
-            {/* "ON" — Figma: Akira Expanded → Archivo Black, 70px, 800, leading 1.15em */}
-            <p className="font-archivo-black font-normal text-white uppercase leading-[1.15em] tracking-[0.04em]
+            {/* "ON" — Figma: Akira Expanded, 70px, 800, leading 1.15em */}
+            <p className="font-akira-expanded font-normal text-white uppercase leading-[1.15em] tracking-[0.04em]
               text-[32px] sm:text-[46px] md:text-[58px] lg:text-[70px]">
               ON
             </p>

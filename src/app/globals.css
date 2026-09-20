@@ -14,6 +14,8 @@
   --font-alata: var(--font-alata);
   --font-cinzel: var(--font-cinzel);
   --font-archivo-black: var(--font-archivo-black);
+  --font-calm-serif: "Calm Serif", var(--font-cinzel), serif;
+  --font-akira-expanded: "Akira Expanded", "Akira Expanded Super Bold", var(--font-archivo-black), sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
