@@ -1,4 +1,5 @@
 import styles from "./TechConclave.module.css";
+import TechConclaveSpeakers from "./TechConclaveSpeakers";
 
 export default function TechConclave() {
   return (
@@ -26,6 +27,11 @@ export default function TechConclave() {
         <span className={styles.conclaveVcrText}>NC</span>
         <span className={styles.conclaveVcrText}>LA</span>
         <span className={styles.conclaveVcrText}>VE</span>
+      </div>
+
+      {/* Speaker photo grid — between the vertical text block and the right header */}
+      <div className="absolute left-[51.2%] top-[11.8%] z-10">
+        <TechConclaveSpeakers />
       </div>
 
       {/* Right Header: TECH CONCLAVE */}
