@@ -10,6 +10,10 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-instrument-serif: var(--font-instrument-serif);
+  --font-alata: var(--font-alata);
+  --font-cinzel: var(--font-cinzel);
+  --font-archivo-black: var(--font-archivo-black);
 }
 
 @media (prefers-color-scheme: dark) {
