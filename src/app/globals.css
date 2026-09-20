@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Jockey+One&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 @font-face {
@@ -31,6 +31,12 @@
   --font-bebas: 'Bebas Neue', sans-serif;
   --font-space: 'Space Grotesk', sans-serif;
   --font-vcr: 'VCR OSD Mono', monospace;
+  --font-jockey: 'Jockey One', sans-serif;
+}
+
+.font-jockey {
+  font-family: 'Jockey One', sans-serif;
+  font-weight: 400;
 }
 
 @theme inline {
