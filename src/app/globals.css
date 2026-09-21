@@ -8,14 +8,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
   --font-instrument-serif: var(--font-instrument-serif);
   --font-alata: var(--font-alata-local);
-  --font-cinzel: var(--font-cinzel);
-  --font-archivo-black: var(--font-archivo-black);
-  --font-calm-serif: var(--font-calm-serif-local), var(--font-cinzel), serif;
-  --font-akira-expanded: var(--font-akira-expanded-local), var(--font-archivo-black), sans-serif;
+  --font-calm-serif: var(--font-calm-serif-local), serif;
+  --font-akira-expanded: var(--font-akira-expanded-local), sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
