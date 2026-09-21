@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&display=swap');
 @import 'tailwindcss';
 
 :root {
@@ -23,4 +24,28 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@font-face {
+  font-family: "PPFragmentSerif";
+  src: url("/fonts/PPFragment-SerifExtraBold.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fontspring";
+  src: url("/fonts/fontspring.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-fragment-serif {
+  font-family: "PPFragmentSerif", serif;
+}
+
+.font-fontspring {
+  font-family: "Fontspring", sans-serif;
 }
