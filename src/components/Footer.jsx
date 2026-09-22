@@ -227,7 +227,7 @@ export default function Footer() {
         <div className="relative z-10 -mb-[20px] sm:-mb-[32px] lg:-mb-[45px]">
   <h2
     ref={headlineRef}
-    className="relative z-20 text-center font-akira text-[15vw] font-extrabold uppercase leading-[100%] tracking-[0%] sm:text-[14vw] lg:text-[150px] xl:text-[180px]"
+    className="relative z-20 -translate-y-1 text-center font-akira text-[15vw] font-extrabold uppercase leading-[100%] tracking-[0%] sm:text-[14vw] lg:text-[150px] xl:text-[180px]"
   >
     ASTERIA
   </h2>
@@ -239,7 +239,7 @@ export default function Footer() {
   fontFamily="'Akira Expanded', 'Anton', sans-serif"
   fontWeight={800}
   fontSize={194.32}
-  textYOffset={6}
+  textYOffset={15}
   radius={170}
 />
 </div>
