@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { Bebas_Neue, Varela } from "next/font/google";
+import { GlowLetters } from "./glow";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -77,13 +78,13 @@ function FooterLink({ label }) {
   const { contextSafe } = useGSAP();
 
   const onEnter = contextSafe(() => {
-    gsap.to(arrowRef.current, { x: 4, duration: 0.25, ease: "power2.out" });
-    gsap.to(textRef.current, { color: "#F19EDC", duration: 0.25, ease: "power2.out" });
+    gsap.to(textRef.current, { x: 3, color: "#F19EDC", duration: 0.25, ease: "power2.out" });
+    gsap.to(arrowRef.current, { x: 7, scale: 1.08, duration: 0.3, ease: "power2.out" });
   });
 
   const onLeave = contextSafe(() => {
-    gsap.to(arrowRef.current, { x: 0, duration: 0.25, ease: "power2.out" });
-    gsap.to(textRef.current, { color: "#FFFFFF", duration: 0.25, ease: "power2.out" });
+    gsap.to(textRef.current, { x: 0, color: "#FFFFFF", duration: 0.25, ease: "power2.out" });
+    gsap.to(arrowRef.current, { x: 0, scale: 1, duration: 0.3, ease: "power2.out" });
   });
 
   return (
@@ -223,12 +224,25 @@ export default function Footer() {
       <div className="relative mx-auto w-full max-w-[1380px] px-4 sm:px-6 lg:px-12">
     
         {/* ASTERIA BACKGROUND TEXT */}
-<h2
-  ref={headlineRef}
-  className="relative z-0 -mb-[18px] text-center font-akira text-[15vw] font-extrabold uppercase leading-[100%] tracking-[0%] sm:-mb-[28px] sm:text-[14vw] lg:-mb-[38px] lg:text-[150px] xl:text-[180px]"
->
-  ASTERIA
-</h2>
+        <div className="relative z-10 -mb-[20px] sm:-mb-[32px] lg:-mb-[45px]">
+  <h2
+    ref={headlineRef}
+    className="relative z-20 text-center font-akira text-[15vw] font-extrabold uppercase leading-[100%] tracking-[0%] sm:text-[14vw] lg:text-[150px] xl:text-[180px]"
+  >
+    ASTERIA
+  </h2>
+  <GlowLetters
+  text="ASTERIA"
+  textColor="transparent"
+  textFit={0.905}
+  textY={0.5}
+  fontFamily="'Akira Expanded', 'Anton', sans-serif"
+  fontWeight={800}
+  fontSize={194.32}
+  textYOffset={6}
+  radius={170}
+/>
+</div>
 
         {/* MAIN CHAMFERED PANEL FRAME */}
         <div ref={panelRef} className="relative z-10 min-h-[250px] w-full lg:min-h-[270px]">
@@ -295,7 +309,7 @@ export default function Footer() {
             </div>
 
             {/* NAVIGATION COLUMNS */}
-            <div className="flex h-auto flex-col items-start justify-center gap-1 pt-0 sm:flex-row sm:gap-0 sm:pt-3 lg:h-full lg:pt-5">
+           <div className="flex h-auto flex-col items-start justify-center gap-1 sm:flex-row sm:gap-0 sm:pt-1 lg:h-full">
               {linkColumns.map((column, index) => (
                 <MobileNavAccordion key={column.heading} column={column} index={index} />
               ))}
@@ -312,29 +326,29 @@ export default function Footer() {
         </div>
 
         {/* BOTTOM FRAME & COPYRIGHT OVERLAY */}
-        <div className="relative z-20 -mt-2 w-full lg:-mt-3">
-          <svg
-            viewBox="0 0 1339 76"
-            fill="none"
-            preserveAspectRatio="none"
-            className="h-[48px] w-full lg:h-[58px]"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M1.04785 9.08366V40.8765L44.7194 74.7657H498.904L536.636 54.8514H830.458L860.853 74.7657L1301.41 71.9707L1337.05 30.3954V1.0481"
-              stroke="#fffdfe"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
+       <div className="relative z-20 -mt-[14px] w-full lg:-mt-[18px]">
+  <svg
+    viewBox="0 0 1339 76"
+    fill="none"
+    preserveAspectRatio="none"
+    className="h-[48px] w-full lg:h-[58px]"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M1.04785 9.08366V40.8765L44.7194 74.7657H498.904L536.636 54.8514H830.458L860.853 74.7657L1301.41 71.9707L1337.05 30.3954V1.0481"
+      stroke="#fffdfe"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
 
-          <div className="absolute inset-0 flex flex-wrap items-end justify-between px-4 pb-2 font-varela text-[9px] uppercase tracking-[0.20em] text-[#C0C0C0] sm:flex-nowrap sm:px-8 sm:pb-2.5 sm:text-[10px] sm:tracking-[0.28em] lg:px-[130px] lg:pb-3 lg:text-[11px]">
-            <span className="translate-y-[-2px]">NIT CALICUT</span>
-            <span className="static sm:absolute sm:left-1/2 sm:translate-x-[-50%] translate-y-[0px] sm:translate-y-[-10px] lg:translate-y-[-14px]">TATHVA&apos; 26</span>
-            <span className="translate-y-[-2px]">ALL RIGHTS RESERVED.</span>
-          </div>
-        </div>
-      </div>
+  <div className="absolute inset-0 flex flex-wrap items-end justify-between px-6 pb-1 font-varela text-[9px] uppercase tracking-[0.20em] text-[#C0C0C0] sm:flex-nowrap sm:px-12 sm:pb-1.5 sm:text-[10px] sm:tracking-[0.28em] lg:px-[105px] lg:pb-2 lg:text-[11px]">
+    <span className="translate-y-[2px]">NIT CALICUT</span>
+    <span className="static sm:absolute sm:left-1/2 sm:-translate-x-1/2 translate-y-[0px] sm:translate-y-[-8px] lg:translate-y-[-10px]">TATHVA&apos; 26</span>
+    <span className="translate-y-[2px]">ALL RIGHTS RESERVED.</span>
+  </div>
+</div>
+  </div>
     </footer>
   );
 }
