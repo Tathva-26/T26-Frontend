@@ -219,6 +219,113 @@ export default function Footer() {
           line-height: 100%;
           letter-spacing: 0.08em;
         }
+
+        .footer-panel-shape-mobile {
+          display: none;
+        }
+
+        @media (max-width: 1023px) {
+          .footer-typography .footer-panel {
+            min-height: 0;
+          }
+
+          .footer-panel-shape-desktop {
+            display: none;
+          }
+
+          .footer-panel-shape-mobile {
+            display: block;
+          }
+
+          .footer-typography .footer-panel-content {
+            min-height: 0;
+          }
+
+          .footer-typography .footer-newsletter,
+          .footer-typography .footer-navigation,
+          .footer-typography .footer-countdown {
+            min-width: 0;
+            width: 100%;
+          }
+
+          .footer-typography .footer-countdown {
+            padding-bottom: 0.5rem;
+          }
+        }
+
+        @media (max-width: 639px) {
+          .footer-typography h2 {
+            font-size: clamp(58px, 19vw, 110px);
+            -webkit-text-stroke-width: 1px;
+          }
+
+          .footer-typography .footer-panel-content {
+            gap: 1rem;
+            padding: 1.25rem 1.25rem 1.5rem;
+          }
+
+          .footer-typography .footer-newsletter > p:first-child {
+            font-size: clamp(18px, 5.8vw, 24px);
+            line-height: 1.1;
+          }
+
+          .footer-typography .footer-newsletter > p:nth-child(2) {
+            max-width: 26rem;
+            font-size: 13px;
+            line-height: 1.3;
+          }
+
+          .footer-typography .footer-newsletter form {
+            max-width: none;
+            width: 100%;
+          }
+
+          .footer-typography .footer-navigation {
+            gap: 0.25rem;
+          }
+
+          .footer-typography .footer-countdown > div,
+          .footer-typography .footer-countdown > div span {
+            font-size: clamp(34px, 12vw, 48.6px);
+          }
+
+          .footer-typography .footer-bottom-labels {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            align-items: end;
+            gap: 0.35rem;
+            padding-left: 1.25rem;
+            padding-right: 1.25rem;
+            font-size: 8px;
+            letter-spacing: 0.05em;
+          }
+
+          .footer-typography .footer-bottom-labels span {
+            max-width: none;
+            min-width: 0;
+            white-space: nowrap;
+            font-size: 8px;
+            line-height: 1.2;
+          }
+
+          .footer-typography .footer-bottom-labels span:first-child {
+            text-align: left;
+          }
+
+          .footer-typography .footer-bottom-labels span:nth-child(2) {
+            text-align: center;
+          }
+
+          .footer-typography .footer-bottom-labels span:last-child {
+            text-align: right;
+          }
+        }
+
+        @media (min-width: 640px) and (max-width: 1023px) {
+          .footer-typography h2 {
+            font-size: clamp(72px, 12vw, 126px);
+          }
+        }
       `}</style>
 
       <div className="relative mx-auto w-full max-w-[1380px] px-4 sm:px-6 lg:px-12">
@@ -245,9 +352,9 @@ export default function Footer() {
 </div>
 
         {/* MAIN CHAMFERED PANEL FRAME */}
-        <div ref={panelRef} className="relative z-10 min-h-[250px] w-full lg:min-h-[270px]">
+        <div ref={panelRef} className="footer-panel relative z-10 min-h-[250px] w-full lg:min-h-[270px]">
           <svg
-            className="absolute inset-0 h-full w-full drop-shadow-xl"
+            className="footer-panel-shape-desktop pointer-events-none absolute inset-0 h-full w-full drop-shadow-xl"
             viewBox="0 0 1331 295"
             preserveAspectRatio="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -258,10 +365,22 @@ export default function Footer() {
             />
           </svg>
 
-          <div className="relative z-10 grid h-full grid-cols-1 items-center gap-6 px-6 py-5 sm:px-8 lg:grid-cols-[280px_1fr_240px] lg:gap-0 lg:px-[64px] lg:py-6">
+          <svg
+            className="footer-panel-shape-mobile pointer-events-none absolute inset-0 h-full w-full drop-shadow-xl"
+            viewBox="0 0 1331 295"
+            preserveAspectRatio="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M0 28 L22 0 H1309 L1331 28 V267 L1309 295 H22 L0 267 Z"
+              fill="#222222"
+            />
+          </svg>
+
+          <div className="footer-panel-content relative z-10 grid min-h-full grid-cols-1 items-center gap-6 px-6 py-5 sm:px-8 lg:grid-cols-[280px_1fr_240px] lg:gap-0 lg:px-[64px] lg:py-6">
 
             {/* NEWSLETTER SECTION */}
-            <div className="self-center">
+            <div className="footer-newsletter self-center">
               <p className="font-bebas text-[22px] sm:text-[24px] lg:text-[26px] leading-[28px] tracking-[0.02em] text-white font-normal">
                 GET THE LATEST UPDATES &amp; SIGNALS
               </p>
@@ -309,7 +428,7 @@ export default function Footer() {
             </div>
 
             {/* NAVIGATION COLUMNS */}
-           <div className="flex h-auto flex-col items-start justify-center gap-1 sm:flex-row sm:gap-0 sm:pt-1 lg:h-full">
+           <div className="footer-navigation flex h-auto flex-col items-start justify-center gap-1 sm:flex-row sm:gap-0 sm:pt-1 lg:h-full">
               {linkColumns.map((column, index) => (
                 <MobileNavAccordion key={column.heading} column={column} index={index} />
               ))}
@@ -342,7 +461,7 @@ export default function Footer() {
     />
   </svg>
 
-  <div className="absolute inset-0 flex flex-wrap items-end justify-between px-6 pb-1 font-varela text-[9px] uppercase tracking-[0.20em] text-[#C0C0C0] sm:flex-nowrap sm:px-12 sm:pb-1.5 sm:text-[10px] sm:tracking-[0.28em] lg:px-[105px] lg:pb-2 lg:text-[11px]">
+  <div className="footer-bottom-labels absolute inset-0 flex flex-wrap items-end justify-between px-6 pb-1 font-varela text-[9px] uppercase tracking-[0.20em] text-[#C0C0C0] sm:flex-nowrap sm:px-12 sm:pb-1.5 sm:text-[10px] sm:tracking-[0.28em] lg:px-[105px] lg:pb-2 lg:text-[11px]">
     <span className="translate-y-[2px]">NIT CALICUT</span>
     <span className="static sm:absolute sm:left-1/2 sm:-translate-x-1/2 translate-y-[0px] sm:translate-y-[-8px] lg:translate-y-[-10px]">TATHVA&apos; 26</span>
     <span className="translate-y-[2px]">ALL RIGHTS RESERVED.</span>
