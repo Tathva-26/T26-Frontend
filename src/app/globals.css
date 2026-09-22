@@ -53,7 +53,9 @@
   }
 }
 
-html {
+/* techconclave page */
+
+/* html {
   height: 100%;
   overflow: hidden;
 }
@@ -64,4 +66,81 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: 'Space Grotesk', sans-serif;
+} */
+
+/* allow scrolling */
+
+html {
+  background: var(--background);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Horizontal Gallery (Lando Norris style sizes) */
+.horizontal-item-img-w {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+  background-color: #121212;
+}
+
+
+.horizontal-item-img-w.is-home-1 {
+  width: calc(var(--vh, 1vh) * 27);
+  height: calc(var(--vh, 1vh) * 33.46);
+}
+
+.horizontal-item-img-w.is-home-2 {
+  width: calc(var(--vh, 1vh) * 29.3);
+  height: calc(var(--vh, 1vh) * 29.3);
+}
+
+.horizontal-item-img-w.is-home3 {
+  width: calc(var(--vh, 1vh) * 65.48);
+  height: calc(var(--vh, 1vh) * 59.48);
+}
+
+.horizontal-item-img-w.is-home-4 {
+  width: calc(var(--vh, 1vh) * 31.75);
+  height: calc(var(--vh, 1vh) * 28.75);
+}
+
+.horizontal-item-img-w.is-home-5 {
+  height: calc(var(--vh, 1vh) * 20.96);
+  width: calc(var(--vh, 1vh) * 21.98);
+}
+
+.horizontal-item-img-w.is-home-6 {
+  width: calc(var(--vh, 1vh) * 21.38);
+  height: calc(var(--vh, 1vh) * 26.48);
+}
+
+.horizontal-item-img-w.is-home-7 {
+  width: calc(var(--vh, 1vh) * 20.74);
+  height: calc(var(--vh, 1vh) * 20.74);
+}
+
+.horizontal-item-img-w.is-home8 {
+  width: calc(var(--vh, 1vh) * 60.95);
+  height: calc(var(--vh, 1vh) * 60.95);
+}
+
+.horizontal-item-img-w.is-home9 {
+  height: calc(var(--vh, 1vh) * 24.91);
+  width: calc(var(--vh, 1vh) * 27.42);
+}
+
+.horizontal-item-img-w.is-home10 {
+  width: calc(var(--vh, 1vh) * 31.69);
+  height: calc(var(--vh, 1vh) * 30.9);
 }
