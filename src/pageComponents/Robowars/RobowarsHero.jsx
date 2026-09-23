@@ -89,10 +89,10 @@ function DesktopFrame({ className, scale = "desktop" }) {
       <Art
         src="arena-right-robot.webp"
         alt=""
-        x={1048}
-        y={86}
-        width={365}
-        height={789}
+        x={1072}
+        y={121}
+        width={342}
+        height={573}
         priority={!isTablet}
         className="robowars-motion robowars-right-robot pointer-events-none will-change-transform"
       />
@@ -194,10 +194,10 @@ function MobileFrame() {
       <Art
         src="arena-right-robot.webp"
         alt=""
-        x={260}
-        y={135}
-        width={210}
-        height={455}
+        x={276}
+        y={218}
+        width={198}
+        height={331}
         frameWidth={MOBILE_FRAME_WIDTH}
         frameHeight={MOBILE_FRAME_HEIGHT}
         priority
