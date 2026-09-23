@@ -203,11 +203,18 @@ export function GlowLetters({
     let isActive = false;  // Whether spotlight is triggered & sustained
     let cancelled = false;
     let img = null;
+    let pointerUpdatePending = false;
 
     // Sampled mask points for instantaneous radius-coverage testing
     let textMaskSamples = [];
 
-    const pointer = { x: -9999, y: -9999, inside: false };
+    const pointer = {
+      x: -9999,
+      y: -9999,
+      clientX: -9999,
+      clientY: -9999,
+      inside: false,
+    };
     const lens = { x: 0, y: 0 };
 
     const look = { ramp: RAMP, angle: 0, spin: 0.45, phase: 0, slide: 0.4 };
@@ -322,6 +329,11 @@ export function GlowLetters({
 
     function frame(now) {
       const time = now / 1000;
+
+      if (pointerUpdatePending) {
+        pointerUpdatePending = false;
+        updatePointerState(pointer.clientX, pointer.clientY);
+      }
 
       // When active, circle expands rapidly to 1. When deactivated, collapses down to 0.
       if (isActive) {
@@ -447,16 +459,18 @@ export function GlowLetters({
           isActive = false;
         }
       }
-
-      start();
     };
 
     const onPointerMove = (e) => {
-      updatePointerState(e.clientX, e.clientY);
+      pointer.clientX = e.clientX;
+      pointer.clientY = e.clientY;
+      pointerUpdatePending = true;
+      start();
     };
 
     const onPointerLeave = () => {
       isActive = false;
+      pointerUpdatePending = false;
       start();
     };
 
