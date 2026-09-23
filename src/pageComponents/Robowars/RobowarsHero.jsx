@@ -69,7 +69,7 @@ function DesktopFrame({ className, scale = "desktop" }) {
 
       <div
         aria-hidden="true"
-        className={`pointer-events-none absolute left-1/2 top-[4.8%] -translate-x-1/2 text-center font-akira-expanded font-extrabold uppercase leading-none text-white/10 ${
+        className={`robowars-fight-on pointer-events-none absolute left-1/2 top-[4.8%] -translate-x-1/2 text-center font-akira-expanded font-extrabold uppercase leading-none text-white will-change-[opacity] ${
           isTablet ? "w-full text-[13.2cqw]" : "w-[96%] text-[14.15cqw]"
         }`}
       >
@@ -174,7 +174,7 @@ function MobileFrame() {
 
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[8%] w-[140%] -translate-x-1/2 text-center font-akira-expanded text-[23cqw] font-extrabold uppercase leading-none text-white/10"
+        className="robowars-fight-on pointer-events-none absolute left-1/2 top-[8%] w-[140%] -translate-x-1/2 text-center font-akira-expanded text-[23cqw] font-extrabold uppercase leading-none text-white will-change-[opacity]"
       >
         FIGHT ON
       </div>
@@ -317,10 +317,12 @@ export default function RobowarsHero() {
 
       if (reduceMotion) {
         gsap.set(pieces, { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" });
+        gsap.set(".robowars-fight-on", { opacity: 0.1 });
         return;
       }
 
       const setInitialMotion = ({ robotDistance, titleDistance, detailDistance, badgeDistance }) => {
+        gsap.set(".robowars-fight-on", { opacity: 1 });
         gsap.set(".robowars-left-robot", {
           opacity: 0.3,
           transform: `translate3d(-${robotDistance}%, 0, 0) scale(0.96)`,
@@ -376,6 +378,7 @@ export default function RobowarsHero() {
             },
             0
           )
+          .to(".robowars-fight-on", { opacity: 0.1 }, 0)
           .to(
             ".robowars-title-left, .robowars-title-right",
             {
