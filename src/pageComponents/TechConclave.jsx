@@ -10,24 +10,31 @@ const smallStar = "/images/techconclave/smallstar.png";
 const bigStar = "/images/techconclave/bigstar.png";
 
 /*
-  The layout is drawn on a 1550 x 815 canvas. Every element is positioned
-  in percentages of that canvas, so the whole poster scales with the screen.
+  The page fills the whole browser window with the background image. The
+  poster artwork (a 1413 x 753 Figma frame) sits in the middle of it and
+  scales with the screen. Change --tc-scale in the CSS below to make all
+  content bigger or smaller.
+
+  - fbox(): takes Figma coordinates directly (frame 1413 x 753).
+  - box():  takes coordinates measured on the 1550 x 815 screenshot and
+            converts them to the same frame.
 */
+const FW = 1413;
+const FH = 753;
 const W = 1550;
 const H = 815;
+const fbox = (x, y, w, h) => ({
+  left: `${(x / FW) * 100}%`,
+  top: `${(y / FH) * 100}%`,
+  width: `${(w / FW) * 100}%`,
+  height: `${(h / FH) * 100}%`,
+});
 const box = (x, y, w, h) => ({
   left: `${(x / W) * 100}%`,
   top: `${(y / H) * 100}%`,
   width: `${(w / W) * 100}%`,
   height: `${(h / H) * 100}%`,
 });
-
-// Figma frame size. figma(x, y, w, h) takes Figma values as they are and
-// converts them to this canvas, so you can paste dimensions straight in.
-const FIGMA_W = 1413;
-const FIGMA_H = 753;
-const figma = (x, y, w, h) =>
-  box((x / FIGMA_W) * W, (y / FIGMA_H) * H, (w / FIGMA_W) * W, (h / FIGMA_H) * H);
 
 const womanTiles = [
   { color: "#00ff5e", shape: [668, 25, 158, 163], img: [668, 18, 158, 170] },
@@ -54,12 +61,11 @@ const Plus = ({ style, rotate = 0 }) => (
 
 export default function TechConclave() {
   return (
-    <main className="tc-page">
+    <main className="tc-page" style={{ backgroundImage: `url(${background})` }}>
       <style>{css}</style>
 
       <section
         className="tc-stage"
-        style={{ backgroundImage: `url(${background})` }}
         aria-label="Tech Conclave, October 10-11"
       >
         {/* colour blocks behind the robot */}
@@ -105,6 +111,7 @@ export default function TechConclave() {
           className="tc-abs tc-type"
           style={{ inset: 0, width: "100%", height: "100%" }}
           viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="none"
           aria-hidden="true"
         >
           <text
@@ -149,12 +156,12 @@ export default function TechConclave() {
         </svg>
 
         {/* robot + hand (drawn over the title text) */}
-        <img className="tc-abs" style={box(-15, 190, 585, 552)} src={robot} alt="Waving robot" />
+        <img className="tc-abs robot-img" style={box(20, 150, 670, 660)} src={robot} alt="Waving robot" />
         <img className="tc-abs" style={box(518, 478, 255, 275)} src={hand} alt="" />
 
         {/* stars on the robot's left side (Figma dimensions) */}
-        <img className="tc-abs" style={figma(-7, 456, 152, 190)} src={bigStar} alt="" />
-        <img className="tc-abs" style={figma(19, 587, 99.96, 125)} src={smallStar} alt="" />
+        <img className="tc-abs" style={fbox(-7, 456, 152, 190)} src={bigStar} alt="" />
+        <img className="tc-abs" style={fbox(19, 587, 99.96, 125)} src={smallStar} alt="" />
 
         {/* right column */}
         <img className="tc-abs" style={box(1097, 240, 393, 65)} src={logo} alt="Tech Conclave" />
@@ -176,27 +183,37 @@ const css = `
 @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500&display=swap");
 
 .tc-page {
+  --tc-scale: 0.82; /* 1 = artwork fills the page, lower = smaller content */
   min-height: 100vh;
+  width: 100%;
   display: grid;
   place-items: center;
-  background: #0d0d10;
   margin: 0;
+  overflow: hidden;
+  background-color: #101014;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .tc-stage {
   position: relative;
-  overflow: hidden;
-  width: min(100vw, calc(100vh * 1550 / 815));
-  aspect-ratio: 1550 / 815;
+  width: calc(min(100vw, 100vh * 1413 / 753) * var(--tc-scale));
+  aspect-ratio: 1413 / 753;
   container-type: inline-size;
-  background-color: #101014;
-  background-size: cover;
-  background-position: center;
+}
+
+.robot-img {
+  transform: scale(1.27);
+  transform-origin: left center;
+  transform: translateX(-7.5%) scale(1.27);
+  tra
 }
 
 .tc-abs {
   position: absolute;
   display: block;
+  object-fit: contain;
 }
 
 .tc-shape {
