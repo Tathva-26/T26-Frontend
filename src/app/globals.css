@@ -32,6 +32,7 @@
   --font-space: 'Space Grotesk', sans-serif;
   --font-vcr: 'VCR OSD Mono', monospace;
   --font-jockey: 'Jockey One', sans-serif;
+  --grid-spacer: clamp(2rem, 6vw, 6rem);
 }
 
 .font-jockey {
@@ -94,20 +95,19 @@ body {
   background-color: #121212;
 }
 
-
 .horizontal-item-img-w.is-home-1 {
   width: calc(var(--vh, 1vh) * 27);
-  height: calc(var(--vh, 1vh) * 33.46);
+  aspect-ratio: 0.81 / 1;
 }
 
 .horizontal-item-img-w.is-home-2 {
   width: calc(var(--vh, 1vh) * 29.3);
-  height: calc(var(--vh, 1vh) * 29.3);
+  aspect-ratio: 1 / 1;
 }
 
 .horizontal-item-img-w.is-home3 {
   width: calc(var(--vh, 1vh) * 65.48);
-  height: calc(var(--vh, 1vh) * 59.48);
+  aspect-ratio: 1.1 / 1;
 }
 
 .horizontal-item-img-w.is-home-4 {
