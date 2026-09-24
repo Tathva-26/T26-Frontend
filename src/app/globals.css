@@ -65,3 +65,72 @@ body {
   color: var(--foreground);
   font-family: 'Space Grotesk', sans-serif;
 }
+
+/* ---------- Proshow carousel: things utility classes can't express ---------- */
+@theme {
+  --animate-ring-pulse: ring-pulse 9s ease-in-out infinite;
+  --animate-twinkle: twinkle 6s ease-in-out infinite;
+  --animate-fade-up: fade-up 0.6s ease both;
+  --animate-eq: eq 0.9s ease-in-out infinite;
+
+  @keyframes ring-pulse {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 1; }
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes eq {
+    0%, 100% { transform: scaleY(0.25); }
+    50% { transform: scaleY(1); }
+  }
+}
+
+@utility bg-stars {
+  background-image:
+    radial-gradient(1.5px 1.5px at 8% 22%, #fff8, transparent),
+    radial-gradient(1px 1px at 18% 70%, #fff9, transparent),
+    radial-gradient(1.5px 1.5px at 27% 40%, #fff6, transparent),
+    radial-gradient(1px 1px at 36% 85%, #fff8, transparent),
+    radial-gradient(1.5px 1.5px at 44% 12%, #fff7, transparent),
+    radial-gradient(1px 1px at 58% 60%, #fff6, transparent),
+    radial-gradient(1.5px 1.5px at 66% 28%, #fff9, transparent),
+    radial-gradient(1px 1px at 74% 78%, #fff7, transparent),
+    radial-gradient(1.5px 1.5px at 83% 15%, #fff8, transparent),
+    radial-gradient(1px 1px at 91% 52%, #fff9, transparent),
+    radial-gradient(1px 1px at 96% 88%, #fff6, transparent),
+    radial-gradient(1px 1px at 4% 92%, #fff7, transparent);
+}
+
+/*
+ * A carousel circle. JS sets --a (distance from centre, 0 = active) and
+ * --sgn (side, -1/1) on each item while scrolling; this turns them into
+ * position/scale/opacity/brightness, blending between the 1st/2nd/3rd
+ * neighbour values (--x1..3 offsets, --o1..2 opacities, set on the page).
+ */
+@utility proshow-item {
+  --a: 9;
+  --sgn: 1;
+  --m1: min(var(--a), 1);
+  --m2: clamp(0, calc(var(--a) - 1), 1);
+  --m3: clamp(0, calc(var(--a) - 2), 1);
+  transform: translateX(
+      calc(
+        var(--c) * var(--sgn) *
+          (
+            var(--x1) * var(--m1) + (var(--x2) - var(--x1)) * var(--m2) +
+              (var(--x3) - var(--x2)) * var(--m3)
+          )
+      )
+    )
+    scale(calc(1 - 0.32 * var(--m1) - 0.18 * var(--m2) - 0.2 * var(--m3)));
+  opacity: calc(
+    1 - (1 - var(--o1)) * var(--m1) - (var(--o1) - var(--o2)) * var(--m2) - var(--o2) * var(--m3)
+  );
+  filter: brightness(calc(1 - 0.5 * var(--m1))) saturate(calc(1 - 0.4 * var(--m1)));
+}
