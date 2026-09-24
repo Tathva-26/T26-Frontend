@@ -142,7 +142,7 @@ function DesktopFrame({ className, scale = "desktop" }) {
       </div>
       <div
         className="robowars-motion robowars-date pointer-events-none absolute w-px bg-white/55 will-change-transform"
-        style={frameStyle({ x: 694, y: 488, width: 1, height: 37 })}
+        style={frameStyle({ x: 674, y: 488, width: 1, height: 37 })}
       />
 
       <Art
@@ -266,7 +266,7 @@ function MobileFrame() {
       <div
         className="robowars-motion robowars-date pointer-events-none absolute w-px bg-white/55 will-change-transform"
         style={frameStyle({
-          x: 206,
+          x: 209,
           y: 501,
           width: 1,
           height: 24,
