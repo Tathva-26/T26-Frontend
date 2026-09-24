@@ -1,13 +1,6 @@
 import localFont from "next/font/local";
 import "./globals.css";
 
-// Figma: "Instrument Serif" (exact match) — used for badge text
-const instrumentSerif = localFont({
-  src: "../../public/fonts/instrument-serif-regular.ttf",
-  variable: "--font-instrument-serif",
-  display: "swap",
-});
-
 // Figma: "Calm Serif" — used for the main serif headline
 const calmSerif = localFont({
   src: "../../public/fonts/calm-serif-demo.otf",
@@ -38,7 +31,7 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
-      className={`${instrumentSerif.variable} ${calmSerif.variable} ${alata.variable} ${akiraExpanded.variable} h-full antialiased`}
+      className={`${calmSerif.variable} ${alata.variable} ${akiraExpanded.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

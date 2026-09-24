@@ -31,7 +31,6 @@ function Art({
   frameHeight,
   priority = false,
   className = "",
-  imageClassName = "",
 }) {
   return (
     <div
@@ -45,7 +44,7 @@ function Art({
         priority={priority}
         sizes={`${Math.ceil(width)}px`}
         draggable={false}
-        className={`select-none object-fill ${imageClassName}`}
+        className="select-none object-fill"
       />
     </div>
   );
@@ -275,7 +274,6 @@ function MobileFrame() {
           frameHeight: MOBILE_FRAME_HEIGHT,
         })}
       />
-
     </div>
   );
 }

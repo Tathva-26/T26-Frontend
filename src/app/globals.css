@@ -10,7 +10,6 @@
   --color-foreground: var(--foreground);
   --font-sans: Arial, Helvetica, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
-  --font-instrument-serif: var(--font-instrument-serif);
   --font-alata: var(--font-alata-local);
   --font-calm-serif: var(--font-calm-serif-local), serif;
   --font-akira-expanded: var(--font-akira-expanded-local), sans-serif;
