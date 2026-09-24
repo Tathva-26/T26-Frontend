@@ -276,31 +276,6 @@ function MobileFrame() {
         })}
       />
 
-      <Art
-        src="mobile-badge.svg"
-        alt=""
-        x={171}
-        y={0}
-        width={87.593}
-        height={16}
-        frameWidth={MOBILE_FRAME_WIDTH}
-        frameHeight={MOBILE_FRAME_HEIGHT}
-        priority
-        className="robowars-motion robowars-badge pointer-events-none will-change-transform"
-      />
-      <p
-        className="robowars-motion robowars-badge pointer-events-none absolute m-0 font-instrument-serif text-[2.38cqw] leading-none text-[#ffdfc4] will-change-transform"
-        style={frameStyle({
-          x: 199,
-          y: 1,
-          width: 44,
-          height: 13,
-          frameWidth: MOBILE_FRAME_WIDTH,
-          frameHeight: MOBILE_FRAME_HEIGHT,
-        })}
-      >
-        Robowars
-      </p>
     </div>
   );
 }
