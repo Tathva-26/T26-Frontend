@@ -22,7 +22,7 @@ const bigStar = "/images/techconclave/bigstar.png";
 const FW = 1413;
 const FH = 753;
 const W = 1550;
-const H = 815;
+const H = Math.round((W *( FH / FW))); // 815
 const fbox = (x, y, w, h) => ({
   left: `${(x / FW) * 100}%`,
   top: `${(y / FH) * 100}%`,
@@ -164,7 +164,10 @@ export default function TechConclave() {
         <img className="tc-abs" style={fbox(19, 587, 99.96, 125)} src={smallStar} alt="" />
 
         {/* right column */}
-        <img className="tc-abs" style={box(1097, 240, 393, 65)} src={logo} alt="Tech Conclave" />
+        <div className="tc-abs tc-hero-heading" style={box(1080, 40, 510, 450)} aria-label="Tech Conclave title">
+          <span className="tc-hero-word"><span className="tc-hero-tech">TECH</span><span className="tc-hero-conclave">CONCLAVE</span></span>
+        </div>
+        <img className="tc-abs logo-img" style={box(990, 540, 500, 175)} src={logo} alt="Tech Conclave" />
         <p className="tc-abs tc-tagline" style={box(1112, 328, 420, 170)}>
           A space for inspiring
           <br />
@@ -204,10 +207,9 @@ const css = `
 }
 
 .robot-img {
-  transform: scale(1.27);
+  transform: translateX(-7.5%) scale(1.23);
+  transform: translateY(-3%) scale(1.27);
   transform-origin: left center;
-  transform: translateX(-7.5%) scale(1.27);
-  tra
 }
 
 .tc-abs {
@@ -232,9 +234,87 @@ const css = `
 .tc-tagline {
   margin: 0;
   font-family: "Space Grotesk", system-ui, sans-serif;
-  font-weight: 400;
+  font-weight: 440;
   font-size: 1.95cqw;
   line-height: 1.34;
   color: #e9e9f2;
+  word-spacing: 0.05em;
+}
+
+.logo-img {
+  transform: scale(1.65) translate(-1%, -3%);
+  transform-origin: right center;
+  z-index: 4;
+}
+
+.tc-hero-heading {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  z-index: 5;
+  pointer-events: none;
+  font-family: "Bebas Neue", "Oswald", Impact, sans-serif;
+}
+
+.tc-hero-word {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.03em;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  font-size: clamp(7rem, 2.8vw, 5.2rem);
+  transform: scaleX(1.08);
+  transform-origin: left center;
+}
+
+.tc-hero-tech {
+  display: inline-block;
+  color: #6d7fff;
+  font-size: 1em;
+  font-weight: 400;
+}
+
+.tc-hero-conclave {
+  display: inline-block;
+  color: #ffffff;
+  font-size: 1em;
+  font-weight: 400;
+}
+
+@media (max-width: 1024px) {
+  .tc-page {
+    --tc-scale: 0.9;
+  }
+
+  .tc-stage {
+    width: min(100vw, 92vw);
+    max-width: 100%;
+  }
+
+  .robot-img {
+    transform: translateX(-3%) scale(1.12);
+  }
+}
+
+@media (max-width: 768px) {
+  .tc-page {
+    --tc-scale: 1.08;
+    padding: 0.5rem 0;
+  }
+
+  .tc-stage {
+    width: min(100vw, 100vw);
+    max-width: 100%;
+  }
+
+  .tc-tagline {
+    font-size: 1.4cqw;
+    line-height: 1.25;
+  }
+
+  .robot-img {
+    transform: translateX(10%) scale(1.08);
+  }
 }
 `;
