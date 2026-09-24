@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Jockey+One&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400&family=Hammersmith+One&display=swap');
 @import 'tailwindcss';
 
 @font-face {
@@ -18,6 +19,14 @@
 }
 
 @font-face {
+  font-family: 'Akira Expanded';
+  src: url('/fonts/AkiraExpanded-SuperBold.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'Space Grotesk';
   src: url('/fonts/SpaceGrotesk-Variable.ttf') format('truetype');
   font-weight: 100 900;
@@ -32,11 +41,16 @@
   --font-space: 'Space Grotesk', sans-serif;
   --font-vcr: 'VCR OSD Mono', monospace;
   --font-jockey: 'Jockey One', sans-serif;
+  --font-akira: 'Akira Expanded', sans-serif;
 }
 
 .font-jockey {
   font-family: 'Jockey One', sans-serif;
   font-weight: 400;
+}
+
+.font-akira {
+  font-family: 'Akira Expanded', sans-serif;
 }
 
 @theme inline {
@@ -54,14 +68,30 @@
 }
 
 html {
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
 }
 
 body {
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
   background: var(--background);
   color: var(--foreground);
   font-family: 'Space Grotesk', sans-serif;
+}
+
+@font-face {
+  font-family: 'Akira Expanded';
+  src: url('/fonts/AkiraExpanded-SuperBold.otf') format('opentype');
+  font-weight: 800;
+  font-display: swap;
+}
+
+@theme {
+  --font-orbitron: 'Orbitron', sans-serif;
+  --font-hammersmith: 'Hammersmith One', sans-serif;
+  --font-akira: 'Akira Expanded', sans-serif;
+  --font-bebas: 'Bebas Neue', sans-serif;
+}
+
+html {
+  scrollbar-gutter: stable;
 }
