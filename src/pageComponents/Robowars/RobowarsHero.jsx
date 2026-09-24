@@ -8,8 +8,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 const ASSET_ROOT = "/images/Robowars";
 const FRAME_WIDTH = 1413;
 const FRAME_HEIGHT = 697;
-const MOBILE_FRAME_WIDTH = 430;
-const MOBILE_FRAME_HEIGHT = 932;
+const MOBILE_FRAME_WIDTH = 412;
+const MOBILE_FRAME_HEIGHT = 594;
 
 function frameStyle({ x, y, width, height, frameWidth = FRAME_WIDTH, frameHeight = FRAME_HEIGHT }) {
   return {
@@ -31,6 +31,7 @@ function Art({
   frameHeight,
   priority = false,
   className = "",
+  imageClassName = "",
 }) {
   return (
     <div
@@ -44,7 +45,7 @@ function Art({
         priority={priority}
         sizes={`${Math.ceil(width)}px`}
         draggable={false}
-        className="select-none object-fill"
+        className={`select-none object-fill ${imageClassName}`}
       />
     </div>
   );
@@ -161,9 +162,9 @@ function DesktopFrame({ className, scale = "desktop" }) {
 
 function MobileFrame() {
   return (
-    <div className="absolute left-1/2 top-1/2 aspect-[430/932] h-[100dvh] min-h-[560px] -translate-x-1/2 -translate-y-1/2 [container-type:size] md:hidden">
+    <div className="absolute left-1/2 top-1/2 aspect-[412/594] w-screen -translate-x-1/2 -translate-y-1/2 [container-type:size] md:hidden">
       <Image
-        src={`${ASSET_ROOT}/arena-bg.png`}
+        src={`${ASSET_ROOT}/mobile-background.png`}
         alt=""
         fill
         priority
@@ -172,20 +173,13 @@ function MobileFrame() {
         className="object-cover"
       />
 
-      <div
-        aria-hidden="true"
-        className="robowars-fight-on pointer-events-none absolute left-1/2 top-[8%] w-[140%] -translate-x-1/2 text-center font-akira-expanded text-[23cqw] font-extrabold uppercase leading-none text-white will-change-[opacity]"
-      >
-        FIGHT ON
-      </div>
-
       <Art
         src="arena-left-robot.webp"
         alt=""
-        x={-128}
-        y={240}
-        width={220}
-        height={366}
+        x={-54}
+        y={34}
+        width={228}
+        height={379}
         frameWidth={MOBILE_FRAME_WIDTH}
         frameHeight={MOBILE_FRAME_HEIGHT}
         priority
@@ -194,10 +188,10 @@ function MobileFrame() {
       <Art
         src="arena-right-robot.webp"
         alt=""
-        x={276}
-        y={218}
-        width={198}
-        height={331}
+        x={240}
+        y={42}
+        width={226}
+        height={378}
         frameWidth={MOBILE_FRAME_WIDTH}
         frameHeight={MOBILE_FRAME_HEIGHT}
         priority
@@ -205,36 +199,30 @@ function MobileFrame() {
       />
 
       <div
-        className="pointer-events-none absolute grid grid-cols-[auto_auto] grid-rows-[auto_auto] items-start justify-center gap-x-[3cqw] text-white uppercase"
+        className="pointer-events-none absolute text-center uppercase text-white"
         style={frameStyle({
-          x: 73,
-          y: 275,
-          width: 260,
-          height: 84,
+          x: 63,
+          y: 386,
+          width: 286,
+          height: 66,
           frameWidth: MOBILE_FRAME_WIDTH,
           frameHeight: MOBILE_FRAME_HEIGHT,
         })}
       >
-        <div className="robowars-motion robowars-title-left font-calm-serif text-right text-[9.2cqw] leading-[0.95] will-change-transform">
-          ROBO
-        </div>
-        <div className="robowars-motion robowars-title-right font-calm-serif text-left text-[9.2cqw] leading-[0.95] will-change-transform">
-          WARS
-        </div>
-        <div className="robowars-motion robowars-title-left font-akira-expanded text-right text-[6.1cqw] font-extrabold leading-[1.15] will-change-transform">
-          ENTER
-        </div>
-        <div className="robowars-motion robowars-title-right font-akira-expanded text-left text-[6.1cqw] font-extrabold leading-[1.15] will-change-transform">
-          ARENA
-        </div>
+        <p className="robowars-motion robowars-title-left m-0 whitespace-nowrap font-akira-expanded text-[8.35cqw] font-extrabold leading-[0.95] will-change-transform">
+          ROBO WARS
+        </p>
+        <p className="robowars-motion robowars-title-right m-0 font-calm-serif text-[6.9cqw] leading-[1.05] normal-case will-change-transform">
+          Enter Arena
+        </p>
       </div>
 
       <div
         className="robowars-motion robowars-date pointer-events-none absolute flex items-center justify-between text-white will-change-transform"
         style={frameStyle({
-          x: 99,
-          y: 356,
-          width: 218,
+          x: 134,
+          y: 460,
+          width: 164,
           height: 12,
           frameWidth: MOBILE_FRAME_WIDTH,
           frameHeight: MOBILE_FRAME_HEIGHT,
@@ -250,24 +238,25 @@ function MobileFrame() {
       <div
         className="robowars-motion robowars-prizes pointer-events-none absolute text-right font-alata text-[2.25cqw] leading-[1.15] uppercase will-change-transform"
         style={frameStyle({
-          x: 70,
-          y: 391,
-          width: 132,
+          x: 118,
+          y: 498,
+          width: 81,
           height: 42,
           frameWidth: MOBILE_FRAME_WIDTH,
           frameHeight: MOBILE_FRAME_HEIGHT,
         })}
       >
-        <p className="m-0 text-white">PRIZES WORTH INR</p>
+        <p className="m-0 text-white">PRIZES WORTH</p>
+        <p className="m-0 text-white">INR</p>
         <p className="m-0 text-[#eb9a58]">8 LAKH</p>
       </div>
       <div
         className="robowars-motion robowars-arena pointer-events-none absolute text-left font-alata text-[2.25cqw] leading-[1.38] uppercase text-white will-change-transform"
         style={frameStyle({
-          x: 221,
-          y: 391,
-          width: 152,
-          height: 42,
+          x: 219,
+          y: 498,
+          width: 145,
+          height: 30,
           frameWidth: MOBILE_FRAME_WIDTH,
           frameHeight: MOBILE_FRAME_HEIGHT,
         })}
@@ -278,27 +267,40 @@ function MobileFrame() {
       <div
         className="robowars-motion robowars-date pointer-events-none absolute w-px bg-white/55 will-change-transform"
         style={frameStyle({
-          x: 210,
-          y: 395,
+          x: 206,
+          y: 501,
           width: 1,
-          height: 32,
+          height: 24,
           frameWidth: MOBILE_FRAME_WIDTH,
           frameHeight: MOBILE_FRAME_HEIGHT,
         })}
       />
 
       <Art
-        src="tathva-white-logo.png"
+        src="mobile-badge.svg"
         alt=""
-        x={16}
-        y={18}
-        width={44}
-        height={36.5}
+        x={171}
+        y={0}
+        width={87.593}
+        height={16}
         frameWidth={MOBILE_FRAME_WIDTH}
         frameHeight={MOBILE_FRAME_HEIGHT}
         priority
         className="robowars-motion robowars-badge pointer-events-none will-change-transform"
       />
+      <p
+        className="robowars-motion robowars-badge pointer-events-none absolute m-0 font-instrument-serif text-[2.38cqw] leading-none text-[#ffdfc4] will-change-transform"
+        style={frameStyle({
+          x: 199,
+          y: 1,
+          width: 44,
+          height: 13,
+          frameWidth: MOBILE_FRAME_WIDTH,
+          frameHeight: MOBILE_FRAME_HEIGHT,
+        })}
+      >
+        Robowars
+      </p>
     </div>
   );
 }
