@@ -101,16 +101,16 @@ function DesktopFrame({ className, scale = "desktop" }) {
         className="pointer-events-none absolute grid grid-cols-[auto_auto] grid-rows-[auto_auto] items-start justify-center gap-x-[1.9cqw] text-white uppercase"
         style={frameStyle({ x: 387, y: 217, width: 602, height: 174 })}
       >
-        <div className="robowars-motion robowars-title-left font-calm-serif text-right text-[5.71cqw] leading-[0.95] will-change-transform">
+        <div className="robowars-motion robowars-title-left font-bowlby-one-sc text-right text-[5.71cqw] leading-[0.95] will-change-transform">
           ROBO
         </div>
-        <div className="robowars-motion robowars-title-right font-calm-serif text-left text-[5.71cqw] leading-[0.95] will-change-transform">
+        <div className="robowars-motion robowars-title-right font-bowlby-one-sc text-left text-[5.71cqw] leading-[0.95] will-change-transform">
           WARS
         </div>
-        <div className="robowars-motion robowars-title-left font-akira-expanded text-right text-[4.58cqw] font-extrabold leading-[1.15] will-change-transform">
+        <div className="robowars-motion robowars-title-left font-calm-serif text-right text-[4.58cqw] leading-[1.15] will-change-transform">
           ENTER
         </div>
-        <div className="robowars-motion robowars-title-right font-akira-expanded text-left text-[4.58cqw] font-extrabold leading-[1.15] will-change-transform">
+        <div className="robowars-motion robowars-title-right font-calm-serif text-left text-[4.58cqw] leading-[1.15] will-change-transform">
           ARENA
         </div>
       </div>
@@ -142,7 +142,7 @@ function DesktopFrame({ className, scale = "desktop" }) {
       </div>
       <div
         className="robowars-motion robowars-date pointer-events-none absolute w-px bg-white/55 will-change-transform"
-        style={frameStyle({ x: 688, y: 488, width: 1, height: 37 })}
+        style={frameStyle({ x: 695, y: 488, width: 1, height: 37 })}
       />
 
       <Art
@@ -208,7 +208,7 @@ function MobileFrame() {
           frameHeight: MOBILE_FRAME_HEIGHT,
         })}
       >
-        <p className="robowars-motion robowars-title-left m-0 whitespace-nowrap font-akira-expanded text-[8.35cqw] font-extrabold leading-[0.95] will-change-transform">
+        <p className="robowars-motion robowars-title-left m-0 whitespace-nowrap font-bowlby-one-sc text-[8.35cqw] leading-[0.95] will-change-transform">
           ROBO WARS
         </p>
         <p className="robowars-motion robowars-title-right m-0 font-calm-serif text-[6.9cqw] leading-[1.05] normal-case will-change-transform">
