@@ -10,8 +10,10 @@ import {
 import { proshowArtists } from "@/lib/proshowArtists";
 import useHoldToPlay from "@/hooks/useHoldToPlay";
 
-const HOLD_MS = 2200;
+const HOLD_MS = 1100;
 const RING_COUNT = 7;
+const SENS = 0.5; // <1 = heavier: the carousel moves less than your finger
+const SPRING_MS = 75; // spring time-constant: bigger = softer, heavier glide
 const N = proshowArtists.length;
 
 // Shortest signed distance from the active index, so the list loops forever.
@@ -35,7 +37,9 @@ export default function ProshowCarousel() {
   const activeRef = useRef(0);
   const posRef = useRef(0); // continuous scroll position, in artist units
   const tweenRef = useRef(0);
-  const targetRef = useRef(0);
+  const goalRef = useRef(0); // where the heavy follow is heading
+  const followingRef = useRef(false); // true while the follow loop is running
+  const velRef = useRef(0); // glide velocity (artists per ms)
   const gesture = useRef({ down: false, moved: false });
 
   const artist = proshowArtists[active];
@@ -104,28 +108,32 @@ export default function ProshowCarousel() {
       if (idx !== activeRef.current) {
         activeRef.current = idx;
         setActive(idx);
-        // Keep the song in sync with the active artist while playing.
-        if (playingRef.current) startTrack(idx);
+        // A new artist stops the current song; it only plays again on a hold.
+        if (playingRef.current) stopTrack();
       }
     },
-    [startTrack],
+    [stopTrack],
   );
 
   useLayoutEffect(() => {
     applyPos(posRef.current);
   }, [applyPos]);
 
-  const stopTween = () => cancelAnimationFrame(tweenRef.current);
+  const stopTween = () => {
+    cancelAnimationFrame(tweenRef.current);
+    tweenRef.current = 0;
+    followingRef.current = false;
+  };
 
   const animateTo = useCallback(
     (target, fast = false) => {
       stopTween();
-      targetRef.current = target;
+      goalRef.current = target;
       const from = posRef.current;
       if (from === target) return;
       const dur = fast
-        ? 220
-        : Math.min(300 + Math.abs(target - from) * 120, 800);
+        ? 300
+        : Math.min(250 + Math.abs(target - from) * 60, 450);
       let t0;
       const tick = (now) => {
         t0 ??= now;
@@ -133,6 +141,38 @@ export default function ProshowCarousel() {
         const e = 1 - Math.pow(1 - k, 3); // easeOutCubic
         applyPos(from + (target - from) * e);
         if (k < 1) tweenRef.current = requestAnimationFrame(tick);
+        else tweenRef.current = 0;
+      };
+      tweenRef.current = requestAnimationFrame(tick);
+    },
+    [applyPos],
+  );
+
+  // Heavy follow: pos eases toward a goal set by the finger / trackpad.
+  const followTo = useCallback(
+    (goal) => {
+      goalRef.current = goal;
+      if (followingRef.current) return;
+      stopTween(); // drop any keyboard/tap tween, then glide from where we are
+      followingRef.current = true;
+      velRef.current = 0;
+      let last = performance.now();
+      // Critically damped spring: velocity is carried across target changes,
+      // so committing to the next artist never causes a sudden jolt.
+      const w = 1 / SPRING_MS;
+      const tick = (now) => {
+        const dt = Math.min(now - last, 40);
+        last = now;
+        const x = posRef.current - goalRef.current;
+        const v = velRef.current;
+        const acc = -w * w * x - 2 * w * v;
+        const nv = v + acc * dt;
+        const nx = x + nv * dt;
+        velRef.current = nv;
+        const done = Math.abs(nx) < 0.001 && Math.abs(nv) < 0.0002;
+        applyPos(done ? goalRef.current : goalRef.current + nx);
+        if (done) stopTween();
+        else tweenRef.current = requestAnimationFrame(tick);
       };
       tweenRef.current = requestAnimationFrame(tick);
     },
@@ -140,7 +180,7 @@ export default function ProshowCarousel() {
   );
 
   const step = useCallback(
-    (dir) => animateTo(Math.round(targetRef.current) + dir),
+    (dir) => animateTo(Math.round(goalRef.current) + dir),
     [animateTo],
   );
 
@@ -194,25 +234,25 @@ export default function ProshowCarousel() {
     const onWheel = (e) => {
       if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
       e.preventDefault();
-      stopTween();
       cancel();
       dir = Math.sign(e.deltaX);
-      applyPos(posRef.current + e.deltaX / stepPx());
+      if (!followingRef.current) goalRef.current = posRef.current;
+      followTo(goalRef.current + (e.deltaX / stepPx()) * SENS);
       clearTimeout(settle);
       // Once scrolling pauses, commit in the scroll direction after a small
       // nudge (25%) rather than waiting for the halfway point.
       settle = setTimeout(() => {
-        const p = posRef.current;
+        const p = goalRef.current;
         const target = dir > 0 ? Math.floor(p + 0.75) : Math.ceil(p - 0.75);
-        animateTo(target, true);
-      }, 60);
+        followTo(target); // keep gliding from the current motion, no jump
+      }, 40);
     };
     page.addEventListener("wheel", onWheel, { passive: false });
     return () => {
       page.removeEventListener("wheel", onWheel);
       clearTimeout(settle);
     };
-  }, [applyPos, animateTo, cancel]);
+  }, [followTo, animateTo, cancel]);
 
   useEffect(() => () => stopTween(), []);
 
@@ -224,6 +264,7 @@ export default function ProshowCarousel() {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {}
     stopTween();
+    goalRef.current = posRef.current;
     gesture.current = {
       index,
       x: e.clientX,
@@ -249,7 +290,7 @@ export default function ProshowCarousel() {
       g.vx = 0.7 * g.vx + 0.3 * ((e.clientX - g.lastX) / (now - g.lastT));
     g.lastX = e.clientX;
     g.lastT = now;
-    applyPos(g.startPos - dx / stepPx());
+    followTo(g.startPos - (dx / stepPx()) * SENS);
   };
   const onPointerUp = () => {
     const g = gesture.current;
@@ -262,7 +303,7 @@ export default function ProshowCarousel() {
       return;
     }
     // project the flick forward a little, then snap to the nearest artist
-    animateTo(Math.round(posRef.current - (g.vx * 160) / stepPx()));
+    followTo(Math.round(goalRef.current - ((g.vx * 160) / stepPx()) * SENS));
   };
 
   const hint = coarse ? "HOLD THE ARTIST TO PLAY" : "HOLD SPACE BAR TO PLAY";
