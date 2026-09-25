@@ -1,0 +1,174 @@
+.frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1413 / 753;
+  container-type: inline-size;
+  background: #0e0f0f;
+  overflow: hidden;
+  margin: 0 auto;
+  user-select: none;
+}
+
+.frame img {
+  position: absolute;
+  display: block;
+}
+
+.imgLeft {
+  left: 1.557%;
+  top: 1%;
+  width: 69.9059%;
+  height: 84%;
+  object-fit: contain;
+  object-position: left bottom;
+  -webkit-mask-image: linear-gradient(to right, black 0%, black 75%, transparent 100%);
+  mask-image: linear-gradient(to right, black 0%, black 75%, transparent 100%);
+}
+
+.imgRight {
+  left: 54.7%;
+  top: -2.3904%;
+  width: 56.6171%;
+  height: 150.1992%;
+  object-fit: fill;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 25%, black 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 25%, black 100%);
+}
+
+.plus1 {
+  left: 73.2484%;
+  top: 3.4529%;
+  width: 7.7849%;
+  height: 22.0505%;
+  object-fit: contain;
+}
+
+/* 1. Bottom Left "TALKS . SHOWS . CONVERSATIONS . EXPERIENCES." */
+.talksShowsText {
+  position: absolute;
+  left: 8%;
+  top: 81%;
+  font-family: 'Bebas Neue', sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: clamp(12px, 1.85cqw, 28px);
+  color: #00E564;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+/* 2. Middle Vertical Text Block (TECH CO NC LA VE) */
+.verticalTextBlock {
+  position: absolute;
+  left: 33.2%;
+  top: 8.8%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.12em;
+  z-index: 10;
+}
+
+.techText {
+  /* font-family: 'Space Grotesk', var(--font-space-grotesk), sans-serif; */
+  font-family: 'Bebas Neue', sans-serif;
+  font-weight: 700;
+  font-size: clamp(28px, 4.8cqw, 72px);
+  color: #ffffff;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.05em;
+  line-height: 1;
+}
+
+.conclaveVcrText {
+  font-family: 'VCR OSD Mono', monospace;
+  font-weight: 400;
+  font-style: normal;
+  font-size: clamp(34px, 5.8cqw, 88px);
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  line-height: 1.0;
+}
+
+/* 3. Right Side Header (TECH CONCLAVE) - Shifted left to 66% */
+.rightHeader {
+  position: absolute;
+  left: 66%;
+  top: 36.5%;
+  display: flex;
+  align-items: center;
+  gap: 0.18em;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+.rightTech {
+  /* font-family: 'Space Grotesk', var(--font-space-grotesk), sans-serif; */
+  font-family: 'Bebas Neue', sans-serif;
+  font-weight: 400;
+  font-weight: 700;
+  font-size: clamp(24px, 4.0cqw, 60px);
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.rightConclave {
+  /* font-family: 'VCR OSD Mono', monospace; */
+  font-family: 'Bebas Neue', sans-serif;
+  font-weight: 400;
+  font-weight: 400;
+  font-style: normal;
+  font-size: clamp(24px, 4.0cqw, 60px);
+  color: #00E564;
+  letter-spacing: 0.02em;
+}
+
+/* 4. Right Side Description Paragraph - Shifted left to 66% */
+.descriptionParagraph {
+  position: absolute;
+  left: 66%;
+  top: 48.5%;
+  width: 29%;
+  font-family: 'Space Grotesk', var(--font-space-grotesk), sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: clamp(12px, 1.55cqw, 24px);
+  color: #ffffff;
+  line-height: 1.38;
+  letter-spacing: 0.01em;
+  z-index: 10;
+  opacity: 0.95;
+}
+
+/* 5. Date Block (OCT 10-11) */
+.dateBlock {
+  position: absolute;
+  left: 58.2%;
+  top: 75%;
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  z-index: 10;
+}
+
+.dateMonth {
+  /* font-family: 'Bebas Neue', var(--font-bebas-neue), sans-serif; */
+  font-family: 'Bebas Neue', sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: clamp(32px, 5.2cqw, 78px);
+  color: #00E564;
+  line-height: 1;
+}
+
+.dateDays {
+  /* font-family: 'Space Grotesk', var(--font-space-grotesk), sans-serif; */
+  font-family: 'Bebas Neue', sans-serif;
+  font-weight: 400;
+  font-weight: 700;
+  font-size: clamp(22px, 3.5cqw, 52px);
+  color: #00E564;
+  line-height: 1;
+}
