@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
-import { useRouter } from "next/navigation";
 
 // Mock Workshops Data
 const WORKSHOPS_DATA = [
@@ -507,7 +506,7 @@ const PULSE_LEAVE_FADE = 0.5;
 // from the hovered card). See the "── Step 11: global dark focus overlay ──"
 // block below for how it integrates with the existing hover lifecycle.
 const FOCUS_OVERLAY_Z = 15; // between resting card z-index (1) and focused card z-index (20)
-const FOCUS_OVERLAY_COLOR = "rgba(4, 5, 9, 0.56)";
+const FOCUS_OVERLAY_COLOR = "transparent";
 const FOCUS_PULSE_DURATION = 1.7; // slow, cinematic expansion from the hovered card
 const FOCUS_PULSE_EASE = "power2.out";
 const FOCUS_CLEAR_DURATION = 1.6; // clearing pulse that reverses the dark state
@@ -534,7 +533,6 @@ export default function WorkshopsPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewDetailsMode, setViewDetailsMode] = useState(false);
 
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   // Step 6 — annotation callout render state
@@ -551,6 +549,59 @@ export default function WorkshopsPage() {
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (motionQuery.matches) return undefined;
+
+    let targetScrollY = window.scrollY;
+    let animationFrame = null;
+
+    const clampScrollY = (value) => {
+      const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
+      return Math.min(Math.max(value, 0), Math.max(maxScrollY, 0));
+    };
+
+    const animateScroll = () => {
+      const currentScrollY = window.scrollY;
+      const nextScrollY = currentScrollY + (targetScrollY - currentScrollY) * 0.2;
+
+      window.scrollTo(0, nextScrollY);
+
+      if (Math.abs(targetScrollY - nextScrollY) > 0.5) {
+        animationFrame = requestAnimationFrame(animateScroll);
+      } else {
+        window.scrollTo(0, targetScrollY);
+        animationFrame = null;
+      }
+    };
+
+    const handleWheel = (event) => {
+      if (event.ctrlKey || event.deltaY === 0) return;
+
+      event.preventDefault();
+
+      const delta = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
+      targetScrollY = clampScrollY(targetScrollY + delta * 1.25);
+
+      if (animationFrame === null) {
+        animationFrame = requestAnimationFrame(animateScroll);
+      }
+    };
+
+    const syncScrollTarget = () => {
+      if (animationFrame === null) targetScrollY = window.scrollY;
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    window.addEventListener("scroll", syncScrollTarget, { passive: true });
+
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("scroll", syncScrollTarget);
+      if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+    };
   }, []);
 
   const slotRefs = useRef({});
@@ -1858,23 +1909,56 @@ export default function WorkshopsPage() {
 
   // Scroll progress for the staggered workshop columns
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [columnCount, setColumnCount] = useState(4);
   const gridRef = React.useRef(null);
   const lastRowRef = React.useRef(null);
+
+  useEffect(() => {
+    const updateColumnCount = () => {
+      const nextColumnCount = window.innerWidth < 768
+        ? 2
+        : window.innerWidth < 1024
+          ? 3
+          : 4;
+
+      setColumnCount(nextColumnCount);
+    };
+
+    updateColumnCount();
+    window.addEventListener("resize", updateColumnCount);
+
+    return () => window.removeEventListener("resize", updateColumnCount);
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
-      if (!gridRef.current || !lastRowRef.current) return;
+      if (!gridRef.current) return;
 
       const gridRect = gridRef.current.getBoundingClientRect();
-      const lastRowRect = lastRowRef.current.getBoundingClientRect();
+      const firstColumn = gridRef.current.firstElementChild;
+      const firstCard = firstColumn?.firstElementChild;
+      const secondCard = firstColumn?.children[1];
+
+      if (!firstCard) return;
+
+      const firstCardRect = firstCard.getBoundingClientRect();
+      const rowGap = secondCard
+        ? secondCard.getBoundingClientRect().top - firstCardRect.bottom
+        : 18;
+      const rowPitch = firstCardRect.height + rowGap;
+      const rowsInViewport = Math.max(
+        1,
+        Math.floor((window.innerHeight + rowGap) / rowPitch)
+      );
 
       const gridTop = window.scrollY + gridRect.top;
-      const lastRowTop = window.scrollY + lastRowRect.top;
 
       // Start when the grid enters the viewport
       const start = gridTop - window.innerHeight;
-      
-      // End exactly when the last row fully enters the viewport
-      const end = lastRowTop + lastRowRect.height - window.innerHeight;
+
+      // Finish when the measured rows that fill the viewport have entered it.
+      const end =
+        gridTop + rowsInViewport * rowPitch - rowGap - window.innerHeight;
 
       const progress = (window.scrollY - start) / (end - start);
 
@@ -1922,7 +2006,7 @@ export default function WorkshopsPage() {
       {/* TOP NAVIGATION BAR */}
       <header className="relative z-30 w-full border-t-2 border-[#0091ff] border-b border-white/5 bg-[#05060d]/90 backdrop-blur-xl">
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
+        <div className="w-full px-4 sm:px-6 lg:px-8 h-[39px] sm:h-14 lg:h-16 flex items-center justify-between">
 
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group">
@@ -2095,7 +2179,7 @@ export default function WorkshopsPage() {
         {/* HERO COSMIC EXPLOSION BANNER */}
         <div className="relative w-full overflow-hidden group mb-8">
 
-          <div className="relative h-44 sm:h-64 md:h-72 w-full">
+          <div className="relative aspect-[677/197] w-full">
 
             <Image
               src="/images/cosmic-banner.png"
@@ -2116,7 +2200,7 @@ export default function WorkshopsPage() {
         {/* TITLE & DESCRIPTION HEADER SECTION */}
         <section className="mb-6 border-b border-white/50 pb-5">
 
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-4">
+          <div className="w-full flex flex-col md:flex-row items-center gap-4">
 
             {/* LEFT TITLE */}
             <div className="w-full md:w-[60%]">
@@ -2124,7 +2208,7 @@ export default function WorkshopsPage() {
               <h1
                 style={{
                   fontFamily: "'Jaro', sans-serif",
-                  fontSize: "clamp(55px, 5vw, 70px)",
+                  fontSize: "clamp(72px, 6vw, 88px)",
                   fontWeight: 400,
                 }}
                 className="text-white leading-none m-0"
@@ -2137,30 +2221,15 @@ export default function WorkshopsPage() {
             {/* RIGHT DESCRIPTION */}
             <div className="w-full md:w-[40%] flex items-center">
 
-              <p className="text-xs text-slate-300 leading-relaxed max-w-lg m-0">
-
-                Get ready to innovate and create. The{" "}
-
-                <span className="font-bold text-white tracking-wide">
-                  TATHVA&apos;26
-                </span>{" "}
-
-                Workshops bring you face-to-face with cutting-edge
-                technologies and industry experts. Dive into interactive,
-                practical sessions, build functional projects from scratch,
-                and earn{" "}
-
-                <span className="font-bold text-white">
-                  Activity Points
-                </span>{" "}
-
-                along with an official{" "}
-
-                <span className="font-bold text-white">
-                  Certificate
-                </span>{" "}
-
-                to elevate your portfolio.
+              <p className="m-0 max-w-lg break-words text-[clamp(12px,1vw,16px)] leading-normal text-white [font-family:'Jost',sans-serif]">
+                <span className="font-semibold">Get ready to innovate and create</span>
+                {`. The `}
+                <span className="font-semibold">TATHVA&apos;26</span>
+                {` Workshops bring you face-to-face with cutting-edge technologies and industry experts. Dive into interactive, practical sessions, build functional projects from scratch, and earn `}
+                <span className="font-semibold">Activity Points</span>
+                {` along with an `}
+                <span className="font-semibold">official Certificate</span>
+                {` to elevate your portfolio.`}
 
               </p>
 
@@ -2171,17 +2240,17 @@ export default function WorkshopsPage() {
         </section>
 
         {/* SEARCH BAR & CATEGORY FILTERS */}
-        <section className="mb-10 flex flex-col items-center">
+        <section className="mb-10 w-full flex flex-col items-center">
 
           {/* SEARCH INPUT */}
-          <div className="relative w-full max-w-md sm:max-w-lg mb-5">
+          <div className="relative mb-5 w-[clamp(280px,45vw,720px)] max-w-[90vw]">
 
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search"
-              className="w-full h-10 sm:h-11 pl-5 pr-11 text-xs sm:text-sm font-medium rounded-full bg-white text-slate-900 placeholder:text-slate-500 shadow-[0_2px_20px_rgba(255,255,255,0.15)] focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+              className="h-8 w-full rounded-[58.807px] bg-white pl-5 pr-11 text-xs font-medium text-slate-900 placeholder:text-slate-500 shadow-[0_2px_20px_rgba(255,255,255,0.15)] transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
 
             {/* SEARCH ICON */}
@@ -2210,7 +2279,7 @@ export default function WorkshopsPage() {
         </section>
 
         {/* WORKSHOP CARDS GRID */}
-        <section className="relative">
+        <section className="relative w-full">
 
           {filteredWorkshops.length === 0 ? (
 
@@ -2247,19 +2316,16 @@ export default function WorkshopsPage() {
                * all columns become aligned.
                */
 
-              const columns = [
-                filteredWorkshops.filter((_, i) => i % 4 === 0),
-                filteredWorkshops.filter((_, i) => i % 4 === 1),
-                filteredWorkshops.filter((_, i) => i % 4 === 2),
-                filteredWorkshops.filter((_, i) => i % 4 === 3),
-              ];
+              const columns = Array.from({ length: columnCount }, (_, columnIndex) =>
+                filteredWorkshops.filter((_, i) => i % columnCount === columnIndex)
+              );
 
               return (
 
                 <div
                   ref={gridRef}
                   id="workshop-grid"
-                  className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6"
+                  className="mx-auto grid w-full grid-cols-2 gap-x-[30px] gap-y-[18px] md:grid-cols-3 lg:grid-cols-4"
                   onMouseLeave={handleGridLeave}
                 >
                   {columns.map((column, columnIndex) => {
@@ -2274,7 +2340,7 @@ export default function WorkshopsPage() {
 
                       <div
                         key={columnIndex}
-                        className="flex flex-col gap-3 sm:gap-4 lg:gap-6"
+                        className="flex flex-col gap-[18px]"
                         style={{
                           transform: `translateY(${offset}px)`,
                         }}
@@ -2316,16 +2382,13 @@ export default function WorkshopsPage() {
                                   if (el) cardRefs.current[workshop.id] = el;
                                   else delete cardRefs.current[workshop.id];
                                 }}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setSelectedWorkshop(workshop);
-                                }}
-                                className="group relative rounded-xl sm:rounded-2xl overflow-hidden bg-[#0d101c] cursor-pointer flex flex-col justify-between w-full h-full"
+                                className="group relative aspect-[0.9825] w-full overflow-hidden bg-[#0d101c]"
                                 style={{
                                   transformStyle: "preserve-3d",
                                   transformOrigin: "center center",
                                   boxShadow: REST_SHADOW,
                                   backgroundColor: REST_EDGE_BG,
+                                  containerType: "inline-size",
                                   willChange: "transform, box-shadow, background-color",
                                 }}
                               >
@@ -2361,7 +2424,19 @@ export default function WorkshopsPage() {
                                   />
 
                                   {/* CARD VISUAL ARTWORK */}
-                                  <div className="relative aspect-square w-full overflow-hidden bg-slate-900">
+                                  <div
+                                    className="absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-slate-900"
+                                    style={{
+                                      maskImage: "url('/images/workshop-card-image.png')",
+                                      WebkitMaskImage: "url('/images/workshop-card-image.png')",
+                                      maskPosition: "center",
+                                      WebkitMaskPosition: "center",
+                                      maskRepeat: "no-repeat",
+                                      WebkitMaskRepeat: "no-repeat",
+                                      maskSize: "100% 100%",
+                                      WebkitMaskSize: "100% 100%",
+                                    }}
+                                  >
                                     <Image
                                       src={workshop.image}
                                       alt={workshop.fullTitle}
@@ -2369,33 +2444,38 @@ export default function WorkshopsPage() {
                                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                                       className="object-cover object-center transition-transform duration-500 ease-out"
                                     />
-                                    {/* GRADIENT OVERLAY */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#06070d] via-transparent to-transparent opacity-85" />
                                   </div>
 
-                                  {/* BOTTOM BAR */}
-                                  <div className="relative z-10 w-full bg-[#080a14] border-t border-white/10 px-2 sm:px-2.5 py-1.5 flex items-center justify-between gap-1">
-                                    {/* LEFT BADGE */}
-                                    <div className="shrink-0 flex items-center gap-1 px-1 py-[1px] rounded border border-white/20 bg-white/5">
-                                      <span className="text-[6px] sm:text-[7px] font-mono font-bold tracking-widest text-slate-300 uppercase leading-none">
-                                        {workshop.badge}
-                                      </span>
-                                    </div>
-                                    {/* CENTER TITLE */}
-                                    <div className="flex-1 min-w-0 text-center">
-                                      <p className="text-[9px] sm:text-[10px] font-bold text-white tracking-wide truncate">
-                                        {viewDetailsMode ? workshop.fullTitle : workshop.title}
-                                      </p>
-                                    </div>
-                                    {/* RIGHT DATE */}
-                                    <div className="shrink-0 flex flex-col items-center justify-center leading-none pl-1">
-                                      <span className="text-[5px] sm:text-[6px] font-extrabold text-slate-300 tracking-wider uppercase mb-[1px]">
+                                  {/* BACKGROUND CUTOUT OUTSIDE THE BORDER */}
+                                  <div
+                                    className="pointer-events-none absolute inset-0 z-15 bg-[#06070d]"
+                                    style={{
+                                      clipPath:
+                                        "polygon(32.18% 90.64%, 100% 90.64%, 100% 100%, 23.29% 100%, 24.64% 99%)",
+                                    }}
+                                  />
+
+                                  {/* FIGMA CARD LABELS */}
+                                  <div className="absolute inset-x-0 bottom-0 z-20 h-[13.5%]">
+                                    <p className="absolute bottom-[9%] left-[29.73%] right-[26.82%] text-right text-[6.55cqw] font-bold leading-[normal] text-white">
+                                      Workshop
+                                    </p>
+                                    <div className="absolute bottom-[8%] right-[1.1%] flex flex-col items-end leading-none">
+                                      <span className="mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#fbebec]">
                                         {workshop.dateMonth}
                                       </span>
-                                      <span className="text-[9px] sm:text-[10px] font-black text-white">
+                                      <span className="text-[8.07cqw] font-bold text-white">
                                         {workshop.dateDay}
                                       </span>
                                     </div>
+                                  </div>
+
+                                  <div className="pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30">
+                                    <img
+                                      src="/images/workshop-card-border.svg"
+                                      alt=""
+                                      className="absolute inset-[-0.38%] h-full w-full"
+                                    />
                                   </div>
 
                                 </div>
@@ -2447,59 +2527,6 @@ export default function WorkshopsPage() {
                 }}
               />
 
-              {/* Step 6 — annotation callout SVG & HTML */}
-              <div
-                ref={calloutOverlayRef}
-                className="workshop-callout-overlay pointer-events-none fixed inset-0 z-50 overflow-hidden"
-              >
-                <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                  <path
-                    ref={calloutPathRef}
-                    className="stroke-indigo-400 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]"
-                    fill="none"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <div
-                  ref={calloutLabelRef}
-                  className="absolute top-0 left-0 flex flex-col justify-end"
-                  style={{ width: CALLOUT_LABEL_WIDTH }}
-                >
-                  <div
-                    className={`flex flex-col ${
-                      calloutSide === "right" ? "items-start" : "items-end text-right"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-1 opacity-80">
-                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_6px_rgba(99,102,241,0.6)]" />
-                      <span
-                        ref={calloutMetaRef}
-                        className="text-[10px] font-mono tracking-[0.15em] text-indigo-300 uppercase"
-                      ></span>
-                    </div>
-                    <h3
-                      ref={calloutTitleRef}
-                      className="text-lg font-black text-white leading-tight mb-2 drop-shadow-md break-words"
-                    ></h3>
-                    <p
-                      ref={calloutDescRef}
-                      className="text-xs text-slate-300 leading-relaxed mb-3 line-clamp-3 opacity-90 w-[95%]"
-                    ></p>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                        Registration
-                      </span>
-                      <div className="h-px w-6 bg-slate-700" />
-                      <span
-                        ref={calloutPriceRef}
-                        className="text-sm font-black text-emerald-400"
-                      ></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </>,
             document.body
           )}
@@ -2551,52 +2578,18 @@ export default function WorkshopsPage() {
         }
       `}</style>
 
-      {/* FLOATING ACTION BUTTON */}
-      <div className="fixed bottom-6 right-6 z-40">
-
-        <button
-          type="button"
-          onClick={() => setViewDetailsMode(!viewDetailsMode)}
-          title={
-            viewDetailsMode
-              ? "Show Simple Titles"
-              : "Show Full Titles"
-          }
-          className="w-13 h-13 rounded-2xl bg-[#2b354f] hover:bg-[#394668] active:scale-95 text-sky-200 hover:text-white border border-white/15 shadow-[0_10px_30px_rgba(0,0,0,0.6)] flex items-center justify-center transition-all duration-300 group cursor-pointer"
-          aria-label="Toggle card details view"
-        >
-
-          {/* EYE ICON */}
-          <svg
-            className="w-4.5 h-4.5 group-hover:scale-110 transition-transform"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-
-            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-
-            <circle cx="12" cy="12" r="3" />
-
-          </svg>
-
-        </button>
-
-      </div>
-
       {/* WORKSHOP DETAILS MODAL */}
       {selectedWorkshop && (
 
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#06050b] bg-cover bg-center p-4 text-white animate-in fade-in duration-200"
+          style={{ backgroundImage: "url('/images/workshop-detail-bg.png')" }}
           onClick={() => setSelectedWorkshop(null)}
         >
 
           <div
-            className="relative w-full max-w-xl bg-[#0d101d] border border-white/15 rounded-2xl overflow-hidden shadow-2xl p-6 sm:p-7 text-left"
+            className="relative w-full max-w-[575px] rounded-[20px] border border-white/10 bg-[#0d0a17]/90 px-5 py-5 shadow-2xl backdrop-blur-sm sm:px-7"
+            style={{ containerType: "inline-size" }}
             onClick={(e) => e.stopPropagation()}
           >
 
@@ -2604,7 +2597,8 @@ export default function WorkshopsPage() {
             <button
               type="button"
               onClick={() => setSelectedWorkshop(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              className="absolute right-4 top-4 z-10 rounded-md p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+              aria-label="Close workshop details"
             >
 
               <svg
@@ -2625,114 +2619,69 @@ export default function WorkshopsPage() {
 
             </button>
 
-            {/* MODAL HEADER */}
-            <div className="flex items-center gap-2 mb-3">
-
-              <span className="px-2.5 py-0.5 text-xs font-mono font-bold uppercase rounded border border-indigo-500/30 bg-indigo-950/50 text-indigo-300">
-                {selectedWorkshop.category}
-              </span>
-
-              <span className="text-xs text-slate-400">
-                {selectedWorkshop.dateMonth}{" "}
-                {selectedWorkshop.dateDay}, 2026
-              </span>
-
-            </div>
-
-            <h2 className="text-xl sm:text-2xl font-black text-white mb-2">
-              {selectedWorkshop.fullTitle}
-            </h2>
-
-            <p className="text-xs sm:text-sm text-slate-300 mb-5 leading-relaxed">
-              {selectedWorkshop.description}
-            </p>
-
-            {/* SPEC DETAILS GRID */}
-            <div className="grid grid-cols-2 gap-3 mb-6 text-xs bg-white/5 p-4 rounded-xl border border-white/5">
-
+            <div className="grid gap-x-8 gap-y-5 pt-2 sm:grid-cols-[216px_minmax(0,1fr)] sm:items-start">
               <div>
-                <span className="text-slate-400 block font-medium">
-                  Instructor:
-                </span>
+                <div className="relative aspect-square overflow-hidden rounded-[7px] border border-[#737373]">
+                  <Image
+                    src={selectedWorkshop.image}
+                    alt={selectedWorkshop.fullTitle}
+                    fill
+                    sizes="216px"
+                    className="object-cover object-center"
+                  />
+                </div>
 
-                <span className="text-white font-semibold">
-                  {selectedWorkshop.instructor}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block font-medium">
-                  Duration:
-                </span>
-
-                <span className="text-white font-semibold">
-                  {selectedWorkshop.duration}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block font-medium">
-                  Venue:
-                </span>
-
-                <span className="text-white font-semibold">
-                  {selectedWorkshop.venue}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block font-medium">
-                  Benefits:
-                </span>
-
-                <span className="text-emerald-400 font-semibold">
-                  {selectedWorkshop.activityPoints}
-                </span>
-              </div>
-
-            </div>
-
-            {/* PREREQUISITES */}
-            <div className="mb-6 text-xs text-slate-300">
-
-              <span className="text-slate-400 font-semibold">
-                Prerequisites:{" "}
-              </span>
-
-              {selectedWorkshop.prerequisites}
-
-            </div>
-
-            {/* MODAL FOOTER */}
-            <div className="flex items-center justify-between pt-4 border-t border-white/10">
-
-              <div>
-
-                <span className="text-xs text-slate-400 block">
-                  Registration Fee
-                </span>
-
-                <span className="text-xl font-bold text-white">
-                  {selectedWorkshop.fee}
-                </span>
-
-              </div>
-
-              <div className="flex items-center gap-3">
-
-                <span className="text-xs text-amber-400">
-                  ⚡ Only {selectedWorkshop.spotsLeft} spots left
-                </span>
+                <div className="mt-2 flex items-end justify-between px-1">
+                  <span className="flex items-baseline leading-none text-white">
+                    <span className="font-sans text-3xl font-bold">₹</span>
+                    <span className="font-['Jaro'] text-3xl">
+                      {selectedWorkshop.fee.replace(/^₹/, "")}
+                    </span>
+                  </span>
+                  <span className="font-bold text-base leading-none text-white">
+                    {selectedWorkshop.dateDay} {selectedWorkshop.dateMonth}
+                  </span>
+                </div>
 
                 <button
                   type="button"
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-sm shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all cursor-pointer"
+                  className="mt-4 w-full rounded-[7px] bg-[rgba(78,40,74,0.72)] py-1.5 text-lg font-bold tracking-[0.16em] text-white transition-colors hover:bg-[rgba(104,52,96,0.9)] cursor-pointer"
                 >
-                  Register Now
+                  REGISTER
                 </button>
-
               </div>
 
+              <div className="pt-2 sm:pt-6">
+                <h2 className="max-w-full overflow-hidden whitespace-nowrap font-fragment-serif text-[clamp(1.75rem,7cqw,3rem)] leading-none text-white">
+                  WORKSHOPS
+                </h2>
+
+                <div className="mt-7 space-y-2">
+                  <h3 className="text-base font-semibold text-[#e2e2e2]">
+                    About the workshop
+                  </h3>
+                  <p className="text-[9px] leading-[1.25] text-[#8d8d8d]">
+                    {selectedWorkshop.description}
+                  </p>
+                </div>
+
+                <div className="mt-5">
+                  <h3 className="text-[11px] font-bold uppercase text-white">
+                    Contacts :
+                  </h3>
+                  <div className="mt-2 grid grid-cols-2 gap-3 text-[9px] uppercase leading-tight text-white">
+                    <span>JOHN DOE<br />1234567890</span>
+                    <span>JANE DOE<br />9087654321</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="mt-5 rounded-[7px] bg-[rgba(0,116,122,0.75)] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[rgba(0,145,151,0.9)] cursor-pointer"
+                >
+                  LEARN MORE
+                </button>
+              </div>
             </div>
 
           </div>
