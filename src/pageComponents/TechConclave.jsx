@@ -235,10 +235,10 @@ const css = `
   margin: 0;
   font-family: "Space Grotesk", system-ui, sans-serif;
   font-weight: 440;
-  font-size: 1.95cqw;
+  font-size: 2cqw;
   line-height: 1.34;
   color: #e9e9f2;
-  word-spacing: 0.05em;
+  // word-spacing: 0.05em;
 }
 
 .logo-img {
@@ -261,23 +261,23 @@ const css = `
   align-items: baseline;
   gap: 0.03em;
   line-height: 0.9;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
   white-space: nowrap;
-  font-size: clamp(7rem, 2.8vw, 5.2rem);
-  transform: scaleX(1.08);
+  font-size: clamp(6rem, 2.8vw, 5.2rem);
+  transform: scaleX(1);
   transform-origin: left center;
 }
 
 .tc-hero-tech {
   display: inline-block;
-  color: #6d7fff;
+  color: #ffffff;
   font-size: 1em;
   font-weight: 400;
 }
 
 .tc-hero-conclave {
   display: inline-block;
-  color: #ffffff;
+  color: #6d7fff;
   font-size: 1em;
   font-weight: 400;
 }
@@ -309,8 +309,8 @@ const css = `
   }
 
   .tc-tagline {
-    font-size: 1.4cqw;
-    line-height: 1.25;
+    font-size: 1.9cqw;
+    line-height: 1.2;
   }
 
   .robot-img {
