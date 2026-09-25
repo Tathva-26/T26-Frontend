@@ -1,4 +1,3 @@
-import Navbar from "@/components/Navbar/Navbar";
 import GpcHero from "@/pageComponents/GPC/GpcHero";
 
 export const metadata = {
@@ -9,7 +8,6 @@ export const metadata = {
 export default function GpcPage() {
   return (
     <main className="bg-[#101010]">
-      <Navbar />
       <GpcHero />
     </main>
   );

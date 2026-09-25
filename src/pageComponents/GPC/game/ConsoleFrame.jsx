@@ -1,33 +1,82 @@
 "use client";
 
 import SpaceShooterCanvas from "./SpaceShooterCanvas";
-import { ASSETS, CONSOLE_FRAME, EXIT_BUTTON, SCREEN_INSET } from "@/pageComponents/GPC/gpcConfig";
+import Hearts from "./Hearts";
+import { RULES } from "@/lib/spaceShooter/constants";
+import {
+  ASSETS,
+  CONSOLE_FRAME,
+  EXIT_BUTTON,
+  SCREEN_INSET,
+} from "@/pageComponents/GPC/gpcConfig";
 
-const MESSAGES = {
-  ready: "PRESS SPACE TO START",
-  over: "GAME OVER - PRESS SPACE",
-};
+const padScore = (value) =>
+  String(value).padStart(5, "0");
 
-function Hud({ stats }) {
-  const message = MESSAGES[stats.phase];
+function Message({ phase }) {
+  const isOver = phase === "over";
+
   return (
-    <div className="pointer-events-none absolute inset-0 font-orbitron text-[16px] text-white">
-      <span className="absolute left-4 top-3">LIVES {stats.lives}</span>
-      <span className="absolute right-4 top-3">SCORE {stats.score}</span>
-      {message && (
-        <p className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-[24px]">
-          {message}
+    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center">
+      {isOver && (
+        <p className="text-[22px] leading-relaxed tracking-widest">
+          GAME OVER
+        </p>
+      )}
+
+      <p className="text-[11px] leading-relaxed tracking-wider text-white/80">
+        {isOver
+          ? "PRESS SPACE TO RETRY"
+          : "PRESS SPACE TO START"}
+      </p>
+
+      {!isOver && (
+        <p className="mt-4 text-[9px] leading-loose tracking-wider text-white/60">
+          ARROW KEYS TO MOVE
+          <br />
+          SPACE TO SHOOT
         </p>
       )}
     </div>
   );
 }
 
-export default function ConsoleFrame({ panelRef, active, stats, onStats, onExit }) {
+function Hud({ stats }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 font-pixel text-white">
+      <div className="absolute left-4 top-3">
+        <Hearts
+          lives={stats.lives}
+          max={RULES.lives}
+        />
+      </div>
+
+      <p className="absolute right-4 top-3 text-[11px] leading-relaxed tracking-widest">
+        <span className="text-white/50">
+          HI {padScore(stats.highScore)}
+        </span>{" "}
+        {padScore(stats.score)}
+      </p>
+
+      {stats.phase !== "playing" && (
+        <Message phase={stats.phase} />
+      )}
+    </div>
+  );
+}
+
+export default function ConsoleFrame({
+  panelRef,
+  active,
+  interactive,
+  stats,
+  onStats,
+  onExit,
+}) {
   return (
     <div
       ref={panelRef}
-      className="absolute"
+      className="absolute will-change-transform"
       style={{
         left: CONSOLE_FRAME.x,
         top: CONSOLE_FRAME.y,
@@ -52,23 +101,37 @@ export default function ConsoleFrame({ panelRef, active, stats, onStats, onExit 
           height: `${SCREEN_INSET.height}%`,
         }}
       >
-        <SpaceShooterCanvas active={active} onStats={onStats} />
+        <SpaceShooterCanvas
+          active={active}
+          interactive={interactive}
+          onStats={onStats}
+        />
+
         <Hud stats={stats} />
       </div>
 
       <button
         type="button"
         onClick={onExit}
+        disabled={!active || !interactive}
         aria-label="Exit game"
-        className="absolute transition-transform hover:scale-110 active:scale-95"
+        className="absolute transition-transform duration-150 hover:scale-110 active:scale-95 disabled:pointer-events-none disabled:opacity-0"
         style={{
-          left: EXIT_BUTTON.x - CONSOLE_FRAME.x,
-          top: EXIT_BUTTON.y - CONSOLE_FRAME.y,
+          left:
+            EXIT_BUTTON.x -
+            CONSOLE_FRAME.x,
+          top:
+            EXIT_BUTTON.y -
+            CONSOLE_FRAME.y,
           width: EXIT_BUTTON.size,
           height: EXIT_BUTTON.size,
         }}
       >
-        <img src={ASSETS.exit} alt="" className="h-full w-full object-cover" />
+        <img
+          src={ASSETS.exit}
+          alt=""
+          className="h-full w-full object-cover"
+        />
       </button>
     </div>
   );

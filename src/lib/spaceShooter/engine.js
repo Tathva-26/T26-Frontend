@@ -1,13 +1,26 @@
-import { GAME, SHIP, ENEMY, BULLET, RULES } from "./constants";
+import { GAME, SHIP, ENEMY, DIFFICULTY, BULLET, RULES } from "./constants";
 import { createInput } from "./input";
 import { overlaps } from "./collision";
 import { loadSprites } from "./sprites";
+import { randomBetween } from "./random";
+import { loadHighScore, saveHighScore } from "./highScore";
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
+/** How many enemies are on screen after `elapsed` seconds of play. */
+export const enemyCountAt = (elapsed) =>
+  Math.min(
+    DIFFICULTY.maxEnemies,
+    DIFFICULTY.startEnemies + Math.floor(elapsed / DIFFICULTY.secondsPerEnemy)
+  );
+
+/** How fast enemies fall (units per second) after `elapsed` seconds of play. */
+export const enemySpeedAt = (elapsed) =>
+  Math.min(DIFFICULTY.maxSpeed, DIFFICULTY.startSpeed + elapsed * DIFFICULTY.speedPerSecond);
+
 const spawnEnemy = () => ({
-  x: Math.random() * (GAME.width - ENEMY.size),
-  y: -ENEMY.size - Math.random() * 150,
+  x: randomBetween(0, GAME.width - ENEMY.size),
+  y: -ENEMY.size - randomBetween(0, 150),
   w: ENEMY.size,
   h: ENEMY.size,
 });
@@ -25,21 +38,20 @@ const createWorld = () => ({
     w: SHIP.size,
     h: SHIP.size,
   },
-  enemies: Array.from({ length: ENEMY.count }, (_, i) => ({
-    ...spawnEnemy(),
-    x: (i + 0.5) * (GAME.width / ENEMY.count) - ENEMY.size / 2,
-  })),
+  enemies: Array.from({ length: DIFFICULTY.startEnemies }, spawnEnemy),
   bullets: [],
 });
 
 /**
  * Creates a Space Shooter bound to a canvas.
- * `spritePaths` maps ship/enemy/bullet to image URLs. Returns { resize, start, setPaused, destroy }. `onStats` fires only when
- * score, lives or phase change, so React never re-renders per frame.
+ * `spritePaths` maps ship/enemy/bullet to image URLs. Returns { resize, start, setPaused, destroy }.
+ * `onStats` fires only when phase, score, high score or lives change, so React never
+ * re-renders per frame.
  */
 export function createSpaceShooter(canvas, { onStats, spritePaths } = {}) {
   const ctx = canvas.getContext("2d");
   let world = createWorld();
+  let highScore = loadHighScore();
   let sprites = null;
   let frameId = 0;
   let lastTime = 0;
@@ -57,6 +69,14 @@ export function createSpaceShooter(canvas, { onStats, spritePaths } = {}) {
     if (world.phase === "playing") return;
     world = createWorld();
     world.phase = "playing";
+  }
+
+  function endRound() {
+    world.phase = "over";
+    if (world.score > highScore) {
+      highScore = world.score;
+      saveHighScore(highScore);
+    }
   }
 
   function moveShip(dt) {
@@ -86,7 +106,9 @@ export function createSpaceShooter(canvas, { onStats, spritePaths } = {}) {
     });
     world.bullets = world.bullets.filter((bullet) => bullet.y + bullet.h > 0);
 
-    const speed = ENEMY.baseSpeed + Math.min(world.elapsed * ENEMY.rampPerSecond, ENEMY.maxBonus);
+    while (world.enemies.length < enemyCountAt(world.elapsed)) world.enemies.push(spawnEnemy());
+
+    const speed = enemySpeedAt(world.elapsed);
     world.enemies.forEach((enemy) => {
       enemy.y += speed * dt;
       if (enemy.y > GAME.height) Object.assign(enemy, spawnEnemy());
@@ -110,7 +132,7 @@ export function createSpaceShooter(canvas, { onStats, spritePaths } = {}) {
     Object.assign(rammer, spawnEnemy());
     world.lives = Math.max(0, world.lives - 1);
     world.invulnerable = RULES.invulnerableSeconds;
-    if (world.lives === 0) world.phase = "over";
+    if (world.lives === 0) endRound();
   }
 
   function update(dt) {
@@ -136,7 +158,7 @@ export function createSpaceShooter(canvas, { onStats, spritePaths } = {}) {
   }
 
   function emitStats() {
-    const stats = { phase: world.phase, score: world.score, lives: world.lives };
+    const stats = { phase: world.phase, score: world.score, highScore, lives: world.lives };
     const key = JSON.stringify(stats);
     if (key === lastStats) return;
     lastStats = key;

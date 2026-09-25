@@ -1,4 +1,9 @@
-import { ASSETS, CLIP } from "@/pageComponents/GPC/gpcConfig";
+import {
+  ASSETS,
+  CLICK_TO_PLAY,
+  CLIP,
+  CONSOLE_BUTTON,
+} from "@/pageComponents/GPC/gpcConfig";
 
 const CORNERS = [
   "left-0 top-0 border-l-[1.5px] border-t-[1.5px] rounded-tl-md",
@@ -7,10 +12,6 @@ const CORNERS = [
   "right-0 bottom-0 border-r-[1.5px] border-b-[1.5px] rounded-br-md",
 ];
 
-/**
- * Every layer is styled in its FINAL state (Figma frame 165:1712).
- * `data-layer` attributes are the hooks for useHeroTimeline.
- */
 export default function HeroLayers({ consoleRef, onPlay }) {
   return (
     <>
@@ -19,13 +20,22 @@ export default function HeroLayers({ consoleRef, onPlay }) {
         className="absolute left-0 top-[91px] h-[530px] w-full"
         style={{ clipPath: CLIP.end }}
       >
-        <img src={ASSETS.banner} alt="" className="h-full w-full object-cover object-bottom" />
+        <img
+          src={ASSETS.banner}
+          alt=""
+          className="h-full w-full object-cover object-bottom"
+        />
       </div>
 
-      {/* Frame 1 only: HUD corner brackets around the banner. */}
-      <div data-layer="brackets" className="pointer-events-none absolute left-0 top-[150px] h-[471px] w-full opacity-0">
+      <div
+        data-layer="brackets"
+        className="pointer-events-none absolute left-0 top-[150px] h-[471px] w-full opacity-0"
+      >
         {CORNERS.map((position) => (
-          <span key={position} className={`absolute h-24 w-24 border-[#4fb4e3] ${position}`} />
+          <span
+            key={position}
+            className={`absolute h-24 w-24 border-[#4fb4e3] ${position}`}
+          />
         ))}
       </div>
 
@@ -38,13 +48,14 @@ export default function HeroLayers({ consoleRef, onPlay }) {
 
       <p
         data-layer="title-a"
-        className="absolute left-[32px] top-[-21px] opacity-0 font-orbitron text-[147px] leading-[1.2] text-white"
+        className="absolute left-[32px] top-[-21px] font-orbitron text-[147px] leading-[1.2] text-white opacity-0"
       >
         GPC
       </p>
+
       <span
         data-layer="cta-a"
-        className="absolute left-[201px] top-[500px] opacity-0 border border-white p-2 font-orbitron text-[37px] text-white"
+        className="absolute left-[201px] top-[500px] border border-white p-2 font-orbitron text-[37px] text-white opacity-0"
       >
         EXPLORE MORE →
       </span>
@@ -55,13 +66,17 @@ export default function HeroLayers({ consoleRef, onPlay }) {
       >
         GPC
       </p>
-      <a
+
+      <button
         data-layer="cta-b"
-        href="#"
-        className="absolute left-[1038px] top-[528px] w-[94px] font-akira text-[14px] leading-tight text-white"
+        type="button"
+        className="group absolute left-[1038px] top-[528px] w-[94px] cursor-pointer text-left font-akira text-[14px] leading-tight text-white transition-colors duration-200 hover:text-[#4fb4e3] focus-visible:text-[#4fb4e3]"
       >
-        EXPLORE MORE →
-      </a>
+        EXPLORE MORE{" "}
+        <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">
+          →
+        </span>
+      </button>
 
       <button
         ref={consoleRef}
@@ -69,9 +84,48 @@ export default function HeroLayers({ consoleRef, onPlay }) {
         type="button"
         onClick={onPlay}
         aria-label="Play the arcade game"
-        className="absolute left-[364px] top-[304px] h-[281px] w-[322px] cursor-pointer outline-none transition-[filter] duration-300 hover:drop-shadow-[0_0_30px_rgba(79,180,227,0.8)] focus-visible:drop-shadow-[0_0_30px_rgba(79,180,227,0.8)]"
+        className="group absolute left-[364px] top-[304px] h-[281px] w-[322px] cursor-pointer outline-none"
       >
-        <img src={ASSETS.console} alt="" className="h-full w-full object-cover" />
+        <img
+          src={ASSETS.console}
+          alt=""
+          className="h-full w-full object-cover"
+        />
+
+        {/* Blurred red illumination layer */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute rounded-full bg-[#ff2020] opacity-0 blur-[6px] transition-all duration-150 group-hover:scale-150 group-hover:opacity-70 group-focus-visible:scale-150 group-focus-visible:opacity-70"
+          style={{
+            left: `${CONSOLE_BUTTON.left}%`,
+            top: `${CONSOLE_BUTTON.top}%`,
+            width: `${CONSOLE_BUTTON.size}%`,
+            aspectRatio: "1",
+          }}
+        />
+
+        {/* Solid bright red center layer */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute rounded-full bg-[#ff2626] opacity-0 mix-blend-screen transition-opacity duration-150 group-hover:opacity-90 group-focus-visible:opacity-90"
+          style={{
+            left: `${CONSOLE_BUTTON.left}%`,
+            top: `${CONSOLE_BUTTON.top}%`,
+            width: `${CONSOLE_BUTTON.size}%`,
+            aspectRatio: "1",
+          }}
+        />
+
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 text-center font-pixel leading-relaxed tracking-[0.1em] text-white [text-shadow:0_0_4px_rgba(0,0,0,0.9)] motion-safe:animate-pulse"
+          style={{
+            top: `${CLICK_TO_PLAY.top}%`,
+            fontSize: CLICK_TO_PLAY.fontSize,
+          }}
+        >
+          [CLICK TO PLAY]
+        </span>
       </button>
 
       <p
