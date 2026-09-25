@@ -14,7 +14,43 @@ const HOLD_MS = 1100;
 const RING_COUNT = 7;
 const SENS = 0.5; // <1 = heavier: the carousel moves less than your finger
 const SPRING_MS = 75; // spring time-constant: bigger = softer, heavier glide
+const IDLE_MS = 4250; // auto-advance to the next artist after this much idle time
 const N = proshowArtists.length;
+
+// The few standout stars with light rays. x/y are % of the page, size is the
+// ray length in px, rot is each star's own angle, o is its brightness.
+// Fixed values (not Math.random) so server and client render identically.
+const SPARKLES = [
+  { x: 70.7, y: 15.5, size: 30, rot: 84, o: 0.6 },
+  { x: 4.8, y: 59.1, size: 21, rot: 72, o: 0.55 },
+  { x: 20, y: 78, size: 32, rot: 58, o: 0.45 },
+  { x: 88.2, y: 35.2, size: 23, rot: 47, o: 0.5 },
+  { x: 10.1, y: 42.9, size: 27, rot: 40, o: 0.6 },
+  { x: 92, y: 72, size: 20, rot: 0, o: 0.45 },
+  { x: 15.1, y: 30.2, size: 28, rot: 31, o: 0.5 },
+  { x: 80, y: 88, size: 30, rot: 22, o: 0.55 },
+  { x: 34.2, y: 16.1, size: 20, rot: 14, o: 0.6 },
+];
+
+// Smaller versions of the same plus-ray star, scattered around the edges.
+const MINI_SPARKLES = [
+  { x: 9.9, y: 97.7, size: 14, rot: 31, o: 0.68 },
+  { x: 22.4, y: 9.2, size: 15, rot: 63, o: 0.5 },
+  { x: 30, y: 90, size: 11, rot: 12, o: 0.41 },
+  { x: 52, y: 3, size: 16, rot: 40, o: 0.47 },
+  { x: 27, y: 3.5, size: 13, rot: 36, o: 0.48 },
+  { x: 59.1, y: 95, size: 16, rot: 29, o: 0.62 },
+  { x: 78, y: 6, size: 11, rot: 70, o: 0.69 },
+  { x: 2.7, y: 44.3, size: 12, rot: 24, o: 0.52 },
+  { x: 26, y: 64, size: 16, rot: 37, o: 0.48 },
+  { x: 4.3, y: 74.8, size: 13, rot: 25, o: 0.67 },
+  { x: 62.8, y: 4.3, size: 14, rot: 73, o: 0.65 },
+  { x: 40.4, y: 6.6, size: 16, rot: 6, o: 0.56 },
+  { x: 9.9, y: 15.5, size: 9, rot: 7, o: 0.6 },
+  { x: 1.6, y: 70.8, size: 11, rot: 62, o: 0.6 },
+  { x: 11.4, y: 84, size: 15, rot: 17, o: 0.45 },
+  { x: 84, y: 18.4, size: 9, rot: 68, o: 0.41 },
+];
 
 // Shortest signed distance from the active index, so the list loops forever.
 function offsetOf(i, active) {
@@ -55,7 +91,7 @@ export default function ProshowCarousel() {
   // Single shared Audio instance for the whole page.
   useEffect(() => {
     const audio = new Audio();
-    audio.loop = true;
+    audio.loop = false; // plays the track once, then "ended" advances the artist
     audio.preload = "none";
     audioRef.current = audio;
     return () => {
@@ -133,7 +169,7 @@ export default function ProshowCarousel() {
       if (from === target) return;
       const dur = fast
         ? 300
-        : Math.min(250 + Math.abs(target - from) * 60, 450);
+        : Math.min(450 + Math.abs(target - from) * 100, 800);
       let t0;
       const tick = (now) => {
         t0 ??= now;
@@ -193,14 +229,55 @@ export default function ProshowCarousel() {
     [animateTo],
   );
 
+  // Auto-advance while idle: pauses during any drag/hold and while music is
+  // playing, and restarts on the next interaction anywhere on the page.
+  const idleTimerRef = useRef(0);
+  const resetIdle = useCallback(() => {
+    clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(function tick() {
+      if (!gesture.current.down && !playingRef.current) step(1);
+      idleTimerRef.current = setTimeout(tick, IDLE_MS);
+    }, IDLE_MS);
+  }, [step]);
+
+  useEffect(() => {
+    resetIdle();
+    window.addEventListener("pointerdown", resetIdle);
+    window.addEventListener("wheel", resetIdle, { passive: true });
+    window.addEventListener("keydown", resetIdle);
+    return () => {
+      clearTimeout(idleTimerRef.current);
+      window.removeEventListener("pointerdown", resetIdle);
+      window.removeEventListener("wheel", resetIdle);
+      window.removeEventListener("keydown", resetIdle);
+    };
+  }, [resetIdle]);
+
+  // Stops the current song and moves on to the next artist right away,
+  // instead of waiting out the idle timer. Used both when the song is
+  // stopped by holding again, and when a track finishes playing on its own.
+  const stopAndAdvance = useCallback(() => {
+    stopTrack();
+    step(1);
+    resetIdle();
+  }, [stopTrack, step, resetIdle]);
+
+  // A track that finishes playing on its own (not looping) advances too.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.addEventListener("ended", stopAndAdvance);
+    return () => audio.removeEventListener("ended", stopAndAdvance);
+  }, [stopAndAdvance]);
+
   const onProgress = useCallback((p) => {
     progressRef.current?.style.setProperty("stroke-dashoffset", String(1 - p));
   }, []);
 
   const onComplete = useCallback(() => {
-    if (playingRef.current) stopTrack();
+    if (playingRef.current) stopAndAdvance();
     else startTrack(activeRef.current);
-  }, [startTrack, stopTrack]);
+  }, [startTrack, stopAndAdvance]);
 
   const { holding, start, cancel } = useHoldToPlay({
     duration: HOLD_MS,
@@ -306,17 +383,31 @@ export default function ProshowCarousel() {
     followTo(Math.round(goalRef.current - ((g.vx * 160) / stepPx()) * SENS));
   };
 
-  const hint = coarse ? "HOLD THE ARTIST TO PLAY" : "HOLD SPACE BAR TO PLAY";
-
   return (
     <main
       ref={pageRef}
-      className="relative grid h-dvh w-full touch-none select-none grid-rows-[auto_minmax(0,1fr)_auto_auto_auto] items-center justify-items-center overflow-hidden overscroll-none bg-[radial-gradient(ellipse_at_50%_45%,#1d1233_0%,#0f0a1c_55%,#08050f_100%)] px-4 pt-[clamp(14px,3dvh,32px)] pb-[clamp(14px,3dvh,28px)] text-white [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [--c:clamp(180px,min(38dvh,36vw),470px)] [--o1:0.6] [--o2:0.4] [--x1:0.8] [--x2:1.32] [--x3:1.7] max-lg:[--c:clamp(170px,min(40dvh,52vw),420px)] max-lg:[--x1:0.84] max-lg:[--x2:1.38] max-sm:pb-[92px] max-sm:[--c:min(58vw,40dvh)] max-sm:[--o2:0] max-sm:[--x1:0.8] max-sm:[--x2:1.4]"
+      className="relative grid h-dvh w-full touch-none select-none grid-rows-[auto_minmax(0,1fr)_auto_auto_auto] items-center justify-items-center overflow-hidden overscroll-none bg-[radial-gradient(ellipse_at_50%_45%,#100e18_0%,#0a0912_55%,#050408_100%)] px-4 pt-[clamp(14px,3dvh,32px)] pb-[clamp(28px,7dvh,64px)] text-white [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [--c:clamp(180px,min(38dvh,36vw),470px)] [--o1:0.6] [--o2:0.4] [--x1:0.8] [--x2:1.32] [--x3:1.7] max-lg:[--c:clamp(170px,min(40dvh,52vw),420px)] max-lg:[--x1:0.84] max-lg:[--x2:1.38] max-sm:pb-[92px] max-sm:[--c:min(58vw,40dvh)] max-sm:[--o2:0] max-sm:[--x1:0.8] max-sm:[--x2:1.4]"
     >
       <div
-        className="bg-stars pointer-events-none absolute inset-0 animate-twinkle motion-reduce:animate-none"
+        className="pointer-events-none absolute inset-0 animate-twinkle motion-reduce:animate-none"
         aria-hidden="true"
-      />
+      >
+        <div className="bg-stars absolute inset-0" />
+        {[...SPARKLES, ...MINI_SPARKLES].map((s, i) => (
+          <span
+            key={i}
+            className="sparkle absolute"
+            style={{
+              left: `${s.x}%`,
+              top: `${s.y}%`,
+              width: s.size,
+              height: s.size,
+              opacity: s.o,
+              transform: `translate(-50%, -50%) rotate(${s.rot}deg)`,
+            }}
+          />
+        ))}
+      </div>
 
       <span className="absolute top-[clamp(14px,3dvh,30px)] left-[clamp(16px,2.4vw,32px)] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em]">
         TATHVA ‘26
@@ -342,7 +433,10 @@ export default function ProshowCarousel() {
         onPointerLeave={onPointerUp}
       >
         <div className="relative h-(--c) w-(--c)" ref={orbitRef}>
-          <div className="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
+          <div
+            className="pointer-events-none absolute inset-0 z-0"
+            aria-hidden="true"
+          >
             {Array.from({ length: RING_COUNT }, (_, i) => (
               <span
                 key={i}
@@ -415,9 +509,35 @@ export default function ProshowCarousel() {
         </div>
       </section>
 
+      <div
+        className="mt-[clamp(10px,2dvh,22px)] flex animate-hint-pulse items-center gap-2.5 rounded-full border border-white/20 bg-white/5 px-5 py-1.5 text-white/85 shadow-[0_0_18px_-4px_rgba(201,182,255,0.5)] motion-reduce:animate-none"
+        role="note"
+        aria-label={coarse ? "Hold the artist to play" : "Hold space bar to play"}
+      >
+        {coarse && (
+          <svg
+            className="size-4 shrink-0 animate-key-press motion-reduce:animate-none"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="10" r="4.5" stroke="currentColor" strokeWidth="1.6" />
+            <path
+              d="M4 21c1.6-3.4 4.6-5 8-5s6.4 1.6 8 5"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+          </svg>
+        )}
+        <span className="text-[clamp(11px,1.2vw,16px)] tracking-[0.04em]" aria-hidden="true">
+          {coarse ? "HOLD THE ARTIST TO PLAY" : "HOLD SPACE BAR TO PLAY"}
+        </span>
+      </div>
+
       <p
         key={`d-${artist.id}`}
-        className="-mr-[0.4em] animate-fade-up text-center font-(family-name:--font-bebas) text-[clamp(20px,3vw,34px)] tracking-[0.4em] uppercase motion-reduce:animate-none"
+        className="-mr-[0.4em] mt-[clamp(8px,1.6dvh,18px)] animate-fade-up text-center font-(family-name:--font-bebas) text-[clamp(20px,3vw,34px)] tracking-[0.4em] uppercase motion-reduce:animate-none"
       >
         {artist.date}
       </p>
@@ -426,9 +546,6 @@ export default function ProshowCarousel() {
         className="mt-[clamp(8px,1.6dvh,18px)] line-clamp-4 max-w-[min(640px,100%)] animate-fade-up overflow-hidden text-justify text-[clamp(12px,1.35vw,17px)] leading-[1.55] text-[#ece8f7] [text-align-last:center] motion-reduce:animate-none max-sm:line-clamp-3 max-sm:text-center [@media(max-height:520px)]:hidden!"
       >
         {artist.description}
-      </p>
-      <p className="mt-[clamp(10px,2dvh,22px)] text-center text-[clamp(11px,1.2vw,16px)] tracking-[0.04em] text-white/40">
-        {hint}
       </p>
 
       <div
@@ -443,11 +560,16 @@ export default function ProshowCarousel() {
           draggable={false}
         />
         <div className="flex flex-col leading-[1.15]">
-          <span className="text-[8px] tracking-[0.08em] text-[#ddd]">NOW PLAYING</span>
+          <span className="text-[8px] tracking-[0.08em] text-[#ddd]">
+            NOW PLAYING
+          </span>
           <span className="text-base font-bold">{artist.track.title}</span>
           <span className="text-[9px] text-[#ccc]">{artist.track.artist}</span>
         </div>
-        <span className="ml-1 inline-flex h-3.5 items-end gap-0.5" aria-hidden="true">
+        <span
+          className="ml-1 inline-flex h-3.5 items-end gap-0.5"
+          aria-hidden="true"
+        >
           {[0, -0.3, -0.6].map((delay) => (
             <i
               key={delay}
