@@ -1,0 +1,328 @@
+/* ===============================
+   SCROLL ARCHITECTURE
+   =============================== */
+
+.scroller {
+  --scene-height: 100vh;
+  position: relative;
+  width: 100%;
+  height: var(--scene-height);
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #080808;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+@supports (height: 100svh) {
+  .scroller {
+    --scene-height: 100svh;
+  }
+}
+
+.scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.runway {
+  position: relative;
+  width: 100%;
+  height: calc(var(--scene-height) * 4);
+}
+
+.viewport {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: var(--scene-height);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===============================
+   RESPONSIVE DESIGN-SPACE SCALING
+   =============================== */
+
+.scene {
+  position: relative;
+  z-index: 2;
+  width: 88.3125rem;
+  height: 49.0625rem;
+  min-width: 88.3125rem;
+  min-height: 49.0625rem;
+  flex-shrink: 0;
+  background: transparent;
+  transform: scale(var(--design-scale, 1));
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* ===============================
+   FIXED VIEWPORT UI
+   =============================== */
+
+.fixedLogo {
+  position: fixed;
+  top: clamp(16px, 2.5vw, 32px);
+  left: clamp(16px, 2.5vw, 32px);
+
+  width: 55px;
+  height: 46px;
+
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  z-index: 1000;
+  display: block;
+  pointer-events: auto;
+}
+
+.fixedRegister {
+  position: fixed;
+  top: clamp(16px, 2.5vw, 32px);
+  right: clamp(16px, 2.5vw, 32px);
+
+  width: 174px;
+  height: 28px;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  z-index: 1000;
+
+  color: white;
+  text-decoration: none;
+}
+
+.fixedRegisterLine {
+  width: 101px;
+  height: 2px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.fixedRegister span {
+  font-family: 'Instrument_Serif', Helvetica, sans-serif;
+  font-style: italic;
+  font-size: 21.5px;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ===============================
+   GROUND
+   Low, distant rock silhouette. Deliberately no sky element sits above
+   it — the .scroller's own dark background stands in for empty space.
+   Sized (see LAYOUT.ground in Hero.jsx) to run off the bottom of the
+   canvas so its own image edge is never visible.
+   =============================== */
+
+.ground {
+  position: absolute;
+  z-index: 2;
+  object-fit: cover;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Distant floating island — farthest layer in the scene, barely moves. */
+.island {
+  position: absolute;
+  z-index: 4;
+  object-fit: contain;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Foreground figure standing to the side of the portal, watching it —
+   nearest layer to the camera, so it sits above the portal and carries
+   the strongest parallax. */
+.girl {
+  position: absolute;
+  z-index: 5;
+  object-fit: contain;
+  object-position: bottom;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* ===============================
+   PORTAL
+   A doorway of light standing on the ground. Grown entirely with CSS —
+   a bright core, a thin rim, and layered box-shadow bloom — then
+   scaled up by the scroll tween in Hero.jsx until it fills the screen.
+   =============================== */
+
+.portal {
+  position: absolute;
+  z-index: 4;
+  overflow: visible;
+  border-radius: 2px;
+  background: radial-gradient(120% 130% at 50% 45%, #ffffff 0%, #e2ecff 42%, #a9c0ec 70%, rgba(120, 150, 220, 0) 100%);
+  box-shadow:
+    0 0 2px 1px rgba(255, 255, 255, 0.95),
+    0 0 26px 6px rgba(196, 216, 255, 0.85),
+    0 0 72px 26px rgba(140, 170, 255, 0.5),
+    0 0 170px 70px rgba(100, 140, 255, 0.25);
+  animation: portalFlicker 5.5s ease-in-out infinite;
+  will-change: transform;
+  transform-origin: center center;
+}
+
+.portal::before {
+  /* thin, extremely bright rim */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  border-radius: inherit;
+  box-shadow: inset 0 0 10px 2px rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+}
+
+.portal::after {
+  /* soft mist pooling at the threshold */
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6%;
+  width: 220%;
+  height: 24%;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgba(210, 225, 255, 0.5), rgba(210, 225, 255, 0) 75%);
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+@keyframes portalFlicker {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.06); }
+}
+
+/* The giant title — real HTML text sitting behind the portal. Its
+   scale/position tween lives in Hero.jsx; this sets face, tracking
+   and color. */
+.heroTitle {
+  position: absolute;
+  z-index: 3;
+  margin: 0;
+  width: max-content;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform, opacity, filter;
+  transform-origin: center center;
+
+  font-family: 'Cinzel', 'Times New Roman', serif;
+  font-weight: 700; /* was 500 — heavier strokes read more imposing */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 0.86;
+  opacity: 1; /* was 0.85 — no longer washed out */
+
+  font-size: 18rem;
+
+  /* Gradient fill: pale near-white cap settling into deep
+     indigo-violet at the base, matching .portal's own palette so the
+     title reads as lit by the same source of light. */
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #e2ecff 20%,
+    #b3c1f0 45%,
+    #8b98e0 70%,
+    #6672c4 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+
+  /* Layered bloom tuned to .portal's glow rgba values, so the two
+     light sources in the scene feel connected. */
+  filter:
+    drop-shadow(0 0 16px rgba(196, 216, 255, 0.55))
+    drop-shadow(0 0 46px rgba(150, 175, 255, 0.4))
+    drop-shadow(0 0 100px rgba(110, 135, 245, 0.22));
+  animation: titleGlow 5.5s ease-in-out infinite;
+  animation-delay: 0.4s; /* slightly out of phase with portalFlicker */
+}
+
+/* Solid fallback for browsers that can't clip a gradient to text —
+   keeps the title visible instead of vanishing. */
+@supports not (background-clip: text) {
+  .heroTitle {
+    background: none;
+    color: #c7cdf5;
+    -webkit-text-fill-color: #c7cdf5;
+  }
+}
+
+@keyframes titleGlow {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 16px rgba(196, 216, 255, 0.5))
+      drop-shadow(0 0 46px rgba(150, 175, 255, 0.35))
+      drop-shadow(0 0 100px rgba(110, 135, 245, 0.2));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 26px rgba(210, 224, 255, 0.8))
+      drop-shadow(0 0 70px rgba(170, 190, 255, 0.55))
+      drop-shadow(0 0 140px rgba(130, 150, 250, 0.32));
+  }
+}
+
+/* Fades the whole scene to white as the portal finishes swallowing the
+   viewport, so the handoff into the next section reads as passing
+   through rather than a hard cut. */
+.whiteout {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: #f5f8ff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ===============================
+   RESPONSIVE
+   =============================== */
+
+@media (max-width: 900px) {
+  .fixedRegister {
+    width: 155px;
+  }
+
+  .fixedRegisterLine {
+    width: 82px;
+  }
+}
+
+@media (max-width: 600px) {
+  .fixedLogo {
+    width: 48px;
+    height: 40px;
+  }
+
+  .fixedRegister {
+    width: 125px;
+    gap: 6px;
+  }
+
+  .fixedRegisterLine {
+    width: 60px;
+  }
+
+  .fixedRegister span {
+    font-size: 18px;
+  }
+}
