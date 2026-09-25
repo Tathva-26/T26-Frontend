@@ -1,0 +1,127 @@
+.page {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(1px 1px at 12% 20%, #fff8, transparent),
+    radial-gradient(1px 1px at 35% 8%, #fff6, transparent),
+    radial-gradient(1px 1px at 62% 14%, #fff8, transparent),
+    radial-gradient(1px 1px at 88% 30%, #fff6, transparent),
+    radial-gradient(1px 1px at 20% 78%, #fff5, transparent),
+    radial-gradient(1px 1px at 75% 85%, #fff6, transparent),
+    radial-gradient(ellipse at 100% 100%, #14285a 0%, transparent 35%),
+    radial-gradient(ellipse at 0% 100%, #101f48 0%, transparent 30%),
+    #000;
+  display: grid;
+  grid-template-columns: 17.1% 1fr;
+  color: #fff;
+}
+
+.heading {
+  align-self: center;
+  justify-self: center;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--font-bebas);
+  font-size: 7.7vw;
+  line-height: 1;
+  margin-top: 6vh;
+  letter-spacing: 0.02em;
+  -webkit-text-stroke: 0.04em #fff;
+}
+
+.cards {
+  align-self: center;
+  display: grid;
+  grid-template-columns: repeat(3, 23.4vw);
+  column-gap: 4.2vw;
+  padding-right: 2vw;
+  justify-content: start;
+}
+
+.card {
+  position: relative;
+  aspect-ratio: 215 / 306;
+  border: 0.28vw solid #fff;
+  border-radius: 2.6vw;
+  overflow: hidden;
+  background: #222;
+}
+
+.cardImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.locate {
+  position: absolute;
+  top: 1.2vw;
+  right: 1.2vw;
+  display: flex;
+  align-items: center;
+  gap: 0.5vw;
+  padding: 0.6vw 1vw;
+  border-radius: 999px;
+  background: #3d2440;
+  color: #fff;
+  font-family: var(--font-space);
+  font-size: 0.75vw;
+  font-weight: 600;
+}
+
+.locate svg {
+  width: 1.1vw;
+  height: 1.1vw;
+}
+
+.info {
+  position: absolute;
+  left: 1.3vw;
+  right: 1.3vw;
+  bottom: 1.3vw;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 1vw 0.9vw;
+  border-radius: 1.6vw;
+  background: rgba(225, 225, 232, 0.55);
+  backdrop-filter: blur(10px);
+}
+
+.name {
+  font-family: var(--font-jockey);
+  font-size: 1.55vw;
+  line-height: 1;
+  color: #14142b;
+  letter-spacing: 0.02em;
+  -webkit-text-stroke: 0.03vw #14142b;
+}
+
+.location {
+  margin-top: 0.4vw;
+  font-family: var(--font-space);
+  font-size: 0.7vw;
+  color: #444;
+}
+
+.explore {
+  display: flex;
+  align-items: center;
+  gap: 0.4vw;
+  padding: 0.75vw 1.1vw;
+  border-radius: 999px;
+  background: #8a8cf5;
+  color: #fff;
+  font-family: var(--font-space);
+  font-size: 0.7vw;
+  font-weight: 600;
+}
+
+.explore svg {
+  width: 0.85vw;
+  height: 0.85vw;
+}
