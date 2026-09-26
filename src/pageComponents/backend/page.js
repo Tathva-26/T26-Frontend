@@ -1,9 +1,7 @@
-import Backend from '../Backend'
-
-export default function BackendPage() {
+export default function Backend() {
   return (
-    <main>
-      <Backend />
-    </main>
-  )
+    <section>
+      <h1>Backend Page</h1>
+    </section>
+  );
 }

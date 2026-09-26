@@ -1,9 +1,7 @@
-import Frontend from '../Frontend'
-
-export default function FrontendPage() {
+export default function Frontend() {
   return (
-    <main>
-      <Frontend />
-    </main>
-  )
+    <section>
+      <h1>Frontend Page</h1>
+    </section>
+  );
 }

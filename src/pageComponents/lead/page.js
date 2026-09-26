@@ -1,9 +1,7 @@
-import Lead from '../Lead'
-
-export default function LeadPage() {
+export default function Lead() {
   return (
-    <main>
-      <Lead />
-    </main>
-  )
+    <section>
+      <h1>Lead Page</h1>
+    </section>
+  );
 }
