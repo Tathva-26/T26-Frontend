@@ -222,14 +222,14 @@ function MobilePoster() {
             </h1>
             
           </div>
-
+          
           <div className="tc-m-hero">
-            <div className="tc-abs" style={{ ...mbox(55, 0, 161, 265), background: "#8585c8" }} />
-            <div className="tc-abs" style={{ ...mbox(20, 243, 280, 92), background: "#c9559a"}} />
+            <div className="tc-abs" style={{ ...mbox(30, -7, 130, 280), background: "#8585c8" }} />
+            <div className="tc-abs" style={{ ...mbox(30, 270, 280, 70), background: "#c9559a"}} />
 
-            <Plus style={{ ...mbox(25, 60, 20, 25) }} rotate={20} />
+            <Plus style={{ ...mbox(-10, 60, 27, 27) }} rotate={20} />
 
-            <div className="tc-abs tc-m-people" style={mbox(227, 0, 174, 231)} role="list" aria-label="Speakers">
+            <div className="tc-abs tc-m-people" style={mbox(215, -9, 174, 231)} role="list" aria-label="Speakers">
               {people.map((t, i) => (
                 <div className="tc-m-tile" style={{ background: t.color }} key={i} role="listitem">
                   <img className="tc-m-tile-img" src={t.img} alt="" />
@@ -237,10 +237,10 @@ function MobilePoster() {
               ))}
             </div>
 
-            <img className="tc-abs tc-m-robot" style={mbox(-8, 55, 233, 220)} src={robot} alt="Waving robot" />
-            <img className="tc-abs" style={mbox(207, 185, 123, 90)} src={hand} alt="" />
-            <img className="tc-abs" style={mbox(8, 170, 42, 65)} src={bigStar} alt="" />
-            <img className="tc-abs" style={mbox(25, 225, 37, 45)} src={smallStar} alt="" />
+            <img className="tc-abs tc-m-robot" style={mbox(-8, -75, 450, 450)} src={robot} alt="Waving robot" />
+            <img className="tc-abs" style={mbox(260, 197, 170, 170)} src={hand} alt="" />
+            <img className="tc-abs" style={mbox(-37, 210, 80, 80)} src={bigStar} alt="" />
+            <img className="tc-abs" style={mbox(-21, 280, 50, 50)} src={smallStar} alt="" />
           </div>
 
           <p className="tc-m-eyebrow">TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.</p>
@@ -254,9 +254,15 @@ function MobilePoster() {
           </div>
 
           <div className="tc-m-footer">
-            <img className="tc-m-logo" src={logo} alt="Tech Conclave" />
+            <h2 className="tc-m-subheading">
+              <span className="tc-m-subheading-tech">tech</span>
+              <span className="tc-m-subheading-conclave">conclave</span>
+            </h2>
             <p className="tc-m-tagline">
-              A space for inspiring personalities engaging conversations and unforgettable experiences.
+              <span>A space for inspiring</span>
+              <span>personalities engaging</span>
+              <span>conversations and</span>
+              <span>unforgettable experiences.</span>
             </p>
           </div>
         </div>
@@ -312,6 +318,13 @@ html, body { margin: 0; padding: 0; }
   container-type: inline-size;
 }
 
+.tc-m-hero {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 424 / 335;
+  margin-top: 24px; /* Increase this value (e.g., 30px, 40px) to push the whole group further down */
+}
+
 .tc-hero-heading {
   display: flex;
   justify-content: flex-start;
@@ -335,7 +348,7 @@ html, body { margin: 0; padding: 0; }
 .tc-hero-conclave { display: inline-block; color: #6d7fff; font-size: 1em; font-weight: 400; }
 
 .robot-img { transform: translateX(-7.5%) scale(1.27); transform-origin: left center; }
-.logo-img { transform: scale(1.65) translate(-1%, -3%); transform-origin: right center; z-index: 4; }
+// .logo-img { transform: scale(1.65) translate(-1%, -3%); transform-origin: right center; z-index: 4; }
 
 .tc-abs { position: absolute; display: block; object-fit: contain; }
 .tc-shape { border-top-right-radius: 42%; }
@@ -382,8 +395,22 @@ html, body { margin: 0; padding: 0; }
   line-height: 0.92;
   letter-spacing: -0.01em;
 }
-.tc-m-tech { color: #ffffff; font-size: clamp(2rem, 8vw, 2.6rem); font-family: "Bebas Neue", "Oswald", Impact, sans-serif;  }
-.tc-m-conclave { color: #6d7fff; font-size: clamp(2.6rem, 10.5vw, 3.4rem); font-family: "Bebas Neue", "Oswald", Impact, sans-serif;  }
+.tc-m-tech { 
+  color: #ffffff; 
+  font-size: clamp(2rem, 8vw, 2.6rem); 
+  font-family: "Bebas Neue", "Oswald", Impact, sans-serif;  
+}
+.tc-m-conclave { 
+ color: #8a38f5; /* Matching purple/indigo accent */
+  font-family: "Syne", "Druk Wide Bold", "Monument Extended", sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: clamp(2.2rem, 9.5vw, 3.8rem);
+  line-height: 0.85;
+  letter-spacing: 0.01em;
+  transform: scaleY(1);
+  transform-origin: left top;
+}
 
 .tc-m-globe {
   position: absolute;
@@ -403,38 +430,93 @@ html, body { margin: 0; padding: 0; }
 
 .tc-m-eyebrow {
   margin: 0;
-  text-align: center;
-  font-family: "Space Grotesk", system-ui, sans-serif;
-  letter-spacing: 0.16em;
-  font-size: 11px;
-  color: #cfcfe6;
+  text-align: left;
+  font-family: Bebas Neue;
+  font-size: 15px;
+  color: #8484C8;
+  transform: translate(30px, -6px);
 }
 
 .tc-m-date {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  color: #6d7fff;
+  color: #8A38F5;
+  transform: translateX(45px);
+    font-weight: 500;
+
 }
 .tc-m-oct {
-  font-size: clamp(2.6rem, 9vw, 3.2rem);
+  font-size: clamp(7.6rem, 9vw, 3.2rem);
   line-height: 1;
+  transform: translateY(-0.2em);
+  font-weight: 500;
 }
 .tc-m-days {
-  font-size: clamp(1.2rem, 4.5vw, 1.5rem);
+  font-weight: 500;
+  font-style: medium;
+  font-size: clamp(4.9rem, 9vw, 3.2rem);
+   transform: translateY(-0.3em);
+}
+.tc-m-footer { display: flex; flex-direction: column; gap: 8px; }
+.tc-m-logo { height: 22px; width: auto; object-fit: contain; align-self: flex-start; }
+
+.tc-m-subheading {
+  margin: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.08em;
+  font-family: Bebas Neue;
+font-weight: 400;
+font-style: Regular;
+font-size: 40px;
+leading-trim: NONE;
+line-height: 100%;
+letter-spacing: 0%;
+text-align: center;
+  font-size: 3.1rem;
+  line-height: 1;
+  // letter-spacing: 0.08em;
+  text-transform: lowercase;
+  transform: translateX(28px);
 }
 
-.tc-m-footer { display: flex; flex-direction: column; gap: 10px; }
-.tc-m-logo { height: 22px; width: auto; object-fit: contain; align-self: flex-start; }
+.tc-m-subheading-tech {
+  color: #d9d9f2;
+}
+
+.tc-m-subheading-conclave {
+  color: #6d7fff;
+}
 
 .tc-m-tagline {
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  font-style: medium;
   font-family: "Space Grotesk", system-ui, sans-serif;
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 1.5;
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 1.35;
   color: #e9e9f2;
-  max-width: 34ch;
+  max-width: 29ch;
+  transform: translate(28px, -2px);
+
+}
+
+.tc-m-tagline span {
+  display: block;
+}
+.tc-m-robot {
+  object-fit: cover !important; /* or object-fit: fill */
+  max-width: none !important;
+  max-height: none !important;
+}
+.tc-abs {
+  object-fit: cover !important; /* or object-fit: fill */
+  max-width: none !important;
+  max-height: none !important;
 }
 
 /* the actual "flex-wrap" grid: 2 columns, 3 rows, from wrapping 6 flex items */
@@ -442,7 +524,7 @@ html, body { margin: 0; padding: 0; }
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 6px;
+  gap: 12px;
 }
 .tc-m-tile {
   flex: 1 1 46%;
