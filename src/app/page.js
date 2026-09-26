@@ -6,8 +6,14 @@ import ExpoPage from './expo/page'
 export default function Home() {
   return (
     <>
-      <DotsBackground />
-      <ExpoPage />;
+      <style>{`
+        main {
+          height: auto !important;
+          overflow: visible !important;
+        }
+      `}</style>
+      <DotsBackground style={{ position: 'fixed' }} />
+      <ExpoPage />
       <Footer />
     </>
   )
