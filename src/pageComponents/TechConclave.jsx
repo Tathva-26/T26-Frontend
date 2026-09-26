@@ -211,7 +211,7 @@ function MobilePoster() {
   ]);
 
   return (
-    <main className="tc-page tc-mobile-only" style={{ backgroundImage: `url(${background})` }}>
+    <main className="tc-page tc-mobile-only" style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})` }}>
       <section className="tc-m-stage" aria-label="Tech Conclave, October 10-11">
         {/* ── visual group: title + illustration + eyebrow ── */}
         <div className="tc-m-panel tc-m-panel--visual">
@@ -291,7 +291,7 @@ function TabletPoster() {
   ]);
 
   return (
-    <main className="tc-t-page" style={{ backgroundImage: `url(${background})` }}>
+    <main className="tc-t-page" style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})`}}>
       <section className="tc-t-stage" aria-label="Tech Conclave, October 10-11">
         <div className="tc-t-visual">
           <h1 className="tc-t-title">
@@ -490,7 +490,7 @@ html, body { margin: 0; padding: 0; }
   width: 100%;
 }
 .tc-m-conclave { 
- color: #8a38f5; /* Matching purple/indigo accent */
+ color: #7787ff; /* Matching purple/indigo accent */
   font-family: "Syne", "Druk Wide Bold", "Monument Extended", sans-serif;
   font-weight: 800;
   text-transform: uppercase;
@@ -521,16 +521,16 @@ html, body { margin: 0; padding: 0; }
   margin: 0;
   text-align: left;
   font-family: Bebas Neue;
-  font-size: 15px;
+  font-size: 17px;
   color: #8484C8;
-  // transform: translate(30px, -6px);
+  transform: translate(-36px, -3px);
 }
 
 .tc-m-date {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  color: #8A38F5;
+  color: #7787ff;
   // transform: translateX(45px);
     font-weight: 500;
 
@@ -575,7 +575,7 @@ text-align: center;
 }
 
 .tc-m-subheading-conclave {
-  color: #6d7fff;
+  color: #7787ff;
 }
 
 .tc-m-tagline {
@@ -687,7 +687,7 @@ text-align: center;
 }
 
 .tc-t-conclave {
-  color: #8a38f5;
+  color: #7787ff;
   font-family: "Syne", sans-serif;
   font-size: clamp(2.6rem, 8vw, 5.4rem);
   font-weight: 800;
@@ -745,7 +745,8 @@ text-align: center;
   margin: 8px 0 0 24px;
   color: #8484c8;
   font-family: "Bebas Neue", sans-serif;
-  font-size: clamp(18px, 2.4vw, 24px);
+  font-size: clamp(25px, 2.4vw, 24px);
+  transform: translateX(21px)
 }
 
 .tc-t-lockup { max-width: 34ch; }
@@ -763,16 +764,18 @@ text-align: center;
   font-size: clamp(3.3rem, 6vw, 4.6rem);
   font-weight: 400;
   line-height: 0.95;
+  transform:translateY(-110px);
 }
 
   .tc-t-name-tech { color: #ffffff; }
-  .tc-t-name-conclave { color: #8a38f5; }
+  .tc-t-name-conclave { color: #7787ff; }
 
 .tc-t-description {
   margin: 16px 0 0;
   color: #e9e9f2;
   font-size: clamp(18px, 2.4vw, 24px);
   line-height: 1.45;
+  transform:translateY(-110px);
 }
 
 .tc-t-date {
@@ -780,9 +783,10 @@ text-align: center;
   align-items: baseline;
   gap: clamp(8px, 1.5vw, 16px);
   white-space: nowrap;
-  color: #8a38f5;
+  color: #7787ff;
   font-family: "Bebas Neue", sans-serif;
   font-size: clamp(2.4rem, 5vw, 3.8rem);
+  transform:translateY(-150px);
 }
 
 .tc-t-oct {
