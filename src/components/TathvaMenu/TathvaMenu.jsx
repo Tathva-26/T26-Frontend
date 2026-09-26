@@ -286,15 +286,20 @@ export default function TathvaMenu() {
       ================================================= */}
       <div
         onClick={() => setIsMobileOpen(false)}
+        style={{
+          backgroundColor: "rgba(0, 0, 0, 0.35)",
+          backdropFilter: "blur(3px)",
+          WebkitBackdropFilter: "blur(3px)",
+        }}
         className={`
           pointer-events-auto
           fixed
           inset-0
+          top-14
           z-[10000]
-          bg-black/60
-          backdrop-blur-sm
           transition-opacity
-          duration-300
+          duration-[250ms]
+          ease
           md:hidden
           ${isMobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
         `}
@@ -302,7 +307,7 @@ export default function TathvaMenu() {
       />
 
       {/* =================================================
-          MOBILE MENU DRAWER (Left side only)
+          MOBILE MENU PANEL (Left side only)
       ================================================= */}
       <aside
         className={`
@@ -332,20 +337,25 @@ export default function TathvaMenu() {
             flex-1
             overflow-y-auto
             px-4
-            py-5
-            pb-10
+            py-[22px]
+            pb-12
             flex
             flex-col
             items-start
-            gap-1.5
+            gap-[14px]
           "
         >
-          {allMenuItems.map((item) => (
+          {allMenuItems.map((item, idx) => (
             <Link
               key={item.label}
               href={item.href}
               onClick={() => setIsMobileOpen(false)}
-              className="
+              style={{
+                transitionDelay: isMobileOpen
+                  ? `${(0.05 + idx * 0.06).toFixed(2)}s`
+                  : "0s",
+              }}
+              className={`
                 group
                 relative
                 flex
@@ -353,8 +363,8 @@ export default function TathvaMenu() {
                 items-center
                 justify-start
                 gap-2.5
-                py-2.5
-                px-3
+                px-2
+                py-1.5
                 rounded-lg
                 text-left
                 text-[19px]
@@ -363,12 +373,18 @@ export default function TathvaMenu() {
                 text-[#999999]
                 no-underline
                 transition-all
-                duration-200
+                duration-300
+                ease
                 hover:text-white
                 hover:bg-white/5
                 active:text-[#00E564]
                 font-jockey
-              "
+                ${
+                  isMobileOpen
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-[10px]"
+                }
+              `}
             >
               <img
                 src="/images/menu/leftwave.png"
