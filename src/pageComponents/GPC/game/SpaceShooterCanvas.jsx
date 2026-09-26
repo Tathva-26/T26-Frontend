@@ -9,7 +9,7 @@ import {
 } from "@/pageComponents/GPC/gpcConfig";
 import {
   createSpaceShooter,
-} from "@/lib/spaceShooter/game";
+} from "@/lib/spaceShooter/engine";
 
 export default function SpaceShooterCanvas({
   active,

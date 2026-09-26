@@ -40,10 +40,12 @@
   --font-space: 'Space Grotesk', sans-serif;
   --font-vcr: 'VCR OSD Mono', monospace;
   --font-jockey: 'Jockey One', sans-serif;
-  --font-akira: 'Akira Expanded', sans-serif;
 }
 
-/* ---------- Tailwind Theme ---------- */
+.font-jockey {
+  font-family: 'Jockey One', sans-serif;
+  font-weight: 400;
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -60,19 +62,12 @@
   --font-pixel: 'Press Start 2P', 'Hammersmith One', sans-serif;
 }
 
-.font-jockey {
-  font-family: 'Jockey One', sans-serif;
-  font-weight: 400;
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
 }
-
-/* ---------- Base ---------- */
 
 html {
   min-height: 100%;
