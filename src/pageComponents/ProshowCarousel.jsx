@@ -9,6 +9,7 @@ import {
 } from "react";
 import { proshowArtists } from "@/lib/proshowArtists";
 import useHoldToPlay from "@/hooks/useHoldToPlay";
+import styles from "./ProshowCarousel.module.css";
 
 const HOLD_MS = 1100;
 const RING_COUNT = 7;
@@ -130,6 +131,10 @@ export default function ProshowCarousel() {
   const applyPos = useCallback(
     (p) => {
       posRef.current = p;
+      // 1 when an artist sits exactly in the centre, easing to 0 halfway
+      // between two; drives the beam/smoke/aura so they re-lock on arrival.
+      const off = Math.min(1, Math.abs(p - Math.round(p)) * 2.2);
+      pageRef.current?.style.setProperty("--lock", (1 - off * off * (3 - 2 * off)).toFixed(3));
       itemRefs.current.forEach((el, i) => {
         if (!el) return;
         let d = (((i - p) % N) + N) % N;
@@ -154,6 +159,25 @@ export default function ProshowCarousel() {
   useLayoutEffect(() => {
     applyPos(posRef.current);
   }, [applyPos]);
+
+  // The beam comes from the top of the page and ends at the active artist,
+  // so it needs to know where the centre of the carousel is.
+  useLayoutEffect(() => {
+    const page = pageRef.current;
+    const orbit = orbitRef.current;
+    if (!page || !orbit) return;
+    const measure = () => {
+      const p = page.getBoundingClientRect();
+      const o = orbit.getBoundingClientRect();
+      page.style.setProperty("--beam-cy", `${Math.round(o.top - p.top + o.height / 2)}px`);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(page);
+    ro.observe(orbit.parentElement);
+    document.fonts?.ready.then(measure);
+    return () => ro.disconnect();
+  }, []);
 
   const stopTween = () => {
     cancelAnimationFrame(tweenRef.current);
@@ -389,14 +413,15 @@ export default function ProshowCarousel() {
       className="relative grid h-dvh w-full touch-none select-none grid-rows-[auto_minmax(0,1fr)_auto_auto_auto] items-center justify-items-center overflow-hidden overscroll-none bg-[radial-gradient(ellipse_at_50%_45%,#100e18_0%,#0a0912_55%,#050408_100%)] px-4 pt-[clamp(14px,3dvh,32px)] pb-[clamp(28px,7dvh,64px)] text-white [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [--c:clamp(180px,min(38dvh,36vw),470px)] [--o1:0.6] [--o2:0.4] [--x1:0.8] [--x2:1.32] [--x3:1.7] max-lg:[--c:clamp(170px,min(40dvh,52vw),420px)] max-lg:[--x1:0.84] max-lg:[--x2:1.38] max-sm:pb-[92px] max-sm:[--c:min(58vw,40dvh)] max-sm:[--o2:0] max-sm:[--x1:0.8] max-sm:[--x2:1.4]"
     >
       <div
-        className="pointer-events-none absolute inset-0 animate-twinkle motion-reduce:animate-none"
+        className={`${styles.twinkle} pointer-events-none absolute inset-0`}
         aria-hidden="true"
       >
-        <div className="bg-stars absolute inset-0" />
+        <div className={`${styles.bgStarsFine} ${styles.twinkleSlow} absolute inset-0`} />
+        <div className={`${styles.bgStars} absolute inset-0`} />
         {[...SPARKLES, ...MINI_SPARKLES].map((s, i) => (
           <span
             key={i}
-            className="sparkle absolute"
+            className={`${styles.sparkle} absolute`}
             style={{
               left: `${s.x}%`,
               top: `${s.y}%`,
@@ -409,6 +434,17 @@ export default function ProshowCarousel() {
         ))}
       </div>
 
+      {/* Celestial smoke: dark ambient gas at two depths, plus bright copies
+          that are only revealed inside the beam's halo (so the beam lights it). */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className={`${styles.smokeLayer} ${styles.smokeFar} ${styles.darkFar}`} />
+        <div className={`${styles.smokeLayer} ${styles.smokeNear} ${styles.darkNear}`} />
+        <div className={styles.litField}>
+          <div className={`${styles.smokeLayer} ${styles.smokeFar} ${styles.litFar}`} />
+          <div className={`${styles.smokeLayer} ${styles.smokeNear} ${styles.litNear}`} />
+        </div>
+      </div>
+
       <span className="absolute top-[clamp(14px,3dvh,30px)] left-[clamp(16px,2.4vw,32px)] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em]">
         TATHVA ‘26
       </span>
@@ -418,7 +454,7 @@ export default function ProshowCarousel() {
 
       <h1
         key={artist.id}
-        className="z-2 mt-[clamp(22px,4dvh,44px)] animate-fade-up text-center font-(family-name:--font-space) text-[clamp(40px,min(9vw,11dvh),104px)] leading-none font-bold tracking-[-0.01em] motion-reduce:animate-none"
+        className={`${styles.fadeUp} z-2 mt-[clamp(22px,4dvh,44px)] text-center font-(family-name:--font-space) text-[clamp(40px,min(9vw,11dvh),104px)] leading-none font-bold tracking-[-0.01em]`}
       >
         {artist.name}
       </h1>
@@ -440,11 +476,12 @@ export default function ProshowCarousel() {
             {Array.from({ length: RING_COUNT }, (_, i) => (
               <span
                 key={i}
-                className="absolute top-1/2 left-1/2 aspect-square w-[calc(var(--c)*(1+var(--k)*0.62))] -translate-x-1/2 -translate-y-1/2 animate-ring-pulse rounded-full border border-[rgba(190,170,255,0.09)] motion-reduce:animate-none"
+                className={`${styles.ringPulse} absolute top-1/2 left-1/2 aspect-square w-[calc(var(--c)*(1+var(--k)*0.62))] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[rgba(190,170,255,0.09)]`}
                 style={{ "--k": i + 1, animationDelay: `${i * -1.2}s` }}
               />
             ))}
           </div>
+          <div className={styles.aura} aria-hidden="true" />
           <svg
             className="pointer-events-none absolute -inset-[6.5%] z-6 h-[113%] w-[113%] overflow-visible"
             viewBox="0 0 100 100"
@@ -478,7 +515,7 @@ export default function ProshowCarousel() {
                 key={a.id}
                 type="button"
                 tabIndex={isCenter ? 0 : -1}
-                className="proshow-item absolute inset-0 cursor-grab touch-none overflow-hidden rounded-full border-0 bg-[#120b22] p-0 outline-none [-webkit-tap-highlight-color:transparent] will-change-[transform,opacity] active:cursor-grabbing"
+                className={`${styles.item} absolute inset-0 cursor-grab touch-none overflow-hidden rounded-full border-0 bg-[#120b22] p-0 outline-none [-webkit-tap-highlight-color:transparent] will-change-[transform,opacity] active:cursor-grabbing`}
                 ref={(el) => {
                   itemRefs.current[i] = el;
                 }}
@@ -510,13 +547,13 @@ export default function ProshowCarousel() {
       </section>
 
       <div
-        className="mt-[clamp(10px,2dvh,22px)] flex animate-hint-pulse items-center gap-2.5 rounded-full border border-white/20 bg-white/5 px-5 py-1.5 text-white/85 shadow-[0_0_18px_-4px_rgba(201,182,255,0.5)] motion-reduce:animate-none"
+        className={`${styles.hintPulse} mt-[clamp(10px,2dvh,22px)] flex items-center gap-2.5 rounded-full border border-white/20 bg-white/5 px-5 py-1.5 text-white/85 shadow-[0_0_18px_-4px_rgba(201,182,255,0.5)]`}
         role="note"
         aria-label={coarse ? "Hold the artist to play" : "Hold space bar to play"}
       >
         {coarse && (
           <svg
-            className="size-4 shrink-0 animate-key-press motion-reduce:animate-none"
+            className={`${styles.keyPress} size-4 shrink-0`}
             viewBox="0 0 24 24"
             fill="none"
             aria-hidden="true"
@@ -537,16 +574,20 @@ export default function ProshowCarousel() {
 
       <p
         key={`d-${artist.id}`}
-        className="-mr-[0.4em] mt-[clamp(8px,1.6dvh,18px)] animate-fade-up text-center font-(family-name:--font-bebas) text-[clamp(20px,3vw,34px)] tracking-[0.4em] uppercase motion-reduce:animate-none"
+        className={`${styles.fadeUp} -mr-[0.4em] mt-[clamp(8px,1.6dvh,18px)] text-center font-(family-name:--font-bebas) text-[clamp(20px,3vw,34px)] tracking-[0.4em] uppercase`}
       >
         {artist.date}
       </p>
       <p
         key={`p-${artist.id}`}
-        className="mt-[clamp(8px,1.6dvh,18px)] line-clamp-4 max-w-[min(640px,100%)] animate-fade-up overflow-hidden text-justify text-[clamp(12px,1.35vw,17px)] leading-[1.55] text-[#ece8f7] [text-align-last:center] motion-reduce:animate-none max-sm:line-clamp-3 max-sm:text-center [@media(max-height:520px)]:hidden!"
+        className={`${styles.fadeUp} mt-[clamp(8px,1.6dvh,18px)] line-clamp-4 max-w-[min(640px,100%)] overflow-hidden text-justify text-[clamp(12px,1.35vw,17px)] leading-[1.55] text-[#ece8f7] [text-align-last:center] max-sm:line-clamp-3 max-sm:text-center [@media(max-height:520px)]:hidden!`}
       >
         {artist.description}
       </p>
+
+      <div className={styles.dust} aria-hidden="true">
+        <div className={styles.dustInner} />
+      </div>
 
       <div
         className={`pointer-events-none absolute right-[clamp(12px,2.4vw,32px)] bottom-[clamp(12px,3dvh,32px)] z-7 flex items-center gap-3 rounded-full bg-white/[0.07] py-2 pr-[18px] pl-2 backdrop-blur-[10px] transition-[opacity,translate] duration-400 max-sm:right-1/2 max-sm:bottom-3.5 max-sm:translate-x-1/2 ${
@@ -573,7 +614,7 @@ export default function ProshowCarousel() {
           {[0, -0.3, -0.6].map((delay) => (
             <i
               key={delay}
-              className="h-full w-[3px] origin-bottom animate-eq rounded-xs bg-[#c9b6ff] motion-reduce:animate-none"
+              className={`${styles.eq} h-full w-[3px] origin-bottom rounded-xs bg-[#c9b6ff]`}
               style={{ animationDelay: `${delay}s` }}
             />
           ))}
