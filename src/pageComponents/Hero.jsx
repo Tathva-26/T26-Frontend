@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import styles from "./Hero.module.css";
+// import AtmosphericMist from "@/components/AtmosphericMist";
 
 const assetBase = "/images/Hero/";
 
@@ -27,8 +28,10 @@ const assetBase = "/images/Hero/";
 // the element is. Roughly, from nearest camera to farthest:
 //   girl (foreground, in front of the portal)
 //   ground (the portal's own depth — it's standing on it)
-//   title (far behind the portal)
+//   bgrocks (a farther ridge, just above the near ground)
+//   t1 / a2 / t3 / h4 / a5 (the five title glyphs, far behind the portal)
 //   island (background — "really far away")
+//   background (the environment plate itself — farthest of all)
 //
 // driftX: sideways drift over the scroll (px). 0 = no horizontal
 //   movement. Use this for a "camera passes beside it" effect — the
@@ -42,28 +45,82 @@ const assetBase = "/images/Hero/";
 //   fixed paint order the whole time.
 // ---------------------------------------------------------------------
 const LAYOUT = {
+    background: {
+        // The environment plate (background.png) — farther than the
+        // island, so it should move even less. Just enough drift to
+        // read as physically distant rather than glued to the viewport.
+        driftY: -1, scaleTo: 1.02,
+        z: 0, zLift: 0,
+    },
     island: {
         // Distant, upper-right of center — barely moves at all.
-        top: 2.5, left: 49, width: 25, height: 37,
-        driftX: 0, driftY: -3, scaleTo: 1.04,
-        z: 1, zLift: 0,
+        top: 0, left: 34.85, width: 37, height: 37,
+        driftX: 0, driftY: -20, scaleTo: 1.04,
+        z: 4, zLift: 0,
     },
     ground: {
         // The portal's own depth. Sized to run off the bottom of the
         // canvas (height reaches well past the 49.0625rem canvas
         // height) so its own image edge is never visible on screen —
         // it just reads as ground continuing out of frame.
-        top: 29, left: 0, width: 88.3125, height: 26,
-        driftX: 0, driftY: -4, scaleTo: 2.02,
+        top: 45, left: 5, width: 88.3125, height: 26,
+        driftX: 0, driftY: -4, scaleTo: 1.02,
         z: 2, zLift: 0,
     },
-    title: {
-        top: 19.5, // = the old top-70 Tailwind value (70 * 0.25rem)
-        driftX: 0, driftY: -40, scaleTo: 1.95, opacityTo: 0,
+    // clean up hanin
+    bgrocks: {
+        // A farther rock/ground layer that only pokes up above the
+        // near ground's top edge (23rem vs. ground's 29rem) — reads as
+        // a distant ridge rather than another copy of the same rocks.
+        // Behind both the ground and the portal (see the CSS).
+        top:39, left: 0, width: 88.3125, height: 14,
+        driftX: 0, driftY: -2, scaleTo: 1.25,
+        z: 1, zLift: 0,
+    },
+    // The old single "Tathva" <h1> is now five separate glyphs
+    // (T1/A2/T3/H4/A5 — drop them in public/images/Hero/) so each
+    // letter can be positioned, sized and timed on its own instead of
+    // moving as one rigid text block. Same depth as the old title (far
+    // behind the portal, in front of the island): z stays 3, and
+    // driftY/scaleTo stay close to what the old title used (driftY:
+    // -70, scaleTo: ~1.95). driftX increases left-to-right so the row
+    // fans out a little as it scales, rather than sliding as one flat
+    // block. top/left/width/height lay the five letters out in a row
+    // roughly where the old centered title sat — purely a first guess,
+    // same as every number below. Tune freely.
+    t1: {
+        top: 16.5, left: -2, width: 75, height: 16.6,
+        driftX: 160, driftY: -665, scaleTo: 3.85,
+        z: 3, zLift: 0,
+    },
+    //clean up hanin
+    a2: {
+        top: 100.5, left: 22, width: 10, height: 14.6,
+        driftX: 160, driftY: -65, scaleTo: 1.85,
+        z: 3, zLift: 0,
+    },
+    t3: {
+        top: 100.5, left: 30, width: 10, height: 14.6,
+        driftX: 160, driftY: -65, scaleTo: 1.85,
+        z: 3, zLift: 0,
+    },
+    h4: {
+        top: 100.5, left: 42, width: 9, height: 13.6,
+        driftX: 160, driftY: -65, scaleTo: 1.85,
+        z: 3, zLift: 0,
+    },
+    v5: {
+        top: 100.5, left: 51, width: 11, height: 14.6,
+        driftX: 160, driftY: -65, scaleTo: 1.85,
+        z: 3, zLift: 0,
+    },
+    a5: {
+        top: 100.5, left: 60, width: 10, height: 14.6,
+        driftX: 160, driftY: -65, scaleTo: 1.85,
         z: 3, zLift: 0,
     },
     portal: {
-        top: 30.875, left: 36.25, width: 9.125, height: 15.1875,
+        top: 27.5, left: 34.25, width: 11.125, height: 30.1875,
         zoomMultiplier: 1.04, // slight overshoot so it fully covers the viewport at scroll end
         z: 4, zLift: 0,
     },
@@ -73,8 +130,8 @@ const LAYOUT = {
         // strongest parallax in the scene. driftX carries her sideways
         // as the camera zooms in level with her and then passes —
         // flip the sign to send her the other way.
-        top: 32, left: 40.5, width: 12, height: 17,
-        driftX: 900, driftY: 34, scaleTo: 15.55,
+        top: 32, left: 13.5, width: 64, height:18,
+        driftX: 1100, driftY: 2100, scaleTo: 15.55,
         z: 5, zLift: 10,
     },
 };
@@ -104,17 +161,25 @@ const LAYOUT = {
 export const Hero = ({ onEnter }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [hasEntered, setHasEntered] = useState(false);
-
+//     const mistBackRef = useRef(null);
+// const mistFrontRef = useRef(null);
     const scrollerRef = useRef(null);
     const runwayRef = useRef(null);
     const viewportRef = useRef(null);
     const sceneRef = useRef(null);
 
-    // The flat 2D scene pieces — ground silhouette, the giant title
-    // behind the portal, the portal itself, and the whiteout overlay
-    // that covers everything once the portal fills the screen.
+    // The flat 2D scene pieces — ground silhouette, the five title
+    // glyphs behind the portal, the portal itself, and the whiteout
+    // overlay that covers everything once the portal fills the screen.
+    const backgroundRef = useRef(null);
     const groundRef = useRef(null);
-    const titleRef = useRef(null);
+    const bgrocksRef = useRef(null);
+    const t1Ref = useRef(null);
+    const a2Ref = useRef(null);
+    const t3Ref = useRef(null);
+    const h4Ref = useRef(null);
+    const a5Ref = useRef(null);
+    const v5Ref = useRef(null);
     const portalRef = useRef(null);
     const islandRef = useRef(null);
     const girlRef = useRef(null);
@@ -213,24 +278,65 @@ export const Hero = ({ onEnter }) => {
         // LAYOUT entry, so a simple parallax layer is fully defined by
         // its numbers alone — add a field in LAYOUT and it animates,
         // leave it out (or at 0) and it's skipped.
-        const simpleParallax = (ref, config) => {
-            if (!ref.current) return;
-            const toVars = { duration: 1, ease: "none" };
-            if (config.driftX) toVars.x = config.driftX;
-            if (config.driftY) toVars.y = config.driftY;
-            if (config.scaleTo !== undefined) toVars.scale = config.scaleTo;
-            if (config.opacityTo !== undefined) toVars.opacity = config.opacityTo;
-            if (config.zLift) {
-                toVars.zIndex = config.z + config.zLift;
-                toVars.snap = { zIndex: 1 };
-            }
-            tl.fromTo(ref.current, { scale: 1, x: 0, y: 0 }, toVars, 0);
-        };
+const simpleParallax = (ref, config) => {
+    if (!ref.current) return;
+    const fromVars = { scale: 1, x: 0, y: 0 };
+    const toVars = { duration: 1, ease: "none" };
+    if (config.xPercent !== undefined) {
+        // Constant for the full tween — this is what keeps the
+        // element self-centered throughout, now that GSAP owns its
+        // transform instead of a CSS class.
+        fromVars.xPercent = config.xPercent;
+        toVars.xPercent = config.xPercent;
+    }
+    if (config.driftX) toVars.x = config.driftX;
+    if (config.driftY) toVars.y = config.driftY;
+    if (config.scaleTo !== undefined) toVars.scale = config.scaleTo;
+    if (config.opacityTo !== undefined) toVars.opacity = config.opacityTo;
+    if (config.zLift) {
+        toVars.zIndex = config.z + config.zLift;
+        toVars.snap = { zIndex: 1 };
+    }
+    tl.fromTo(ref.current, fromVars, toVars, 0);
+};
+// Girl's zLift would fight the mist's own static zIndex prop, so
+// only take the motion values, not the whole LAYOUT.girl config.
+// const mistFrontMotion = {
+//     driftX: LAYOUT.girl.driftX,
+//     driftY: LAYOUT.girl.driftY,
+//     scaleTo: LAYOUT.girl.scaleTo,
+// };
 
-        simpleParallax(islandRef, LAYOUT.island);
-        simpleParallax(groundRef, LAYOUT.ground);
-        simpleParallax(titleRef, LAYOUT.title);
-        simpleParallax(girlRef, LAYOUT.girl);
+simpleParallax(backgroundRef, LAYOUT.background);
+simpleParallax(islandRef, LAYOUT.island);
+simpleParallax(groundRef, LAYOUT.ground);
+simpleParallax(bgrocksRef, LAYOUT.bgrocks);
+simpleParallax(t1Ref, LAYOUT.t1);
+simpleParallax(a2Ref, LAYOUT.a2);
+simpleParallax(t3Ref, LAYOUT.t3);
+simpleParallax(h4Ref, LAYOUT.h4);
+simpleParallax(a5Ref, LAYOUT.a5);
+simpleParallax(v5Ref, LAYOUT.v5)
+simpleParallax(girlRef, LAYOUT.girl);
+// simpleParallax(mistBackRef, LAYOUT.bgrocks);   // zooms exactly like the rock bg
+// simpleParallax(mistFrontRef, mistFrontMotion); // zooms exactly like the girl
+
+        // Title-letter opacity gets its own tween, starting partway
+        // through the scroll instead of fading across the whole range
+        // — this way each glyph is still fully visible while
+        // simpleParallax's scale/driftX carries it across the island,
+        // and only dissolves after. All five glyphs fade on the same
+        // schedule; only their scale/drift differ.
+        [t1Ref, a2Ref, t3Ref, h4Ref, a5Ref, v5Ref].forEach((ref) => {
+            if (ref.current) {
+                tl.fromTo(
+                    ref.current,
+                    { opacity: 1 },
+                    { opacity: 0, duration: 0.45, ease: "power1.in" },
+                    0.5,
+                );
+            }
+        });
 
         if (portalRef.current) {
             tl.fromTo(
@@ -289,20 +395,25 @@ export const Hero = ({ onEnter }) => {
         aria-label="Tathva home"
     />
 
-    <a
-        href="#register"
-        className={styles.fixedRegister}
-        aria-label="Register for Tathva 26"
-    >
-        <img
-            className={styles.fixedRegisterLine}
-            alt=""
-            aria-hidden="true"
-            src={`${assetBase}line-56.svg`}
-        />
+ <a
+    href="#register"
+    className={`${styles.fixedRegister} group flex items-center justify-center gap-3 px-6 py-2.5 bg-white/5 backdrop-blur-md border border-white/20 rounded-full transition-all duration-300 hover:bg-white/10 hover:border-white/50 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50`}
+    aria-label="Register for Tathva 26"
+>
 
-        <span>Register</span>
-    </a>
+    {/* Typography pulled from your design spec */}
+    <span className="font-['Instrument_Serif',Helvetica] italic text-[21.5px] font-normal text-white tracking-wide leading-none mt-1">
+        Register
+    </span>
+
+    {/* Arrow that slides right on hover */}
+    <img
+        className="w-5 h-5 opacity-70 transition-all duration-300 group-hover:translate-x-1.5 group-hover:opacity-100"
+        alt=""
+        aria-hidden="true"
+        src={`${assetBase}arrow-right.png`} 
+    />
+</a>
             <section ref={runwayRef} className={styles.runway}>
                 <div ref={viewportRef} className={styles.viewport}>
                     <div
@@ -311,47 +422,205 @@ export const Hero = ({ onEnter }) => {
                         data-model-id="10:78"
                         aria-label="Tathva 26 Asteria"
                     >
+            {/* Hidden SVG filter behind the portal's edge — a touch of
+                procedural noise displaces the rim so it reads as an
+                unstable boundary of light rather than a drawn CSS
+                border. Zero-size definition only; doesn't render or
+                affect layout by itself. */}
+            <svg aria-hidden="true" focusable="false" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
+                <filter id="portalEdgeNoise" x="-40%" y="-40%" width="180%" height="180%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.015 0.05" numOctaves="2" seed="7" result="noise" />
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="7" xChannelSelector="R" yChannelSelector="G" />
+                </filter>
+            </svg>
+
             {/* Every element below is positioned/sized straight from
                 LAYOUT (see top of file) and rendered back-to-front by
-                depth: island (farthest) → ground → title → portal →
-                girl (nearest the camera). No sky element sits above
-                the ground; .scroller's own dark background stands in
-                for empty space. */}
-            <img
+                depth: background (farthest) → island → ground → the
+                five title glyphs → portal → girl (nearest the camera).
+                background.png is now the actual environment;
+                .scroller's dark color only shows through before it
+                loads. */}
+            <div
+                ref={backgroundRef}
+                className={styles.background}
+                style={{ backgroundImage: `url(${assetBase}backgroundd.jpg)` }}
+                aria-hidden="true"
+            />
+
+            {/* Ambient light-streak backdrop. Has to live inside .scene,
+            //     layered right above .background: .scene is its own
+            //     stacking context (position: relative + z-index: 2) with
+            //     an opaque full-bleed .background image, so anything
+            //     placed outside .scene — behind it or not — is fully
+            //     hidden by that image regardless of z-index. Sitting here
+            //     (z-index 0, right after .background in the DOM) puts it
+            //     above the flat sky plate but below every other layer
+            //     (island/ground/bgrocks/title/portal/girl, all z-index
+            //     1+), reading as a distant field of drifting light. */}
+            {/* // <AmbientStars position="absolute" /> */}
+
+            <div
                 ref={islandRef}
-                className={styles.island}
+                className={styles.islandWrap}
                 style={{
                     top: `${LAYOUT.island.top}rem`,
                     left: `${LAYOUT.island.left}rem`,
                     width: `${LAYOUT.island.width}rem`,
                     height: `${LAYOUT.island.height}rem`,
                 }}
-                alt=""
                 aria-hidden="true"
-                src={`${assetBase}floatingisland.svg`}
-            />
+            >
+                {/* Independent, near-imperceptible float lives on the
+                    inner img (a plain CSS animation) so it never fights
+                    the GSAP scroll transform applied to this wrapper. */}
+                <div className={styles.islandGlow} />
+                <img
+                    className={styles.island}
+                    alt=""
+                    aria-hidden="true"
+                    src={`${assetBase}floatingisland.svg`}
+                />
+            </div>
 
-            <img
+            <div
                 ref={groundRef}
-                className={styles.ground}
+                className={styles.groundWrap}
                 style={{
                     top: `${LAYOUT.ground.top}rem`,
                     left: `${LAYOUT.ground.left}rem`,
                     width: `${LAYOUT.ground.width}rem`,
                     height: `${LAYOUT.ground.height}rem`,
                 }}
+                aria-hidden="true"
+            >
+                <img
+                    className={styles.ground}
+                    alt=""
+                    aria-hidden="true"
+                    src={`${assetBase}rockyground.png`}
+                />
+                {/* <div className={styles.groundLight} /> */}
+            </div>
+
+            <img
+                ref={bgrocksRef}
+                className={styles.bgrocks}
+                style={{
+                    top: `${LAYOUT.bgrocks.top}rem`,
+                    left: `${LAYOUT.bgrocks.left}rem`,
+                    width: `${LAYOUT.bgrocks.width}rem`,
+                    height: `${LAYOUT.bgrocks.height}rem`,
+                }}
                 alt=""
                 aria-hidden="true"
-                src={`${assetBase}rockyground.png`}
+                src={`${assetBase}bgrocks.png`}
             />
+{/* <AtmosphericMist
+    ref={mistBackRef}
+    position="absolute"
+    zIndex={15}
+    groundStart={0}
+    groundEnd={0.28}   // was 0.32 — a bit taller
+    density={0.75}     // was implicit 0.5 — thicker
+/>
 
-            <h1
-                ref={titleRef}
-                className={`left-1/2 -translate-x-1/2 ${styles.heroTitle}`}
-                style={{ top: `${LAYOUT.title.top}rem` }}
-            >
-                Tathva
-            </h1>
+<AtmosphericMist
+    ref={mistFrontRef}
+    position="absolute"
+    zIndex={3}
+    groundStart={0}
+    groundEnd={0.28}   // was 0.42 — a bit taller
+    density={0.7}
+    intensity={0.55}
+    lightY={0.24}
+    driftSpeed={1.3}
+    octaves={2}
+    resolutionScale={0.4}
+/> */}
+{/* Five separate glyphs replacing the old "Tathva" <h1> — each one is
+    its own parallax layer (see LAYOUT.t1..LAYOUT.a5 above), so they
+    can be repositioned/re-timed independently instead of moving as a
+    single block of text. Swap the src filenames below if the final
+    assets end up named differently. */}
+<img
+    ref={t1Ref}
+    className={styles.titleLetter}
+    style={{
+        top: `${LAYOUT.t1.top}rem`,
+        left: `${LAYOUT.t1.left}rem`,
+        width: `${LAYOUT.t1.width}rem`,
+        height: `${LAYOUT.t1.height}rem`,
+    }}
+    alt=""
+    aria-hidden="true"
+    src={`${assetBase}tathva.svg`}
+/>
+<img
+    ref={a2Ref}
+    className={styles.titleLetter}
+    style={{
+        top: `${LAYOUT.a2.top}rem`,
+        left: `${LAYOUT.a2.left}rem`,
+        width: `${LAYOUT.a2.width}rem`,
+        height: `${LAYOUT.a2.height}rem`,
+    }}
+    alt=""
+    aria-hidden="true"
+    src={`${assetBase}A2.svg`}
+/>
+<img
+    ref={t3Ref}
+    className={styles.titleLetter}
+    style={{
+        top: `${LAYOUT.t3.top}rem`,
+        left: `${LAYOUT.t3.left}rem`,
+        width: `${LAYOUT.t3.width}rem`,
+        height: `${LAYOUT.t3.height}rem`,
+    }}
+    alt=""
+    aria-hidden="true"
+    src={`${assetBase}T3.svg`}
+/>
+<img
+    ref={h4Ref}
+    className={styles.titleLetter}
+    style={{
+        top: `${LAYOUT.h4.top}rem`,
+        left: `${LAYOUT.h4.left}rem`,
+        width: `${LAYOUT.h4.width}rem`,
+        height: `${LAYOUT.h4.height}rem`,
+    }}
+    alt=""
+    aria-hidden="true"
+    src={`${assetBase}H4.svg`}
+/>
+<img
+    ref={a5Ref}
+    className={styles.titleLetter}
+    style={{
+        top: `${LAYOUT.a5.top}rem`,
+        left: `${LAYOUT.a5.left}rem`,
+        width: `${LAYOUT.a5.width}rem`,
+        height: `${LAYOUT.a5.height}rem`,
+    }}
+    alt=""
+    aria-hidden="true"
+    src={`${assetBase}A5.svg`}
+/>
+<img
+    ref={v5Ref}
+    className={styles.titleLetter}
+    style={{
+        top: `${LAYOUT.v5.top}rem`,
+        left: `${LAYOUT.v5.left}rem`,
+        width: `${LAYOUT.v5.width}rem`,
+        height: `${LAYOUT.v5.height}rem`,
+    }}
+    alt=""
+    aria-hidden="true"
+    src={`${assetBase}V5.svg`}
+/>
 
             <div
                 ref={portalRef}
@@ -363,24 +632,49 @@ export const Hero = ({ onEnter }) => {
                     height: `${LAYOUT.portal.height}rem`,
                 }}
                 aria-hidden="true"
-            />
+            >
+                {/* Painted in this order so the rim ends up crisp on
+                    top: wide haze, then the ground-facing pool, then
+                    the noise-displaced edge. */}
+                <div className={styles.portalHaze} />
+                <div className={styles.portalGroundGlow} />
+                <div className={styles.portalRim} />
+            </div>
 
-            <img
+            <div
                 ref={girlRef}
-                className={styles.girl}
+                className={styles.girlWrap}
                 style={{
                     top: `${LAYOUT.girl.top}rem`,
                     left: `${LAYOUT.girl.left}rem`,
                     width: `${LAYOUT.girl.width}rem`,
                     height: `${LAYOUT.girl.height}rem`,
                 }}
-                alt=""
                 aria-hidden="true"
-                src={`${assetBase}girl.png`}
-            />
+            >
+                <img
+                    className={styles.girl}
+                    alt=""
+                    aria-hidden="true"
+                    src={`${assetBase}girl4.png`}
+                />
+                {/* Rim light masked to her own alpha shape (same PNG),
+                    so it catches her silhouette's edge instead of
+                    sitting over her like a rectangle. */}
+                <div
+                    className={styles.girlRim}
+                    style={{
+                        WebkitMaskImage: `url(${assetBase}girl.png)`,
+                        maskImage: `url(${assetBase}girl.png)`,
+                    }}
+                />
+                <div className={styles.girlContact} />
+            </div>
+
+
 
             <div ref={whiteoutRef} className={styles.whiteout} aria-hidden="true" />
-
+{/* 
             <button
                 type="button"
                 onClick={handleEnter}
@@ -408,7 +702,7 @@ export const Hero = ({ onEnter }) => {
                     aria-hidden="true"
                     src={`${assetBase}arrow-right.svg`}
                 />
-            </button>
+            </button> */}
             {/* <a
                 href="#home"
                 className="absolute top-5.5 left-9.25 w-13.75 h-11.5 bg-cover bg-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"

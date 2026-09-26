@@ -447,7 +447,7 @@ export default function TathvaMenu() {
                 font-normal
                 leading-none
                 tracking-[1px]
-                text-[#999999]
+                text-[rgba(205,220,255,0.72)]]
                 no-underline
                 opacity-0
                 transition-colors
@@ -551,7 +551,7 @@ export default function TathvaMenu() {
                 font-normal
                 leading-none
                 tracking-[1px]
-                text-[#999999]
+                text-[rgba(205,220,255,0.72)]
                 no-underline
                 opacity-0
                 transition-colors
@@ -619,8 +619,8 @@ export default function TathvaMenu() {
           top-0
           z-20
           flex
-          h-[38px]
-          w-[110px]
+          h-[68px]
+          w-[130px]
           -translate-x-1/2
           cursor-pointer
           items-center

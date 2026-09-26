@@ -118,168 +118,257 @@
 }
 
 /* ===============================
-   GROUND
-   Low, distant rock silhouette. Deliberately no sky element sits above
-   it — the .scroller's own dark background stands in for empty space.
-   Sized (see LAYOUT.ground in Hero.jsx) to run off the bottom of the
-   canvas so its own image edge is never visible.
+   BACKGROUND ENVIRONMENT
+   The primary environment plate (background.png) — deep space, stars,
+   whatever the art provides. This is the source of truth for the sky;
+   nothing else in this file should paint clouds/stars/moon on top of
+   it. Sits behind the island and gets only the barest scroll drift so
+   it reads as physically distant rather than glued to the viewport.
    =============================== */
+
+.background {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  will-change: transform;
+
+  /* Pushes the image visually backward */
+  filter: brightness(0.55) saturate(0.6) contrast(1.2);
+}
+/* ===============================
+   GROUND
+   Low, distant rock silhouette, standing on the same ground the portal
+   does. Sized (see LAYOUT.ground in Hero.jsx) to run off the bottom of
+   the canvas so its own image edge is never visible.
+   =============================== */
+
+.groundWrap {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  will-change: transform;
+}
 
 .ground {
   position: absolute;
-  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  pointer-events: none;
+}
+
+/* Portal light pooling onto the ground near the portal's own
+   footprint, plus a faint horizon haze — both screened on so they read
+   as light adding onto the rock rather than a painted patch. */
+.groundLight {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(38% 65% at 46% 0%, rgba(205, 222, 255, 0.4), rgba(205, 222, 255, 0) 72%),
+    linear-gradient(to bottom, rgba(150, 175, 230, 0) 0%, rgba(150, 175, 230, 0.12) 14%, rgba(150, 175, 230, 0) 42%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* A second, farther ground layer — a distant ridge that only pokes up
+   just above the near rocks, reading as depth rather than a duplicate
+   of .ground. z-index keeps it behind both .groundWrap and .portal;
+   the dimmed brightness sells the extra distance/haze. */
+.bgrocks {
+  position: absolute;
+  z-index: 1;
+  object-fit: cover;
+  object-position: bottom;
+  pointer-events: none;
+  will-change: transform;
+  filter: brightness(0.55);
+}
+
+/* Distant floating island — moves least of the foreground layers
+   (only the environment plate behind it moves less). The wrapper
+   carries the scroll parallax (GSAP); the inner img carries its own
+   slow, independent drift as a plain CSS animation so the two never
+   fight over the transform property. */
+.islandWrap {
+  position: absolute;
+  z-index: 4;
   pointer-events: none;
   will-change: transform;
 }
 
-/* Distant floating island — farthest layer in the scene, barely moves. */
 .island {
   position: absolute;
-  z-index: 4;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   pointer-events: none;
+  animation: islandFloat 50s ease-in-out infinite;
   will-change: transform;
 }
+
+/* Extremely slow, small drift + rotation — "massive structure gently
+   suspended," not a bob or a loop you can catch happening. */
+@keyframes islandFloat {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(0.2rem, -1.1rem) rotate(0.7deg); }
+}
+/* Soft atmospheric bloom around the island, independent of whatever
+   waterfall/window highlights are baked into the asset itself. */
 
 /* Foreground figure standing to the side of the portal, watching it —
    nearest layer to the camera, so it sits above the portal and carries
    the strongest parallax. */
-.girl {
+.girlWrap {
   position: absolute;
   z-index: 5;
-  object-fit: contain;
-  object-position: bottom;
   pointer-events: none;
   will-change: transform;
 }
 
+.girl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom;
+  pointer-events: none;
+}
+
+/* Cool rim light along her portal-facing side, masked to her own PNG
+   alpha so it catches her silhouette's edge instead of sitting over
+   her like a rectangle. Low opacity and screened on — she stays a
+   dark silhouette, this only lifts the one edge. */
+.girlRim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, rgba(210, 225, 255, 0.55) 0%, rgba(210, 225, 255, 0) 24%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: bottom;
+  mask-position: bottom;
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
+  mix-blend-mode: screen;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Contact shadow + haze at her feet, so she reads as standing on the
+   rock rather than pasted over it. */
+.girlContact {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: -4%;
+  height: 16%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0) 75%);
+  filter: blur(2px);
+  pointer-events: none;
+}
+
 /* ===============================
    PORTAL
-   A doorway of light standing on the ground. Grown entirely with CSS —
-   a bright core, a thin rim, and layered box-shadow bloom — then
-   scaled up by the scroll tween in Hero.jsx until it fills the screen.
+   A doorway of light standing on the ground. Grown entirely with CSS
+   from four layers — the bright core (.portal itself), a wide outer
+   haze, a ground-facing light pool, and a noise-displaced rim — then
+   scaled up as one unit by the scroll tween in Hero.jsx until it fills
+   the screen. See LAYOUT.portal / the portal tween in Hero.jsx for the
+   zoom math; nothing here should change how big or fast it grows.
    =============================== */
 
 .portal {
   position: absolute;
   z-index: 4;
   overflow: visible;
-  border-radius: 2px;
-  background: radial-gradient(120% 130% at 50% 45%, #ffffff 0%, #e2ecff 42%, #a9c0ec 70%, rgba(120, 150, 220, 0) 100%);
+  border-radius: 3px;
+  /* Slightly off-center focal point so the interior reads as an
+     irregular glow rather than a mathematically perfect gradient. */
+  background: radial-gradient(115% 130% at 46% 40%, #ffffff 0%, #eef3ff 38%, #b7c8f2 66%, rgba(130, 155, 225, 0) 100%);
+  /* Tight and bright only — the wide volumetric bloom now lives in
+     .portalHaze instead of a big-spread box-shadow. A box-shadow's
+     blur/spread scale up together with the transform:scale() the
+     scroll tween applies to this element, so a few hundred px of
+     spread here would blow out the whole viewport well before the
+     portal is meant to fill it. */
   box-shadow:
-    0 0 2px 1px rgba(255, 255, 255, 0.95),
-    0 0 26px 6px rgba(196, 216, 255, 0.85),
-    0 0 72px 26px rgba(140, 170, 255, 0.5),
-    0 0 170px 70px rgba(100, 140, 255, 0.25);
-  animation: portalFlicker 5.5s ease-in-out infinite;
+    0 0 2px 1px rgba(255, 255, 255, 0.9),
+    0 0 22px 5px rgba(196, 216, 255, 0.65);
+  animation: portalFlicker 6.5s ease-in-out infinite;
   will-change: transform;
   transform-origin: center center;
 }
 
-.portal::before {
-  /* thin, extremely bright rim */
-  content: "";
+/* Wide, soft volumetric bloom well outside the rectangle — kept low-
+   opacity, blurred and screened onto the scene instead of an opaque
+   painted shape, so it stays "extremely bright" without reading as
+   excessive bloom. */
+.portalHaze {
   position: absolute;
-  inset: 0;
-  border: 1px solid rgba(255, 255, 255, 0.92);
-  border-radius: inherit;
-  box-shadow: inset 0 0 10px 2px rgba(255, 255, 255, 0.6);
+  inset: -55% -70%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(200, 220, 255, 0.38), rgba(160, 185, 255, 0.13) 55%, rgba(140, 170, 255, 0) 78%);
+  filter: blur(6px);
+  mix-blend-mode: screen;
   pointer-events: none;
 }
 
-.portal::after {
-  /* soft mist pooling at the threshold */
-  content: "";
+/* Pool of light where the portal meets the ground — wider than the
+   portal and biased downward, so the glow reads as falling onto a
+   surface rather than radiating evenly in every direction. */
+.portalGroundGlow {
   position: absolute;
   left: 50%;
-  bottom: -6%;
-  width: 220%;
-  height: 24%;
+  bottom: -18%;
+  width: 260%;
+  height: 46%;
   transform: translateX(-50%);
-  background: radial-gradient(closest-side, rgba(210, 225, 255, 0.5), rgba(210, 225, 255, 0) 75%);
-  filter: blur(2px);
+  background: radial-gradient(closest-side, rgba(210, 225, 255, 0.55), rgba(190, 210, 255, 0.2) 55%, rgba(180, 200, 255, 0) 80%);
+  filter: blur(4px);
+  mix-blend-mode: screen;
   pointer-events: none;
 }
+
+/* Extremely bright, slightly irregular edge. The SVG displacement
+   filter (defined inline in Hero.jsx, id="portalEdgeNoise") warps the
+   rectangle's boundary so it reads as an edge of light/energy rather
+   than a drawn CSS border. Browsers that can't apply the filter still
+   get a clean bright rim as a fallback. */
+
 
 @keyframes portalFlicker {
   0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.06); }
+  50% { filter: brightness(1.05); }
 }
 
-/* The giant title — real HTML text sitting behind the portal. Its
-   scale/position tween lives in Hero.jsx; this sets face, tracking
-   and color. */
-.heroTitle {
+/* Five separate glyphs (T1/A2/T3/H4/A5) sitting behind the portal,
+   replacing the old real-text "Tathva" <h1>. Position/size/motion for
+   each one live in LAYOUT.t1..LAYOUT.a5 in Hero.jsx; this just sets
+   the shared depth and glow treatment. Since these are images now
+   rather than live text, the old background-clip gradient-fill trick
+   doesn't apply — a drop-shadow stack does the same "lit by the
+   portal" glow job on the SVGs' own alpha instead, so the fallback
+   block the text version needed is gone too. */
+.titleLetter {
   position: absolute;
   z-index: 3;
-  margin: 0;
-  width: max-content;
-  white-space: nowrap;
   pointer-events: none;
   user-select: none;
-  will-change: transform, opacity, filter;
+  will-change: transform, opacity;
   transform-origin: center center;
 
-  font-family: 'Cinzel', 'Times New Roman', serif;
-  font-weight: 700; /* was 500 — heavier strokes read more imposing */
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  line-height: 0.86;
-  opacity: 1; /* was 0.85 — no longer washed out */
-
-  font-size: 18rem;
-
-  /* Gradient fill: pale near-white cap settling into deep
-     indigo-violet at the base, matching .portal's own palette so the
-     title reads as lit by the same source of light. */
-  background: linear-gradient(
-    180deg,
-    #ffffff 0%,
-    #e2ecff 20%,
-    #b3c1f0 45%,
-    #8b98e0 70%,
-    #6672c4 100%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-
-  /* Layered bloom tuned to .portal's glow rgba values, so the two
-     light sources in the scene feel connected. */
-  filter:
-    drop-shadow(0 0 16px rgba(196, 216, 255, 0.55))
-    drop-shadow(0 0 46px rgba(150, 175, 255, 0.4))
-    drop-shadow(0 0 100px rgba(110, 135, 245, 0.22));
-  animation: titleGlow 5.5s ease-in-out infinite;
-  animation-delay: 0.4s; /* slightly out of phase with portalFlicker */
+  object-fit: contain; /* slightly out of phase with portalFlicker */
 }
 
-/* Solid fallback for browsers that can't clip a gradient to text —
-   keeps the title visible instead of vanishing. */
-@supports not (background-clip: text) {
-  .heroTitle {
-    background: none;
-    color: #c7cdf5;
-    -webkit-text-fill-color: #c7cdf5;
-  }
-}
 
-@keyframes titleGlow {
-  0%, 100% {
-    filter:
-      drop-shadow(0 0 16px rgba(196, 216, 255, 0.5))
-      drop-shadow(0 0 46px rgba(150, 175, 255, 0.35))
-      drop-shadow(0 0 100px rgba(110, 135, 245, 0.2));
-  }
-  50% {
-    filter:
-      drop-shadow(0 0 26px rgba(210, 224, 255, 0.8))
-      drop-shadow(0 0 70px rgba(170, 190, 255, 0.55))
-      drop-shadow(0 0 140px rgba(130, 150, 250, 0.32));
-  }
-}
 
 /* Fades the whole scene to white as the portal finishes swallowing the
    viewport, so the handoff into the next section reads as passing
