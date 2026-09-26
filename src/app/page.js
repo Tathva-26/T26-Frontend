@@ -1,5 +1,5 @@
-import ProshowCarousel from "@/pageComponents/ProshowCarousel";
+import ProshowCarousel from '@/pageComponents/ProshowCarousel/ProshowCarousel'
 
 export default function Home() {
-  return <ProshowCarousel />;
+  return <>Hello</>
 }
