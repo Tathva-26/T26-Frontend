@@ -1,9 +1,38 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import Image from "next/image";
+import localFont from "next/font/local";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
+import "./robowars.css";
+
+gsap.registerPlugin(useGSAP, ScrollTrigger);
+
+const calmSerif = localFont({
+  src: "../../../public/fonts/calm-serif-demo.otf",
+  variable: "--font-calm-serif-local",
+  display: "swap",
+});
+
+const alata = localFont({
+  src: "../../../public/fonts/alata-regular.ttf",
+  variable: "--font-alata-local",
+  display: "swap",
+});
+
+const akiraExpanded = localFont({
+  src: "../../../public/fonts/akira-expanded-demo.otf",
+  variable: "--font-akira-expanded-local",
+  display: "swap",
+});
+
+const bowlbyOneSC = localFont({
+  src: "../../../public/fonts/BowlbyOneSC-Regular.ttf",
+  variable: "--font-bowlby-one-sc-local",
+  display: "swap",
+});
 
 const ASSET_ROOT = "/images/Robowars";
 const FRAME_WIDTH = 1413;
@@ -279,13 +308,13 @@ function MobileFrame() {
 }
 
 export default function RobowarsHero() {
+  const scrollerRef = useRef(null);
   const sectionRef = useRef(null);
 
-  useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-
+  useGSAP(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let media;
+    let refreshTimer;
 
     const ctx = gsap.context(() => {
       const pieces = gsap.utils.toArray(".robowars-motion");
@@ -336,6 +365,7 @@ export default function RobowarsHero() {
         const timeline = gsap.timeline({
           defaults: { ease: "none" },
           scrollTrigger: {
+            scroller: scrollerRef.current,
             trigger: sectionRef.current,
             start: "top top",
             end: "bottom bottom",
@@ -418,27 +448,45 @@ export default function RobowarsHero() {
       });
     }, sectionRef);
 
+    const refreshTrigger = () => {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 150);
+    };
+
+    const animationFrame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
+    window.addEventListener("orientationchange", refreshTrigger);
+    window.visualViewport?.addEventListener("resize", refreshTrigger);
+
     return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(refreshTimer);
+      window.removeEventListener("orientationchange", refreshTrigger);
+      window.visualViewport?.removeEventListener("resize", refreshTrigger);
       media?.revert();
       ctx.revert();
     };
-  }, []);
+  }, { scope: sectionRef });
 
   return (
-    <section
-      ref={sectionRef}
-      aria-labelledby="robowars-title"
-      className="relative h-[180dvh] min-h-[900px] w-full bg-black text-white md:min-h-[1100px] xl:min-h-[940px] motion-reduce:h-dvh motion-reduce:min-h-dvh"
+    <div
+      ref={scrollerRef}
+      className="h-dvh touch-pan-y overflow-y-auto overscroll-contain bg-black [-webkit-overflow-scrolling:touch]"
     >
-      <h1 id="robowars-title" className="sr-only">
-        Robo Wars Enter Arena
-      </h1>
+      <section
+        ref={sectionRef}
+        aria-labelledby="robowars-title"
+        className={`${calmSerif.variable} ${alata.variable} ${akiraExpanded.variable} ${bowlbyOneSC.variable} robowars-root relative h-[180dvh] min-h-[900px] w-full bg-black text-white md:min-h-[1100px] xl:min-h-[940px] motion-reduce:h-dvh motion-reduce:min-h-dvh`}
+      >
+        <h1 id="robowars-title" className="sr-only">
+          Robo Wars Enter Arena
+        </h1>
 
-      <div className="sticky top-0 h-[100dvh] min-h-[560px] w-full overflow-hidden">
-        <DesktopFrame className="hidden w-screen xl:block" />
-        <DesktopFrame className="hidden w-[112vw] md:block xl:hidden" scale="tablet" />
-        <MobileFrame />
-      </div>
-    </section>
+        <div className="sticky top-0 h-[100dvh] min-h-[560px] w-full overflow-hidden">
+          <DesktopFrame className="hidden w-screen xl:block" />
+          <DesktopFrame className="hidden w-[112vw] md:block xl:hidden" scale="tablet" />
+          <MobileFrame />
+        </div>
+      </section>
+    </div>
   );
 }
