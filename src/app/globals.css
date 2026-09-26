@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;600&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Jockey+One&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
@@ -55,13 +57,258 @@
 
 html {
   height: 100%;
-  overflow: hidden;
 }
 
 body {
   height: 100%;
-  overflow: hidden;
-  background: var(--background);
+  background: #06070d;
   color: var(--foreground);
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@font-face {
+  font-family: "PPFragmentSerif";
+  src: url("/fonts/PPFragment-SerifExtraBold.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fontspring";
+  src: url("/fonts/fontspring.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-fragment-serif {
+  font-family: "PPFragmentSerif", serif;
+}
+
+.font-fontspring {
+  font-family: "Fontspring", sans-serif;
+}
+
+@media (max-width: 1023px) {
+  .workshop-detail {
+    background: #090712;
+  }
+
+  .workshop-detail > div {
+    background-image:
+      radial-gradient(circle at 50% 38%, rgba(50, 38, 74, 0.22), transparent 48%),
+      radial-gradient(#ffffff12 1px, transparent 1px);
+    background-size: auto, 26px 26px;
+  }
+
+  .workshop-detail-panel {
+    width: 502px;
+    max-width: calc(100vw - 32px);
+    min-height: 1174px;
+    margin-top: 4px;
+    padding: 56px 44px 40px;
+    border-color: rgba(255, 255, 255, 0.55);
+    border-radius: 35px;
+    background: rgba(10, 7, 19, 0.68);
+    box-shadow: none;
+  }
+
+  .workshop-detail-content {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "media"
+      "heading"
+      "meta"
+      "register"
+      "learn"
+      "description"
+      "contacts";
+    gap: 0;
+  }
+
+  .workshop-detail-media,
+  .workshop-detail-info {
+    display: contents;
+  }
+
+  .workshop-detail-poster {
+    grid-area: media;
+    width: 394px;
+    max-width: 100%;
+    height: 394px;
+    margin: 0 auto;
+    border-radius: 10px;
+  }
+
+  .workshop-detail-heading {
+    grid-area: heading;
+    margin-top: 34px;
+    font-size: clamp(3.3rem, 15vw, 3.85rem);
+    line-height: 0.9;
+    letter-spacing: -0.06em;
+    white-space: nowrap;
+  }
+
+  .workshop-detail-meta {
+    grid-area: meta;
+    margin: 36px 6px 0;
+    display: block;
+    min-height: 74px;
+  }
+
+  .workshop-detail-meta > p:first-child {
+    font-size: 2.6rem;
+    letter-spacing: -0.06em;
+  }
+
+  .workshop-detail-meta > p:first-child span {
+    font-size: 1.7rem;
+  }
+
+  .workshop-detail-meta > p:last-child {
+    margin-top: 7px;
+    font-size: 1.55rem;
+  }
+
+  .workshop-detail-learn {
+    grid-area: meta;
+    justify-self: end;
+    align-self: end;
+    margin: 0 0 12px;
+  }
+
+  .workshop-detail-learn button {
+    width: 133px;
+    padding: 9px 0;
+    border-radius: 10px;
+    font-size: 1rem;
+    letter-spacing: 0;
+  }
+
+  .workshop-detail-register {
+    grid-area: register;
+    margin-top: 20px;
+    padding: 5px 0 6px;
+    border-radius: 10px;
+    font-size: 1.55rem;
+    letter-spacing: 0.16em;
+  }
+
+  .workshop-detail-description {
+    grid-area: description;
+    margin-top: 37px;
+    text-align: center;
+  }
+
+  .workshop-detail-description h2 {
+    font-size: 1.55rem;
+  }
+
+  .workshop-detail-description p {
+    max-width: none;
+    margin-top: 10px;
+    color: #8d8d8d;
+    font-size: 0.94rem;
+    line-height: 1.28;
+  }
+
+  .workshop-detail-contacts {
+    grid-area: contacts;
+    margin-top: 35px;
+    text-align: center;
+  }
+
+  .workshop-detail-contacts h2 {
+    font-size: 1.2rem;
+  }
+
+  .workshop-detail-contacts > div {
+    margin-top: 15px;
+    font-size: 0.95rem;
+    text-align: left;
+  }
+}
+
+@media (max-width: 549px) {
+  .workshop-detail-panel {
+    width: calc(100vw - 26px);
+    max-width: none;
+    min-height: 0;
+    padding: clamp(41px, 10vw, 55px) clamp(32px, 7.8vw, 43px) clamp(40px, 9.7vw, 53px);
+  }
+
+  .workshop-detail-poster {
+    width: 95%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .workshop-detail-heading {
+    margin-top: clamp(34px, 8.25vw, 45px);
+  }
+
+  .workshop-detail-meta {
+    margin-top: clamp(36px, 8.7vw, 48px);
+  }
+
+  .workshop-detail-learn button {
+    width: clamp(133px, 32.3vw, 177px);
+    padding: clamp(9px, 2.2vw, 12px) 0;
+  }
+
+  .workshop-detail-register {
+    margin-top: clamp(20px, 4.9vw, 27px);
+    padding: clamp(5px, 1.2vw, 7px) 0 clamp(6px, 1.5vw, 8px);
+  }
+
+  .workshop-detail-description {
+    margin-top: clamp(37px, 9vw, 49px);
+  }
+
+  .workshop-detail-description p {
+    margin-top: clamp(10px, 2.4vw, 13px);
+  }
+
+  .workshop-detail-contacts {
+    margin-top: clamp(35px, 8.5vw, 47px);
+  }
+
+  .workshop-detail-contacts > div {
+    margin-top: clamp(15px, 3.6vw, 20px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .workshop-detail-shell {
+    width: calc(100vw - 48px);
+    max-width: none;
+  }
+
+  .workshop-detail-panel {
+    width: calc(100vw - 96px);
+    max-width: none;
+    padding: clamp(28px, 3.2vw, 64px);
+  }
+
+  .workshop-detail-content {
+    grid-template-columns: clamp(240px, 29vw, 700px) minmax(0, 1fr);
+    gap: clamp(28px, 4vw, 72px);
+  }
+
+  .workshop-detail-poster {
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .workshop-detail-heading {
+    font-size: clamp(3.1rem, 5.5vw, 6.5rem);
+  }
+
+  .workshop-detail-description p {
+    max-width: none;
+    font-size: clamp(0.8rem, 1.1vw, 1.1rem);
+  }
 }
