@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Jockey+One&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Hammersmith+One&family=Jaini+Purva&family=Jaro:opsz@6..72&family=Jockey+One&family=Plus+Jakarta+Sans:wght@500;600;700&family=Roboto+Slab:wght@600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 @font-face {
@@ -21,6 +21,15 @@
   font-family: 'Space Grotesk';
   src: url('/fonts/SpaceGrotesk-Variable.ttf') format('truetype');
   font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Mona Sans';
+  src: url('/fonts/MonaSansVF.woff2') format('woff2');
+  font-weight: 200 900;
+  font-stretch: 75% 125%;
   font-style: normal;
   font-display: swap;
 }
@@ -53,14 +62,11 @@
   }
 }
 
-html {
-  height: 100%;
-  overflow: hidden;
-}
+html { height: 100%; }
 
 body {
   height: 100%;
-  overflow: hidden;
+  overflow: auto;
   background: var(--background);
   color: var(--foreground);
   font-family: 'Space Grotesk', sans-serif;
