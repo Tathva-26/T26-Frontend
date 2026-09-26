@@ -1,0 +1,564 @@
+.pageShell {
+  position: relative;
+  height: 100vh;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(126, 176, 255, 0.18), transparent 20%),
+    radial-gradient(circle at 75% 75%, rgba(11, 89, 140, 0.4), transparent 30%),
+    linear-gradient(180deg, rgba(4, 10, 19, 0.98) 0%, rgba(2, 8, 16, 1) 100%);
+  color: #f5f6f7;
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-family: var(--font-space), 'Segoe UI', sans-serif;
+}
+
+.profileBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: url('/images/profile.png') center top / cover no-repeat;
+}
+
+
+.stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(2px 2px at 6% 18%, rgba(255, 255, 255, 0.8) 0, transparent 100%),
+    radial-gradient(2px 2px at 16% 42%, rgba(255, 255, 255, 0.8) 0, transparent 100%),
+    radial-gradient(2px 2px at 24% 12%, rgba(255, 255, 255, 0.8) 0, transparent 100%),
+    radial-gradient(2px 2px at 28% 70%, rgba(255, 255, 255, 0.7) 0, transparent 100%),
+    radial-gradient(2px 2px at 42% 25%, rgba(255, 255, 255, 0.7) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 52% 16%, rgba(255, 255, 255, 0.7) 0, transparent 100%),
+    radial-gradient(2px 2px at 60% 34%, rgba(255, 255, 255, 0.7) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 71% 18%, rgba(255, 255, 255, 0.9) 0, transparent 100%),
+    radial-gradient(2px 2px at 83% 26%, rgba(255, 255, 255, 0.8) 0, transparent 100%),
+    radial-gradient(1.8px 1.8px at 90% 12%, rgba(255, 255, 255, 0.8) 0, transparent 100%),
+    radial-gradient(1.8px 1.8px at 92% 46%, rgba(255, 255, 255, 0.8) 0, transparent 100%),
+    radial-gradient(1.8px 1.8px at 74% 58%, rgba(255, 255, 255, 0.7) 0, transparent 100%);
+  opacity: 0.9;
+}
+
+.stars::before,
+.stars::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+}
+
+.stars::after {
+  inset: auto 0 0 0;
+  height: 16rem;
+  background: radial-gradient(ellipse at center, rgba(47, 92, 151, 0.5) 0%, rgba(7, 13, 22, 0) 68%);
+}
+
+.topbar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  width: min(100%, 1500px);
+  margin: 0 auto;
+  padding: 1.4rem 2.3rem 0.8rem;
+}
+
+.leftHeader {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.brandWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.logoMark {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.05rem;
+  height: 2.05rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.logoImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: brightness(0) invert(1);
+}
+
+.menuButton {
+  position: relative;
+  width: 1.7rem;
+  height: 1.25rem;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.menuButton span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.menuButton span:nth-child(1) { top: 0; }
+.menuButton span:nth-child(2) { top: 0.52rem; }
+.menuButton span:nth-child(3) { top: 1.02rem; }
+
+.mainNav {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  flex-wrap: wrap;
+}
+
+.navItem {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.75rem;
+  letter-spacing: 0.08rem;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-weight: 500;
+  opacity: 0.86;
+}
+
+.navItem:hover {
+  opacity: 1;
+}
+
+.signOutButton {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.55rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.9rem;
+  font-family: var(--font-space), sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.signOutIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.signOutIcon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+  object-fit: contain;
+  mix-blend-mode: screen;
+}
+
+.contentWrap {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(100%, 760px);
+  margin: 2.2rem auto 0;
+  padding-bottom: 2.5rem;
+}
+
+.avatar {
+  overflow: hidden;
+  flex: 0 0 auto;
+  width: 78px;
+  height: 78px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: transparent;
+  margin-top: 1rem;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.username {
+  margin: 1.1rem 0 1.2rem;
+  font-size: clamp(2.2rem, 3vw, 3.2rem);
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  font-family: var(--font-space), sans-serif;
+  color: rgba(255, 255, 255, 0.98);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.usernameEditIcon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
+.emailField {
+  display: flex;
+  align-items: center;
+  width: min(100%, 470px);
+  min-height: 3.15rem;
+  padding: 0.9rem 1rem 0.9rem 1rem;
+  background: rgba(66, 67, 69, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.6rem;
+  color: rgba(255, 255, 255, 0.82);
+  box-sizing: border-box;
+}
+
+.inputIcon {
+  display: inline-flex;
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-right: 0.8rem;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.inputIcon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.emailText {
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.44);
+}
+
+.infoNote {
+  width: min(100%, 520px);
+  margin: 0.75rem 0 2.4rem;
+  color: rgba(255, 255, 255, 0.72);
+  text-align: left;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  font-style: italic;
+}
+
+.highlight {
+  color: #ffd74d;
+}
+
+.detailsSection {
+  width: min(100%, 670px);
+}
+
+.sectionTitle {
+  margin: 0 0 1.1rem;
+  text-align: center;
+  font-size: clamp(2.1rem, 2.4vw, 3.3rem);
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.05rem 1.3rem;
+  align-items: end;
+}
+
+.fieldBlock {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.stateField {
+  align-self: end;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.12rem;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+  margin-left: 0.2rem;
+}
+
+.fieldValue {
+  display: flex;
+  align-items: center;
+  min-height: 3rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.6rem;
+  background: rgba(68, 68, 70, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.44);
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+}
+
+.saveButton {
+  margin-top: 0.2rem;
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.92rem;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+
+.fieldSpacer {
+  height: 0;
+}
+
+.bookingsSection {
+  width: min(100%, 700px);
+  margin-top: 2.5rem;
+}
+
+.bookingsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.bookingsHeader .sectionTitle {
+  margin: 0;
+  font-size: clamp(2rem, 2.3vw, 2.8rem);
+}
+
+.refreshButton {
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(111, 190, 255, 0.5);
+  background: rgba(20, 77, 116, 0.18);
+  color: #7cc2ff;
+  font-size: 0.68rem;
+  letter-spacing: 0.08rem;
+  cursor: pointer;
+}
+
+.bookingCard {
+  width: 100%;
+  min-height: 4.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.3rem;
+  border-radius: 0.8rem;
+  background: rgba(63, 67, 74, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.74);
+  text-align: center;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 5, 12, 0.78);
+  backdrop-filter: blur(5px);
+}
+
+.profileModal {
+  width: min(100%, 620px);
+  max-height: min(88vh, 800px);
+  overflow-y: auto;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 0.6rem;
+  background: rgba(7, 17, 29, 0.98);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+.modalTitle {
+  margin: 0 0 1.25rem;
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 1.35rem;
+  font-weight: 500;
+}
+
+.modalRows {
+  display: grid;
+  gap: 0;
+}
+
+.modalRow {
+  display: grid;
+  grid-template-columns: minmax(9rem, 0.7fr) minmax(0, 1.3fr);
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.modalLabel {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.78rem;
+}
+
+.modalInput {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.7rem;
+  box-sizing: border-box;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 0.35rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.96);
+  font: inherit;
+}
+
+.modalInput:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 2px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.cancelButton,
+.modalActions .saveButton {
+  width: auto;
+  min-width: 8rem;
+  min-height: 2.8rem;
+  margin: 0;
+  padding: 0.65rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 0.4rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cancelButton {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.modalActions .saveButton {
+  background: rgba(255, 255, 255, 0.94);
+  color: #07111d;
+}
+
+.cancelButton:hover,
+.modalActions .saveButton:hover {
+  background: #fff;
+  color: #07111d;
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    padding: 1.1rem 1rem 0.5rem;
+  }
+
+  .leftHeader {
+    gap: 0.9rem;
+    flex-wrap: wrap;
+  }
+
+  .mainNav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
+
+  .leftHeader {
+    flex-direction: column;
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .navItem {
+    font-size: 0.62rem;
+    letter-spacing: 0.05rem;
+  }
+
+  .signOutButton {
+    font-size: 0.72rem;
+  }
+
+  .avatar {
+    width: 78px;
+    height: 78px;
+  }
+
+  .contentWrap {
+    width: min(100%, 520px);
+    padding: 0 1rem 2rem;
+  }
+
+  .detailsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .bookingsHeader {
+    flex-direction: column;
+  }
+
+  .profileModal {
+    padding: 1rem;
+  }
+
+  .modalRow {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .modalActions {
+    flex-direction: column-reverse;
+  }
+
+  .cancelButton,
+  .modalActions .saveButton {
+    width: 100%;
+  }
+}
