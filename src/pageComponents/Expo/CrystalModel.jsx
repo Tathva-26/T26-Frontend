@@ -24,7 +24,7 @@ function prepareGlass(shader) {
   // border while keeping the DOM background transparent outside the crystal.
   const transmission = ShaderChunk.transmission_pars_fragment.replace(
     "return textureBicubic( transmissionSamplerMap, fragCoord.xy, lod );",
-    "vec4 sampleColor = textureBicubic(transmissionSamplerMap, fragCoord.xy, lod); sampleColor.rgb = mix(vec3(.008,.015,.035),sampleColor.rgb,clamp(sampleColor.a*1.5-.4,0.,1.)); sampleColor.a=1.; return sampleColor;",
+    "vec4 sampleColor = textureBicubic(transmissionSamplerMap, fragCoord.xy, lod); sampleColor.rgb = mix(vec3(.008,.015,.035),sampleColor.rgb,clamp(sampleColor.a*2.-1.,0.,1.)); sampleColor.a=1.; return sampleColor;",
   );
   shader.fragmentShader = shader.fragmentShader.replace("#include <transmission_pars_fragment>", transmission);
   shader.fragmentShader = shader.fragmentShader.replace(
@@ -51,6 +51,7 @@ function createEnergy() {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = 512;
   const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#01040e"; ctx.fillRect(0, 0, 512, 512);
   const bloom = (x, y, radius, color) => {
     const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
     gradient.addColorStop(0, color); gradient.addColorStop(1, "transparent");
@@ -138,13 +139,7 @@ export default function CrystalModel({ target, onReady }) {
     <group ref={group}>
       <group ref={shell}>
         <mesh geometry={geometry} scale={[.96, .97, .48]} position={[0, 0, -.3]} onAfterRender={firstFrame}>
-          <shaderMaterial
-            transparent
-            depthWrite={false}
-            uniforms={energyUniforms}
-            vertexShader={"varying vec2 vEnergyUv; void main(){vEnergyUv=position.xy/vec2(2.18,3.4)+.5;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}"}
-            fragmentShader={"uniform sampler2D map; varying vec2 vEnergyUv; void main(){vec4 tex=texture2D(map,vEnergyUv); if(tex.a<0.04) discard; gl_FragColor=vec4(tex.rgb,tex.a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}"}
-          />
+          <shaderMaterial uniforms={energyUniforms} vertexShader={"varying vec2 vEnergyUv; void main(){vEnergyUv=position.xy/vec2(2.18,3.4)+.5;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}"} fragmentShader={"uniform sampler2D map; varying vec2 vEnergyUv; void main(){gl_FragColor=vec4(texture2D(map,vEnergyUv).rgb,1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}"} />
         </mesh>
         <mesh geometry={geometry}>
           <meshPhysicalMaterial color="#b9d0f4" metalness={0} roughness={.045} roughnessMap={roughness} normalMap={normal} normalScale={[.24, .24]} transmission={1} thickness={.12} ior={1.18} reflectivity={.3} clearcoat={0} envMapIntensity={1.7} onBeforeCompile={prepareGlass} />
