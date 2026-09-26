@@ -54,22 +54,9 @@
   }
 }
 
-/* techconclave page */
 
-/* html {
-  height: 100%;
-  overflow: hidden;
-}
 
-body {
-  height: 100%;
-  overflow: hidden;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: 'Space Grotesk', sans-serif;
-} */
-
-/* allow scrolling */
+/* allow scrolling - for horizontal gallery */
 
 html {
   background: var(--background);
