@@ -2,8 +2,38 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
+import localFont from "next/font/local";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import "./robowars.css";
+
+// Figma: "Calm Serif" — used for the main serif headline
+const calmSerif = localFont({
+  src: "../../../public/fonts/calm-serif-demo.otf",
+  variable: "--font-calm-serif-local",
+  display: "swap",
+});
+
+// Figma: "Alata" — used for date, arena specs, prize text
+const alata = localFont({
+  src: "../../../public/fonts/alata-regular.ttf",
+  variable: "--font-alata-local",
+  display: "swap",
+});
+
+// Figma: "Akira Expanded" — used for the bold expanded headline
+const akiraExpanded = localFont({
+  src: "../../../public/fonts/akira-expanded-demo.otf",
+  variable: "--font-akira-expanded-local",
+  display: "swap",
+});
+
+// "Bowlby One SC" — used for ROBO WARS headline
+const bowlbyOneSC = localFont({
+  src: "../../../public/fonts/BowlbyOneSC-Regular.ttf",
+  variable: "--font-bowlby-one-sc-local",
+  display: "swap",
+});
 
 const ASSET_ROOT = "/images/Robowars";
 const FRAME_WIDTH = 1413;
@@ -428,7 +458,7 @@ export default function RobowarsHero() {
     <section
       ref={sectionRef}
       aria-labelledby="robowars-title"
-      className="relative h-[180dvh] min-h-[900px] w-full bg-black text-white md:min-h-[1100px] xl:min-h-[940px] motion-reduce:h-dvh motion-reduce:min-h-dvh"
+      className={`${calmSerif.variable} ${alata.variable} ${akiraExpanded.variable} ${bowlbyOneSC.variable} relative h-[180dvh] min-h-[900px] w-full bg-black text-white md:min-h-[1100px] xl:min-h-[940px] motion-reduce:h-dvh motion-reduce:min-h-dvh`}
     >
       <h1 id="robowars-title" className="sr-only">
         Robo Wars Enter Arena

@@ -1,8 +1,8 @@
 import './globals.css'
 
 export const metadata = {
-  title: "Tathva '26",
-  description: "Official website for Tathva '26",
+  title: "Tech Conclave - Tathva '26",
+  description: "Tech Conclave - Talks, Shows, Conversations, Experiences",
 }
 
 export default function RootLayout({ children }) {

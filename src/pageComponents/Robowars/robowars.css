@@ -1,0 +1,6 @@
+@theme inline {
+  --font-alata: var(--font-alata-local);
+  --font-calm-serif: var(--font-calm-serif-local), serif;
+  --font-akira-expanded: var(--font-akira-expanded-local), sans-serif;
+  --font-bowlby-one-sc: var(--font-bowlby-one-sc-local), sans-serif;
+}
