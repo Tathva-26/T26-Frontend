@@ -1,15 +1,15 @@
-import UIUXPage from '@/pageComponents/uiux/page'
-import FrontendPage from '@/pageComponents/frontend/page'
-import BackendPage from '@/pageComponents/backend/page'
-import LeadPage from '@/pageComponents/lead/page'
+import Lead from "@/pageComponents/Lead";
+import Frontend from "@/pageComponents/Frontend";
+import Backend from "@/pageComponents/Backend";
+import UIUX from "@/pageComponents/UIUX";
 
 export default function Home() {
   return (
-    <>
-      <UIUXPage />
-      <FrontendPage />
-      <BackendPage />
-      <LeadPage />
-    </>
-  )
+    <div className="h-[100dvh] w-full overflow-y-auto overflow-x-hidden">
+      <Lead />
+      <Frontend />
+      <Backend />
+      <UIUX />
+    </div>
+  );
 }
