@@ -125,3 +125,89 @@
   width: 0.85vw;
   height: 0.85vw;
 }
+
+/* Tablet / mobile: heading on top, two cards above and one centred below */
+@media (max-width: 900px) {
+  .page {
+    height: 100%;
+    overflow-y: auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    padding: 24px 20px 40px;
+  }
+
+  .heading {
+    writing-mode: horizontal-tb;
+    transform: none;
+    margin-top: 56px;
+    font-size: clamp(2rem, 10.5vw, 5rem);
+    text-align: center;
+  }
+
+  .cards {
+    align-self: start;
+    margin-top: 24px;
+    padding-right: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    justify-content: stretch;
+    max-width: 640px;
+    justify-self: center;
+    width: 100%;
+  }
+
+  .cards > .card:nth-child(3):last-child {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: calc(50% - 8px);
+  }
+
+  .card {
+    border-width: 2px;
+    border-radius: 20px;
+  }
+
+  .locate {
+    top: 8px;
+    right: 8px;
+    gap: 4px;
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+
+  .locate svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .info {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 14px;
+  }
+
+  .name {
+    font-size: 16px;
+  }
+
+  .location {
+    margin-top: 3px;
+    font-size: 10px;
+  }
+
+  .explore {
+    gap: 4px;
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+
+  .explore svg {
+    width: 12px;
+    height: 12px;
+  }
+}

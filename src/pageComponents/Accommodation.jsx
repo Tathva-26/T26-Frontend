@@ -1,9 +1,9 @@
-import styles from "./Accomodation.module.css";
+import styles from "./Accommodation.module.css";
 
 const HOSTELS = [
-  { id: 1, name: "Mega Hostel Boys II", location: "West Campus, NIT Calicut", image: "/images/accomodation/sample.svg" },
-  { id: 2, name: "Mega Hostel Boys II", location: "West Campus, NIT Calicut", image: "/images/accomodation/sample.svg" },
-  { id: 3, name: "Mega Hostel Boys II", location: "West Campus, NIT Calicut", image: "/images/accomodation/sample.svg" },
+  { id: 1, name: "Mega Hostel Boys II", location: "West Campus, NIT Calicut", image: "/images/accommodation/sample.svg" },
+  { id: 2, name: "Mega Hostel Boys II", location: "West Campus, NIT Calicut", image: "/images/accommodation/sample.svg" },
+  { id: 3, name: "Mega Hostel Boys II", location: "West Campus, NIT Calicut", image: "/images/accommodation/sample.svg" },
 ];
 
 function PinIcon() {
@@ -45,11 +45,11 @@ function HostelCard({ name, location, image }) {
   );
 }
 
-export default function Accomodation() {
+export default function Accommodation() {
   return (
     <main className={styles.page}>
       {/* Navbar slot: render <Navbar /> here (absolutely positioned) when it is ready */}
-      <h1 className={styles.heading}>ACCOMODATION</h1>
+      <h1 className={styles.heading}>ACCOMMODATION</h1>
       <section className={styles.cards}>
         {HOSTELS.map((h) => (
           <HostelCard key={h.id} {...h} />
