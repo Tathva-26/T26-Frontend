@@ -1,7 +1,9 @@
+
+
 export default function LeadPage() {
   return (
     <main>
-      <h1>Lead Page</h1>
+      <h1>Lead</h1>
     </main>
   );
 }
