@@ -55,13 +55,20 @@
 
 html {
   height: 100%;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 body {
-  height: 100%;
-  overflow: hidden;
+  /*height: 100;*/
+  /* overflow: hidden; */
   background: var(--background);
   color: var(--foreground);
   font-family: 'Space Grotesk', sans-serif;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
