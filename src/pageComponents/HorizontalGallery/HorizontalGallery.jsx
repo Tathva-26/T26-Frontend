@@ -9,6 +9,11 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
+const GRID_SPACER = 'clamp(2rem, 6vw, 6rem)';
+
+const IMG_BASE =
+  'relative shrink-0 flex items-center justify-center overflow-hidden rounded-xl border border-white/12 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.7)] bg-[#121212]';
+
 const GALLERY_GROUPS = [
   // 01 + 02
   {
@@ -16,14 +21,14 @@ const GALLERY_GROUPS = [
     items: [
       {
         id: 1,
-        itemClass: 'is-home-1 aspect-[0.81/1]',
+        itemClass: 'w-[calc(var(--vh,1vh)*27)] aspect-[0.81/1]',
         src: 'https://placehold.co/800x1000/18181b/c084fc?text=Placeholder+01',
         alt: 'Lando in casual clothes',
         extraClass: '-translate-y-16 md:-translate-y-24',
       },
       {
         id: 2,
-        itemClass: 'is-home-2 aspect-square',
+        itemClass: 'w-[calc(var(--vh,1vh)*29.3)] aspect-square',
         src: 'https://placehold.co/800x1000/18181b/a855f7?text=Placeholder+02',
         alt: 'Lando in tux',
         extraClass: 'translate-y-16 md:translate-y-24',
@@ -37,7 +42,7 @@ const GALLERY_GROUPS = [
     id: 3,
     quote: 'Tathva message 1',
     quotePosition: 'top',
-    itemClass: 'is-home3 aspect-[1.1/1]',
+    itemClass: 'w-[calc(var(--vh,1vh)*65.48)] aspect-[1.1/1]',
     src: 'https://placehold.co/1200x1000/18181b/e879f9?text=Placeholder+03',
     alt: 'Lando lifting trophy',
   },
@@ -48,14 +53,14 @@ const GALLERY_GROUPS = [
     items: [
       {
         id: 4,
-        itemClass: 'is-home-4',
+        itemClass: 'w-[calc(var(--vh,1vh)*31.75)] h-[calc(var(--vh,1vh)*28.75)]',
         src: 'https://placehold.co/800x1000/18181b/c084fc?text=Placeholder+04',
         alt: 'Lando playing golf',
         extraClass: '-translate-y-20 md:-translate-y-28',
       },
       {
         id: 5,
-        itemClass: 'is-home-5',
+        itemClass: 'h-[calc(var(--vh,1vh)*20.96)] w-[calc(var(--vh,1vh)*21.98)]',
         src: 'https://placehold.co/800x1000/18181b/a855f7?text=Placeholder+05',
         alt: 'Lando in helmet',
         extraClass: 'translate-y-12 md:translate-y-20',
@@ -69,14 +74,14 @@ const GALLERY_GROUPS = [
     items: [
       {
         id: 6,
-        itemClass: 'is-home-6',
+        itemClass: 'w-[calc(var(--vh,1vh)*21.38)] h-[calc(var(--vh,1vh)*26.48)]',
         src: 'https://placehold.co/800x1000/18181b/e879f9?text=Placeholder+06',
         alt: 'Lando gala',
         extraClass: '-translate-y-16 md:-translate-y-24',
       },
       {
         id: 7,
-        itemClass: 'is-home-7',
+        itemClass: 'w-[calc(var(--vh,1vh)*20.74)] h-[calc(var(--vh,1vh)*20.74)]',
         src: 'https://placehold.co/800x1000/18181b/c084fc?text=Placeholder+07',
         alt: 'Lando battersea',
         extraClass: 'translate-y-16 md:translate-y-24',
@@ -90,7 +95,7 @@ const GALLERY_GROUPS = [
     id: 8,
     quote: 'Tathva message 2',
     quotePosition: 'bottom',
-    itemClass: 'is-home8',
+    itemClass: 'w-[calc(var(--vh,1vh)*60.95)] h-[calc(var(--vh,1vh)*60.95)]',
     src: 'https://placehold.co/1200x1200/18181b/a855f7?text=Placeholder+08',
     alt: 'Lando taking photo',
   },
@@ -101,14 +106,14 @@ const GALLERY_GROUPS = [
     items: [
       {
         id: 9,
-        itemClass: 'is-home9',
+        itemClass: 'h-[calc(var(--vh,1vh)*24.91)] w-[calc(var(--vh,1vh)*27.42)]',
         src: 'https://placehold.co/800x1000/18181b/e879f9?text=Placeholder+09',
         alt: 'Lando austria',
         extraClass: '-translate-y-20 md:-translate-y-28',
       },
       {
         id: 10,
-        itemClass: 'is-home10',
+        itemClass: 'w-[calc(var(--vh,1vh)*31.69)] h-[calc(var(--vh,1vh)*30.9)]',
         src: 'https://placehold.co/800x1000/18181b/c084fc?text=Placeholder+10',
         alt: 'Lando US',
         extraClass: 'translate-y-12 md:translate-y-20',
@@ -474,7 +479,7 @@ export default function HorizontalGallery() {
           "
           style={{
             paddingRight:
-              'var(--grid-spacer)',
+              GRID_SPACER,
           }}
         >
 
@@ -509,7 +514,7 @@ export default function HorizontalGallery() {
                       w-full
 
                       md:h-auto
-                      md:w-[var(--grid-spacer)]
+                      md:w-[clamp(2rem,6vw,6rem)]
                     "
                   />
                 )}
@@ -571,7 +576,7 @@ export default function HorizontalGallery() {
 
                     <div
                       className={`
-                        horizontal-item-img-w
+                        ${IMG_BASE}
                         ${group.itemClass}
                       `}
                     >
@@ -645,7 +650,7 @@ export default function HorizontalGallery() {
                     "
                     style={{
                       gap:
-                        'var(--grid-spacer)',
+                        GRID_SPACER,
                     }}
                   >
 
@@ -677,7 +682,7 @@ export default function HorizontalGallery() {
 
                           <div
                             className={`
-                              horizontal-item-img-w
+                              ${IMG_BASE}
                               ${item.itemClass}
                             `}
                           >
@@ -744,7 +749,7 @@ export default function HorizontalGallery() {
 
                   {/* FEATURED CENTERED IMAGE (03 or 08) */}
                   <div className={`flex w-full ${config.align}`}>
-                    <div className={`horizontal-item-img-w ${config.width} ${config.aspect}`}>
+                    <div className={`${IMG_BASE} ${config.width} ${config.aspect}`}>
                       <img
                         src={group.src}
                         alt={group.alt}
@@ -781,7 +786,7 @@ export default function HorizontalGallery() {
                       key={`m-item-${item.id}`}
                       className={`flex w-full ${config.align}`}
                     >
-                      <div className={`horizontal-item-img-w ${config.width} ${config.aspect}`}>
+                      <div className={`${IMG_BASE} ${config.width} ${config.aspect}`}>
                         <img
                           src={item.src}
                           alt={item.alt}
