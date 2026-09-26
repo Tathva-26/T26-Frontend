@@ -26,26 +26,53 @@
   font-weight: 400;
 }
 
+:root {
+  color: #fff;
+  background: #1c1c1c;
+  font-family: "Mona Sans:Regular", Arial, sans-serif;
+}
+
+html {
+  background: #1c1c1c;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+a {
+  color: inherit;
+}
+
+button {
+  font: inherit;
+}
+
 .proshow-section {
   display: grid;
   grid-template-columns: minmax(0, 47.2%) minmax(0, 52.8%);
   min-height: 200dvh;
   background: #1c1c1c;
-  color: #fff;
-  font-family: "Mona Sans:Regular", Arial, sans-serif;
 }
 
-.proshow-section button,
-.proshow-section a {
-  color: inherit;
-}
-
-.proshow-section button {
-  font: inherit;
+.global-bg-container {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  width: 100%;
+  z-index: 0;
+  overflow: hidden;
 }
 
 .featured-column {
+  grid-column: 1 / 2;
+  grid-row: 1 / -1;
   position: relative;
+  z-index: 1;
 }
 
 .featured-viewport {
@@ -53,7 +80,7 @@
   top: 0;
   height: 100dvh;
   overflow: hidden;
-  background: #09001c;
+  /* Removed background: #09001c; so global background shows through */
 }
 
 .featured-bg-layer {
@@ -96,10 +123,12 @@
 }
 
 .artist-portrait--arijit {
-  right: -4%;
-  bottom: 0;
-  width: 112%;
-  height: 86%;
+  top: 50%;
+  left: 50px;
+  transform: translateY(-50%);
+  width: 75%;
+  height: 75%;
+  object-fit: contain;
 }
 
 .artist-portrait--shreya {
@@ -235,9 +264,10 @@
 }
 
 .artist-list {
+  grid-column: 2 / 3;
+  grid-row: 1 / -1;
   position: relative;
-  z-index: 2;
-  overflow: hidden;
+  z-index: 1;
   min-width: 0;
 }
 
@@ -245,17 +275,61 @@
   min-height: 100dvh;
   display: flex;
   align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 2vw;
+}
+
+.artist-board {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  aspect-ratio: 831 / 743;
+  overflow: hidden;
+  border-radius: 24px;
+  container-type: inline-size;
+}
+
+.artist-board__texture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.connector {
+  position: absolute;
+  z-index: 2;
+  object-fit: cover;
+}
+
+.connector--bottom {
+  right: 8.2%;
+  bottom: 15%;
+  width: 17%;
+  z-index: 4;
+}
+
+
+
+/* Marquee inside the board */
+.board-marquee {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
   overflow: hidden;
 }
 
-.marquee-track {
+.board-marquee-track {
   display: flex;
-  gap: 2vw;
   width: max-content;
-  animation: marquee-scroll 30s linear infinite;
+  height: 100%;
+  animation: board-scroll 20s linear infinite;
 }
 
-@keyframes marquee-scroll {
+@keyframes board-scroll {
   0% {
     transform: translateX(0);
   }
@@ -265,126 +339,78 @@
   }
 }
 
-.artist-card {
-  display: flex;
-  flex-shrink: 0;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 5.5vh 1vw;
-}
-
-.artist-board {
+/* Each slide is the same size as the board */
+.artist-content-slide {
   position: relative;
-  width: 500px;
+  width: 100cqi;
   aspect-ratio: 831 / 743;
-  overflow: hidden;
-  border-radius: 24px;
   flex-shrink: 0;
 }
 
-.artist-board__texture {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-
-}
-
-.artist-board__primary,
-.artist-board__secondary,
-.artist-board__avatar,
-.connector {
+.slide__avatar {
   position: absolute;
   z-index: 2;
+  top: 35%;
+  left: 8%;
+  width: 10%;
+  aspect-ratio: 1;
+  border-radius: 50%;
   object-fit: cover;
 }
 
-.artist-board__primary {
-  top: 6.9%;
-  left: 55.2%;
-  width: 21.4%;
-  height: 33.9%;
+.slide__secondary {
+  position: absolute;
+  z-index: 2;
+  top: 55%;
+  left: 32%;
+  width: 24%;
+  height: 38%;
+  object-fit: cover;
+  border-radius: 12px;
 }
 
-.artist-card:nth-child(2) .artist-board__primary {
-  border-radius: 4px;
-  object-position: 48% center;
+.slide__primary {
+  position: absolute;
+  z-index: 2;
+  top: 10%;
+  left: 68%;
+  width: 24%;
+  height: 38%;
+  object-fit: cover;
+  border-radius: 12px;
 }
 
-.artist-board__secondary {
-  top: 0.6%;
-  left: 5.6%;
-  width: 21.4%;
-  height: 33.9%;
-}
-
-.artist-card:nth-child(2) .artist-board__secondary {
-  border-radius: 5px;
-  object-position: center;
-}
-
-.artist-board__avatar {
-  top: 13.5%;
-  right: 1.8%;
-  width: 60px;
-  height: 60px;
-  border-radius: 999px;
-}
-
-
-
-.connector--bottom {
-  right: 8.2%;
-  bottom: 15%;
-}
-
-.artist-board h2 {
+.slide__name {
   position: absolute;
   z-index: 3;
-  top: 39%;
-  left: 39.5%;
+  top: 65%;
+  left: 65%;
   margin: 0;
   color: white;
   font-family: "La Belle Aurore:Regular", cursive;
   font-size: clamp(28px, 3.2vw, 52px);
-  font-weight: 400;
-  line-height: 1;
-  transform: rotate(-9.93deg);
+  transform: rotate(-10deg);
 }
 
-.artist-card:nth-child(2) .artist-board h2 {
-  transform: rotate(5.59deg);
-}
-
-.artist-board__dot {
+.connector-overlay {
   position: absolute;
-  z-index: 2;
-  bottom: 25%;
-  right: 78.8%;
-  width: 55px;
-  aspect-ratio: 1;
-  border-radius: 999px;
-  background: #e8e8e8;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
 }
 
-.artist-board__placeholder {
-  position: absolute;
-  z-index: 2;
-  bottom: 0;
-  background: #c4c4c4;
+.connector-line {
+  fill: none;
+  stroke: #eb9a58;
+  stroke-width: 3;
+  stroke-linecap: round;
 }
 
-.artist-board__placeholder--one {
-  left: 5.6%;
-  width: 21.4%;
-  height: 34%;
-}
-
-.artist-board__placeholder--two {
-  right: 19.9%;
-  width: 19.7%;
-  height: 29.3%;
+.connector-arrowhead {
+  fill: #eb9a58;
 }
 
 @media (max-width: 900px) {
@@ -433,7 +459,7 @@
     height: 36px;
   }
 
-  .connector {
+  .connector-overlay {
     display: none;
   }
 
