@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { haptics } from "@/lib/haptics";
 
 /**
  * Hold-to-confirm interaction. Holding Space (or calling start() from a
@@ -21,6 +22,7 @@ export default function useHoldToPlay({ duration = 1200, onProgress, onComplete 
     if (!activeRef.current) return;
     activeRef.current = false;
     cancelAnimationFrame(rafRef.current);
+    haptics.cancel();
     setHolding(false);
     cbRef.current.onProgress?.(0);
   }, []);
@@ -30,13 +32,21 @@ export default function useHoldToPlay({ duration = 1200, onProgress, onComplete 
     activeRef.current = true;
     setHolding(true);
     const t0 = performance.now();
+    let lastBuzz = 0;
+    haptics.tick();
     const tick = (now) => {
       if (!activeRef.current) return;
       const p = Math.min((now - t0) / duration, 1);
       cbRef.current.onProgress?.(p);
+      // Ramping pulse while holding, ~every 120ms, stronger as it fills.
+      if (p < 1 && now - lastBuzz >= 120) {
+        lastBuzz = now;
+        haptics.hold(p);
+      }
       if (p >= 1) {
         activeRef.current = false;
         setHolding(false);
+        haptics.success();
         cbRef.current.onComplete?.();
         cbRef.current.onProgress?.(0);
         return;
