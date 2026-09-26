@@ -1,0 +1,69 @@
+/* Artist (Proshow) page - Tathva '26
+   Design canvas: 1413 x 697.
+   The frame is a container (container-type: inline-size) so 1cqw = 1% of the
+   frame width (14.13px at design size). Every value below is design px / 14.13. */
+
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif&display=swap");
+
+.frame {
+  position: relative;
+  width: 100%;
+  /* 1413 / 697 = 2.0272 -> keeps the whole canvas inside the viewport height */
+  max-width: 202.72dvh;
+  aspect-ratio: 1413 / 697;
+  margin: auto;
+  overflow: hidden;
+  container-type: inline-size;
+  background: #0e0f0f url("/images/artist/bg.png") 50% 50% / cover no-repeat;
+  user-select: none;
+}
+
+.frame img {
+  position: absolute;
+  display: block;
+}
+
+/* 1. Concert performer cut-out (top 51, left -168, 1413 x 646) */
+.performer {
+  left: -11.889cqw;
+  top: 3.609cqw;
+  width: 100cqw;
+  height: 45.719cqw;
+  object-fit: contain;
+}
+
+/* 2. "Proshow" tag (top 0, left 392, 162 x 30) */
+.proshowTag {
+  left: 27.742cqw;
+  top: 0;
+  width: 11.465cqw;
+}
+
+.proshowText {
+  position: absolute;
+  left: 31.564cqw;
+  top: 0.212cqw;
+  margin: 0;
+  font-family: "Instrument Serif", serif;
+  font-weight: 400;
+  font-size: clamp(12px, 1.281cqw, 30px);
+  line-height: normal;
+  letter-spacing: 0;
+  color: #ffdfc4;
+  z-index: 1;
+}
+
+/* 3. Hairline above the schedule card (top 165, left 1, 278 wide) */
+.topDivider {
+  left: 0.071cqw;
+  top: 11.678cqw;
+  width: 19.675cqw;
+}
+
+/* 4. Event flow illustration (top 65, left 582, 831 x 743) */
+.flow {
+  left: 41.189cqw;
+  top: 4.6cqw;
+  width: 58.811cqw;
+}
+
