@@ -5,6 +5,6 @@ export const metadata = {
   description: "Technology, ideas and innovation at Tathva Expo, NIT Calicut.",
 };
 
-export default function Home() {
+export default function ExpoPage() {
   return <Expo />;
 }
