@@ -46,13 +46,9 @@ const SHARED_CONNECTORS = [
 ];
 
 /* ⚠️ TODO — REPLACE THESE WITH REAL PER-ARTIST TRANSPARENT CUTOUT PNGs.
-   The bug where the left image "never changes" was caused by every
-   artist previously pointing at the SAME file (image-98.png) — the
-   crossfade animation was working the whole time, there was just
-   nothing visually different to fade between.
-   Each artist below now has a distinct placeholder image so you can
-   confirm the crossfade is working; swap `mainImage` for each artist
-   with that artist's own transparent-background cutout PNG. */
+   Each artist needs their own transparent-background cutout PNG —
+   sharing one file across artists makes the crossfade invisible.
+   Swap each `mainImage` with that artist's own cutout PNG. */
 const artists = [
   {
     name: "Shreya Ghoshal",
@@ -63,29 +59,12 @@ const artists = [
   },
   {
     name: "Arijit Singh",
-    mainImage: "https://picsum.photos/id/453/600/800.jpg", // TODO: replace with Arijit Singh cutout PNG
+    mainImage: "https://c.animaapp.com/BV8mRzVS/img/image-96.png", // TODO: replace with real cutout PNG
     bgColor: "#1a3654",
-    artworkAssets: SHARED_ARTWORK,
-    connectorAssets: SHARED_CONNECTORS,
-  },
-  {
-    name: "AR Rahman",
-    mainImage: "https://picsum.photos/id/350/600/800.jpg", // TODO: replace with AR Rahman cutout PNG
-    bgColor: "#36541a",
-    artworkAssets: SHARED_ARTWORK,
-    connectorAssets: SHARED_CONNECTORS,
-  },
-  {
-    name: "Anirudh Ravichander",
-    mainImage: "https://picsum.photos/id/239/600/800.jpg", // TODO: replace with Anirudh Ravichander cutout PNG
-    bgColor: "#541a36",
-    artworkAssets: SHARED_ARTWORK,
-    connectorAssets: SHARED_CONNECTORS,
-  },
-  {
-    name: "Prateek Kuhad",
-    mainImage: "https://picsum.photos/id/177/600/800.jpg", // TODO: replace with Prateek Kuhad cutout PNG
-    bgColor: "#1a5454",
+    // Tweak this one token until his fill matches Shreya's (same
+    // container + object-contain, so the smaller source needs a boost).
+    // Must stay a full literal class — Tailwind can't see constructed names.
+    imgClassName: "scale-[2] translate-x-[200px]",
     artworkAssets: SHARED_ARTWORK,
     connectorAssets: SHARED_CONNECTORS,
   },
@@ -96,7 +75,10 @@ const artists = [
    ────────────────────────────────────────────────────────── */
 function ArtistCard({ artist }) {
   return (
-    <div className="relative w-full h-[700px] flex-shrink-0">
+    <div className="w-full flex justify-center overflow-hidden">
+    {/* Fixed 700px design box, scaled down on small screens (all
+        inner coordinates are absolute px, so scale beats re-layout) */}
+    <div className="relative w-[700px] h-[700px] flex-shrink-0 origin-top scale-[0.5] min-[500px]:scale-[0.65] md:scale-[0.8] xl:scale-100">
       {/* Board frame */}
       <img
         className="absolute top-0 left-0 w-full h-[659px] object-cover"
@@ -151,6 +133,7 @@ function ArtistCard({ artist }) {
             src="https://c.animaapp.com/z3WmKXFp/img/ellipse-5@2x.png"
           />
         </div>
+      </div>
       </div>
     </div>
   );
@@ -306,7 +289,7 @@ export const Frame = () => {
 
         /* Outgoing: fade out, stays in place */
         tl.to(prev, { opacity: 0, duration: 1, ease: "power2.inOut" }, 0);
-        
+
         /* Incoming movement: rise smoothly from deep below */
         tl.to(curr, { y: 0, duration: 1, ease: "power2.out" }, 0);
         /* Incoming opacity: lag behind movement (starts at 0.4s) */
@@ -335,13 +318,13 @@ export const Frame = () => {
 
       <section
         ref={outerRef}
-        className="relative w-full flex"
+        className="relative w-full flex flex-col md:flex-row overflow-x-clip"
         style={{ zIndex: 1 }}
         data-model-id="54:35"
       >
         {/* ═══════════  LEFT COLUMN (CSS STICKY)  ═══════════ */}
         <div
-          className="w-[50%] h-screen self-start overflow-hidden"
+          className="w-full md:w-[50%] h-[62vh] md:h-screen self-start overflow-hidden"
           style={{ position: "sticky", top: 0 }}
         >
           {/* Tathva logo */}
@@ -351,15 +334,15 @@ export const Frame = () => {
             aria-label="Tathva logo"
           />
 
-          {/* Stacked hero images */}
-          <div className="absolute top-[203px] left-[55px] w-[615px] h-[495px]">
+          {/* Stacked hero images — centered + fluid on mobile, exact design coords on md+ */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92vw] max-w-[615px] aspect-[615/495] md:left-[55px] md:top-[203px] md:translate-x-0 md:translate-y-0 md:w-[615px] md:h-[495px] md:aspect-auto">
             {artists.map((artist, i) => (
               <img
                 key={artist.name}
                 ref={(el) => {
                   imageRefs.current[i] = el;
                 }}
-                className="absolute inset-0 w-full h-full object-contain"
+                className={`absolute inset-0 w-full h-full object-contain ${artist.imgClassName ?? ""}`}
                 alt={`${artist.name} performing`}
                 src={artist.mainImage}
               />
@@ -368,7 +351,7 @@ export const Frame = () => {
         </div>
 
         {/* ═══════════  RIGHT COLUMN (SCROLLS)  ═══════════ */}
-        <div className="relative w-[50%]">
+        <div className="relative w-full md:w-[50%]">
           {/* Fixed Proshow banner */}
           <div
             className="sticky top-[68px] z-50 pointer-events-none"

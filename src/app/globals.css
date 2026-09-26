@@ -55,12 +55,10 @@
 
 html {
   height: 100%;
-  overflow: hidden;
 }
 
 body {
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
   background: var(--background);
   color: var(--foreground);
   font-family: 'Space Grotesk', sans-serif;
