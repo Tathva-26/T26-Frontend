@@ -1,9 +1,9 @@
-
+import Backend from '../Backend'
 
 export default function UIUXPage() {
   return (
     <main>
-      <h1>UIUX</h1>
+      <Backend />
     </main>
-  );
+  )
 }

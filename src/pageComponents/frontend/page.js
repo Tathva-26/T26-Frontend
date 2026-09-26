@@ -1,9 +1,9 @@
-
+import Frontend from '../Frontend'
 
 export default function FrontendPage() {
   return (
     <main>
-      <h1>Frontend</h1>
+      <Frontend />
     </main>
-  );
+  )
 }
