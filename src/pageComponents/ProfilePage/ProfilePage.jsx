@@ -1,20 +1,80 @@
+'use client';
+
+import { startTransition, useEffect, useState } from 'react';
 import styles from './ProfilePage.module.css';
 
 const tathvaWhiteLogo = 'https://www.figma.com/api/mcp/asset/c4b1e068-12d7-4e70-bc34-c2dad84d5388.png';
 
 const navItems = ['PROSHOW', 'WORKSHOPS', 'CAMPUS AMBASADOR', 'GALLERY'];
+const profileStorageKey = 'tathva-profile';
+
+const initialProfile = {
+  username: 'Username',
+  email: 'adoc...@gmail.com',
+  phoneNumber: '123456789',
+  college: 'NIT Calicut',
+  branch: 'CSE',
+  semester: '3',
+  yearOfStudy: '2',
+  district: 'Kozhikode',
+  state: 'Kerala',
+};
 
 const fieldRows = [
-  { label: 'Phone Number', value: '123456789' },
-  { label: 'College', value: 'NIT Calicut' },
-  { label: 'Branch', value: 'CSE' },
-  { label: 'Semester', value: '3' },
-  { label: 'Year of Study', value: '2' },
-  { label: 'District', value: 'Kozhikode' },
-  { label: 'State', value: 'Kerala' },
+  { label: 'Phone Number', key: 'phoneNumber', type: 'tel' },
+  { label: 'College', key: 'college', type: 'text' },
+  { label: 'Branch', key: 'branch', type: 'text' },
+  { label: 'Semester', key: 'semester', type: 'text' },
+  { label: 'Year of Study', key: 'yearOfStudy', type: 'text' },
+  { label: 'District', key: 'district', type: 'text' },
+  { label: 'State', key: 'state', type: 'text' },
+];
+
+const modalRows = [
+  { label: 'Username', key: 'username', type: 'text' },
+  ...fieldRows,
 ];
 
 export default function ProfilePage() {
+  const [profile, setProfile] = useState(initialProfile);
+  const [draftProfile, setDraftProfile] = useState(initialProfile);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+
+  useEffect(() => {
+    const savedProfile = window.localStorage.getItem(profileStorageKey);
+    if (!savedProfile) return;
+
+    try {
+      const parsedProfile = JSON.parse(savedProfile);
+      if (parsedProfile && typeof parsedProfile === 'object' && !Array.isArray(parsedProfile)) {
+        const loadedProfile = { ...initialProfile, ...parsedProfile };
+        startTransition(() => {
+          setProfile(loadedProfile);
+          setDraftProfile(loadedProfile);
+        });
+      }
+    } catch {
+      window.localStorage.removeItem(profileStorageKey);
+    }
+  }, []);
+
+  function openProfileEditor() {
+    setDraftProfile(profile);
+    setIsEditorOpen(true);
+  }
+
+  function saveProfile(event) {
+    event.preventDefault();
+    const savedProfile = {
+      ...draftProfile,
+      username: draftProfile.username.trim() || profile.username,
+    };
+    window.localStorage.setItem(profileStorageKey, JSON.stringify(savedProfile));
+    setProfile(savedProfile);
+    setDraftProfile(savedProfile);
+    setIsEditorOpen(false);
+  }
+
   return (
     <div className={styles.pageShell}>
       <div className={styles.profileBackdrop} aria-hidden="true" />
@@ -55,17 +115,24 @@ export default function ProfilePage() {
           <img src="/images/profile-main-avatar.png" alt="" />
         </div>
         <h1 className={styles.username}>
-          Username
-          <svg
-            className={styles.usernameEditIcon}
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
+          {profile.username}
+          <button
+            type="button"
+            className={styles.usernameEditButton}
+            aria-label="Edit profile"
+            onClick={openProfileEditor}
           >
-            <path d="M12 20h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4L16.5 3.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+            <svg
+              className={styles.usernameEditIcon}
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path d="M12 20h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4L16.5 3.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </h1>
 
         <label className={styles.emailField}>
@@ -75,7 +142,7 @@ export default function ProfilePage() {
               <path d="M4.5 6.5L12 12.5L19.5 6.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </span>
-          <span className={styles.emailText}>adoc...@gmail.com</span>
+          <span className={styles.emailText}>{profile.email}</span>
         </label>
 
         <p className={styles.infoNote}>
@@ -87,7 +154,7 @@ export default function ProfilePage() {
           <h2 className={styles.sectionTitle}>Your details</h2>
 
           <div className={styles.detailsGrid}>
-            {fieldRows.map(({ label, value }, index) => {
+            {fieldRows.map(({ label, key }, index) => {
               const isLast = index === fieldRows.length - 1;
               const isState = label === 'State';
 
@@ -97,12 +164,7 @@ export default function ProfilePage() {
                   className={`${styles.fieldBlock} ${isState ? styles.stateField : ''}`.trim()}
                 >
                   <label className={styles.fieldLabel}>{label}</label>
-                  <div className={styles.fieldValue}>{value}</div>
-                  {isState && (
-                    <button type="button" className={styles.saveButton}>
-                      Save Changes
-                    </button>
-                  )}
+                  <div className={styles.fieldValue}>{profile[key]}</div>
                   {isLast && !isState && <div className={styles.fieldSpacer} aria-hidden="true" />}
                 </div>
               );
@@ -123,6 +185,57 @@ export default function ProfilePage() {
           </div>
         </section>
       </main>
+
+      {isEditorOpen && (
+        <div
+          className={styles.modalOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="profile-editor-title"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setIsEditorOpen(false);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setIsEditorOpen(false);
+          }}
+          tabIndex={-1}
+        >
+          <form className={styles.profileModal} onSubmit={saveProfile}>
+            <h2 id="profile-editor-title" className={styles.modalTitle}>Edit Profile</h2>
+            <div className={styles.modalRows}>
+              {modalRows.map(({ label, key, type, inputMode }, index) => (
+                <label className={styles.modalRow} htmlFor={`profile-edit-${key}`} key={key}>
+                  <span className={styles.modalLabel}>{label}</span>
+                  <input
+                    id={`profile-edit-${key}`}
+                    className={styles.modalInput}
+                    type={type}
+                    inputMode={inputMode}
+                    value={draftProfile[key]}
+                    autoFocus={index === 0}
+                    onChange={(event) => setDraftProfile((current) => ({
+                      ...current,
+                      [key]: event.target.value,
+                    }))}
+                  />
+                </label>
+              ))}
+            </div>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.cancelButton}
+                type="button"
+                onClick={() => setIsEditorOpen(false)}
+              >
+                Cancel
+              </button>
+              <button className={styles.saveButton} type="submit">
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
