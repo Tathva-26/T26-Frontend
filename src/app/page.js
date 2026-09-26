@@ -1,5 +1,5 @@
-import ProshowCarousel from '@/pageComponents/ProshowCarousel'
+import Accommodation from '@/pageComponents/Accomodation/Accommodation'
 
 export default function Home() {
-  return <ProshowCarousel />
+  return <Accommodation />
 }
