@@ -1,11 +1,11 @@
 'use client';
 
-import { startTransition, useEffect, useState } from 'react';
+import { startTransition, useEffect, useRef, useState } from 'react';
 import styles from './ProfilePage.module.css';
+import Galaxy from '../../components/Galaxy/Galaxy';
 
 const tathvaWhiteLogo = 'https://www.figma.com/api/mcp/asset/c4b1e068-12d7-4e70-bc34-c2dad84d5388.png';
 
-const navItems = ['PROSHOW', 'WORKSHOPS', 'CAMPUS AMBASADOR', 'GALLERY'];
 const profileStorageKey = 'tathva-profile';
 
 const initialProfile = {
@@ -20,25 +20,54 @@ const initialProfile = {
   state: 'Kerala',
 };
 
+const semesterOptions = Array.from({ length: 8 }, (_, index) => String(index + 1));
+
 const fieldRows = [
-  { label: 'Phone Number', key: 'phoneNumber', type: 'tel' },
-  { label: 'College', key: 'college', type: 'text' },
+  { label: 'Phone Number', key: 'phoneNumber', type: 'tel', inputMode: 'numeric', pattern: '[0-9]{10}', maxLength: 10, required: true },
+  { label: 'College', key: 'college', type: 'text', required: true },
   { label: 'Branch', key: 'branch', type: 'text' },
-  { label: 'Semester', key: 'semester', type: 'text' },
-  { label: 'Year of Study', key: 'yearOfStudy', type: 'text' },
-  { label: 'District', key: 'district', type: 'text' },
+  { label: 'Semester', key: 'semester', options: semesterOptions },
+  { label: 'Year of Study', key: 'yearOfStudy', readOnly: true },
   { label: 'State', key: 'state', type: 'text' },
+  { label: 'District', key: 'district', type: 'text' },
 ];
 
 const modalRows = [
-  { label: 'Username', key: 'username', type: 'text' },
+  { label: 'Username', key: 'username', type: 'text', required: true },
   ...fieldRows,
 ];
+
+function getFieldError(key, value) {
+  if (key === 'username' && !value.trim()) {
+    return 'Enter name';
+  }
+
+  if (key === 'college' && !value.trim()) {
+    return 'Enter college';
+  }
+
+  if (key === 'phoneNumber' && !/^[0-9]{10}$/.test(value)) {
+    return 'Enter valid phone number';
+  }
+
+  return '';
+}
+
+function getProfileErrors(values) {
+  return Object.fromEntries(
+    ['username', 'phoneNumber', 'college']
+      .map((key) => [key, getFieldError(key, values[key])])
+      .filter(([, error]) => error),
+  );
+}
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(initialProfile);
   const [draftProfile, setDraftProfile] = useState(initialProfile);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [showSubmitError, setShowSubmitError] = useState(false);
+  const profileModalRef = useRef(null);
 
   useEffect(() => {
     const savedProfile = window.localStorage.getItem(profileStorageKey);
@@ -58,13 +87,55 @@ export default function ProfilePage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!isEditorOpen) return undefined;
+
+    function handleDialogKeyDown(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsEditorOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const focusableElements = profileModalRef.current?.querySelectorAll(
+        'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusableElements?.length) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
+
+    document.addEventListener('keydown', handleDialogKeyDown, true);
+    return () => document.removeEventListener('keydown', handleDialogKeyDown, true);
+  }, [isEditorOpen]);
+
   function openProfileEditor() {
     setDraftProfile(profile);
+    setValidationErrors({});
+    setShowSubmitError(false);
     setIsEditorOpen(true);
   }
 
   function saveProfile(event) {
     event.preventDefault();
+    const errors = getProfileErrors(draftProfile);
+    setValidationErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      setShowSubmitError(true);
+      return;
+    }
+
     const savedProfile = {
       ...draftProfile,
       username: draftProfile.username.trim() || profile.username,
@@ -72,13 +143,45 @@ export default function ProfilePage() {
     window.localStorage.setItem(profileStorageKey, JSON.stringify(savedProfile));
     setProfile(savedProfile);
     setDraftProfile(savedProfile);
+    setShowSubmitError(false);
     setIsEditorOpen(false);
+  }
+
+  function updateDraftField(key, value) {
+    const nextProfile = { ...draftProfile, [key]: value };
+    if (key === 'semester') {
+      nextProfile.yearOfStudy = String(Math.ceil(Number(value) / 2));
+    }
+    setDraftProfile(nextProfile);
+
+    if (Object.keys(validationErrors).length > 0) {
+      const errors = getProfileErrors(nextProfile);
+      setValidationErrors(errors);
+      setShowSubmitError(Object.keys(errors).length > 0);
+    }
+  }
+
+  function validateFieldOnBlur(key, value) {
+    const error = getFieldError(key, value);
+    setValidationErrors((currentErrors) => {
+      if (error) return { ...currentErrors, [key]: error };
+
+      const { [key]: _removedError, ...remainingErrors } = currentErrors;
+      return remainingErrors;
+    });
   }
 
   return (
     <div className={styles.pageShell}>
-      <div className={styles.profileBackdrop} aria-hidden="true" />
-      <div className={styles.stars} aria-hidden="true" />
+      <Galaxy
+        mouseInteraction={false}
+        hueShift={205}
+        density={0.9}
+        glowIntensity={0.35}
+        saturation={0.55}
+        twinkleIntensity={0.4}
+        rotationSpeed={0.05}
+      />
 
       <header className={styles.topbar}>
         <div className={styles.leftHeader}>
@@ -86,20 +189,7 @@ export default function ProfilePage() {
             <div className={styles.logoMark} aria-hidden="true">
               <img src={tathvaWhiteLogo} alt="Tathva logo" className={styles.logoImage} />
             </div>
-            <button type="button" className={styles.menuButton} aria-label="Open menu">
-              <span />
-              <span />
-              <span />
-            </button>
           </div>
-
-          <nav className={styles.mainNav} aria-label="Main navigation">
-            {navItems.map((item) => (
-              <a key={item} href="#" className={styles.navItem}>
-                {item}
-              </a>
-            ))}
-          </nav>
         </div>
 
         <button type="button" className={styles.signOutButton}>
@@ -111,19 +201,18 @@ export default function ProfilePage() {
       </header>
 
       <main className={styles.contentWrap}>
-        <div className={styles.avatar} aria-label="User avatar">
-          <img src="/images/profile-main-avatar.png" alt="" />
-        </div>
-        <h1 className={styles.username}>
-          {profile.username}
+        <div className={styles.avatarGroup}>
+          <div className={styles.avatar} aria-label="User avatar">
+            <img src="/images/profile-main-avatar.png" alt="" />
+          </div>
           <button
             type="button"
-            className={styles.usernameEditButton}
+            className={styles.avatarEditButton}
             aria-label="Edit profile"
             onClick={openProfileEditor}
           >
             <svg
-              className={styles.usernameEditIcon}
+              className={styles.avatarEditIcon}
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -133,7 +222,8 @@ export default function ProfilePage() {
               <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4L16.5 3.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-        </h1>
+        </div>
+        <h1 className={styles.username}>{profile.username}</h1>
 
         <label className={styles.emailField}>
           <span className={styles.inputIcon} aria-hidden="true">
@@ -195,32 +285,68 @@ export default function ProfilePage() {
           onClick={(event) => {
             if (event.target === event.currentTarget) setIsEditorOpen(false);
           }}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') setIsEditorOpen(false);
-          }}
           tabIndex={-1}
         >
-          <form className={styles.profileModal} onSubmit={saveProfile}>
+          <form ref={profileModalRef} className={styles.profileModal} onSubmit={saveProfile} noValidate>
             <h2 id="profile-editor-title" className={styles.modalTitle}>Edit Profile</h2>
             <div className={styles.modalRows}>
-              {modalRows.map(({ label, key, type, inputMode }, index) => (
+              {modalRows.map(({ label, key, type, inputMode, pattern, maxLength, required, options, readOnly }, index) => (
                 <label className={styles.modalRow} htmlFor={`profile-edit-${key}`} key={key}>
-                  <span className={styles.modalLabel}>{label}</span>
-                  <input
-                    id={`profile-edit-${key}`}
-                    className={styles.modalInput}
-                    type={type}
-                    inputMode={inputMode}
-                    value={draftProfile[key]}
-                    autoFocus={index === 0}
-                    onChange={(event) => setDraftProfile((current) => ({
-                      ...current,
-                      [key]: event.target.value,
-                    }))}
-                  />
+                  <span className={styles.modalLabel}>
+                    {label}
+                    {required && <span className={styles.requiredMarker} aria-hidden="true">*</span>}
+                  </span>
+                  {readOnly ? (
+                    <output
+                      id={`profile-edit-${key}`}
+                      className={`${styles.modalInput} ${styles.modalDerived}`}
+                      aria-live="polite"
+                    >
+                      {draftProfile[key]}
+                    </output>
+                  ) : options ? (
+                    <select
+                      id={`profile-edit-${key}`}
+                      className={`${styles.modalInput} ${styles.modalSelect} ${validationErrors[key] ? styles.modalInputError : ''}`.trim()}
+                      value={draftProfile[key]}
+                      aria-invalid={Boolean(validationErrors[key])}
+                      aria-describedby={validationErrors[key] ? `profile-error-${key}` : undefined}
+                      autoFocus={index === 0}
+                      onChange={(event) => updateDraftField(key, event.target.value)}
+                      onBlur={(event) => validateFieldOnBlur(key, event.currentTarget.value)}
+                    >
+                      {options.map((option) => (
+                        <option value={option} key={option}>{option}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      id={`profile-edit-${key}`}
+                      className={`${styles.modalInput} ${validationErrors[key] ? styles.modalInputError : ''}`.trim()}
+                      type={type}
+                      inputMode={inputMode}
+                      pattern={pattern}
+                      maxLength={maxLength}
+                      required={required}
+                      value={draftProfile[key]}
+                      aria-invalid={Boolean(validationErrors[key])}
+                      aria-describedby={validationErrors[key] ? `profile-error-${key}` : undefined}
+                      autoFocus={index === 0}
+                      onChange={(event) => updateDraftField(key, event.target.value)}
+                      onBlur={(event) => validateFieldOnBlur(key, event.currentTarget.value)}
+                    />
+                  )}
+                  {validationErrors[key] && (
+                    <span className={styles.modalFieldError} id={`profile-error-${key}`} role="alert">
+                      {validationErrors[key]}
+                    </span>
+                  )}
                 </label>
               ))}
             </div>
+            {showSubmitError && (
+              <p className={styles.modalSubmitError} role="alert">Enter required details</p>
+            )}
             <div className={styles.modalActions}>
               <button
                 className={styles.cancelButton}
