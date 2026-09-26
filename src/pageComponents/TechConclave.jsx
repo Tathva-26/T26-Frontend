@@ -1,22 +1,29 @@
 import styles from "./TechConclave.module.css";
+import Image from "next/image";
 
 export default function TechConclave() {
   return (
     <div className={styles.frame}>
-      <img
+      <Image
         className={styles.imgRight}
         src="/images/techconclave/conclaveright.png"
         alt=""
+        width={800}
+        height={1131}
       />
-      <img
+      <Image
         className={styles.imgLeft}
         src="/images/techconclave/conclaveleft.png"
         alt=""
+        width={1043}
+        height={878}
       />
-      <img
+      <Image
         className={styles.plus1}
         src="/images/techconclave/greenplus.png"
         alt=""
+        width={53}
+        height={80}
       />
 
       {/* Middle Vertical Text Block: TECH CO NC LA VE */}
