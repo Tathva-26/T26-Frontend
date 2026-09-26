@@ -10,7 +10,7 @@ if (typeof window !== 'undefined') {
 }
 
 const GALLERY_GROUPS = [
-  // Group 1: Staggered pair 1 (Top-left & Bottom-right)
+  // 01 + 02
   {
     type: 'pair',
     items: [
@@ -30,7 +30,8 @@ const GALLERY_GROUPS = [
       },
     ],
   },
-  // Group 2: Featured Large Card + Quote
+
+  // 03
   {
     type: 'featured',
     id: 3,
@@ -40,7 +41,8 @@ const GALLERY_GROUPS = [
     src: 'https://placehold.co/1200x1000/18181b/e879f9?text=Placeholder+03',
     alt: 'Lando lifting trophy',
   },
-  // Group 3: Staggered pair 2
+
+  // 04 + 05
   {
     type: 'pair',
     items: [
@@ -60,7 +62,8 @@ const GALLERY_GROUPS = [
       },
     ],
   },
-  // Group 4: Staggered pair 3
+
+  // 06 + 07
   {
     type: 'pair',
     items: [
@@ -80,7 +83,8 @@ const GALLERY_GROUPS = [
       },
     ],
   },
-  // Group 5: Featured Large Card 2 + Quote
+
+  // 08
   {
     type: 'featured',
     id: 8,
@@ -90,7 +94,8 @@ const GALLERY_GROUPS = [
     src: 'https://placehold.co/1200x1200/18181b/a855f7?text=Placeholder+08',
     alt: 'Lando taking photo',
   },
-  // Group 6: Staggered pair 4
+
+  // 09 + 10
   {
     type: 'pair',
     items: [
@@ -112,49 +117,136 @@ const GALLERY_GROUPS = [
   },
 ];
 
+const MOBILE_CONFIG = {
+  // 01: Left aligned (~46vw wide, portrait 0.81/1)
+  1: { align: 'justify-start', width: 'w-[46vw] max-w-[230px]', aspect: 'aspect-[0.81/1]' },
+
+  // 02: Right aligned (~50vw wide, square)
+  2: { align: 'justify-end', width: 'w-[50vw] max-w-[250px]', aspect: 'aspect-square' },
+
+  // 03: Centered & Large (~86vw wide, 1.1/1)
+  3: { align: 'justify-center', width: 'w-[86vw] max-w-md', aspect: 'aspect-[1.1/1]' },
+
+  // 04: Right aligned (~52vw wide, 31.75/28.75)
+  4: { align: 'justify-end', width: 'w-[52vw] max-w-[260px]', aspect: 'aspect-[31.75/28.75]' },
+
+  // 05: Left aligned (~36vw wide, 21.98/20.96 - small accent image)
+  5: { align: 'justify-start', width: 'w-[36vw] max-w-[180px]', aspect: 'aspect-[21.98/20.96]' },
+
+  // 06: Left aligned (~44vw wide, portrait 21.38/26.48)
+  6: { align: 'justify-start', width: 'w-[44vw] max-w-[220px]', aspect: 'aspect-[21.38/26.48]' },
+
+  // 07: Right aligned (~42vw wide, square 20.74/20.74)
+  7: { align: 'justify-end', width: 'w-[42vw] max-w-[210px]', aspect: 'aspect-square' },
+
+  // 08: Centered & Large (~86vw wide, square)
+  8: { align: 'justify-center', width: 'w-[86vw] max-w-md', aspect: 'aspect-square' },
+
+  // 09: Left aligned (~46vw wide, 27.42/24.91)
+  9: { align: 'justify-start', width: 'w-[46vw] max-w-[230px]', aspect: 'aspect-[27.42/24.91]' },
+
+  // 10: Right aligned (~50vw wide, 31.69/30.9)
+  10: { align: 'justify-end', width: 'w-[50vw] max-w-[250px]', aspect: 'aspect-[31.69/30.9]' },
+};
+
 export default function HorizontalGallery() {
   const containerRef = useRef(null);
   const sectionRef = useRef(null);
   const trackRef = useRef(null);
 
+  /* -----------------------------------------
+     VIEWPORT HEIGHT VARIABLE
+  ----------------------------------------- */
+
   useEffect(() => {
     const updateVh = () => {
-      document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+      document.documentElement.style.setProperty(
+        '--vh',
+        `${window.innerHeight * 0.01}px`
+      );
     };
+
     updateVh();
+
     window.addEventListener('resize', updateVh);
-    return () => window.removeEventListener('resize', updateVh);
+
+    return () => {
+      window.removeEventListener('resize', updateVh);
+    };
   }, []);
+
+  /* -----------------------------------------
+     DESKTOP GSAP HORIZONTAL SCROLL
+     
+     MOBILE:
+     GSAP is completely disabled.
+     The gallery becomes normal vertical
+     scrolling.
+  ----------------------------------------- */
 
   useLayoutEffect(() => {
     const container = containerRef.current;
     const section = sectionRef.current;
     const track = trackRef.current;
+
     if (!container || !section || !track) return;
 
     const ctx = gsap.context(() => {
       let tl;
 
       const build = () => {
+        /* Kill previous animation */
         if (tl) {
           tl.scrollTrigger?.kill();
           tl.kill();
+          tl = null;
         }
 
         const vw = window.innerWidth;
+
+        /* =====================================
+           MOBILE
+           ===================================== */
+
+        if (vw < 768) {
+          // Remove any inline transforms, pins or styles left by GSAP/ScrollTrigger
+          gsap.set([container, section, track], {
+            clearProps: 'all',
+          });
+
+          // Normal document height
+          container.style.height = 'auto';
+
+          return;
+        }
+
+        /* =====================================
+           DESKTOP
+           ===================================== */
+
         const vh = window.innerHeight;
-        const scrollAmount = track.scrollWidth - vw;
 
-        // Total distance translated across the full scroll sequence
+        const scrollAmount = Math.max(
+          track.scrollWidth - vw,
+          0
+        );
+
         const exitShift = vh * 0.6;
-        const totalTranslation = scrollAmount + exitShift;
-        const totalDuration = vh * 2 + scrollAmount;
 
-        // Container height accommodates entrance (1vh), sticky scrollAmount, and exit (1vh)
-        container.style.height = `${totalDuration}px`;
+        const totalTranslation =
+          scrollAmount + exitShift;
+
+        const totalDuration =
+          vh * 2 + scrollAmount;
+
+        container.style.height =
+          `${totalDuration}px`;
 
         tl = gsap.timeline({
-          defaults: { ease: 'none' },
+          defaults: {
+            ease: 'none',
+          },
+
           scrollTrigger: {
             trigger: container,
             start: 'top bottom',
@@ -164,22 +256,46 @@ export default function HorizontalGallery() {
           },
         });
 
-        // 1. Single unbroken linear horizontal translation — 0 jump down or up!
-        tl.to(track, { x: -totalTranslation, duration: totalDuration, ease: 'none' }, 0);
+        /* Horizontal movement */
 
-        // 2. Entrance opacity fade-in over 1vh
-        tl.fromTo(
+        tl.to(
           track,
-          { opacity: 0.85 },
-          { opacity: 1, duration: vh, ease: 'none' },
+          {
+            x: -totalTranslation,
+            duration: totalDuration,
+            ease: 'none',
+          },
           0
         );
 
-        // 3. Outro Exit opacity fade-out over 1vh
+        /* Entrance opacity */
+
         tl.fromTo(
           track,
-          { opacity: 1 },
-          { opacity: 0.85, duration: vh, ease: 'none', immediateRender: false },
+          {
+            opacity: 0.85,
+          },
+          {
+            opacity: 1,
+            duration: vh,
+            ease: 'none',
+          },
+          0
+        );
+
+        /* Exit opacity */
+
+        tl.fromTo(
+          track,
+          {
+            opacity: 1,
+          },
+          {
+            opacity: 0.85,
+            duration: vh,
+            ease: 'none',
+            immediateRender: false,
+          },
           vh + scrollAmount
         );
       };
@@ -187,15 +303,27 @@ export default function HorizontalGallery() {
       build();
 
       let resizeTimer;
+
       const handleResize = () => {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => ctx.add(build), 150);
+
+        resizeTimer = setTimeout(() => {
+          build();
+          ScrollTrigger.refresh();
+        }, 150);
       };
-      window.addEventListener('resize', handleResize);
+
+      window.addEventListener(
+        'resize',
+        handleResize
+      );
 
       return () => {
         clearTimeout(resizeTimer);
-        window.removeEventListener('resize', handleResize);
+        window.removeEventListener(
+          'resize',
+          handleResize
+        );
       };
     }, container);
 
@@ -203,17 +331,95 @@ export default function HorizontalGallery() {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div
+      ref={containerRef}
+      className="relative w-full"
+    >
+
+      {/* =========================================
+          STICKY SECTION
+      ========================================= */}
+
       <section
         ref={sectionRef}
-        className="sticky top-0 h-screen w-full overflow-hidden bg-[#080808]"
-      >
-        {/* Soft gradient masks for smooth entrance/exit transitions */}
-        <div className="pointer-events-none absolute top-0 left-0 right-0 z-20 h-32 bg-gradient-to-b from-[#080808] via-[#080808]/50 to-transparent" />
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 h-32 bg-gradient-to-t from-[#080808] via-[#080808]/50 to-transparent" />
+        className="
+          relative
+          md:sticky
+          md:top-0
 
-        {/* Animated CRTWarp background */}
-        <div className="absolute inset-0 z-0 h-full w-full">
+          min-h-screen
+          md:h-screen
+
+          w-full
+          md:overflow-hidden
+          bg-[#080808]
+        "
+      >
+
+        {/* =====================================
+            TOP GRADIENT
+        ===================================== */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            top-0
+            left-0
+            right-0
+            z-20
+
+            h-20
+            md:h-32
+
+            bg-gradient-to-b
+            from-[#080808]
+            via-[#080808]/50
+            to-transparent
+          "
+        />
+
+        {/* =====================================
+            BOTTOM GRADIENT
+        ===================================== */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            bottom-0
+            left-0
+            right-0
+            z-20
+
+            h-32
+            md:h-48
+
+            bg-gradient-to-t
+            from-[#080808]
+            via-[#080808]/60
+            to-transparent
+          "
+        />
+
+        {/* =====================================
+            CRT BACKGROUND
+        ===================================== */}
+
+        <div
+          className="
+            sticky
+            top-0
+            z-0
+
+            h-screen
+            w-full
+            -mb-[100vh]
+
+            pointer-events-none
+            overflow-hidden
+          "
+        >
           <CRTWarp
             color="#683ab5"
             backgroundColor="#080808"
@@ -238,63 +444,361 @@ export default function HorizontalGallery() {
           />
         </div>
 
+        {/* =========================================
+            GALLERY TRACK
+
+            DESKTOP:
+            horizontal
+
+            MOBILE:
+            vertical
+        ========================================= */}
+
         <div
           ref={trackRef}
-          className="relative z-10 flex h-full w-max items-center pl-[75vw] md:pl-[80vw] lg:pl-[80vw] will-change-transform"
-          style={{ paddingRight: 'var(--grid-spacer)' }}
+          className="
+            relative
+            z-10
+
+            hidden
+            md:flex
+            md:flex-row
+            md:w-max
+            md:h-full
+            md:items-center
+
+            md:py-0
+            md:pl-[80vw]
+
+            will-change-transform
+          "
+          style={{
+            paddingRight:
+              'var(--grid-spacer)',
+          }}
         >
-          {GALLERY_GROUPS.map((group, gIdx) => (
-            <div key={`g-${gIdx}`} className="flex items-center flex-shrink-0">
-              {gIdx > 0 && <div className="flex-none" style={{ width: 'var(--grid-spacer)' }} />}
-              {group.type === 'featured' ? (
-                <div className="flex flex-col items-center flex-shrink-0 justify-center">
-                  {group.quotePosition === 'top' && (
-                    <p className="font-serif text-xl md:text-2xl lg:text-3xl italic text-neutral-200 max-w-lg text-center leading-relaxed mb-6 font-light">
-                      "{group.quote}"
-                    </p>
-                  )}
-                  <div className="flex flex-col items-start">
-                    <div className={`horizontal-item-img-w ${group.itemClass}`}>
+
+          {GALLERY_GROUPS.map(
+            (group, gIdx) => (
+
+              <div
+                key={`g-${gIdx}`}
+                className="
+                  flex
+                  flex-col
+
+                  w-full
+
+                  flex-shrink-0
+
+                  md:flex-row
+                  md:w-auto
+                "
+              >
+
+                {/* =================================
+                    SPACE BETWEEN GROUPS
+                ================================= */}
+
+                {gIdx > 0 && (
+                  <div
+                    className="
+                      flex-none
+
+                      h-20
+                      w-full
+
+                      md:h-auto
+                      md:w-[var(--grid-spacer)]
+                    "
+                  />
+                )}
+
+                {/* =================================
+                    FEATURED IMAGE
+                ================================= */}
+
+                {group.type === 'featured' ? (
+
+                  <div
+                    className="
+                      flex
+                      flex-col
+                      items-center
+                      justify-center
+
+                      w-full
+
+                      flex-shrink-0
+
+                      py-10
+
+                      md:w-auto
+                      md:py-0
+                    "
+                  >
+
+                    {/* TOP QUOTE */}
+
+                    {group.quotePosition === 'top' && (
+
+                      <p
+                        className="
+                          font-serif
+                          italic
+                          font-light
+                          text-neutral-200
+                          text-center
+                          leading-relaxed
+
+                          text-base
+                          px-8
+                          mb-5
+
+                          md:text-xl
+                          lg:text-3xl
+                          md:max-w-lg
+                          md:px-0
+                          md:mb-6
+                        "
+                      >
+                        "{group.quote}"
+                      </p>
+
+                    )}
+
+                    {/* IMAGE */}
+
+                    <div
+                      className={`
+                        horizontal-item-img-w
+                        ${group.itemClass}
+                      `}
+                    >
                       <img
                         src={group.src}
                         alt={group.alt}
                         loading="lazy"
-                        className="image is-horizontal-scroll h-full w-full object-cover scale-110"
+                        className="
+                          image
+                          is-horizontal-scroll
+
+                          h-full
+                          w-full
+
+                          object-cover
+                          scale-110
+                        "
+                      />
+                    </div>
+
+                    {/* BOTTOM QUOTE */}
+
+                    {group.quotePosition === 'bottom' && (
+
+                      <p
+                        className="
+                          font-serif
+                          italic
+                          font-light
+                          text-neutral-200
+                          text-center
+                          leading-relaxed
+
+                          text-base
+                          px-8
+                          mt-5
+
+                          md:text-xl
+                          lg:text-3xl
+                          md:max-w-lg
+                          md:px-0
+                          md:mt-6
+                        "
+                      >
+                        "{group.quote}"
+                      </p>
+
+                    )}
+
+                  </div>
+
+                ) : (
+
+                  /* =================================
+                     PAIR
+                  ================================= */
+
+                  <div
+                    className="
+                      flex
+                      flex-col
+
+                      w-full
+
+                      flex-shrink-0
+
+                      md:flex-row
+                      md:w-auto
+
+                      md:items-center
+                    "
+                    style={{
+                      gap:
+                        'var(--grid-spacer)',
+                    }}
+                  >
+
+                    {group.items.map(
+                      (item, index) => (
+
+                        <div
+                          key={item.id}
+                          className={`
+                            flex
+                            flex-col
+                            flex-shrink-0
+
+                            w-full
+
+                            ${index % 2 === 0
+                              ? 'items-start pl-[5vw]'
+                              : 'items-end pr-[5vw]'
+                            }
+
+                            md:w-auto
+                            md:items-start
+                            md:pl-0
+                            md:pr-0
+
+                            ${item.extraClass || ''}
+                          `}
+                        >
+
+                          <div
+                            className={`
+                              horizontal-item-img-w
+                              ${item.itemClass}
+                            `}
+                          >
+
+                            <img
+                              src={item.src}
+                              alt={item.alt}
+                              loading="lazy"
+                              className="
+                                image
+                                is-horizontal-scroll
+
+                                h-full
+                                w-full
+
+                                object-cover
+                                scale-110
+                              "
+                            />
+
+                          </div>
+
+                        </div>
+
+                      )
+                    )}
+
+                  </div>
+
+                )}
+
+              </div>
+
+            )
+          )}
+
+        </div>
+
+        {/* =========================================
+            MOBILE GALLERY (STATIC EDITORIAL ZIG-ZAG)
+        ========================================= */}
+
+        <div className="relative z-10 flex flex-col w-full px-[5vw] pt-16 pb-16 space-y-16 md:hidden">
+          {GALLERY_GROUPS.map((group, gIdx) => {
+            if (group.type === 'featured') {
+              const isTopQuote = group.quotePosition === 'top';
+              const config = MOBILE_CONFIG[group.id] || {
+                align: 'justify-center',
+                width: 'w-[86vw]',
+                aspect: 'aspect-square',
+              };
+
+              return (
+                <div
+                  key={`m-g-${gIdx}`}
+                  className="flex flex-col items-center justify-center w-full py-8 space-y-8"
+                >
+                  {/* TOP QUOTE */}
+                  {isTopQuote && group.quote && (
+                    <p className="font-serif italic font-light text-neutral-200 text-center leading-relaxed text-base px-4 max-w-xs sm:max-w-sm">
+                      "{group.quote}"
+                    </p>
+                  )}
+
+                  {/* FEATURED CENTERED IMAGE (03 or 08) */}
+                  <div className={`flex w-full ${config.align}`}>
+                    <div className={`horizontal-item-img-w ${config.width} ${config.aspect}`}>
+                      <img
+                        src={group.src}
+                        alt={group.alt}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
                       />
                     </div>
                   </div>
-                  {group.quotePosition === 'bottom' && (
-                    <p className="font-serif text-xl md:text-2xl lg:text-3xl italic text-neutral-200 max-w-lg text-center leading-relaxed mt-6 font-light">
+
+                  {/* BOTTOM QUOTE */}
+                  {!isTopQuote && group.quote && (
+                    <p className="font-serif italic font-light text-neutral-200 text-center leading-relaxed text-base px-4 max-w-xs sm:max-w-sm">
                       "{group.quote}"
                     </p>
                   )}
                 </div>
-              ) : (
-                <div className="flex items-center flex-shrink-0" style={{ gap: 'var(--grid-spacer)' }}>
-                  {group.items.map((item) => (
+              );
+            }
+
+            return (
+              <div
+                key={`m-g-${gIdx}`}
+                className="flex flex-col w-full space-y-16"
+              >
+                {group.items.map((item) => {
+                  const config = MOBILE_CONFIG[item.id] || {
+                    align: 'justify-start',
+                    width: 'w-[56vw]',
+                    aspect: 'aspect-square',
+                  };
+
+                  return (
                     <div
-                      key={item.id}
-                      className={`flex flex-col items-start ${item.extraClass || ''}`}
+                      key={`m-item-${item.id}`}
+                      className={`flex w-full ${config.align}`}
                     >
-                      <div className={`horizontal-item-img-w ${item.itemClass}`}>
+                      <div className={`horizontal-item-img-w ${config.width} ${config.aspect}`}>
                         <img
                           src={item.src}
                           alt={item.alt}
                           loading="lazy"
-                          className="image is-horizontal-scroll h-full w-full object-cover scale-110"
+                          className="h-full w-full object-cover"
                         />
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
+
       </section>
+
     </div>
   );
 }
-
-
-
