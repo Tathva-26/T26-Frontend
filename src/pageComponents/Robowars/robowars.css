@@ -1,0 +1,30 @@
+/*
+ * Robowars-only Tailwind font tokens.
+ *
+ * Import this from the Robowars component after its local `next/font` setup;
+ * keeping these tokens here prevents page-specific font configuration from
+ * conflicting with app-level globals.
+ */
+@theme inline {
+  --font-alata: var(--font-alata-local);
+  --font-calm-serif: var(--font-calm-serif-local), serif;
+  --font-akira-expanded: var(--font-akira-expanded-local), sans-serif;
+  --font-bowlby-one-sc: var(--font-bowlby-one-sc-local), sans-serif;
+}
+
+.robowars-root .font-alata {
+  font-family: var(--font-alata-local), sans-serif !important;
+}
+
+.robowars-root .font-calm-serif {
+  font-family: var(--font-calm-serif-local), serif !important;
+}
+
+.robowars-root .font-akira-expanded,
+.robowars-root .robowars-fight-on {
+  font-family: var(--font-akira-expanded-local), sans-serif !important;
+}
+
+.robowars-root .font-bowlby-one-sc {
+  font-family: var(--font-bowlby-one-sc-local), sans-serif !important;
+}
