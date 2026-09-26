@@ -348,13 +348,159 @@ function ArtistBoard({ artist, artistIdx }) {
   )
 }
 
+function ArtistMobile() {
+  const days = ["DAY 1", "DAY 2", "DAY 3"]
+  const sectionRef = useRef(null)
+  const pageRefs = useRef([])
+  const [activeDay, setActiveDay] = useState(0)
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  // Same scrub crossfade as desktop (bg fades, portrait slides), scoped to mobile layers.
+  useLayoutEffect(() => {
+    const section = sectionRef.current
+    if (!section || !window.matchMedia("(max-width: 768px)").matches) return
+    const context = gsap.context(() => {
+      const backgrounds = gsap.utils.toArray(".mobile-bg-layer")
+      const portraits = gsap.utils.toArray(".mobile-portrait-layer")
+
+      gsap.set(backgrounds.slice(1), { autoAlpha: 0 })
+      gsap.set(portraits.slice(1), { yPercent: 100, autoAlpha: 0 })
+
+      const timeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: section,
+          start: "top top",
+          end: "bottom bottom",
+          scrub: 1.2,
+          invalidateOnRefresh: true,
+        },
+      })
+
+      portraits.slice(1).forEach((incoming, index) => {
+        timeline
+          .to(backgrounds[index], { autoAlpha: 0, ease: "none" })
+          .to(backgrounds[index + 1], { autoAlpha: 1, ease: "none" }, "<")
+          .to(portraits[index], { yPercent: -15, autoAlpha: 0, ease: "none" }, "<")
+          .to(incoming, { yPercent: 0, autoAlpha: 1, ease: "none" }, "<")
+      })
+    }, section)
+
+    return () => context.revert()
+  }, [])
+
+  // Highlight the day tab of the artist currently in view.
+  useLayoutEffect(() => {
+    const pages = pageRefs.current.filter(Boolean)
+    if (!pages.length) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActiveDay(Number(entry.target.dataset.index))
+        })
+      },
+      { threshold: 0.5 }
+    )
+    pages.forEach((page) => observer.observe(page))
+    return () => observer.disconnect()
+  }, [])
+
+  const goToDay = (index) => {
+    setActiveDay(index)
+    // ponytail: 3 day tabs over 2 artists, cycle with % instead of new data
+    pageRefs.current[index % artists.length]?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
+  return (
+    <section ref={sectionRef} className="proshow-mobile" aria-label="Proshow artists mobile">
+      <div className="mobile-sticky" aria-hidden="true">
+        {artists.map((artist) => (
+          <div className="mobile-bg-layer" key={`m-bg-${artist.name}`}>
+            <img src={artist.background} alt="" />
+          </div>
+        ))}
+        {artists.map((artist) => (
+          <div className="mobile-portrait-layer" key={`m-portrait-${artist.name}`}>
+            <img
+              className={artist.portraitClassName}
+              src={artist.portrait}
+              alt=""
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="mobile-pages">
+        <header className="mobile-header">
+          <img className="site-logo" src={`${assetPathPrefix}/32c3b.png`} alt="Tathva" />
+          <FestivalMark />
+          <button
+            className="menu-button"
+            type="button"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <img src={`${assetPathPrefix}/4e2c4.svg`} alt="" />
+          </button>
+          {menuOpen && (
+            <nav className="mobile-menu" aria-label="Main navigation">
+              <a href="#proshow">PROSHOW</a>
+              <i>/</i>
+              <a href="#workshops">WORKSHOPS</a>
+              <i>/</i>
+              <a href="#campus">CAMPUS AMBASADOR</a>
+              <i>/</i>
+              <a href="#gallery">GALLERY</a>
+            </nav>
+          )}
+        </header>
+
+        {artists.map((artist, index) => (
+          <div
+            key={artist.name}
+            data-index={index}
+            ref={(el) => {
+              pageRefs.current[index] = el
+            }}
+            className="mobile-page snap-start snap-always"
+          >
+            <div className="mobile-body">
+              <nav className="mobile-days" aria-label="Performance days">
+                {days.map((label, i) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-selected={activeDay === i}
+                    className={activeDay === i ? "is-active" : ""}
+                    onClick={() => goToDay(i)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+              <div className="mobile-stage">
+                <ArtistBoard artist={artist} artistIdx={index} />
+              </div>
+            </div>
+            <h2 className="mobile-name">{artist.name}</h2>
+            <p className="mobile-desc">
+              Brace yourselves for a magical night as the legendary {artist.name}{" "}
+              takes the stage. Get ready to sing, sway, and make memories!
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default function App() {
   const sectionRef = useRef(null)
 
   // Document-level vertical snap: <html> is the scroll container, so
-  // snap-type lives there (scoped to this page, removed on unmount).
-  // Each .artist-page is a snap-start point. Nested scroller avoided on
-  // purpose — it would detach GSAP ScrollTrigger from the page scroll.
+  // snap-type lives here (scoped to this page, removed on unmount).
+  // Desktop .artist-page and mobile .mobile-page are the snap-start points.
+  // Nested scroller avoided on purpose — it would detach GSAP ScrollTrigger.
   useLayoutEffect(() => {
     const root = document.documentElement
     root.classList.add("snap-y", "snap-mandatory", "scroll-smooth", "motion-reduce:snap-none")
@@ -432,6 +578,8 @@ export default function App() {
           <ArtistBoard artist={artist} artistIdx={artistIdx} key={artist.name} />
         ))}
       </section>
+
+      <ArtistMobile />
     </main>
   )
 }

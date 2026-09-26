@@ -129,6 +129,7 @@ button {
   width: 75%;
   height: 75%;
   object-fit: contain;
+  /* opacity: 0; */
 }
 
 .artist-portrait--shreya {
@@ -136,6 +137,7 @@ button {
   bottom: -1%;
   width: 91%;
   height: 76%;
+  /* opacity: 0; */
 }
 
 .site-header {
@@ -473,5 +475,206 @@ button {
   .featured-bg-layer,
   .featured-portrait-layer {
     will-change: auto;
+  }
+}
+
+/* Mobile-only view (Anima compact design). Desktop selectors above untouched. */
+.proshow-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .proshow-section {
+    display: block;
+    min-height: 0;
+  }
+
+  .global-bg-container,
+  .featured-column,
+  .artist-list {
+    display: none;
+  }
+
+  .proshow-mobile {
+    position: relative;
+    display: block;
+    background: #1c1c1c;
+  }
+
+  .mobile-sticky {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .mobile-bg-layer {
+    position: absolute;
+    inset: 0;
+    will-change: opacity;
+  }
+
+  .mobile-bg-layer img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.5;
+  }
+
+  .mobile-portrait-layer {
+    display: none;
+  }
+
+  .proshow-mobile .artist-portrait--arijit {
+    top: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 94%;
+    height: 62%;
+  }
+
+  .proshow-mobile .artist-portrait--shreya {
+    top: 3%;
+    bottom: auto;
+    left: 4%;
+    width: 92%;
+    height: 64%;
+  }
+
+  .mobile-pages {
+    position: relative;
+    z-index: 1;
+    margin-top: -100dvh;
+  }
+
+  .mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 70px;
+    padding: 0 12px;
+  }
+
+  .mobile-header .festival-mark {
+    right: 50%;
+    transform: translateX(50%);
+  }
+
+  .mobile-menu {
+    position: absolute;
+    top: 70px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid #323231;
+    border-radius: 7px;
+    background: #202020;
+    font-family: "Hammersmith One:Regular", sans-serif;
+    font-size: 11px;
+  }
+
+  .mobile-menu a {
+    text-decoration: none;
+  }
+
+  .mobile-menu i {
+    font-style: normal;
+    opacity: 0.85;
+  }
+
+  .mobile-page {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 12px 24px;
+  }
+
+  .mobile-body {
+    display: flex;
+    gap: 10px;
+  }
+
+  .mobile-days {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    align-items: center;
+    padding: 26px 8px;
+    border: 1px solid #323231;
+    border-radius: 9px;
+    background: #202020;
+    margin-top: 50px;
+  }
+
+  .mobile-days button {
+    padding: 4px 8px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #fff;
+    font-family: "Bebas Neue", "Bebas Neue:Regular", sans-serif;
+    font-size: 19px;
+    letter-spacing: 0.04em;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    cursor: pointer;
+  }
+
+  .mobile-days .is-active {
+    background: #7786ff;
+  }
+
+  .mobile-stage {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-stage .artist-page {
+    min-height: 0;
+    padding: 0;
+    scroll-snap-align: none;
+  }
+
+  .mobile-stage .connector-overlay {
+    display: block;
+  }
+
+  .mobile-stage .artist-board {
+    border-radius: 18px;
+    height: 75dvh;
+    aspect-ratio: auto;
+    margin-top: 50px;
+  }
+
+  .mobile-stage .artist-content-slide {
+    width: auto;
+    height: 100%;
+  }
+
+  .mobile-name {
+    position: relative;
+    z-index: 1;
+    margin: 18px 0 0;
+    color: #fff;
+    font-family: "Bebas Neue", "Bebas Neue:Regular", sans-serif;
+    font-size: 72px;
+    line-height: 0.95;
+  }
+
+  .mobile-desc {
+    position: relative;
+    z-index: 1;
+    margin: 10px 0 0;
+    max-width: 34ch;
+    font-size: 12px;
+    line-height: 1.4;
+    opacity: 0.9;
   }
 }
