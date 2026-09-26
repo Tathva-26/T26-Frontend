@@ -98,7 +98,7 @@ export default function TathvaMenu() {
           duration: 0.5,
           ease: "power2.inOut",
         },
-        0
+        0,
       );
 
       tl.to(
@@ -108,7 +108,7 @@ export default function TathvaMenu() {
           duration: 0.5,
           ease: "power2.inOut",
         },
-        0
+        0,
       );
 
       /* 2. HORIZONTAL EXPANSION */
@@ -119,7 +119,7 @@ export default function TathvaMenu() {
           duration: 0.55,
           ease: "expo.out",
         },
-        ">"
+        ">",
       );
 
       /* 3. CENTER LINE FALLS */
@@ -131,7 +131,7 @@ export default function TathvaMenu() {
           duration: 0.35,
           ease: "power3.out",
         },
-        "-=0.25"
+        "-=0.25",
       );
 
       /* 4. TEXT APPEARS */
@@ -146,7 +146,7 @@ export default function TathvaMenu() {
           },
           ease: "power2.out",
         },
-        "-=0.15"
+        "-=0.15",
       );
     }, rootRef);
 
@@ -445,8 +445,3 @@ export default function TathvaMenu() {
     </div>
   );
 }
-
-
-
-
-
