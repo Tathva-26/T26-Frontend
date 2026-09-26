@@ -9,7 +9,7 @@ import React from "react";
  * If a custom `src` image is provided, it seamlessly displays the photo.
  * If no `src` is provided, displays the clean avatar silhouette.
  */
-export function PersonImage({ src, alt = "Lead Member", className = "" }) {
+export function PersonImage({ src, alt = "UI/UX Member", className = "" }) {
   return (
     <div
       className={`relative aspect-square w-full h-full bg-white flex items-center justify-center overflow-hidden select-none ${className}`}
@@ -60,13 +60,13 @@ function GitHubIcon({ className = "w-5 h-5" }) {
 }
 
 /**
- * LeadCard Component
+ * UiuxCard Component
  * ------------------
  * Uses the ripped paper sunburst card element.
  * Supports custom photo (via PersonImage), custom name text,
  * and clickable LinkedIn / GitHub profile links.
  */
-export function LeadCard({
+export function UiuxCard({
   name = "NAME SURNAME",
   image = null,
   linkedin = "https://linkedin.com",
@@ -128,9 +128,9 @@ export function LeadCard({
 }
 
 /**
- * Default Leads Data (5 Members)
+ * Default UI/UX Data (5 Members)
  */
-const defaultLeads = [
+const defaultUiux = [
   {
     name: "NAME SURNAME",
     image: null,
@@ -164,9 +164,9 @@ const defaultLeads = [
 ];
 
 /**
- * Main Lead Page Component
+ * Main UI/UX Page Component
  */
-export default function Lead({ leads = defaultLeads }) {
+export default function Uiux({ uiux = defaultUiux }) {
   return (
     <div className="relative h-screen h-[100dvh] w-full bg-[#010208] overflow-x-hidden overflow-y-auto overscroll-contain flex flex-col font-sans select-none [-webkit-overflow-scrolling:touch]">
       {/* =====================================================
@@ -228,32 +228,32 @@ export default function Lead({ leads = defaultLeads }) {
       </div>
 
       {/* =====================================================
-          MAIN SECTION: LEAD TITLE (always visible) + CARDS
+          MAIN SECTION: UI/UX TITLE (always visible) + CARDS
       ===================================================== */}
       <main className="relative z-10 w-full min-h-screen flex flex-col items-center justify-start sm:justify-center px-3 sm:px-5 md:px-8 lg:px-10 pt-20 pb-10 sm:py-6 max-w-[1920px] mx-auto">
         
-        {/* "LEAD" title — crisp rendered text, always sharp at any size */}
+        {/* "UI/UX" title — crisp rendered text, always sharp at any size */}
         <div className="w-full flex justify-center pb-0 pointer-events-none select-none">
           <h1
             className="text-[18vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] font-black uppercase text-white leading-[1.1] sm:leading-[0.85] tracking-[0.04em] [-webkit-text-stroke:5px_white] drop-shadow-[0_0_40px_rgba(255,255,255,0.2)]"
             style={{ fontFamily: "Impact, 'Arial Black', sans-serif" }}
           >
-            LEAD
+            UI/UX
           </h1>
         </div>
 
-        {/* 5 Lead Cards — negative top margin on larger screens so they overlap LEAD */}
+        {/* 5 UI/UX Cards — negative top margin on larger screens so they overlap UI/UX */}
         <div className="relative z-10 w-full flex flex-wrap items-start justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-5 -mt-2 sm:-mt-3 md:-mt-6 lg:-mt-10 py-2 scrollbar-none">
-          {leads.map((lead, index) => (
+          {uiux.map((member, index) => (
             <div
               key={index}
               className="w-[42%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] max-w-[300px]"
             >
-              <LeadCard
-                name={lead.name}
-                image={lead.image}
-                linkedin={lead.linkedin}
-                github={lead.github}
+              <UiuxCard
+                name={member.name}
+                image={member.image}
+                linkedin={member.linkedin}
+                github={member.github}
               />
             </div>
           ))}
