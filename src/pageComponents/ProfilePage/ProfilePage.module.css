@@ -217,6 +217,15 @@
   letter-spacing: -0.04em;
   font-family: var(--font-space), sans-serif;
   color: rgba(255, 255, 255, 0.98);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.usernameEditIcon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
 }
 
 .emailField {
@@ -237,7 +246,7 @@
   width: 1.3rem;
   height: 1.3rem;
   margin-right: 0.8rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.42);
 }
 
 .inputIcon svg {
@@ -248,6 +257,7 @@
 .emailText {
   font-size: 0.95rem;
   letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.44);
 }
 
 .infoNote {
@@ -303,7 +313,7 @@
   font-size: 0.72rem;
   letter-spacing: 0.12rem;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.95);
   margin-left: 0.2rem;
 }
 
@@ -313,9 +323,9 @@
   min-height: 3rem;
   padding: 0.7rem 0.9rem;
   border-radius: 0.6rem;
-  background: rgba(68, 68, 70, 0.42);
+  background: rgba(68, 68, 70, 0.32);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.44);
   font-size: 0.92rem;
   letter-spacing: 0.04em;
 }
