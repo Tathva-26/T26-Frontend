@@ -421,7 +421,7 @@ export default function HorizontalGallery() {
           "
         >
           <CRTWarp
-            color="#683ab5"
+            color="#6f48b1"
             backgroundColor="#080808"
             speed={0.4}
             curvature={0}

@@ -58,6 +58,10 @@ float referencePlasma(vec2 uv, float t) {
   float scanline = 0.5 - 0.5 * cos(uv.y * 3.14159265 * uScanlineFrequency);
   scanline = mix(1.0, scanline, uScanlineStrength);
 
+  // Portrait screens (mobile): compress the pattern vertically so it isn't stretched tall.
+  float portraitAspect = max(uResolution.y / max(uResolution.x, 1.0), 1.0);
+  uv.y = (uv.y - 0.5) * portraitAspect + 0.5;
+
   uv *= vec2(80.0, 24.0);
   uv = ceil(uv);
   uv /= vec2(80.0, 24.0);
@@ -125,7 +129,7 @@ void main() {
 `;
 
 export default function CRTWarp({
-  color = '#c755f7',
+  color = '#420c7a',
   backgroundColor = '#05010a',
   speed = 0.5,
   curvature = 0.25,
