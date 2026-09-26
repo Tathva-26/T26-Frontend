@@ -86,16 +86,6 @@ function DesktopFrame({ className, scale = "desktop" }) {
     <div
       className={`absolute left-1/2 top-1/2 aspect-[1413/697] -translate-x-1/2 -translate-y-1/2 [container-type:size] ${className}`}
     >
-      <Image
-        src={`${ASSET_ROOT}/arena-bg.png`}
-        alt=""
-        fill
-        priority={!isTablet}
-        sizes={isTablet ? "112vw" : "100vw"}
-        draggable={false}
-        className="object-cover"
-      />
-
       <div
         aria-hidden="true"
         className={`robowars-fight-on pointer-events-none absolute left-1/2 top-[4.8%] -translate-x-1/2 text-center font-akira-expanded font-extrabold uppercase leading-none text-white will-change-[opacity] ${
@@ -191,16 +181,6 @@ function DesktopFrame({ className, scale = "desktop" }) {
 function MobileFrame() {
   return (
     <div className="absolute left-1/2 top-1/2 aspect-[412/594] w-screen -translate-x-1/2 -translate-y-1/2 [container-type:size] md:hidden">
-      <Image
-        src={`${ASSET_ROOT}/mobile-background.png`}
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        draggable={false}
-        className="object-cover"
-      />
-
       <Art
         src="arena-left-robot.webp"
         alt=""
@@ -482,6 +462,26 @@ export default function RobowarsHero() {
         </h1>
 
         <div className="sticky top-0 h-[100dvh] min-h-[560px] w-full overflow-hidden">
+          {/* Keep the backdrop tied to the viewport; the framed artwork remains
+              separate so its GSAP transforms and scroll timing are unchanged. */}
+          <Image
+            src={`${ASSET_ROOT}/arena-bg.png`}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            draggable={false}
+            className="hidden object-cover md:block"
+          />
+          <Image
+            src={`${ASSET_ROOT}/mobile-background.png`}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            draggable={false}
+            className="object-cover md:hidden"
+          />
           <DesktopFrame className="hidden w-screen xl:block" />
           <DesktopFrame className="hidden w-[112vw] md:block xl:hidden" scale="tablet" />
           <MobileFrame />
