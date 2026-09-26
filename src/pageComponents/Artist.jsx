@@ -327,7 +327,7 @@ function ArtistContent({ artist }) {
 function ArtistBoard({ artist, artistIdx }) {
   const dupes = [artist, artist, artist, artist, artist, artist]
   return (
-    <div className="artist-page">
+    <div className="artist-page snap-start snap-always">
       <div className="artist-board">
         {/* Static texture background */}
         <img
@@ -351,6 +351,16 @@ function ArtistBoard({ artist, artistIdx }) {
 export default function App() {
   const sectionRef = useRef(null)
 
+  // Document-level vertical snap: <html> is the scroll container, so
+  // snap-type lives there (scoped to this page, removed on unmount).
+  // Each .artist-page is a snap-start point. Nested scroller avoided on
+  // purpose — it would detach GSAP ScrollTrigger from the page scroll.
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    root.classList.add("snap-y", "snap-mandatory", "scroll-smooth", "motion-reduce:snap-none")
+    return () => root.classList.remove("snap-y", "snap-mandatory", "scroll-smooth", "motion-reduce:snap-none")
+  }, [])
+
   useLayoutEffect(() => {
     const section = sectionRef.current
     if (!section) return
@@ -367,7 +377,7 @@ export default function App() {
           trigger: section,
           start: "top top",
           end: "bottom bottom",
-          scrub: true,
+          scrub: 1.2, // catch-up smoothing: snap jumps scroll, fade eases through visibly after landing
           invalidateOnRefresh: true,
         },
       })
