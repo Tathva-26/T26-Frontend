@@ -9,7 +9,7 @@ import { RobowarsHero } from '@/pageComponents/Robowars'
 
 export default function Home() {
   return (
-    <div className='main-scroll relative h-dvh w-full overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] bg-black'>
+    <div className='main-scroll relative h-dvh w-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] bg-black'>
       <ProfilePage />
       <HorizontalGallery />
       <WheelsExperience revealUnderlay />
