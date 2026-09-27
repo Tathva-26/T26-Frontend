@@ -1,7 +1,7 @@
-import UIUXPage from '@/pageComponents/uiux/page'
-import FrontendPage from '@/pageComponents/frontend/page'
-import BackendPage from '@/pageComponents/backend/page'
-import LeadPage from '@/pageComponents/lead/page'
+import UIUXPage from '@/pageComponents/Team/uiux/page'
+import FrontendPage from '@/pageComponents/Team/frontend/page'
+import BackendPage from '@/pageComponents/Team/backend/page'
+import LeadPage from '@/pageComponents/Team/lead/page'
 
 export default function Home() {
   return (
