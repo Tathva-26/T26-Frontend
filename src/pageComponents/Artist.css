@@ -1,0 +1,597 @@
+@font-face {
+  font-family: "Bebas Neue:Regular";
+  src: url("https://static.figma.com/font/BebasNeue-Regular_1") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Hammersmith One:Regular";
+  src: url("https://static.figma.com/font/HammersmithOne-Regular_2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "La Belle Aurore:Regular";
+  src: url("https://static.figma.com/font/LaBelleAurore_1") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Mona Sans:Regular";
+  src: url("https://static.figma.com/font/MonaSans_wdth_wght__1") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+}
+
+.proshow-section {
+  display: grid;
+  grid-template-columns: minmax(0, 47.2%) minmax(0, 52.8%);
+  min-height: 200dvh;
+  background: #1c1c1c;
+}
+
+.global-bg-container {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  width: 100%;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.featured-column {
+  grid-column: 1 / 2;
+  grid-row: 1 / -1;
+  position: relative;
+  z-index: 1;
+}
+
+.featured-viewport {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow: hidden;
+  /* Removed background: #09001c; so global background shows through */
+}
+
+.featured-bg-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  will-change: opacity;
+}
+
+.featured-portrait-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  will-change: transform, opacity;
+  z-index: 1;
+}
+
+.featured-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.featured-bg-layer:first-child .featured-background {
+  object-position: 58% center;
+}
+
+.featured-bg-layer:nth-child(2) .featured-background {
+  object-position: center;
+}
+
+.artist-portrait {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  object-fit: contain;
+  object-position: bottom;
+}
+
+.artist-portrait--arijit {
+  top: 50%;
+  left: 50px;
+  transform: translateY(-50%);
+  width: 100%;
+  height: 90%;
+}
+
+.artist-portrait--shreya {
+  left: -4%;
+  bottom: -1%;
+  width: 91%;
+  height: 76%;
+}
+
+.site-header {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 94px;
+  padding: 0 clamp(18px, 3.1vw, 48px);
+  gap: clamp(18px, 2.4vw, 36px);
+}
+
+.site-logo {
+  width: 55px;
+  height: 46px;
+  object-fit: contain;
+}
+
+.menu-button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.menu-button img {
+  width: 27px;
+  height: 18px;
+}
+
+.site-header nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(9px, 1.2vw, 18px);
+  font-family: "Hammersmith One:Regular", sans-serif;
+  font-size: clamp(7px, 0.73vw, 12px);
+  white-space: nowrap;
+}
+
+.site-header nav a {
+  text-decoration: none;
+}
+
+.site-header nav i {
+  font-style: normal;
+  opacity: 0.85;
+}
+
+/* Festival badge. Horizontal anchor comes from the host: desktop pins it to
+   the featured-column seam, mobile centers it in .mobile-header. */
+.festival-mark {
+  position: absolute;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 34px;
+  background: #464646;
+  clip-path: polygon(12% 0, 88% 0, 100% 50%, 88% 100%, 12% 100%, 0 50%);
+  font-family: "Bebas Neue:Regular", sans-serif;
+  line-height: 0.8;
+  text-align: center;
+  flex-direction: column;
+}
+
+.festival-mark span {
+  font-size: 12px;
+}
+
+.festival-mark small {
+  font-size: 5px;
+  letter-spacing: 0.22em;
+}
+
+/* Badge straddles the column seam; translateX(50%) derives the offset from
+   the column width instead of hard-coding 47.2%. */
+@media (min-width: 769px) {
+  .proshow-section > .festival-mark {
+    position: sticky;
+    z-index: 2;
+    /* above .featured-column and .artist-list (both z-index: 1) */
+
+    grid-column: 1 / 2;
+    grid-row: 1 / -1;
+    justify-self: end;
+    /* sticky needs a box shorter than its grid area to travel inside */
+    align-self: start;
+    transform: translateX(50%);
+  }
+}
+
+.schedule-card {
+  position: absolute;
+  z-index: 3;
+  top: 25.8%;
+  right: 19%;
+  width: min(279px, 44%);
+  min-width: 220px;
+  overflow: hidden;
+  border: 1px solid #323231;
+  border-radius: 7px;
+  background: #202020;
+}
+
+.schedule-days {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+  height: 36px;
+  padding: 5px 13px;
+  border-bottom: 1px solid #d63d5e;
+  font-family: "Arial Black", sans-serif;
+}
+
+.schedule-days button {
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.schedule-days .is-active {
+  background: rgb(235 154 88 / 70%);
+}
+
+.schedule-card p {
+  margin: 0;
+  padding: 7px 21px 18px;
+  font-size: 11px;
+  line-height: 1.18;
+  font-variation-settings: "wdth" 100;
+}
+
+.artist-list {
+  grid-column: 2 / 3;
+  grid-row: 1 / -1;
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.artist-page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 2vw;
+}
+
+.artist-board {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  aspect-ratio: 831 / 743;
+  overflow: hidden;
+  border-radius: 24px;
+  container-type: inline-size;
+}
+
+.artist-board__texture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+/* Marquee inside the board */
+.board-marquee {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+}
+
+.board-marquee-track {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  animation: board-scroll 20s linear infinite;
+}
+
+@keyframes board-scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Each slide is the same size as the board */
+.artist-content-slide {
+  position: relative;
+  width: 100cqi;
+  aspect-ratio: 831 / 743;
+  flex-shrink: 0;
+}
+
+.slide__avatar {
+  position: absolute;
+  z-index: 2;
+  top: 35%;
+  left: 8%;
+  width: 10%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.slide__secondary {
+  position: absolute;
+  z-index: 2;
+  top: 55%;
+  left: 32%;
+  width: 24%;
+  height: 38%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.slide__primary {
+  position: absolute;
+  z-index: 2;
+  top: 10%;
+  left: 68%;
+  width: 24%;
+  height: 38%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.slide__name {
+  position: absolute;
+  z-index: 3;
+  top: 65%;
+  left: 65%;
+  margin: 0;
+  color: white;
+  font-family: "La Belle Aurore:Regular", cursive;
+  font-size: clamp(28px, 3.2vw, 52px);
+  transform: rotate(-10deg);
+}
+
+.connector-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.connector-line {
+  fill: none;
+  stroke: #eb9a58;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.connector-arrowhead {
+  fill: #eb9a58;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-marquee-track {
+    animation: none;
+  }
+
+  .featured-bg-layer,
+  .featured-portrait-layer {
+    will-change: auto;
+  }
+}
+
+/* Mobile-only view (Anima compact design). Desktop selectors above untouched. */
+.proshow-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .proshow-section {
+    display: block;
+    min-height: 0;
+  }
+
+  .global-bg-container,
+  .featured-column,
+  .artist-list,
+  .proshow-section > .festival-mark {
+    display: none;
+  }
+
+  .proshow-mobile {
+    position: relative;
+    display: block;
+    background: #1c1c1c;
+  }
+
+  .mobile-sticky {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .mobile-bg-layer {
+    position: absolute;
+    inset: 0;
+    will-change: opacity;
+  }
+
+  .mobile-bg-layer img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.5;
+  }
+
+  .proshow-mobile .artist-portrait--arijit {
+    top: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 94%;
+    height: 62%;
+  }
+
+  .proshow-mobile .artist-portrait--shreya {
+    top: 3%;
+    bottom: auto;
+    left: 4%;
+    width: 92%;
+    height: 64%;
+  }
+
+  .mobile-pages {
+    position: relative;
+    z-index: 1;
+    margin-top: -100dvh;
+  }
+
+  .mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 70px;
+    padding: 0 12px;
+  }
+
+  .mobile-header .festival-mark {
+    right: 50%;
+    transform: translateX(50%);
+  }
+
+  .mobile-menu {
+    position: absolute;
+    top: 70px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid #323231;
+    border-radius: 7px;
+    background: #202020;
+    font-family: "Hammersmith One:Regular", sans-serif;
+    font-size: 11px;
+  }
+
+  .mobile-menu a {
+    text-decoration: none;
+  }
+
+  .mobile-menu i {
+    font-style: normal;
+    opacity: 0.85;
+  }
+
+  .mobile-page {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 12px 24px;
+  }
+
+  .mobile-body {
+    display: flex;
+    gap: 10px;
+  }
+
+  .mobile-days {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    align-items: center;
+    padding: 26px 8px;
+    border: 1px solid #323231;
+    border-radius: 9px;
+    background: #202020;
+    margin-top: 50px;
+  }
+
+  .mobile-days button {
+    padding: 4px 8px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #fff;
+    font-family: "Bebas Neue", "Bebas Neue:Regular", sans-serif;
+    font-size: 19px;
+    letter-spacing: 0.04em;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    cursor: pointer;
+  }
+
+  .mobile-days .is-active {
+    background: #7786ff;
+  }
+
+  .mobile-stage {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-stage .artist-page {
+    min-height: 0;
+    padding: 0;
+    scroll-snap-align: none;
+  }
+
+  .mobile-stage .artist-board {
+    border-radius: 18px;
+    height: 75dvh;
+    aspect-ratio: auto;
+    margin-top: 50px;
+  }
+
+  .mobile-stage .artist-content-slide {
+    width: auto;
+    height: 100%;
+  }
+
+  .mobile-name {
+    position: relative;
+    z-index: 1;
+    margin: 18px 0 0;
+    color: #fff;
+    font-family: "Bebas Neue", "Bebas Neue:Regular", sans-serif;
+    font-size: 72px;
+    line-height: 0.95;
+  }
+
+  .mobile-desc {
+    position: relative;
+    z-index: 1;
+    margin: 10px 0 0;
+    max-width: 34ch;
+    font-size: 12px;
+    line-height: 1.4;
+    opacity: 0.9;
+  }
+}
