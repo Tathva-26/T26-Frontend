@@ -5,6 +5,12 @@ import Image from "next/image";
 import localFont from "next/font/local";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import {
+  ROBOWARS_FRAME_HEIGHT,
+  ROBOWARS_FRAME_WIDTH,
+  ROBOWARS_TV_SCREEN,
+  TV_ART_STYLE,
+} from "../wheels/robowarsHandoff";
 import "./robowars.css";
 
 // Figma: "Calm Serif" — used for the main serif headline
@@ -36,8 +42,8 @@ const bowlbyOneSC = localFont({
 });
 
 const ASSET_ROOT = "/images/Robowars";
-const FRAME_WIDTH = 1413;
-const FRAME_HEIGHT = 697;
+const FRAME_WIDTH = ROBOWARS_FRAME_WIDTH;
+const FRAME_HEIGHT = ROBOWARS_FRAME_HEIGHT;
 const MOBILE_FRAME_WIDTH = 412;
 const MOBILE_FRAME_HEIGHT = 594;
 
@@ -98,19 +104,17 @@ function DesktopFrame({ className, scale = "desktop" }) {
       />
 
       {/* The docked Wheels TV, now dark, carried over as a background prop —
-          sits behind "FIGHT ON" to bridge the two sections. */}
+          sits behind "FIGHT ON" to bridge the two sections. Same geometry as
+          the Wheels TV, which docks exactly on top of it before fading out. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute opacity-90"
-        style={frameStyle({ x: 546, y: 20, width: 320, height: 180 })}
+        style={frameStyle(ROBOWARS_TV_SCREEN)}
       >
-        <div className="relative h-full w-full">
-          <Image src="/wheels/tv.png" alt="" fill sizes="320px" className="object-contain" />
-          <div
-            className="absolute rounded-[2px] bg-black"
-            style={{ left: "12.26%", top: "29.97%", width: "75.48%", height: "56.85%" }}
-          />
+        <div className="absolute" style={TV_ART_STYLE}>
+          <Image src="/wheels/tv.png" alt="" fill sizes="440px" className="object-fill" />
         </div>
+        <div className="absolute inset-0 rounded-[6px] bg-black" />
       </div>
 
       <div
@@ -324,8 +328,14 @@ function MobileFrame() {
   );
 }
 
-export default function RobowarsHero() {
+// leadInVh: extra scroll distance the stage stays pinned before its own scroll
+// animation starts — used when it's pulled up underneath Wheels on the home page.
+// introVh: { from, to } scroll range (vh from the section top) within that
+// lead-in over which the robots slide in, while the stage is being revealed.
+export default function RobowarsHero({ leadInVh = 0, introVh = null }) {
   const sectionRef = useRef(null);
+  const introRef = useRef(null);
+  const timelineRef = useRef(null);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -379,11 +389,36 @@ export default function RobowarsHero() {
       };
 
       const buildTimeline = () => {
+        const scroller = document.querySelector(".main-scroll") || window;
+        const robotsIn = [
+          ".robowars-left-robot, .robowars-right-robot",
+          {
+            opacity: 1,
+            transform: "translate3d(0, 0, 0) scale(1)",
+          },
+        ];
+
+        // While revealed underneath Wheels, the robots slide in on their own
+        // range so the arena isn't sitting still behind the shrinking TV.
+        if (introVh) {
+          gsap.timeline({
+            defaults: { ease: "none" },
+            scrollTrigger: {
+              scroller,
+              trigger: introRef.current,
+              start: "top top",
+              end: "bottom top",
+              scrub: 1,
+              invalidateOnRefresh: true,
+            },
+          }).to(...robotsIn);
+        }
+
         const timeline = gsap.timeline({
           defaults: { ease: "none" },
           scrollTrigger: {
-            scroller: document.querySelector(".main-scroll") || window,
-            trigger: sectionRef.current,
+            scroller,
+            trigger: timelineRef.current,
             start: "top top",
             end: "bottom bottom",
             scrub: 1,
@@ -391,15 +426,9 @@ export default function RobowarsHero() {
           },
         });
 
+        if (!introVh) timeline.to(...robotsIn, 0);
+
         timeline
-          .to(
-            ".robowars-left-robot, .robowars-right-robot",
-            {
-              opacity: 1,
-              transform: "translate3d(0, 0, 0) scale(1)",
-            },
-            0
-          )
           .to(".robowars-fight-on", { opacity: 0.1 }, 0)
           .to(
             ".robowars-title-left, .robowars-title-right",
@@ -469,14 +498,30 @@ export default function RobowarsHero() {
       media?.revert();
       ctx.revert();
     };
-  }, []);
+  }, [introVh]);
 
   return (
     <section
       ref={sectionRef}
       aria-labelledby="robowars-title"
-      className={`${calmSerif.variable} ${alata.variable} ${akiraExpanded.variable} ${bowlbyOneSC.variable} relative h-[180dvh] min-h-[900px] w-full shrink-0 bg-black text-white md:min-h-[1100px] xl:min-h-[940px] motion-reduce:h-dvh motion-reduce:min-h-dvh`}
+      className={`${calmSerif.variable} ${alata.variable} ${akiraExpanded.variable} ${bowlbyOneSC.variable} relative w-full shrink-0 bg-black text-white [--robowars-h:max(180dvh,900px)] md:[--robowars-h:max(180dvh,1100px)] xl:[--robowars-h:max(180dvh,940px)] motion-reduce:[--robowars-h:100dvh]`}
+      style={{ height: `calc(${leadInVh}vh + var(--robowars-h))` }}
     >
+      {introVh && (
+        <div
+          ref={introRef}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0"
+          style={{ top: `${introVh.from}vh`, height: `${introVh.to - introVh.from}vh` }}
+        />
+      )}
+      {/* Scroll range of the title/details animation: the section minus the lead-in */}
+      <div
+        ref={timelineRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-(--robowars-h)"
+      />
+
       <h1 id="robowars-title" className="sr-only">
         Robo Wars Enter Arena
       </h1>

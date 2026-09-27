@@ -3,19 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import {
+  FRAME_COUNT,
+  FRAME_SCROLL_VH,
+  SHRINK_START_FRAME,
+  START_FRAME,
+  TOTAL_SCROLL_VH,
+  TV_ART_STYLE,
+  getRobowarsTvScreenRect,
+} from "./robowarsHandoff";
 // import styles from "./WheelsExperience.module.css";
 
-const START_FRAME = 105;
-const END_FRAME = 240;
-const FRAME_COUNT = END_FRAME - START_FRAME + 1;
 const ASPECT_RATIO = 16 / 9;
 
-// Scroll distance (in viewport heights) spent scrubbing through the car frames,
-// followed by extra distance spent fading the docked TV screen to black before
-// Robowars takes over.
-const FRAME_SCROLL_VH = 700;
-const FADE_SCROLL_VH = 70;
-const TOTAL_SCROLL_VH = FRAME_SCROLL_VH + FADE_SCROLL_VH;
 const FRAME_PROGRESS_END = FRAME_SCROLL_VH / TOTAL_SCROLL_VH;
 
 const getFramePath = (index) => {
@@ -38,7 +38,10 @@ export const ALIGN_CONFIG = {
   dockedShiftY: 50,
 };
 
-export default function WheelsExperience() {
+// revealUnderlay: the next section (Robowars) is pinned underneath this one.
+// Wheels' black backdrop fades out as the TV shrinks to reveal it, the TV docks
+// onto Robowars' TV prop, then fades away once its screen has gone dark.
+export default function WheelsExperience({ revealUnderlay = false }) {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const [loadProgress, setLoadProgress] = useState(0);
@@ -48,6 +51,7 @@ export default function WheelsExperience() {
   const currentFrameRef = useRef(0);
   const lastDrawnFrameRef = useRef(-1);
   const fadeOverlayRef = useRef(null);
+  const backdropRef = useRef(null);
   const targetFadeRef = useRef(0);
   const currentFadeRef = useRef(0);
 
@@ -66,6 +70,9 @@ export default function WheelsExperience() {
     animTop: 0,
     animW: 0,
     animH: 0,
+    dockScale: 1,
+    dockX: 0,
+    dockY: 0,
   });
 
   useEffect(() => {
@@ -138,12 +145,21 @@ export default function WheelsExperience() {
       const scaleCover = Math.max(vpW / animW, vpH / animH);
       const startY = (vpH / 2) - animCenterY;
 
+      // Docked spot: exactly over Robowars' TV prop when it's underneath,
+      // otherwise the top of the viewport (final visual top of -5px).
+      const dock = revealUnderlay ? getRobowarsTvScreenRect(vpW, vpH) : null;
+
       layoutMetricsRef.current = {
         startTvScale: scaleCover,
         startTvY: startY,
         animTop,
         animW,
         animH,
+        dockScale: dock ? dock.width / animW : 1,
+        dockX: dock ? dock.x + dock.width / 2 - vpW / 2 : ALIGN_CONFIG.dockedShiftX,
+        dockY: dock
+          ? dock.y + dock.height / 2 - animCenterY
+          : -5 - animTop + ALIGN_CONFIG.dockedShiftY,
       };
 
       const tvContainer = tvContainerRef.current;
@@ -169,7 +185,7 @@ export default function WheelsExperience() {
       if (coverRef.w <= 0 || coverRef.h <= 0) updateCanvasDimensions();
 
       let panRatio = 1;
-      const SHRINK_START = 80;
+      const SHRINK_START = SHRINK_START_FRAME;
       const SHRINK_END = FRAME_COUNT - 1;
       if (index > SHRINK_START) {
         const shrinkProgress = (index - SHRINK_START) / (SHRINK_END - SHRINK_START);
@@ -260,10 +276,11 @@ export default function WheelsExperience() {
       const wheelsText = wheelsTextRef.current;
       if (!tvContainer || !tvFrame || !tvScreen) return;
 
-      const SHRINK_START = 80; // Starts earlier to slow down the animation speed
+      const SHRINK_START = SHRINK_START_FRAME; // Starts earlier to slow down the animation speed
       const SHRINK_END = FRAME_COUNT - 1; // 135 (frame 240)
 
-      const { startTvScale, startTvY, animTop, animW, animH } = layoutMetricsRef.current;
+      const { startTvScale, startTvY, animTop, animW, animH, dockScale, dockX, dockY } =
+        layoutMetricsRef.current;
 
       // Keep dimensions and top anchor strictly applied even through React re-renders
       tvContainer.style.top = `${animTop.toFixed(2)}px`;
@@ -276,6 +293,7 @@ export default function WheelsExperience() {
         tvContainer.style.transform = `translate3d(${initX.toFixed(2)}px, ${initY.toFixed(2)}px, 0) scale(${startTvScale.toFixed(4)})`;
         tvFrame.style.opacity = "0";
         tvScreen.style.borderRadius = "0px";
+        if (backdropRef.current) backdropRef.current.style.opacity = "1";
         if (wheelsText) {
           wheelsText.style.opacity = "0";
           wheelsText.style.transform = "scale(0.85)";
@@ -291,15 +309,11 @@ export default function WheelsExperience() {
       const curEase = shrinkRatio * shrinkRatio * (3 - 2 * shrinkRatio);
 
       // Single unified container transform: both TV and screen scale and move as one
-      const curTvScale = startTvScale + (1 - startTvScale) * curEase;
-      const curTvX = ALIGN_CONFIG.fullscreenShiftX * (1 - curEase) + ALIGN_CONFIG.dockedShiftX * curEase;
-      
-      // We want the final visual top to be -5px. Since the container is anchored at `animTop`,
-      // we translate by (-5 - animTop) to reach that visual position at the end.
+      const curTvScale = startTvScale + (dockScale - startTvScale) * curEase;
+      const curTvX = ALIGN_CONFIG.fullscreenShiftX * (1 - curEase) + dockX * curEase;
       const initY = startTvY + ALIGN_CONFIG.fullscreenShiftY;
-      const finalY = -5 - animTop + ALIGN_CONFIG.dockedShiftY;
-      const curTvY = initY * (1 - curEase) + finalY * curEase;
-      
+      const curTvY = initY * (1 - curEase) + dockY * curEase;
+
       tvContainer.style.transform = `translate3d(${curTvX.toFixed(2)}px, ${curTvY.toFixed(2)}px, 0) scale(${curTvScale.toFixed(4)})`;
 
       // TV frame fades in over the first 20% of the shrink
@@ -308,6 +322,11 @@ export default function WheelsExperience() {
 
       // TV screen corners smoothly round to 6px
       tvScreen.style.borderRadius = `${(curEase * 6).toFixed(1)}px`;
+
+      // Black backdrop around the TV fades out as it shrinks, revealing Robowars
+      if (revealUnderlay && backdropRef.current) {
+        backdropRef.current.style.opacity = (1 - curEase).toFixed(3);
+      }
 
       // Wheels text fades in near the very end
       if (wheelsText) {
@@ -370,6 +389,12 @@ export default function WheelsExperience() {
       if (fadeOverlayRef.current) {
         fadeOverlayRef.current.style.opacity = currentFadeRef.current.toFixed(3);
       }
+      // Once the screen is nearly black, fade the whole TV out onto the
+      // identical Robowars prop underneath so nothing slides away on unpin.
+      if (revealUnderlay && tvContainerRef.current) {
+        const tvFadeOut = Math.min(1, Math.max(0, (currentFadeRef.current - 0.6) / 0.4));
+        tvContainerRef.current.style.opacity = (1 - tvFadeOut).toFixed(3);
+      }
 
       animationFrameId = requestAnimationFrame(renderLoop);
     };
@@ -426,12 +451,12 @@ export default function WheelsExperience() {
       intersectionObserver.disconnect();
       trigger.kill();
     };
-  }, []);
+  }, [revealUnderlay]);
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full shrink-0 bg-black"
+      className={`relative z-10 w-full shrink-0 ${revealUnderlay ? "" : "bg-black"}`}
       style={{ height: `${TOTAL_SCROLL_VH}vh` }}
     >
       <style>{`
@@ -440,7 +465,8 @@ export default function WheelsExperience() {
           to { transform: translate3d(-50%, 0, 0); }
         }
       `}</style>
-      <div className="wheels-viewport sticky top-0 w-full h-dvh overflow-hidden bg-black">
+      <div className="wheels-viewport sticky top-0 w-full h-dvh overflow-hidden">
+        <div ref={backdropRef} className="pointer-events-none absolute inset-0 bg-black" />
         {/* Source of truth: Animation Viewport Unit */}
         <div
           ref={tvContainerRef}
@@ -453,13 +479,7 @@ export default function WheelsExperience() {
             src="/wheels/tv.png"
             alt="TV"
             className="absolute pointer-events-none select-none z-10 opacity-0"
-            style={{
-              left: "-16.244%",
-              top: "-52.710%",
-              width: "132.488%",
-              height: "175.888%",
-              maxWidth: "none",
-            }}
+            style={TV_ART_STYLE}
           />
 
           {/* Animation Viewport / TV Inner Screen */}
