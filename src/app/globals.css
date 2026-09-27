@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Jockey+One&family=Space+Grotesk:wght@400;500;600;700&family=Orbitron:wght@400&family=Hammersmith+One&family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Jockey+One&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 @font-face {
@@ -25,14 +25,6 @@
   font-display: swap;
 }
 
-@font-face {
-  font-family: 'Akira Expanded';
-  src: url('/fonts/AkiraExpanded-SuperBold.otf') format('opentype');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -54,14 +46,6 @@
   --font-mono: var(--font-vcr);
 }
 
-@theme {
-  --font-orbitron: 'Orbitron', sans-serif;
-  --font-hammersmith: 'Hammersmith One', sans-serif;
-  --font-akira: 'Akira Expanded', sans-serif;
-  --font-bebas: 'Bebas Neue', sans-serif;
-  --font-pixel: 'Press Start 2P', 'Hammersmith One', sans-serif;
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -70,12 +54,13 @@
 }
 
 html {
-  min-height: 100%;
-  scrollbar-gutter: stable;
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
   background: var(--background);
   color: var(--foreground);
   font-family: 'Space Grotesk', sans-serif;

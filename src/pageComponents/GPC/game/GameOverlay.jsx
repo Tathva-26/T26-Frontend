@@ -9,6 +9,7 @@ import { useFitScale } from "@/hooks/useFitScale";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { useZoomTransition } from "@/pageComponents/GPC/hooks/useZoomTransition";
 import { ASSETS, CONSOLE_SCREEN_INSET, GAME_BOX } from "@/pageComponents/GPC/gpcConfig";
+import { orbitron, hammersmithOne, pressStart2P } from "@/pageComponents/GPC/gpcFonts";
 
 const INITIAL_STATS = { phase: "ready", score: 0, highScore: 0, lives: 3 };
 
@@ -22,15 +23,9 @@ const screenRectStyle = {
 /**
  * Lifecycle: closed -> opening (zoom in) -> playing -> closing (zoom out) -> closed.
  *
- * There's only ever ONE console image here (console.png - the same asset
- * the hero button shows), so nothing ever swaps to a different-looking
- * bezel. It just grows. No backdrop is painted behind it, so the rest of
- * the page (including the hero, still animating underneath) stays visible
- * around the console the whole time.
- *
- * `playing` flips true the INSTANT the console is clicked - not once the
- * zoom animation finishes - so the ambient scene stops and the real game
- * starts in parallel with the zoom, not gated on it settling.
+ * Rendered via a portal, so it's mounted outside GpcHero's DOM subtree -
+ * the next/font variable classes are re-applied here for that reason,
+ * since CSS custom properties only inherit through the DOM tree.
  */
 export default function GameOverlay({ open, originRef, onClosed }) {
   const [playing, setPlaying] = useState(false);
@@ -49,9 +44,7 @@ export default function GameOverlay({ open, originRef, onClosed }) {
     if (!open || !scale || hasOpenedRef.current) return;
     hasOpenedRef.current = true;
     setPlaying(true);
-    zoom.play("in", () => {
-      rootRef.current?.focus();
-    });
+    zoom.play("in", () => rootRef.current?.focus());
   }, [open, scale, zoom]);
 
   const handleExit = useCallback(() => {
@@ -74,10 +67,6 @@ export default function GameOverlay({ open, originRef, onClosed }) {
 
   if (!open) return null;
 
-  // Not visible until scale is measured - nothing in this subtree (raw
-  // console art included) can paint before this flips, so the cutout cover
-  // below never needs to "win a race" against the console image; both are
-  // gated behind the exact same visibility switch.
   const isVisible = Boolean(scale);
 
   return createPortal(
@@ -87,7 +76,7 @@ export default function GameOverlay({ open, originRef, onClosed }) {
       aria-modal="true"
       aria-label="Arcade game"
       tabIndex={-1}
-      className="fixed inset-0 z-40 flex items-center justify-center outline-none"
+      className={`fixed inset-0 z-40 flex items-center justify-center outline-none ${orbitron.variable} ${hammersmithOne.variable} ${pressStart2P.variable}`}
     >
       <div
         ref={groupRef}
@@ -98,26 +87,11 @@ export default function GameOverlay({ open, originRef, onClosed }) {
           visibility: isVisible ? "visible" : "hidden",
         }}
       >
-        <Image
-          src={ASSETS.console}
-          alt=""
-          fill
-          priority
-          unoptimized
-          sizes="100vw"
-          className="object-contain"
-        />
+        <Image src={ASSETS.console} alt="" fill priority unoptimized sizes="100vw" className="object-contain" />
 
-        {/* Pure CSS, opaque, no image fetch/decode/paint involved - cannot
-            ever lag behind the console art rendering, unlike an
-            <img>/<Image> which still needs a decode step. This guarantees
-            console.png's baked-in screen art is never exposed, even under
-            a slow first paint. */}
-        <div
-          className="absolute overflow-hidden rounded-[18px] bg-[#050414]"
-          style={screenRectStyle}
-          aria-hidden="true"
-        />
+        {/* Solid cover for console.png's baked-in screen art, opaque before
+            ConsoleScreenCanvas paints its first frame. */}
+        <div className="absolute overflow-hidden rounded-[18px] bg-[#050414]" style={screenRectStyle} aria-hidden="true" />
 
         <ConsoleScreenCanvas backgroundOnly={playing} />
 

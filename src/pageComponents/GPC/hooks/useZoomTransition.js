@@ -5,13 +5,11 @@ import { TIMING } from "@/pageComponents/GPC/gpcConfig";
 /**
  * Grows the game console out of the clickable hero console (origin) and
  * shrinks it back - one continuous transform on `groupRef`, uniform scale
- * only. There's only one console image throughout (no separate bezel to
- * swap to), so `groupRef` itself is what gets measured and moved.
+ * only, since there's only one console image throughout.
  *
- * `revealRef` (the real game + HUD + exit button) fades in right at the
- * start of the opening tween, in parallel with the scale-up - not gated on
- * the scale-up finishing - and fades out first on close, before the group
- * starts shrinking.
+ * `revealRef` (game + HUD + exit button) fades in at the start of the
+ * opening tween, in parallel with the scale-up, and fades out first on
+ * close, before the group starts shrinking.
  */
 export function useZoomTransition({ originRef, groupRef, revealRef }) {
   const timelineRef = useRef(null);
@@ -35,7 +33,7 @@ export function useZoomTransition({ originRef, groupRef, revealRef }) {
       if (!group || !reveal) return;
 
       timelineRef.current?.kill();
-      gsap.set(group, { clearProps: "transform" });
+      gsap.set(group, { clearProps: "transform" }); // measure at rest
 
       const rest = { x: 0, y: 0, scale: 1 };
       const collapsed = measureCollapsed();

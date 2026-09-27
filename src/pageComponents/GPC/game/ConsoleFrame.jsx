@@ -9,7 +9,10 @@ import { ASSETS, CONSOLE_SCREEN_INSET, EXIT_BUTTON } from "@/pageComponents/GPC/
 function Message({ phase }) {
   const isOver = phase === "over";
   return (
-    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center">
+    <div
+      className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center"
+      style={{ fontFamily: "var(--font-pixel)" }}
+    >
       {isOver && <p className="text-[22px] leading-relaxed tracking-widest">GAME OVER</p>}
       <p className="text-[11px] leading-relaxed tracking-wider text-white/80">
         {isOver ? "PRESS SPACE TO RETRY" : "PRESS SPACE TO START"}
@@ -27,7 +30,10 @@ function Message({ phase }) {
 
 function Hud({ stats }) {
   return (
-    <div className="pointer-events-none absolute inset-0 font-pixel text-white">
+    <div
+      className="pointer-events-none absolute inset-0 text-white"
+      style={{ fontFamily: "var(--font-pixel)" }}
+    >
       <div className="absolute left-4 top-3">
         <Hearts lives={stats.lives} max={RULES.lives} />
       </div>

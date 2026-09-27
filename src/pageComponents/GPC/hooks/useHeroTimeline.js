@@ -14,6 +14,25 @@ const layer = (name) => `[data-layer="${name}"]`;
  */
 export function useHeroTimeline(rootRef) {
   useEffect(() => {
+    // globals.css sets html/body to a fixed height and overflow: hidden
+    // site-wide (left untouched - see README's Feature Integration
+    // section). ScrollTrigger's pin needs the page to actually scroll, and
+    // scrollbarGutter: "stable" prevents the scrollbar appearing/
+    // disappearing (e.g. from GameOverlay's scroll lock) from shifting
+    // layout width. All overridden here only while this component is
+    // mounted, restored on cleanup.
+    const previousHtmlHeight = document.documentElement.style.height;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousHtmlScrollbarGutter = document.documentElement.style.scrollbarGutter;
+    const previousBodyHeight = document.body.style.height;
+    const previousBodyOverflow = document.body.style.overflow;
+
+    document.documentElement.style.height = "auto";
+    document.documentElement.style.overflow = "auto";
+    document.documentElement.style.scrollbarGutter = "stable";
+    document.body.style.height = "auto";
+    document.body.style.overflow = "auto";
+
     const mm = gsap.matchMedia();
 
     mm.add(
@@ -39,12 +58,10 @@ export function useHeroTimeline(rootRef) {
           .fromTo(layer("title-a"), { opacity: 1, y: 0 }, { opacity: 0, y: -40, duration: 0.25 }, 0)
           .fromTo(layer("cta-a"), { opacity: 1 }, { opacity: 0, duration: 0.2 }, 0);
 
-        // The banner morphs in place (same asset, different crop/position).
+        // Banner morphs in place (same asset, different crop/position).
         tl.from(layer("banner"), { clipPath: CLIP.start, duration: 0.6 }, 0.05);
 
-        // The dragon: one asset, no fade - it shrinks and drifts back into
-        // its frame-2 position/size as you scroll. DRAGON_FRAME_1/_2 give
-        // the same top-left-corner-relative offset and scale GSAP needs.
+        // Dragon shrinks and drifts back into its frame-2 position/size.
         tl.from(
           layer("dragon"),
           {
@@ -60,17 +77,20 @@ export function useHeroTimeline(rootRef) {
         if (nav) tl.from(nav, { yPercent: -100, opacity: 0, duration: 0.25 }, 0.45);
         tl.from(layer("title-b"), { opacity: 0, y: 40, duration: 0.25 }, 0.55)
           .from(layer("cta-b"), { opacity: 0, duration: 0.2 }, 0.6)
-          .from(
-            layer("console"),
-            { opacity: 0, y: 120, scale: 0.9, duration: 0.3, ease: "back.out(1.4)" },
-            0.6
-          )
+          .from(layer("console"), { opacity: 0, y: 120, scale: 0.9, duration: 0.3, ease: "back.out(1.4)" }, 0.6)
           .from(layer("tagline"), { opacity: 0, y: 30, duration: 0.25 }, 0.75)
           .set(layer("console"), { pointerEvents: "auto" }, 0.9);
       },
       rootRef
     );
 
-    return () => mm.revert();
+    return () => {
+      mm.revert();
+      document.documentElement.style.height = previousHtmlHeight;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.documentElement.style.scrollbarGutter = previousHtmlScrollbarGutter;
+      document.body.style.height = previousBodyHeight;
+      document.body.style.overflow = previousBodyOverflow;
+    };
   }, [rootRef]);
 }
