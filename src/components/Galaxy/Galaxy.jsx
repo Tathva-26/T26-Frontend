@@ -268,8 +268,21 @@ export default function Galaxy({
 		let lastFrameTime = 0;
 		const frameInterval = 1000 / 30;
 
+		// Pause rendering entirely while this background is nowhere near the
+		// viewport (or the tab is backgrounded), so it doesn't keep driving a
+		// WebGL shader forever while the user is scrolled somewhere else.
+		let isIntersecting = true;
+		const intersectionObserver = new IntersectionObserver(
+			([entry]) => {
+				isIntersecting = entry.isIntersecting;
+			},
+			{ rootMargin: '50% 0px 50% 0px' },
+		);
+		intersectionObserver.observe(container);
+
 		function update(time) {
 			animationFrame = requestAnimationFrame(update);
+			if (!isIntersecting || document.hidden) return;
 			if (time - lastFrameTime < frameInterval) return;
 			lastFrameTime = time;
 
@@ -313,6 +326,7 @@ export default function Galaxy({
 		return () => {
 			cancelAnimationFrame(animationFrame);
 			resizeObserver.disconnect();
+			intersectionObserver.disconnect();
 			if (mouseInteraction) {
 				container.removeEventListener('mousemove', handleMouseMove);
 				container.removeEventListener('mouseleave', handleMouseLeave);

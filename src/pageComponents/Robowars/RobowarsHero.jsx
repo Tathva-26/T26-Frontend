@@ -97,6 +97,22 @@ function DesktopFrame({ className, scale = "desktop" }) {
         className="object-cover"
       />
 
+      {/* The docked Wheels TV, now dark, carried over as a background prop —
+          sits behind "FIGHT ON" to bridge the two sections. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute opacity-90"
+        style={frameStyle({ x: 546, y: 20, width: 320, height: 180 })}
+      >
+        <div className="relative h-full w-full">
+          <Image src="/wheels/tv.png" alt="" fill sizes="320px" className="object-contain" />
+          <div
+            className="absolute rounded-[2px] bg-black"
+            style={{ left: "12.26%", top: "29.97%", width: "75.48%", height: "56.85%" }}
+          />
+        </div>
+      </div>
+
       <div
         aria-hidden="true"
         className={`robowars-fight-on pointer-events-none absolute left-1/2 top-[4.8%] -translate-x-1/2 text-center font-akira-expanded font-extrabold uppercase leading-none text-white will-change-[opacity] ${
@@ -366,6 +382,7 @@ export default function RobowarsHero() {
         const timeline = gsap.timeline({
           defaults: { ease: "none" },
           scrollTrigger: {
+            scroller: document.querySelector(".main-scroll") || window,
             trigger: sectionRef.current,
             start: "top top",
             end: "bottom bottom",
@@ -458,7 +475,7 @@ export default function RobowarsHero() {
     <section
       ref={sectionRef}
       aria-labelledby="robowars-title"
-      className={`${calmSerif.variable} ${alata.variable} ${akiraExpanded.variable} ${bowlbyOneSC.variable} relative h-[180dvh] min-h-[900px] w-full bg-black text-white md:min-h-[1100px] xl:min-h-[940px] motion-reduce:h-dvh motion-reduce:min-h-dvh`}
+      className={`${calmSerif.variable} ${alata.variable} ${akiraExpanded.variable} ${bowlbyOneSC.variable} relative h-[180dvh] min-h-[900px] w-full shrink-0 bg-black text-white md:min-h-[1100px] xl:min-h-[940px] motion-reduce:h-dvh motion-reduce:min-h-dvh`}
     >
       <h1 id="robowars-title" className="sr-only">
         Robo Wars Enter Arena

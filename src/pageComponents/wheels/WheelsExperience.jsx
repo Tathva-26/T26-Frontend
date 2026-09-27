@@ -10,6 +10,14 @@ const END_FRAME = 240;
 const FRAME_COUNT = END_FRAME - START_FRAME + 1;
 const ASPECT_RATIO = 16 / 9;
 
+// Scroll distance (in viewport heights) spent scrubbing through the car frames,
+// followed by extra distance spent fading the docked TV screen to black before
+// Robowars takes over.
+const FRAME_SCROLL_VH = 700;
+const FADE_SCROLL_VH = 70;
+const TOTAL_SCROLL_VH = FRAME_SCROLL_VH + FADE_SCROLL_VH;
+const FRAME_PROGRESS_END = FRAME_SCROLL_VH / TOTAL_SCROLL_VH;
+
 const getFramePath = (index) => {
   const frameNum = (START_FRAME + index).toString().padStart(3, "0");
   return `/wheels/frames/ezgif-frame-${frameNum}.webp`;
@@ -39,6 +47,9 @@ export default function WheelsExperience() {
   const targetFrameRef = useRef(0);
   const currentFrameRef = useRef(0);
   const lastDrawnFrameRef = useRef(-1);
+  const fadeOverlayRef = useRef(null);
+  const targetFadeRef = useRef(0);
+  const currentFadeRef = useRef(0);
 
   const wheelsSceneRef = useRef(null);
   const wheelsLeftRef = useRef(null);
@@ -61,28 +72,7 @@ export default function WheelsExperience() {
     gsap.registerPlugin(ScrollTrigger);
     ScrollTrigger.config({ ignoreMobileResize: true });
 
-    // The host site intentionally locks its document scroll. This route restores
-    // scroll only while mounted, then puts the shared shell back exactly as found.
-    const documentStyles = {
-      htmlHeight: document.documentElement.style.height,
-      htmlOverflow: document.documentElement.style.overflow,
-      htmlOverflowX: document.documentElement.style.overflowX,
-      htmlOverflowY: document.documentElement.style.overflowY,
-      bodyHeight: document.body.style.height,
-      bodyMinHeight: document.body.style.minHeight,
-      bodyOverflow: document.body.style.overflow,
-      bodyOverflowX: document.body.style.overflowX,
-      bodyOverflowY: document.body.style.overflowY,
-    };
-    document.documentElement.style.height = "auto";
-    document.documentElement.style.overflow = "auto";
-    document.documentElement.style.overflowX = "clip";
-    document.documentElement.style.overflowY = "auto";
-    document.body.style.height = "auto";
-    document.body.style.minHeight = "100%";
-    document.body.style.overflow = "visible";
-    document.body.style.overflowX = "clip";
-    document.body.style.overflowY = "visible";
+    const scroller = document.querySelector('.main-scroll') || window;
 
     const coverRef = { x: 0, y: 0, w: 0, h: 0, dpr: 1, isMobile: false };
     const timeoutIds = [];
@@ -92,7 +82,7 @@ export default function WheelsExperience() {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
-      const parent = canvas.closest('.fixed');
+      const parent = canvas.closest('.wheels-viewport');
       const viewportWidth = parent ? parent.clientWidth : window.innerWidth;
       const viewportHeight = parent ? parent.clientHeight : window.innerHeight;
       const isMobile = viewportWidth <= 768 || "ontouchstart" in window;
@@ -327,10 +317,27 @@ export default function WheelsExperience() {
       }
     };
 
+    // Pause the render loop entirely while this section is nowhere near the
+    // viewport, so it doesn't keep drawing to canvas + writing styles forever
+    // while the user is scrolled somewhere else on the page.
+    let isIntersecting = true;
+    const intersectionObserver = new IntersectionObserver(
+      ([entry]) => {
+        isIntersecting = entry.isIntersecting;
+      },
+      { rootMargin: "50% 0px 50% 0px" },
+    );
+    if (containerRef.current) intersectionObserver.observe(containerRef.current);
+
     let animationFrameId;
     const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
     const lerpRate = isTouchDevice ? 0.2 : 0.08;
     const renderLoop = () => {
+      if (!isIntersecting || document.hidden) {
+        animationFrameId = requestAnimationFrame(renderLoop);
+        return;
+      }
+
       const difference = targetFrameRef.current - currentFrameRef.current;
       currentFrameRef.current = Math.abs(difference) > 0.001
         ? currentFrameRef.current + difference * lerpRate
@@ -355,6 +362,15 @@ export default function WheelsExperience() {
 
       updateCinematicText(currentFrameRef.current / (FRAME_COUNT - 1));
       updateTvShrinkAnimation(currentFrameRef.current);
+
+      const fadeDifference = targetFadeRef.current - currentFadeRef.current;
+      currentFadeRef.current = Math.abs(fadeDifference) > 0.001
+        ? currentFadeRef.current + fadeDifference * lerpRate
+        : targetFadeRef.current;
+      if (fadeOverlayRef.current) {
+        fadeOverlayRef.current.style.opacity = currentFadeRef.current.toFixed(3);
+      }
+
       animationFrameId = requestAnimationFrame(renderLoop);
     };
     animationFrameId = requestAnimationFrame(renderLoop);
@@ -378,12 +394,26 @@ export default function WheelsExperience() {
     window.addEventListener("resize", handleResize);
 
     const trigger = ScrollTrigger.create({
+      scroller,
       trigger: containerRef.current,
       start: "top top",
-      end: "bottom bottom",
+      // CSS `position: sticky` naturally releases its pin during the final
+      // viewport-height of its containing block (that's just how sticky
+      // works). End the trigger's progress exactly at that pin boundary so
+      // the frame-scrub + fade-to-black finish while the screen is still
+      // fully pinned, and the last viewport-height of scroll is spent
+      // carrying an already-black frame away (invisible) into Robowars.
+      end: () => `+=${Math.max((containerRef.current?.offsetHeight || 0) - window.innerHeight, 0)}`,
       scrub: 0,
+      invalidateOnRefresh: true,
       onUpdate: (self) => {
-        targetFrameRef.current = self.progress * (FRAME_COUNT - 1);
+        if (self.progress <= FRAME_PROGRESS_END) {
+          targetFrameRef.current = (self.progress / FRAME_PROGRESS_END) * (FRAME_COUNT - 1);
+          targetFadeRef.current = 0;
+        } else {
+          targetFrameRef.current = FRAME_COUNT - 1;
+          targetFadeRef.current = (self.progress - FRAME_PROGRESS_END) / (1 - FRAME_PROGRESS_END);
+        }
       },
     });
 
@@ -393,32 +423,24 @@ export default function WheelsExperience() {
       timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
       images.forEach((image) => { image.onload = null; image.onerror = null; });
       window.removeEventListener("resize", handleResize);
+      intersectionObserver.disconnect();
       trigger.kill();
-      Object.assign(document.documentElement.style, {
-        height: documentStyles.htmlHeight,
-        overflow: documentStyles.htmlOverflow,
-        overflowX: documentStyles.htmlOverflowX,
-        overflowY: documentStyles.htmlOverflowY,
-      });
-      Object.assign(document.body.style, {
-        height: documentStyles.bodyHeight,
-        minHeight: documentStyles.bodyMinHeight,
-        overflow: documentStyles.bodyOverflow,
-        overflowX: documentStyles.bodyOverflowX,
-        overflowY: documentStyles.bodyOverflowY,
-      });
     };
   }, []);
 
   return (
-    <div ref={containerRef} className="relative flex-none h-[700vh] bg-black">
+    <div
+      ref={containerRef}
+      className="relative w-full shrink-0 bg-black"
+      style={{ height: `${TOTAL_SCROLL_VH}vh` }}
+    >
       <style>{`
         @keyframes ticker-marquee {
           from { transform: translate3d(0, 0, 0); }
           to { transform: translate3d(-50%, 0, 0); }
         }
       `}</style>
-      <div className="fixed inset-0 w-screen h-screen h-[100dvh] overflow-hidden bg-black">
+      <div className="wheels-viewport sticky top-0 w-full h-dvh overflow-hidden bg-black">
         {/* Source of truth: Animation Viewport Unit */}
         <div
           ref={tvContainerRef}
@@ -452,6 +474,12 @@ export default function WheelsExperience() {
             >
               Wheels
             </span>
+            {/* Fades just the screen's content to black as you scroll past it — the
+                TV frame itself stays put, its screen simply goes dark. */}
+            <div
+              ref={fadeOverlayRef}
+              className="pointer-events-none absolute inset-0 z-30 bg-black opacity-0"
+            />
           </div>
         </div>
 
