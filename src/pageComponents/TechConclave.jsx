@@ -1,10 +1,10 @@
+"use client";
 import React from "react";
 
 const background = "/images/techconclave/background.png";
 const person1 = "/images/techconclave/person2.png";
 const person2 = "/images/techconclave/person1.png";
 const robot = "/images/techconclave/robot.png";
-const hand = "/images/techconclave/hand.png";
 const logo = "/images/techconclave/logo.png";
 const smallStar = "/images/techconclave/smallstar.png";
 const bigStar = "/images/techconclave/bigstar.png";
@@ -21,6 +21,19 @@ const bigStar = "/images/techconclave/bigstar.png";
                    columns as the screen narrows.
   Both are rendered; CSS `display` (via matching media queries) shows only
   one at a time, so there's no layout-shift/hydration flicker.
+
+  SPEAKER CARDS — every speaker tile (all three layouts) is a `.tc-card`:
+    • hover/focus lift   → scale(1.05) translateY(-8px) + purple glow
+    • inner image zoom   → image scales to 1.1 inside the clipped card
+    • cursor spotlight   → radial gradient driven by --mx / --my
+    • accent ring        → 1.5px #7c3aed border fades in
+    • floating badge     → slides/fades in at the bottom-left corner
+  SCROLL DRIFT — while the poster passes through the viewport, the left
+  speaker column drifts up and the right column drifts down. It uses the
+  CSS `translate` property (separate from `transform`), so it never fights
+  the hover lift, and it's transform-only, so no layout box moves. When the
+  poster is centred in the viewport both columns sit at their exact
+  original positions.
   ──────────────────────────────────────────────────────────────────────── */
 
 const FW = 1413;
@@ -41,21 +54,22 @@ const box = (x, y, w, h) => ({
   height: `${(h / FH) * 100}%`,
 });
 
+/* badge text is placeholder metadata — swap in real session names / roles */
 const womanTiles = [
-  { color: "#00ff5e", shape: [668, 25, 158, 163], img: [668, 18, 158, 170] },
-  { color: "#ffe600", shape: [668, 243, 158, 163], img: [668, 236, 158, 170] },
-  { color: "#0033ff", shape: [668, 461, 158, 163], img: [668, 454, 158, 170] },
+  { color: "#000000", shape: [668, 25, 158, 163], img: [668, 18, 158, 170]},
+  { color: "#000000", shape: [668, 243, 158, 163], img: [668, 236, 158, 170]},
+  { color: "#000000", shape: [668, 461, 158, 163], img: [668, 454, 158, 170] },
 ];
 
 const manTiles = [
-  { color: "#ff8ff5", shape: [870, 40, 158, 160], img: [870, 8, 158, 194] },
-  { color: "#d62828", shape: [870, 257, 158, 161], img: [870, 225, 158, 195] },
-  { color: "#9b3bb0", shape: [870, 475, 158, 161], img: [870, 443, 158, 195] },
+  { color: "#000000", shape: [870, 40, 158, 160], img: [870, 8, 158, 194] },
+  { color: "#000000", shape: [870, 257, 158, 161], img: [870, 225, 158, 195]},
+  { color: "#000000", shape: [870, 475, 158, 161], img: [870, 443, 158, 195] },
 ];
 
 const Plus = ({ style, rotate = 0 }) => (
   <svg
-    className="tc-abs"
+    className="tc-abs tc-deco"
     style={{ ...style, transform: `rotate(${rotate}deg)` }}
     viewBox="0 0 10 10"
     aria-hidden="true"
@@ -64,45 +78,148 @@ const Plus = ({ style, rotate = 0 }) => (
   </svg>
 );
 
+/* ───────────────────────── SCROLL DRIFT HOOK ─────────────────────────
+   Writes --tc-p (-1 → 0 → 1) on the poster's <main>:
+     -1 = poster just entering from the bottom of the viewport
+      0 = poster centred in the viewport (tiles at their original spots)
+      1 = poster leaving through the top
+   Smoothed with a small lerp for an eased, "floating" feel. Only runs
+   while the poster is on screen; hidden layouts (display:none) never
+   intersect, so they cost nothing. */
+function useScrollDrift() {
+  const ref = React.useRef(null);
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof window === "undefined") return undefined;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+
+    let visible = false;
+    let raf = 0;
+    let current = 0;
+    let target = 0;
+    let primed = false;
+
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      const vh = window.innerHeight || 1;
+      const range = (vh + r.height) / 2 || 1;
+      const p = (vh / 2 - (r.top + r.height / 2)) / range;
+      target = Math.max(-1, Math.min(1, p));
+      if (!primed) {
+        current = target; // no jump on first paint
+        primed = true;
+        el.style.setProperty("--tc-p", current.toFixed(4));
+      }
+    };
+
+    // Runs every animation frame while the poster is on screen, instead of
+    // waiting for scroll/resize events. Scroll-event dispatch is where
+    // browsers/devices disagree (nested scroll containers like the tablet
+    // layout's own overflow-y:auto wrapper, devtool device emulation not
+    // always firing a clean resize, etc.) — polling position every frame
+    // sidesteps all of that, it just can't miss an update.
+    const loop = () => {
+      if (!visible) { raf = 0; return; }
+      measure();
+      current += (target - current) * 0.12;
+      if (Math.abs(target - current) < 0.0005) current = target;
+      el.style.setProperty("--tc-p", current.toFixed(4));
+      raf = requestAnimationFrame(loop);
+    };
+
+   const io = new IntersectionObserver(([entry]) => {
+  visible = entry.isIntersecting;
+  if (visible && !raf) raf = requestAnimationFrame(loop);
+});
+
+io.observe(el);
+measure();
+raf = requestAnimationFrame(loop);
+
+    return () => {
+      io.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  return ref;
+}
+
+/* ───────────────────────── SPEAKER CARD HELPERS ───────────────────────── */
+
+/* Writes the pointer position into CSS vars so the spotlight follows the
+   cursor. Touches the DOM directly — no React state, no re-renders. */
+const trackLight = (e) => {
+  // Only execute for mouse/pointer devices, skip touch/mobile interactions
+  if (e.pointerType === 'touch') return;
+
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  e.currentTarget.style.setProperty('--light-x', `${x}px`);
+  e.currentTarget.style.setProperty('--light-y', `${y}px`);
+};
+
+
+/* Desktop tile: the photo is taller than its black shape so the head pops
+   out above it. The card box = photo box; shape / light / ring are placed
+   inside it at the shape's exact original position. */
+function DeskTile({ tile, src, alt, col }) {
+  const [ix, iy, iw, ih] = tile.img;
+  const [sx, sy, sw, sh] = tile.shape;
+  const inner = {
+    left: `${((sx - ix) / iw) * 100}%`,
+    top: `${((sy - iy) / ih) * 100}%`,
+    width: `${(sw / iw) * 100}%`,
+    height: `${(sh / ih) * 100}%`,
+  };
+
+  return (
+    <div
+      className={`tc-card tc-card--desk ${col}`}
+      style={box(...tile.img)}
+      tabIndex={0}
+      onPointerMove={trackLight}
+    >
+      <div className="tc-card-shape tc-shape" style={{ ...inner, background: tile.color }} />
+      <div className="tc-card-clip">
+        <img className="tc-person tc-card-img" src={src} alt={alt} />
+      </div>
+      <span className="tc-card-light" style={inner} />
+      <span className="tc-card-ring" style={inner} />
+    </div>
+  );
+}
+
 /* ───────────────────────── DESKTOP (unchanged) ───────────────────────── */
 
 function DesktopPoster() {
+  const driftRef = useScrollDrift();
+
   return (
     <main
+      ref={driftRef}
       className="tc-page tc-desktop-only"
-      style={{ backgroundImage: `url(${background})` }}
+      style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})` }}
     >
       <section className="tc-stage" aria-label="Tech Conclave, October 10-11">
         {/* colour blocks behind the robot */}
-        <div className="tc-abs" style={{ ...box(55, 38, 280, 600), background: "#8585c8" }} />
-        <div className="tc-abs" style={{ ...box(40, 588, 500, 170), background: "#c9559a" }} />
+        <div className="tc-abs tc-deco" style={{ ...box(10, 38, 290, 550), background: "#8A38F5C2" }} />
+        <div className="tc-abs tc-deco" style={{ ...box(20, 588, 600, 170), background: "#9C03A0BA" }} />
 
         {/* decorations */}
-        <Plus style={box(-35, 250, 40, 40)} rotate={20} />
         <Plus style={box(1128, 42, 92, 92)} rotate={20} />
+        <p className="tc-eyebrow tc-abs" style={box(40, 770, 600, 40)}>
+  TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.
+</p>
 
-        {/* people grid */}
+        {/* people grid — interactive speaker cards */}
         {womanTiles.map((t, i) => (
-          <React.Fragment key={`w${i}`}>
-            <div className="tc-abs tc-shape" style={{ ...box(...t.shape), background: t.color }} />
-            <img
-              className="tc-abs tc-person"
-              style={box(...t.img)}
-              src={person1}
-              alt={i === 0 ? "Speaker" : ""}
-            />
-          </React.Fragment>
+          <DeskTile key={`w${i}`} tile={t} src={person1} alt={i === 0 ? "Speaker" : ""} col="tc-col-left" />
         ))}
         {manTiles.map((t, i) => (
-          <React.Fragment key={`m${i}`}>
-            <div className="tc-abs tc-shape" style={{ ...box(...t.shape), background: t.color }} />
-            <img
-              className="tc-abs tc-person"
-              style={box(...t.img)}
-              src={person2}
-              alt={i === 0 ? "Speaker" : ""}
-            />
-          </React.Fragment>
+          <DeskTile key={`m${i}`} tile={t} src={person2} alt={i === 0 ? "Speaker" : ""} col="tc-col-right" />
         ))}
 
         {/* stretched display type */}
@@ -113,14 +230,14 @@ function DesktopPoster() {
           preserveAspectRatio="none"
           aria-hidden="true"
         >
-          <text x="375" y="140" fontSize="135" fill="#ffffff" textLength="190" lengthAdjust="spacingAndGlyphs">
+          <text x="335" y="140" fontSize="135" fill="#ffffff" textLength="235" lengthAdjust="spacingAndGlyphs">
             TECH
           </text>
           <text
-            transform="translate(560, 630) rotate(-90)"
-            fontSize="250"
+            transform="translate(550, 635) rotate(-90)"
+            fontSize="270"
             fill="#6d7fff"
-            textLength="480"
+            textLength="485"
             lengthAdjust="spacingAndGlyphs"
           >
             CONCLAVE
@@ -133,14 +250,12 @@ function DesktopPoster() {
           </text>
         </svg>
 
-        {/* robot + hand */}
-        <img className="tc-abs robot-img" style={box(-30, 100, 650, 650)} src={robot} alt="Waving robot" />
-        <img className="tc-abs" style={box(410, 400, 390, 390)} src={hand} alt="" />
+        {/* robot */}
+        <img className="tc-abs-robot robot-img tc-deco" style={box(-270, -70, 970, 950)} src={robot} alt="Waving robot" />
 
         {/* stars */}
-        <img className="tc-abs" style={fbox(-160, 490, 200, 210)} src={bigStar} alt="" />
-        <img className="tc-abs" style={fbox(-106, 650, 90, 115)} src={smallStar} alt="" />
-
+        <img className="tc-abs tc-deco" style={box(-180, -30, 200, 210)} src={bigStar} alt="" />
+        <img className="tc-abs tc-deco" style={box(-140, 130, 115, 130)} src={smallStar} alt="" />
         {/* right column */}
         <div className="tc-abs tc-hero-heading" style={box(1080, 230, 510, 450)} aria-label="Tech Conclave title">
           <span className="tc-hero-word">
@@ -148,8 +263,8 @@ function DesktopPoster() {
             <span className="tc-hero-conclave">CONCLAVE</span>
           </span>
         </div>
-        <img className="tc-abs logo-img" style={box(970, 510, 220, 220)} src={logo} alt="Tech Conclave" />
-        <p className="tc-abs tc-tagline" style={box(1112,328, 420, 170)}>
+        <img className="tc-abs logo-img tc-deco" style={box(970, 510, 220, 220)} src={logo} alt="Tech Conclave" />
+        <p className="tc-abs tc-tagline" style={box(1112, 328, 420, 170)}>
           A space for inspiring
           <br />
           personalities engaging
@@ -180,7 +295,7 @@ function DesktopPoster() {
       no extra breakpoint needed for that switch.
 
    The illustration itself (purple block behind the robot, robot
-   overlapping the pink block, hand overlapping the grid, stars/plus) is
+   overlapping the pink block, overlapping the grid, stars/plus) is
    one composited scene, so — same as the desktop version — its pieces
    are placed with percentage coordinates *inside that one scene only*
    (mbox helper, on its own small canvas), not scattered absolute
@@ -201,9 +316,9 @@ const mbox = (x, y, w, h) => ({
   height: `${(h / MH) * 100}%`,
 });
 
-
-
 function MobilePoster() {
+  const driftRef = useScrollDrift();
+
   // interleaved so flex-wrap lands them green/pink, yellow/red, blue/purple
   const people = womanTiles.flatMap((w, i) => [
     { ...w, img: person1 },
@@ -211,7 +326,7 @@ function MobilePoster() {
   ]);
 
   return (
-    <main className="tc-page tc-mobile-only" style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})` }}>
+    <main ref={driftRef} className="tc-page tc-mobile-only" style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})` }}>
       <section className="tc-m-stage" aria-label="Tech Conclave, October 10-11">
         {/* ── visual group: title + illustration + eyebrow ── */}
         <div className="tc-m-panel tc-m-panel--visual">
@@ -220,27 +335,32 @@ function MobilePoster() {
               <span className="tc-m-tech">TECH</span>
               <span className="tc-m-conclave">CONCLAVE</span>
             </h1>
-            
           </div>
-          
-          <div className="tc-m-hero">
-            <div className="tc-abs" style={{ ...mbox(30, -7, 130, 280), background: "#8585c8" }} />
-            <div className="tc-abs" style={{ ...mbox(30, 270, 280, 70), background: "#c9559a"}} />
 
-            <Plus style={{ ...mbox(-10, 60, 27, 27) }} rotate={20} />
+          <div className="tc-m-hero">
+            <div className="tc-abs tc-deco" style={{ ...mbox(30, -7, 130, 280), background: "#8A38F5C2" }} />
+            <div className="tc-abs tc-deco" style={{ ...mbox(30, 270, 280, 70), background: "#9C03A0BA" }} />
 
             <div className="tc-abs tc-m-people" style={mbox(215, -9, 174, 231)} role="list" aria-label="Speakers">
-              {people.map((t, i) => (
-                <div className="tc-m-tile" style={{ background: t.color }} key={i} role="listitem">
-                  <img className="tc-m-tile-img" src={t.img} alt="" />
-                </div>
-              ))}
-            </div>
+  {people.map((t, i) => (
+    <div
+      className={`tc-m-tile tc-card ${i % 2 === 0 ? "tc-col-left" : "tc-col-right"}`}
+      style={{ "--tile-color": t.color }}
+      key={i}
+      role="listitem"
+      tabIndex={0}
+      onPointerMove={trackLight}
+    >
+      <img className="tc-m-tile-img tc-card-img" src={t.img} alt="" />
+      <span className="tc-card-light" />
+      <span className="tc-card-ring" />
+    </div>
+  ))}
+</div>
 
-            <img className="tc-abs tc-m-robot" style={mbox(-8, -75, 450, 450)} src={robot} alt="Waving robot" />
-            <img className="tc-abs" style={mbox(260, 197, 170, 170)} src={hand} alt="" />
-            <img className="tc-abs" style={mbox(-37, 210, 80, 80)} src={bigStar} alt="" />
-            <img className="tc-abs" style={mbox(-21, 280, 50, 50)} src={smallStar} alt="" />
+            <img className="tc-abs tc-m-robot tc-deco" style={mbox(-75, 35, 350, 350)} src={robot} alt="Waving robot" />
+            <img className="tc-abs tc-deco" style={mbox(-37, -15, 80, 80)} src={bigStar} alt="" />
+            <img className="tc-abs tc-deco" style={mbox(-21, 50, 50, 50)} src={smallStar} alt="" />
           </div>
 
           <p className="tc-m-eyebrow">TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.</p>
@@ -274,7 +394,7 @@ function MobilePoster() {
 function TabletPlus({ style, rotate = 0 }) {
   return (
     <svg
-      className="tc-t-abs tc-t-plus"
+      className="tc-t-abs tc-t-plus tc-deco"
       style={{ ...style, transform: `rotate(${rotate}deg)` }}
       viewBox="0 0 10 10"
       aria-hidden="true"
@@ -285,13 +405,15 @@ function TabletPlus({ style, rotate = 0 }) {
 }
 
 function TabletPoster() {
+  const driftRef = useScrollDrift();
+
   const speakers = womanTiles.flatMap((woman, index) => [
     { ...woman, img: person1 },
     { ...manTiles[index], img: person2 },
   ]);
 
   return (
-    <main className="tc-t-page" style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})`}}>
+    <main ref={driftRef} className="tc-t-page" style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})` }}>
       <section className="tc-t-stage" aria-label="Tech Conclave, October 10-11">
         <div className="tc-t-visual">
           <h1 className="tc-t-title">
@@ -300,23 +422,33 @@ function TabletPoster() {
           </h1>
 
           <div className="tc-t-art">
-            <div className="tc-t-abs tc-t-block" style={{ ...mbox(30, -7, 130, 280), background: "#8585c8" }} />
-            <div className="tc-t-abs tc-t-pink-block" style={{ ...mbox(30, 270, 280, 70), background: "#c9559a" }} />
-            <TabletPlus style={mbox(-10, 60, 27, 27)} rotate={20} />
+            <div className="tc-t-abs tc-t-block tc-deco" style={{ ...mbox(30, -7, 130, 280), background: "#8A38F5C2" }} />
+            <div className="tc-t-abs tc-t-pink-block tc-deco" style={{ ...mbox(30, 270, 280, 70), background: "#9C03A0BA" }} />
             <div className="tc-t-abs tc-t-speakers" style={mbox(215, -9, 174, 231)} role="list" aria-label="Speakers">
-              {speakers.map((speaker, index) => (
-                <div className="tc-t-speaker" style={{ background: speaker.color }} key={index} role="listitem">
-                  <img className="tc-t-speaker-img" src={speaker.img} alt="" />
-                </div>
-              ))}
-            </div>
-            <img className="tc-t-abs tc-t-robot" style={mbox(-8, -75, 450, 450)} src={robot} alt="Waving robot" />
-            <img className="tc-t-abs tc-t-hand" style={mbox(260, 197, 170, 170)} src={hand} alt="" />
-            <img className="tc-t-abs tc-t-star" style={mbox(-37, 210, 80, 80)} src={bigStar} alt="" />
-            <img className="tc-t-abs tc-t-star" style={mbox(-21, 280, 50, 50)} src={smallStar} alt="" />
+  {speakers.map((speaker, index) => (
+    <div
+      className={`tc-t-speaker tc-card ${index % 2 === 0 ? "tc-col-left" : "tc-col-right"}`}
+      style={{ "--tile-color": speaker.color }}
+      key={index}
+      role="listitem"
+      tabIndex={0}
+      onPointerMove={trackLight}
+    >
+      <img className="tc-t-speaker-img tc-card-img" src={speaker.img} alt="" />
+      <span className="tc-card-light" />
+      <span className="tc-card-ring" />
+    </div>
+  ))}
+</div>
+            <img className="tc-t-abs tc-t-robot tc-deco" style={mbox(-100, 5, 400, 400)} src={robot} alt="Waving robot" />
+            <img className="tc-t-abs tc-t-star tc-deco" style={mbox(-55, -20, 110, 110)} src={bigStar} alt="" />
+            <img className="tc-t-abs tc-t-star tc-deco" style={mbox(-34, 50, 70, 70)} src={smallStar} alt="" />
           </div>
 
-          <p className="tc-t-eyebrow">TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.</p>
+
+<p className="tc-t-eyebrow">
+  TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.
+</p>
         </div>
 
         <div className="tc-t-info">
@@ -378,7 +510,7 @@ html, body { margin: 0; padding: 0; }
   .tc-mobile-only { display: grid; }
 }
 
-/* ============================ DESKTOP (unchanged) ============================ */
+/* ============================ DESKTOP ============================ */
 
 .tc-stage {
   position: relative;
@@ -410,18 +542,24 @@ html, body { margin: 0; padding: 0; }
   line-height: 0.9;
   letter-spacing: -0.02em;
   white-space: nowrap;
-  font-size: clamp(5rem, 2.8vw, 5.2rem);
+  font-size: clamp(2.6rem, 7.4cqw, 5.2rem);
 }
 
 .tc-hero-tech { display: inline-block; color: #ffffff; font-size: 1em; font-weight: 400; }
 .tc-hero-conclave { display: inline-block; color: #6d7fff; font-size: 1em; font-weight: 400; }
 
-.robot-img { transform: translateX(-7.5%) scale(1.27); transform-origin: left center; }
+.robot-img { transform: translateX(-7.5%) ; transform-origin: left center; }
 // .logo-img { transform: scale(1.65) translate(-1%, -3%); transform-origin: right center; z-index: 4; }
-
+.tc-abs-robot { position: absolute; display: block; }
 .tc-abs { position: absolute; display: block; object-fit: contain; }
-.tc-shape { border-top-right-radius: 42%; }
-.tc-person { object-fit: cover; object-position: center bottom; }
+.tc-shape { 
+  border-top-right-radius: 15%;
+  border-top-left-radius: 15%;
+  border-bottom-right-radius: 15%;
+  border-bottom-left-radius: 15%;
+  }
+.tc-person { object-fit: cover; object-position: center bottom; border-bottom-right-radius: 15%;
+  border-bottom-left-radius: 15%;}
 .tc-type text { font-family: "Bebas Neue", "Oswald", Impact, sans-serif; }
 
 .tc-tagline {
@@ -432,7 +570,18 @@ html, body { margin: 0; padding: 0; }
   line-height: 1.34;
   color: #e9e9f2;
 }
-
+.tc-eyebrow {
+  margin: 0;
+  text-align: left;
+  font-family: "Bebas Neue", sans-serif;
+  font-weight:800;
+  font-size: 2.5cqw;
+  color: #6d7fff;
+  line-height: 1;
+  z-index: 10;
+  pointer-events: none;
+  /* Removed transform translateY which was causing offset bugs */
+}
 /* ============================ MOBILE / TABLET (new, flex-wrap) ============================ */
 
 .tc-m-stage {
@@ -497,6 +646,7 @@ html, body { margin: 0; padding: 0; }
   font-size: clamp(2.2rem, 9.4vw, 3.7rem);
   line-height: 0.86;
   letter-spacing: 0.01em;
+  transform: translateX(-6px)!important;
   // transform: scaleY(0.8);
   // transform-origin: left top;
 }
@@ -522,7 +672,7 @@ html, body { margin: 0; padding: 0; }
   text-align: left;
   font-family: Bebas Neue;
   font-size: 17px;
-  color: #8484C8;
+  color: #6d7fff;
   transform: translate(-36px, -3px);
 }
 
@@ -613,29 +763,56 @@ text-align: center;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 11px;
+  gap: 18px;
+  margin-left: 20px !important;
 }
+
 .tc-m-tile {
-  flex: 1 1 46%;
+  flex: 0 0 calc(44% - 9px);
   aspect-ratio: 1 / 1;
-  border-top-right-radius: 34%;
-  overflow: hidden;
   position: relative;
+  overflow: visible !important;
 }
+
+/* the rounded "body" shape only — sits lower than the tile itself so the
+   head has room to pop out above it. This is the layer that owns the
+   colour fill and the hover glow (not the tile / not the image). */
+.tc-m-tile::before {
+  content: "";
+  position: absolute;
+  top: 26%;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--tile-color);
+  border-radius: 15%;
+  z-index: 1;
+  transition: box-shadow 0.45s var(--tc-ease);
+}
+
+.tc-m-tile:is(:hover, :focus-visible)::before {
+  box-shadow: var(--tc-glow);
+}
+
 .tc-m-tile-img {
   position: absolute;
-  inset: 0;
+  bottom: 0;
+  left: 0;
   width: 100%;
-  height: 100%;
+  height: 122%;
   object-fit: cover;
   object-position: center bottom;
+  border-bottom-right-radius: 15%;
+  border-bottom-left-radius: 15%;
+  z-index: 5;
+  pointer-events: none;
 }
+
 /*-------------------------------TABLETS----------------------------------------------*/
 .tc-t-page {
   min-height: 100vh;
   width: 100%;
   overflow-x: hidden;
-  overflow-y: auto;
   background-color: #101014;
   background-size: cover;
   background-position: center;
@@ -684,6 +861,7 @@ text-align: center;
   font-family: "Bebas Neue", sans-serif;
   font-size: clamp(3rem, 9vw, 6rem);
   font-weight: 400;
+  transform: translateY(-15px);
 }
 
 .tc-t-conclave {
@@ -692,6 +870,7 @@ text-align: center;
   font-size: clamp(2.6rem, 8vw, 5.4rem);
   font-weight: 800;
   line-height: 0.96;
+   transform: translateY(-9px);
 }
 
 .tc-t-art {
@@ -712,38 +891,63 @@ text-align: center;
 .tc-t-block { border-top-right-radius: 0%; }
 .tc-t-pink-block { z-index: 0; }
 .tc-t-plus { z-index: 2; }
-.tc-t-robot { z-index: 2; object-fit: cover; }
-.tc-t-hand { z-index: 4; object-fit: contain; }
+.tc-t-robot { z-index: 2; }
 .tc-t-star { z-index: 5; }
 
-.tc-t-speakers {
-  z-index: 1;
+ .tc-t-speakers {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 7px;
+  gap: 19px;
+  transform:translateX(46px)
+}
+.tc-t-speaker:is(:hover, :focus-visible) {
+  z-index: 10;
 }
 
 .tc-t-speaker {
   position: relative;
-  flex: 1 1 46%;
-  aspect-ratio: 1;
-  overflow: hidden;
-  border-top-right-radius: 32%;
+  flex: 0 0 calc(44% - 10px);
+  aspect-ratio: 1 / 1;
+  overflow: visible !important;
+}
+
+/* same "body" shape pattern as mobile: colour + glow live on this lower
+   layer, not on the tile itself, so the glow never crosses the forehead */
+.tc-t-speaker::before {
+  content: "";
+  position: absolute;
+  top: 26%;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--tile-color);
+  border-radius: 15%;
+  z-index: 1;
+  transition: box-shadow 0.8s var(--tc-ease);
+}
+
+.tc-t-speaker:is(:hover, :focus-visible)::before {
+  box-shadow: var(--tc-glow);
 }
 
 .tc-t-speaker-img {
   position: absolute;
-  inset: 0;
+  bottom: 0;
+  left: 0;
   width: 100%;
-  height: 100%;
+  height: 122%;
   object-fit: cover;
   object-position: center bottom;
+  border-bottom-right-radius: 15%;
+  border-bottom-left-radius: 15%;
+  z-index: 5;
+  pointer-events: none;
 }
 
 .tc-t-eyebrow {
   margin: 8px 0 0 24px;
-  color: #8484c8;
+  color: #6d7fff;
   font-family: "Bebas Neue", sans-serif;
   font-size: clamp(25px, 2.4vw, 24px);
   transform: translateX(21px)
@@ -752,7 +956,7 @@ text-align: center;
 .tc-t-lockup { max-width: 34ch; }
 .tc-t-kicker {
   margin: 0 0 12px;
-  color: #c9559a;
+  color: #9C03A0BA;
   font-family: "Bebas Neue", sans-serif;
   font-size: clamp(14px, 1.5vw, 18px);
 }
@@ -799,18 +1003,171 @@ text-align: center;
   line-height: 0.9;
 }
 
-/* toggle desktop vs mobile layout — no JS, no hydration flicker */
+/* ===================== SPEAKER CARDS — floating hover ===================== */
+
+/* decorative layers (robot, stars, colour blocks, display type, logo) sit on
+   top of the tiles in places — let the pointer pass through them */
+.tc-deco,
+.tc-type { pointer-events: none; }
+
+.tc-card {
+  --tc-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --tc-accent: #7c3aed;
+  --tc-glow: 0 12px 28px rgba(124, 58, 237, 0.45), 0 0 22px rgba(124, 58, 237, 0.3);
+  container-type: inline-size;   /* badge text scales with the tile */
+  cursor: pointer;
+  outline: none;
+  border: none;
+  -webkit-tap-highlight-color: transparent;
+  transform: scale(1) translateY(0);
+  transition:
+    transform 0.45s var(--tc-ease),
+    box-shadow 0.45s var(--tc-ease);
+  will-change: transform, translate;
+}
+
+/* 1 ─ floating lift + glow */
+.tc-card:is(:hover, :focus-visible) {
+  transform: scale(1.05) translateY(-8px);
+  z-index: 6;
+}
+.tc-card:not(.tc-card--desk):not(.tc-m-tile):not(.tc-t-speaker):is(:hover, :focus-visible) {
+  box-shadow: var(--tc-glow);
+}
+
+/* 3 ─ inner image zoom (card itself stays clipped) */
+.tc-card-img {
+  transform: scale(1);
+  transform-origin: center bottom;
+  transition: transform 0.6s var(--tc-ease), filter 0.6s var(--tc-ease);
+}
+.tc-card:is(:hover, :focus-visible) .tc-card-img {
+  transform: scale(1.1);
+  filter: saturate(1.08) contrast(1.04);
+}
+
+
+.tc-card-img,
+.tc-person,
+.tc-m-tile-img,
+.tc-t-speaker-img {
+  position: relative;
+  z-index: 10; /* Set higher than other card layers (like background shapes or overlays) */
+}
+  
+.tc-card-ring {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  box-shadow: inset 0 0 14px rgba(124, 58, 237, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s var(--tc-ease);
+}
+
+.tc-card:is(:hover, :focus-visible) .tc-card-ring {
+  opacity: 1;
+}
+
+/* on mobile/tablet tiles the ring should trace the lower "body" shape
+   (same box as the ::before glow), not the full square, or it would cut
+   across the forehead the same way the old glow did */
+.tc-m-tile .tc-card-ring,
+.tc-t-speaker .tc-card-ring {
+  top: 26%;
+  border-radius: 15%;
+}
+
+/* desktop tile: card = photo box; shape / light / ring sit at the shape spot */
+.tc-card--desk { position: absolute; display: block; }
+.tc-card-shape {
+  position: absolute;
+  z-index: 0;
+  transition: box-shadow 0.45s var(--tc-ease);
+}
+.tc-card--desk:is(:hover, :focus-visible) .tc-card-shape { box-shadow: var(--tc-glow); }
+
+/* clips the zoom on the sides and (rounded) bottom but leaves headroom on
+   top so the head still breaks out of the shape */
+.tc-card-clip {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  clip-path: inset(-20% 0 0 0 round 0 0 15% 15%);
+}
+.tc-card--desk .tc-card-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.tc-card--desk ,
+.tc-card--desk {
+  inset: auto;
+  border-radius: 15%;   /* matches .tc-shape */
+}
+
+.tc-card--desk:is(:hover, :focus-visible) { opacity: 1; }
+
+
+/* ===================== SCROLL DRIFT — columns ===================== */
+/* --tc-p is written by useScrollDrift() on the poster's <main>.
+   Uses the standalone translate property, so it stacks with the hover
+   transform instead of replacing it, and never touches layout boxes.
+   The % is relative to each tile's own height, so the drift scales
+   the same on phone, tablet and laptop. */
+.tc-col-left,
+.tc-col-right { --tc-drift: 22%; }
+.tc-col-left  { translate: 0 calc(var(--tc-p, 0) * -1 * var(--tc-drift)); } /* moves up   */
+.tc-col-right { translate: 0 calc(var(--tc-p, 0) * var(--tc-drift)); }      /* moves down */
+
+/* respect reduced-motion: keep glow, ring and badge, drop the movement */
+@media (prefers-reduced-motion: reduce) {
+  .tc-card,
+  .tc-card-img,
+  .tc-badge { transition-duration: 0.01ms; }
+  .tc-card:is(:hover, :focus-visible),
+  .tc-card:is(:hover, :focus-visible) .tc-card-img,
+  .tc-card:is(:hover, :focus-visible) .tc-badge { transform: none; }
+  .tc-col-left,
+  .tc-col-right { translate: none; }
+}
+
+/* Clean, non-conflicting width ranges */
 .tc-desktop-only { display: grid; }
 .tc-mobile-only { display: none; }
 .tc-t-page { display: none; }
-@media (max-width: 1024px) {
-  .tc-desktop-only { display: none; }
-  .tc-mobile-only { display: grid; }
+
+/* Mobile (0px - 639px) */
+@media (max-width: 639px) {
+  .tc-desktop-only { display: none !important; }
+  .tc-mobile-only { display: grid !important; }
+  .tc-t-page { display: none !important; }
+}
+/* Hide pointer light overlay on tablet and mobile viewports */
+
+/* Tablet (640px - 1024px) */
+@media (min-width: 640px) and (max-width: 1024px) {
+  .tc-desktop-only { display: none !important; }
+  .tc-mobile-only { display: none !important; }
+  .tc-t-page { display: block !important; }
 }
 
-@media (min-width: 640px) and (max-width: 1024px) and (pointer: coarse) {
-  .tc-mobile-only { display: none; }
-  .tc-t-page { display: block; }
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .tc-t-name,
+  .tc-t-description,
+  .tc-t-date {
+    transform: none;
+  }
 }
 
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) { .tc-t-name, .tc-t-description, .tc-t-date { transform: none; } }
+/* Desktop (1025px+) */
+@media (min-width: 1025px) {
+  .tc-desktop-only { display: grid !important; }
+  .tc-mobile-only { display: none !important; }
+  .tc-t-page { display: none !important; }
+}
 `;
