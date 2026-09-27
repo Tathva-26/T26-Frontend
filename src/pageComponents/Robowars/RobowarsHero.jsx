@@ -27,13 +27,6 @@ const alata = localFont({
   display: "swap",
 });
 
-// Figma: "Akira Expanded" — used for the bold expanded headline
-const akiraExpanded = localFont({
-  src: "../../../public/fonts/akira-expanded-demo.otf",
-  variable: "--font-akira-expanded-local",
-  display: "swap",
-});
-
 // "Bowlby One SC" — used for ROBO WARS headline
 const bowlbyOneSC = localFont({
   src: "../../../public/fonts/BowlbyOneSC-Regular.ttf",
@@ -103,8 +96,8 @@ function DesktopFrame({ className, scale = "desktop" }) {
         className="object-cover"
       />
 
-      {/* The docked Wheels TV, now dark, carried over as a background prop —
-          sits behind "FIGHT ON" to bridge the two sections. Same geometry as
+      {/* The docked Wheels TV, now dark, carried over as a background prop to
+          bridge the two sections. Same geometry as
           the Wheels TV, which docks exactly on top of it before fading out. */}
       <div
         aria-hidden="true"
@@ -115,15 +108,6 @@ function DesktopFrame({ className, scale = "desktop" }) {
           <Image src="/wheels/tv.png" alt="" fill sizes="440px" className="object-fill" />
         </div>
         <div className="absolute inset-0 rounded-[6px] bg-black" />
-      </div>
-
-      <div
-        aria-hidden="true"
-        className={`robowars-fight-on pointer-events-none absolute left-1/2 top-[4.8%] -translate-x-1/2 text-center font-akira-expanded font-extrabold uppercase leading-none text-white will-change-[opacity] ${
-          isTablet ? "w-full text-[13.2cqw]" : "w-[96%] text-[14.15cqw]"
-        }`}
-      >
-        FIGHT ON
       </div>
 
       <Art
@@ -330,11 +314,8 @@ function MobileFrame() {
 
 // leadInVh: extra scroll distance the stage stays pinned before its own scroll
 // animation starts — used when it's pulled up underneath Wheels on the home page.
-// introVh: { from, to } scroll range (vh from the section top) within that
-// lead-in over which the robots slide in, while the stage is being revealed.
-export default function RobowarsHero({ leadInVh = 0, introVh = null }) {
+export default function RobowarsHero({ leadInVh = 0 }) {
   const sectionRef = useRef(null);
-  const introRef = useRef(null);
   const timelineRef = useRef(null);
 
   useEffect(() => {
@@ -348,12 +329,10 @@ export default function RobowarsHero({ leadInVh = 0, introVh = null }) {
 
       if (reduceMotion) {
         gsap.set(pieces, { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" });
-        gsap.set(".robowars-fight-on", { opacity: 0.1 });
         return;
       }
 
       const setInitialMotion = ({ robotDistance, titleDistance, detailDistance, badgeDistance }) => {
-        gsap.set(".robowars-fight-on", { opacity: 1 });
         gsap.set(".robowars-left-robot", {
           opacity: 0.3,
           transform: `translate3d(-${robotDistance}%, 0, 0) scale(0.96)`,
@@ -389,35 +368,10 @@ export default function RobowarsHero({ leadInVh = 0, introVh = null }) {
       };
 
       const buildTimeline = () => {
-        const scroller = document.querySelector(".main-scroll") || window;
-        const robotsIn = [
-          ".robowars-left-robot, .robowars-right-robot",
-          {
-            opacity: 1,
-            transform: "translate3d(0, 0, 0) scale(1)",
-          },
-        ];
-
-        // While revealed underneath Wheels, the robots slide in on their own
-        // range so the arena isn't sitting still behind the shrinking TV.
-        if (introVh) {
-          gsap.timeline({
-            defaults: { ease: "none" },
-            scrollTrigger: {
-              scroller,
-              trigger: introRef.current,
-              start: "top top",
-              end: "bottom top",
-              scrub: 1,
-              invalidateOnRefresh: true,
-            },
-          }).to(...robotsIn);
-        }
-
         const timeline = gsap.timeline({
           defaults: { ease: "none" },
           scrollTrigger: {
-            scroller,
+            scroller: document.querySelector(".main-scroll") || window,
             trigger: timelineRef.current,
             start: "top top",
             end: "bottom bottom",
@@ -426,10 +380,15 @@ export default function RobowarsHero({ leadInVh = 0, introVh = null }) {
           },
         });
 
-        if (!introVh) timeline.to(...robotsIn, 0);
-
         timeline
-          .to(".robowars-fight-on", { opacity: 0.1 }, 0)
+          .to(
+            ".robowars-left-robot, .robowars-right-robot",
+            {
+              opacity: 1,
+              transform: "translate3d(0, 0, 0) scale(1)",
+            },
+            0
+          )
           .to(
             ".robowars-title-left, .robowars-title-right",
             {
@@ -498,24 +457,16 @@ export default function RobowarsHero({ leadInVh = 0, introVh = null }) {
       media?.revert();
       ctx.revert();
     };
-  }, [introVh]);
+  }, []);
 
   return (
     <section
       ref={sectionRef}
       aria-labelledby="robowars-title"
-      className={`${calmSerif.variable} ${alata.variable} ${akiraExpanded.variable} ${bowlbyOneSC.variable} relative w-full shrink-0 bg-black text-white [--robowars-h:max(180dvh,900px)] md:[--robowars-h:max(180dvh,1100px)] xl:[--robowars-h:max(180dvh,940px)] motion-reduce:[--robowars-h:100dvh]`}
+      className={`${calmSerif.variable} ${alata.variable} ${bowlbyOneSC.variable} relative w-full shrink-0 bg-black text-white [--robowars-h:max(180dvh,900px)] md:[--robowars-h:max(180dvh,1100px)] xl:[--robowars-h:max(180dvh,940px)] motion-reduce:[--robowars-h:100dvh]`}
       style={{ height: `calc(${leadInVh}vh + var(--robowars-h))` }}
     >
-      {introVh && (
-        <div
-          ref={introRef}
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0"
-          style={{ top: `${introVh.from}vh`, height: `${introVh.to - introVh.from}vh` }}
-        />
-      )}
-      {/* Scroll range of the title/details animation: the section minus the lead-in */}
+      {/* Scroll range of the robots/title animation: the section minus the lead-in */}
       <div
         ref={timelineRef}
         aria-hidden="true"

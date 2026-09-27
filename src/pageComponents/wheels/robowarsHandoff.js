@@ -16,8 +16,8 @@ export const TOTAL_SCROLL_VH = FRAME_SCROLL_VH + FADE_SCROLL_VH;
 // Wheels is pinned for all but its last viewport-height, and the frames scrub
 // across FRAME_SCROLL_VH / TOTAL_SCROLL_VH of that pinned distance.
 const PINNED_SCROLL_VH = TOTAL_SCROLL_VH - 100;
-const SHRINK_END_VH = (FRAME_SCROLL_VH / TOTAL_SCROLL_VH) * PINNED_SCROLL_VH;
-const SHRINK_START_VH = (SHRINK_START_FRAME / (FRAME_COUNT - 1)) * SHRINK_END_VH;
+const SHRINK_START_VH =
+  (SHRINK_START_FRAME / (FRAME_COUNT - 1)) * (FRAME_SCROLL_VH / TOTAL_SCROLL_VH) * PINNED_SCROLL_VH;
 
 // How far (vh) Robowars is pulled up underneath Wheels. It must already be
 // pinned in place when the TV starts shrinking, because that's when Wheels'
@@ -26,12 +26,6 @@ export const UNDERLAY_VH = Math.ceil(TOTAL_SCROLL_VH - SHRINK_START_VH + 40);
 // Scroll distance Robowars sits pinned behind Wheels before Wheels unpins and
 // Robowars' own scroll animation takes over.
 export const UNDERLAY_LEAD_IN_VH = UNDERLAY_VH - 100;
-// Scroll range (vh from the top of Robowars) over which the TV shrinks, so
-// Robowars can move its robots in step with the reveal.
-export const UNDERLAY_INTRO_VH = {
-  from: SHRINK_START_VH - (TOTAL_SCROLL_VH - UNDERLAY_VH),
-  to: SHRINK_END_VH - (TOTAL_SCROLL_VH - UNDERLAY_VH),
-};
 
 export const ROBOWARS_FRAME_WIDTH = 1413;
 export const ROBOWARS_FRAME_HEIGHT = 697;
