@@ -298,6 +298,14 @@ export default function Footer() {
           letter-spacing: 0.08em;
         }
 
+        @media (min-width: 1024px) {
+          .footer-typography .footer-countdown > div,
+          .footer-typography .footer-countdown > div span {
+            font-size: clamp(32px, 2.8vw, 42px);
+            letter-spacing: 0.04em;
+          }
+        }
+
         .footer-panel-shape-mobile {
           display: none;
         }
@@ -526,7 +534,7 @@ export default function Footer() {
             </div>
 
             {/* COUNTDOWN */}
-            <div className='footer-countdown self-center text-center pt-2 sm:pt-0'>
+            <div className='footer-countdown self-center text-center p-4 pt-3 sm:pt-1'>
               <p className='font-bebas text-[20px] sm:text-[22px] lg:text-[24px] leading-[24px] tracking-[0.05em] text-white'>
                 DAYS TO GO
               </p>

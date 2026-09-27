@@ -168,6 +168,7 @@ export function GlowLetters({
   follow = 0.85,
   growSpeed = 0.22,    // Snappy expansion on first contact
   shrinkSpeed = 0.16,  // Smooth contraction to a point on leave
+  softness = 0.45,     // Edge blur as a fraction of the radius (higher = softer light)
 }) {
   const canvasRef = useRef(null);
 
@@ -220,7 +221,7 @@ export function GlowLetters({
       clientY: -9999,
       inside: false,
     };
-    const lens = { x: 0, y: 0, vx: 0, vy: 0 };
+    const lens = { x: 0, y: 0 };
     // A short chain of followers, each lagging the one before it, so the
     // blob stretches into a gooey trail instead of staying a rigid circle.
     const TRAIL_LEN = 5;
@@ -381,19 +382,10 @@ export function GlowLetters({
         if (scale < 0.003) scale = 0;
       }
 
-      // Follow the cursor on a soft spring so the light lags behind, then
-      // overshoots and settles rather than sliding straight to a stop.
-      if (reduceMotion) {
-        lens.x = pointer.x;
-        lens.y = pointer.y;
-      } else {
-        const stiffness = follow * 0.12;
-        const damping = 0.86;
-        lens.vx = (lens.vx + (pointer.x - lens.x) * stiffness) * damping;
-        lens.vy = (lens.vy + (pointer.y - lens.y) * stiffness) * damping;
-        lens.x += lens.vx;
-        lens.y += lens.vy;
-      }
+      // Glide towards the cursor, easing to a stop without overshooting.
+      const f = reduceMotion ? 1 : follow * 0.25;
+      lens.x += (pointer.x - lens.x) * f;
+      lens.y += (pointer.y - lens.y) * f;
 
       // Chain of laggier followers behind the head, stretching the blob
       // into a gooey trail (merged below via blurred, overlapping blobs).
@@ -413,10 +405,12 @@ export function GlowLetters({
       // Physical current radius in pixels (shrinks directly to a point: R -> 0)
       const currentRadius = radius * scale;
 
-      const rx = Math.max(0, Math.floor(lens.x - currentRadius));
-      const ry = Math.max(0, Math.floor(lens.y - currentRadius));
-      const rw = Math.min(w, Math.ceil(lens.x + currentRadius)) - rx;
-      const rh = Math.min(h, Math.ceil(lens.y + currentRadius)) - ry;
+      // Work area around the light, padded so the blurred edge never gets clipped square
+      const reach = currentRadius * (1 + softness * 1.5);
+      const rx = Math.max(0, Math.floor(lens.x - reach));
+      const ry = Math.max(0, Math.floor(lens.y - reach));
+      const rw = Math.min(w, Math.ceil(lens.x + reach)) - rx;
+      const rh = Math.min(h, Math.ceil(lens.y + reach)) - ry;
 
       const ang = reduceMotion ? look.angle : look.angle + look.spin * time;
       const slide = reduceMotion ? 0.5 : 0.5 + 0.5 * Math.sin(time * look.slide + look.phase);
@@ -462,12 +456,25 @@ export function GlowLetters({
         gooCtx.clearRect(rx, ry, rw, rh);
         gooCtx.globalCompositeOperation = "source-over";
         gooCtx.fillStyle = "#fff";
-        gooCtx.filter = `blur(${Math.max(4, currentRadius * 0.18)}px)`;
+        gooCtx.filter = `blur(${Math.max(4, currentRadius * softness)}px)`;
         for (let i = 0; i < trail.length; i++) {
           const t = i / (trail.length - 1);
-          const blobRadius = currentRadius * (0.62 - t * 0.3);
+          const blobRadius = currentRadius * (0.75 - t * 0.3);
           if (blobRadius <= 0) continue;
+          const blobGradient = gooCtx.createRadialGradient(
+            trail[i].x,
+            trail[i].y,
+            0,
+            trail[i].x,
+            trail[i].y,
+            blobRadius,
+          );
+          blobGradient.addColorStop(0, "rgba(255,255,255,1)");
+          blobGradient.addColorStop(0.68, "rgba(255,255,255,1)");
+          blobGradient.addColorStop(0.88, "rgba(255,255,255,0.45)");
+          blobGradient.addColorStop(1, "rgba(255,255,255,0)");
           gooCtx.globalAlpha = 1 - t * 0.35;
+          gooCtx.fillStyle = blobGradient;
           gooCtx.beginPath();
           gooCtx.arc(trail[i].x, trail[i].y, blobRadius, 0, Math.PI * 2);
           gooCtx.fill();
@@ -517,8 +524,6 @@ export function GlowLetters({
           newLook();
           lens.x = x;
           lens.y = y;
-          lens.vx = 0;
-          lens.vy = 0;
           trail.forEach((p) => {
             p.x = x;
             p.y = y;
@@ -589,7 +594,7 @@ export function GlowLetters({
       document.documentElement.removeEventListener("pointerleave", onPointerLeave);
       window.removeEventListener("blur", onPointerLeave);
     };
-  }, [text, imageSrc, textColor, textFit, textY, fontFamily, fontWeight, fontSize, measureRef, baseFontSize, textYOffset, radius, intensity, follow, growSpeed, shrinkSpeed]);
+  }, [text, imageSrc, textColor, textFit, textY, fontFamily, fontWeight, fontSize, measureRef, baseFontSize, textYOffset, radius, intensity, follow, growSpeed, shrinkSpeed, softness]);
 
   return (
     <canvas

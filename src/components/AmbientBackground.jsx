@@ -210,7 +210,7 @@ const WINDOW = 0.55;
  * Place it inside a `position: relative` container that has a height.
  * ============================================================ */
 export function GlowLetters({
-  text = "Melius",
+  text = "",
   imageSrc = "",          // optional: logo image to use instead of text
   textColor = "#3d3d3d",  // resting letter colour
   textFit = 0.62,         // letter width as a fraction of the container width
@@ -393,7 +393,7 @@ export function GlowLetters({
         const mg = litCtx.createRadialGradient(lens.x, lens.y, 0, lens.x, lens.y, R);
         mg.addColorStop(0, "rgba(0,0,0,1)");
         mg.addColorStop(0.55, "rgba(0,0,0,1)");
-        mg.addColorStop(0.75, "rgba(0,0,0,0.85)");
+        mg.addColorStop(0.9, "rgba(0,0,0,0.85)");
         mg.addColorStop(0.9, "rgba(0,0,0,0.35)");
         mg.addColorStop(1, "rgba(0,0,0,0)");
         litCtx.fillStyle = mg;
