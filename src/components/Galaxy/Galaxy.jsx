@@ -101,8 +101,7 @@ vec3 StarLayer(vec2 uv) {
 			float grn = min(red, blu) * seed;
 			vec3 base = vec3(red, grn, blu);
 
-			float hue = atan(base.g - base.r, base.b - base.r) / (2.0 * 3.14159) + 0.5;
-			hue = fract(hue + uHueShift / 360.0);
+			float hue = 0.62;
 			float sat = length(base - vec3(dot(base, vec3(0.299, 0.587, 0.114)))) * uSaturation;
 			float val = max(max(base.r, base.g), base.b);
 			base = hsv2rgb(vec3(hue, sat, val));
@@ -247,7 +246,7 @@ export default function Galaxy({
 				uFocal: { value: new Float32Array(focal) },
 				uRotation: { value: new Float32Array(rotation) },
 				uStarSpeed: { value: starSpeed },
-				uDensity: { value: density },
+				uDensity: { value: Math.min(density, 1) },
 				uHueShift: { value: hueShift },
 				uSpeed: { value: speed },
 				uMouse: { value: new Float32Array([smoothMousePosition.current.x, smoothMousePosition.current.y]) },
@@ -266,9 +265,14 @@ export default function Galaxy({
 
 		const mesh = new Mesh(gl, { geometry, program });
 		let animationFrame;
+		let lastFrameTime = 0;
+		const frameInterval = 1000 / 30;
 
 		function update(time) {
 			animationFrame = requestAnimationFrame(update);
+			if (time - lastFrameTime < frameInterval) return;
+			lastFrameTime = time;
+
 			if (!disableAnimation) {
 				program.uniforms.uTime.value = time * 0.001;
 				program.uniforms.uStarSpeed.value = (time * 0.001 * starSpeed) / 10;

@@ -14,20 +14,18 @@ const initialProfile = {
   phoneNumber: '123456789',
   college: 'NIT Calicut',
   branch: 'CSE',
-  semester: '3',
   yearOfStudy: '2',
   district: 'Kozhikode',
   state: 'Kerala',
 };
 
-const semesterOptions = Array.from({ length: 8 }, (_, index) => String(index + 1));
+const yearOfStudyOptions = ['1', '2', '3', '4'];
 
 const fieldRows = [
   { label: 'Phone Number', key: 'phoneNumber', type: 'tel', inputMode: 'numeric', pattern: '[0-9]{10}', maxLength: 10, required: true },
   { label: 'College', key: 'college', type: 'text', required: true },
   { label: 'Branch', key: 'branch', type: 'text' },
-  { label: 'Semester', key: 'semester', options: semesterOptions },
-  { label: 'Year of Study', key: 'yearOfStudy', readOnly: true },
+  { label: 'Year of Study', key: 'yearOfStudy', options: yearOfStudyOptions },
   { label: 'State', key: 'state', type: 'text' },
   { label: 'District', key: 'district', type: 'text' },
 ];
@@ -77,6 +75,7 @@ export default function ProfilePage() {
       const parsedProfile = JSON.parse(savedProfile);
       if (parsedProfile && typeof parsedProfile === 'object' && !Array.isArray(parsedProfile)) {
         const loadedProfile = { ...initialProfile, ...parsedProfile };
+        delete loadedProfile.semester;
         startTransition(() => {
           setProfile(loadedProfile);
           setDraftProfile(loadedProfile);
@@ -149,9 +148,6 @@ export default function ProfilePage() {
 
   function updateDraftField(key, value) {
     const nextProfile = { ...draftProfile, [key]: value };
-    if (key === 'semester') {
-      nextProfile.yearOfStudy = String(Math.ceil(Number(value) / 2));
-    }
     setDraftProfile(nextProfile);
 
     if (Object.keys(validationErrors).length > 0) {
