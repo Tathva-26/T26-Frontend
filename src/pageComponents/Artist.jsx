@@ -8,13 +8,14 @@ gsap.registerPlugin(ScrollTrigger)
 
 const assetPathPrefix = "/images/artist"
 
+const NAV_LINKS = ["PROSHOW", "WORKSHOPS", "CAMPUS AMBASADOR", "GALLERY"]
+
 const artists = [
   {
     name: "Arijit Singh",
     background: `${assetPathPrefix}/21bbf.png`,
     portrait: `${assetPathPrefix}/af3e8.png`,
     portraitClassName: "artist-portrait artist-portrait--arijit",
-    portraitStyle: { width: "100%", height: "90%" },
     cardPortrait: `${assetPathPrefix}/50195.png`,
     cardSecondary: `${assetPathPrefix}/8577e.png`,
     avatar: `${assetPathPrefix}/475ef.png`,
@@ -51,15 +52,13 @@ function Header() {
         <img src={`${assetPathPrefix}/4e2c4.svg`} alt="" />
       </button>
       <nav aria-label="Main navigation">
-        <a href="#proshow">PROSHOW</a>
-        <i>/</i>
-        <a href="#workshops">WORKSHOPS</a>
-        <i>/</i>
-        <a href="#campus">CAMPUS AMBASADOR</a>
-        <i>/</i>
-        <a href="#gallery">GALLERY</a>
+        {NAV_LINKS.map((label, i) => (
+          <span key={label}>
+            {i > 0 && <i>/</i>}
+            <a href={`#${label.toLowerCase().split(" ")[0]}`}>{label}</a>
+          </span>
+        ))}
       </nav>
-      <FestivalMark />
     </header>
   )
 }
@@ -84,24 +83,47 @@ function ScheduleCard() {
 }
 
 // --- Connector geometry -----------------------------------------------
-// Instead of hand-tuned top/left/width/rotate() values on a static arrow
-// image (which drift out of alignment the moment .slide__avatar,
-// .slide__secondary or .slide__primary get repositioned), we measure the
-// REAL rendered boxes of the two elements a connector should join and draw
-// a line between the edges that face each other. Move a card in CSS and
-// every connector touching it re-solves itself on the next paint/resize.
+// Connectors join the real rendered boxes of two elements, so moving a card
+// in CSS re-solves every arrow on the next resize instead of drifting.
 
-// Where a ray from `from`'s center towards `to`'s center exits `from`'s
-// rectangle (classic ray/box intersection).
+// Shared scrub crossfade: bg fades while portrait slides, scoped to `ref`.
+function useScrubCrossfade(ref, bgSel, portraitSel) {
+  useLayoutEffect(() => {
+    const section = ref.current
+    if (!section) return
+    const context = gsap.context(() => {
+      const backgrounds = gsap.utils.toArray(bgSel)
+      const portraits = portraitSel ? gsap.utils.toArray(portraitSel) : []
+      gsap.set(backgrounds.slice(1), { autoAlpha: 0 })
+      gsap.set(portraits.slice(1), { yPercent: 100, autoAlpha: 0 })
+      const timeline = gsap.timeline({
+        scrollTrigger: { trigger: section, start: "top top", end: "bottom bottom", scrub: 1.2, invalidateOnRefresh: true },
+      })
+      portraits.slice(1).forEach((incoming, index) => {
+        timeline
+          .to(backgrounds[index], { autoAlpha: 0, ease: "none" })
+          .to(backgrounds[index + 1], { autoAlpha: 1, ease: "none" }, "<")
+          .to(portraits[index], { yPercent: -15, autoAlpha: 0, ease: "none" }, "<")
+          .to(incoming, { yPercent: 0, autoAlpha: 1, ease: "none" }, "<")
+      })
+      if (!portraits.length && backgrounds.length > 1) {
+        backgrounds.slice(1).forEach((incoming, index) => {
+          timeline
+            .to(backgrounds[index], { autoAlpha: 0, ease: "none" })
+            .to(incoming, { autoAlpha: 1, ease: "none" }, "<")
+        })
+      }
+    }, section)
+    return () => context.revert()
+  }, [])
+}
+
+// Ray/box exit point of a ray from `rect`'s center towards (dx, dy).
 function edgePoint(rect, dx, dy) {
   const cx = rect.left + rect.width / 2
   const cy = rect.top + rect.height / 2
   if (dx === 0 && dy === 0) return { x: cx, y: cy }
-  const halfW = rect.width / 2
-  const halfH = rect.height / 2
-  const scaleX = dx !== 0 ? halfW / Math.abs(dx) : Infinity
-  const scaleY = dy !== 0 ? halfH / Math.abs(dy) : Infinity
-  const scale = Math.min(scaleX, scaleY)
+  const scale = Math.min(rect.width / 2 / Math.abs(dx || Infinity), rect.height / 2 / Math.abs(dy || Infinity))
   return { x: cx + dx * scale, y: cy + dy * scale }
 }
 
@@ -110,18 +132,11 @@ function segmentBetween(rectA, rectB) {
   const centerB = { x: rectB.left + rectB.width / 2, y: rectB.top + rectB.height / 2 }
   const dx = centerB.x - centerA.x
   const dy = centerB.y - centerA.y
-  return {
-    start: edgePoint(rectA, dx, dy),
-    end: edgePoint(rectB, -dx, -dy),
-  }
+  return { start: edgePoint(rectA, dx, dy), end: edgePoint(rectB, -dx, -dy) }
 }
 
-// Turns a straight start->end segment into a gentle cubic-bezier bow.
-// `bend` flips which side it bulges towards (used to zig-zag the three
-// connectors instead of having them all bow the same way). Returns the
-// path's `d` plus the tangent angle the curve actually arrives at end
-// with — NOT the straight start->end angle, since the curve approaches
-// from the direction of its second control point.
+// Straight start->end segment as a gentle cubic bow; returns `d` plus the
+// arrival angle so the head trails the curve's own direction.
 function buildCurve(start, end, bend = 1) {
   const dx = end.x - start.x
   const dy = end.y - start.y
@@ -129,41 +144,24 @@ function buildCurve(start, end, bend = 1) {
   const perpX = (-dy / distance) * bend
   const perpY = (dx / distance) * bend
   const curvature = distance * 0.18
-
   const c1 = { x: start.x + dx / 3 + perpX * curvature, y: start.y + dy / 3 + perpY * curvature }
   const c2 = { x: start.x + (dx * 2) / 3 + perpX * curvature, y: start.y + (dy * 2) / 3 + perpY * curvature }
-
-  const d = `M${start.x},${start.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${end.x},${end.y}`
-  const angle = Math.atan2(end.y - c2.y, end.x - c2.x) * (180 / Math.PI)
-
-  return { d, angle }
+  return {
+    d: `M${start.x},${start.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${end.x},${end.y}`,
+    angle: Math.atan2(end.y - c2.y, end.x - c2.x) * (180 / Math.PI),
+  }
 }
 
-// Draws one arrow between two elements, resolved fresh from getFrom/getTo
-// (plain functions so connector-3 can reach into the *next* marquee slide,
-// which doesn't exist as a ref on this component). `delay` staggers the
-// draw-in animation so the three arrows don't all pulse in sync. `visible`
-// comes from the parent slide's IntersectionObserver: the arrow draws in
-// once when the slide is in frame, stays fully drawn while it remains in
-// frame, and only resets while the slide is off-screen (so the reset is
-// never actually seen — it's already invisible when it happens). `animate`
-// renders the arrow fully drawn with no draw-in animation (used for the two
-// left arrows — only the rightmost arrow animates).
-function ConnectorArrow({ getFrom, getTo, slideRef, visible, delay = 0, bend = 1, animate = true }) {
+// Static arrow between two elements, re-measured on resize.
+function ConnectorArrow({ getFrom, getTo, slideRef, bend = 1 }) {
   const [segment, setSegment] = useState(null)
-  const lineRef = useRef(null)
-  const headRef = useRef(null)
-  const drawnRef = useRef(false)
 
   useLayoutEffect(() => {
     const measure = () => {
       const slide = slideRef.current
       const fromEl = getFrom()
       const toEl = getTo()
-      if (!slide || !fromEl || !toEl) {
-        setSegment(null)
-        return
-      }
+      if (!slide || !fromEl || !toEl) return setSegment(null)
       const slideBox = slide.getBoundingClientRect()
       const rectOf = (el) => {
         const b = el.getBoundingClientRect()
@@ -171,11 +169,7 @@ function ConnectorArrow({ getFrom, getTo, slideRef, visible, delay = 0, bend = 1
       }
       setSegment(segmentBetween(rectOf(fromEl), rectOf(toEl)))
     }
-
     measure()
-    // The "next slide" sibling (for connector-3) may not exist on the very
-    // first paint of a freshly duplicated marquee slide, so re-check once
-    // after mount as well as on resize.
     const raf = requestAnimationFrame(measure)
     const ro = new ResizeObserver(measure)
     if (slideRef.current) ro.observe(slideRef.current)
@@ -187,65 +181,12 @@ function ConnectorArrow({ getFrom, getTo, slideRef, visible, delay = 0, bend = 1
     }
   }, [])
 
-  // Runs only once this arrow actually has real coordinates, so it never
-  // races the measurement above.
-  useLayoutEffect(() => {
-    if (!segment || !lineRef.current || !headRef.current) return
-    const line = lineRef.current
-    const head = headRef.current
-    const length = line.getTotalLength()
-
-    if (!animate) {
-      // Static connector: always fully drawn, no draw-in animation.
-      gsap.killTweensOf([line, head])
-      gsap.set(line, { strokeDasharray: length, strokeDashoffset: 0 })
-      gsap.set(head, { opacity: 1 })
-      return
-    }
-
-    if (!visible) {
-      // Off-screen: reset instantly. Nothing is visibly "disappearing"
-      // here — the slide has already scrolled out of the frame, so this
-      // just arms the arrow to draw in fresh next time it enters.
-      drawnRef.current = false
-      gsap.killTweensOf([line, head])
-      gsap.set(line, { strokeDasharray: length, strokeDashoffset: length })
-      gsap.set(head, { opacity: 0 })
-      return
-    }
-
-    if (drawnRef.current) {
-      // Already fully drawn and holding — just keep the dash length in
-      // sync in case a resize changed the curve's geometry, without
-      // replaying the reveal.
-      gsap.set(line, { strokeDasharray: length, strokeDashoffset: 0 })
-      return
-    }
-
-    // SVG marker-end sits at the path's endpoint regardless of
-    // stroke-dasharray/dashoffset, so it used to render at full opacity
-    // before the dash animation ever "reached" it. Drawing our own
-    // triangle and fading it in only once the line finishes fixes that.
-    drawnRef.current = true
-    gsap.set(line, { strokeDasharray: length, strokeDashoffset: length })
-    gsap.set(head, { opacity: 0 })
-    const tl = gsap.timeline({ delay })
-    tl.to(line, { strokeDashoffset: 0, duration: 1, ease: "power2.inOut" })
-    tl.to(head, { opacity: 1, duration: 0.15 }, "-=0.1")
-
-    return () => tl.kill()
-  }, [segment, visible, delay, animate])
-
   if (!segment) return null
-
   const { d, angle } = buildCurve(segment.start, segment.end, bend)
-
   return (
     <>
-      <path ref={lineRef} d={d} className="connector-line" />
-      {/* Tip sits exactly at segment.end; base trails back along the curve's own arrival direction. */}
+      <path d={d} className="connector-line" />
       <path
-        ref={headRef}
         className="connector-arrowhead"
         d="M0,0 L-9,-4.5 L-9,4.5 Z"
         transform={`translate(${segment.end.x} ${segment.end.y}) rotate(${angle})`}
@@ -259,21 +200,6 @@ function ArtistContent({ artist }) {
   const avatarRef = useRef(null)
   const secondaryRef = useRef(null)
   const primaryRef = useRef(null)
-  const [visible, setVisible] = useState(false)
-
-  useLayoutEffect(() => {
-    const slide = slideRef.current
-    if (!slide) return
-    // .board-marquee is the overflow:hidden frame the cards scroll through,
-    // so intersection with it is exactly "is this slide currently on screen".
-    const root = slide.closest(".board-marquee") || null
-    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
-      root,
-      threshold: 0,
-    })
-    observer.observe(slide)
-    return () => observer.disconnect()
-  }, [])
 
   return (
     <div className="artist-content-slide" ref={slideRef}>
@@ -282,24 +208,18 @@ function ArtistContent({ artist }) {
       <svg className="connector-overlay" aria-hidden="true">
         <ConnectorArrow
           slideRef={slideRef}
-          visible={visible}
-          animate={false}
           bend={1}
           getFrom={() => avatarRef.current}
           getTo={() => secondaryRef.current}
         />
         <ConnectorArrow
           slideRef={slideRef}
-          visible={visible}
-          animate={false}
           bend={-1}
           getFrom={() => secondaryRef.current}
           getTo={() => primaryRef.current}
         />
         <ConnectorArrow
           slideRef={slideRef}
-          visible={visible}
-          delay={1}
           bend={1}
           getFrom={() => primaryRef.current}
           getTo={() => slideRef.current?.nextElementSibling?.querySelector(".slide__avatar")}
@@ -324,8 +244,9 @@ function ArtistContent({ artist }) {
   )
 }
 
-function ArtistBoard({ artist, artistIdx }) {
-  const dupes = [artist, artist, artist, artist, artist, artist]
+function ArtistBoard({ artist }) {
+  // ponytail: 2 copies is the minimum seamless -50% marquee loop; add more only if a gap shows on ultrawide
+  const dupes = [artist, artist]
   return (
     <div className="artist-page snap-start snap-always">
       <div className="artist-board">
@@ -355,38 +276,8 @@ function ArtistMobile() {
   const [activeDay, setActiveDay] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
 
-  // Same scrub crossfade as desktop (bg fades, portrait slides), scoped to mobile layers.
-  useLayoutEffect(() => {
-    const section = sectionRef.current
-    if (!section || !window.matchMedia("(max-width: 768px)").matches) return
-    const context = gsap.context(() => {
-      const backgrounds = gsap.utils.toArray(".mobile-bg-layer")
-      const portraits = gsap.utils.toArray(".mobile-portrait-layer")
-
-      gsap.set(backgrounds.slice(1), { autoAlpha: 0 })
-      gsap.set(portraits.slice(1), { yPercent: 100, autoAlpha: 0 })
-
-      const timeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 1.2,
-          invalidateOnRefresh: true,
-        },
-      })
-
-      portraits.slice(1).forEach((incoming, index) => {
-        timeline
-          .to(backgrounds[index], { autoAlpha: 0, ease: "none" })
-          .to(backgrounds[index + 1], { autoAlpha: 1, ease: "none" }, "<")
-          .to(portraits[index], { yPercent: -15, autoAlpha: 0, ease: "none" }, "<")
-          .to(incoming, { yPercent: 0, autoAlpha: 1, ease: "none" }, "<")
-      })
-    }, section)
-
-    return () => context.revert()
-  }, [])
+  // ponytail: mobile portrait layers are display:none in CSS, so only backgrounds crossfade here
+  useScrubCrossfade(sectionRef, ".mobile-bg-layer", null)
 
   // Highlight the day tab of the artist currently in view.
   useLayoutEffect(() => {
@@ -418,15 +309,6 @@ function ArtistMobile() {
             <img src={artist.background} alt="" />
           </div>
         ))}
-        {artists.map((artist) => (
-          <div className="mobile-portrait-layer" key={`m-portrait-${artist.name}`}>
-            <img
-              className={artist.portraitClassName}
-              src={artist.portrait}
-              alt=""
-            />
-          </div>
-        ))}
       </div>
 
       <div className="mobile-pages">
@@ -444,13 +326,12 @@ function ArtistMobile() {
           </button>
           {menuOpen && (
             <nav className="mobile-menu" aria-label="Main navigation">
-              <a href="#proshow">PROSHOW</a>
-              <i>/</i>
-              <a href="#workshops">WORKSHOPS</a>
-              <i>/</i>
-              <a href="#campus">CAMPUS AMBASADOR</a>
-              <i>/</i>
-              <a href="#gallery">GALLERY</a>
+              {NAV_LINKS.map((label, i) => (
+                <span key={label}>
+                  {i > 0 && <i>/</i>}
+                  <a href={`#${label.toLowerCase().split(" ")[0]}`}>{label}</a>
+                </span>
+              ))}
             </nav>
           )}
         </header>
@@ -479,7 +360,7 @@ function ArtistMobile() {
                 ))}
               </nav>
               <div className="mobile-stage">
-                <ArtistBoard artist={artist} artistIdx={index} />
+                <ArtistBoard artist={artist} />
               </div>
             </div>
             <h2 className="mobile-name">{artist.name}</h2>
@@ -507,38 +388,7 @@ export default function App() {
     return () => root.classList.remove("snap-y", "snap-mandatory", "scroll-smooth", "motion-reduce:snap-none")
   }, [])
 
-  useLayoutEffect(() => {
-    const section = sectionRef.current
-    if (!section) return
-
-    const context = gsap.context(() => {
-      const backgrounds = gsap.utils.toArray(".featured-bg-layer")
-      const portraits = gsap.utils.toArray(".featured-portrait-layer")
-
-      gsap.set(backgrounds.slice(1), { autoAlpha: 0 })
-      gsap.set(portraits.slice(1), { yPercent: 100, autoAlpha: 0 })
-
-      const timeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 1.2, // catch-up smoothing: snap jumps scroll, fade eases through visibly after landing
-          invalidateOnRefresh: true,
-        },
-      })
-
-      portraits.slice(1).forEach((incoming, index) => {
-        timeline
-          .to(backgrounds[index], { autoAlpha: 0, ease: "none" })
-          .to(backgrounds[index + 1], { autoAlpha: 1, ease: "none" }, "<")
-          .to(portraits[index], { yPercent: -15, autoAlpha: 0, ease: "none" }, "<")
-          .to(incoming, { yPercent: 0, autoAlpha: 1, ease: "none" }, "<")
-      })
-    }, section)
-
-    return () => context.revert()
-  }, [])
+  useScrubCrossfade(sectionRef, ".featured-bg-layer", ".featured-portrait-layer")
 
   return (
     <main ref={sectionRef} className="proshow-section" id="proshow">
@@ -562,7 +412,6 @@ export default function App() {
             <div className="featured-portrait-layer" key={`portrait-${artist.name}`}>
               <img
                 className={artist.portraitClassName}
-                style={artist.portraitStyle}
                 src={artist.portrait}
                 alt={`${artist.name} featured artist`}
               />
@@ -573,9 +422,12 @@ export default function App() {
         </div>
       </section>
 
+      {/* Desktop badge: direct child so .featured-viewport's overflow:hidden doesn't slice it. */}
+      <FestivalMark />
+
       <section className="artist-list" aria-label="Proshow artists">
-        {artists.map((artist, artistIdx) => (
-          <ArtistBoard artist={artist} artistIdx={artistIdx} key={artist.name} />
+        {artists.map((artist) => (
+          <ArtistBoard artist={artist} key={artist.name} />
         ))}
       </section>
 

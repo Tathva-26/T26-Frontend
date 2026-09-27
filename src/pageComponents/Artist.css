@@ -26,30 +26,6 @@
   font-weight: 400;
 }
 
-:root {
-  color: #fff;
-  background: #1c1c1c;
-  font-family: "Mona Sans:Regular", Arial, sans-serif;
-}
-
-html {
-  background: #1c1c1c;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-}
-
-button,
-a {
-  color: inherit;
-}
-
-button {
-  font: inherit;
-}
-
 .proshow-section {
   display: grid;
   grid-template-columns: minmax(0, 47.2%) minmax(0, 52.8%);
@@ -126,10 +102,8 @@ button {
   top: 50%;
   left: 50px;
   transform: translateY(-50%);
-  width: 75%;
-  height: 75%;
-  object-fit: contain;
-  /* opacity: 0; */
+  width: 100%;
+  height: 90%;
 }
 
 .artist-portrait--shreya {
@@ -137,7 +111,6 @@ button {
   bottom: -1%;
   width: 91%;
   height: 76%;
-  /* opacity: 0; */
 }
 
 .site-header {
@@ -193,10 +166,11 @@ button {
   opacity: 0.85;
 }
 
+/* Festival badge. Horizontal anchor comes from the host: desktop pins it to
+   the featured-column seam, mobile centers it in .mobile-header. */
 .festival-mark {
   position: absolute;
   top: 0;
-  right: -50px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -217,6 +191,23 @@ button {
 .festival-mark small {
   font-size: 5px;
   letter-spacing: 0.22em;
+}
+
+/* Badge straddles the column seam; translateX(50%) derives the offset from
+   the column width instead of hard-coding 47.2%. */
+@media (min-width: 769px) {
+  .proshow-section > .festival-mark {
+    position: sticky;
+    z-index: 2;
+    /* above .featured-column and .artist-list (both z-index: 1) */
+
+    grid-column: 1 / 2;
+    grid-row: 1 / -1;
+    justify-self: end;
+    /* sticky needs a box shorter than its grid area to travel inside */
+    align-self: start;
+    transform: translateX(50%);
+  }
 }
 
 .schedule-card {
@@ -300,21 +291,6 @@ button {
   object-fit: cover;
   z-index: 0;
 }
-
-.connector {
-  position: absolute;
-  z-index: 2;
-  object-fit: cover;
-}
-
-.connector--bottom {
-  right: 8.2%;
-  bottom: 15%;
-  width: 17%;
-  z-index: 4;
-}
-
-
 
 /* Marquee inside the board */
 .board-marquee {
@@ -415,62 +391,10 @@ button {
   fill: #eb9a58;
 }
 
-@media (max-width: 900px) {
-  .proshow-section {
-    grid-template-columns: minmax(0, 47%) minmax(0, 53%);
-  }
-
-  .site-header {
-    height: 70px;
-    gap: 12px;
-    padding-inline: 15px;
-  }
-
-  .site-logo {
-    width: 42px;
-    height: 36px;
-  }
-
-  .site-header nav {
-    display: none;
-  }
-
-  .festival-mark {
-    right: -46px;
-    width: 92px;
-  }
-
-  .schedule-card {
-    top: 18%;
-    right: 7%;
-    width: 86%;
-    min-width: 0;
-  }
-
-  .schedule-card p {
-    padding-inline: 12px;
-    font-size: 9px;
-  }
-
-  .artist-card {
-    padding-inline: 1.2vw;
-  }
-
-  .artist-board__avatar {
-    width: 36px;
-    height: 36px;
-  }
-
-  .connector-overlay {
-    display: none;
-  }
-
-  .artist-board__dot {
-    width: 32px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
+  .board-marquee-track {
+    animation: none;
+  }
 
   .featured-bg-layer,
   .featured-portrait-layer {
@@ -491,7 +415,8 @@ button {
 
   .global-bg-container,
   .featured-column,
-  .artist-list {
+  .artist-list,
+  .proshow-section > .festival-mark {
     display: none;
   }
 
@@ -519,10 +444,6 @@ button {
     height: 100%;
     object-fit: cover;
     opacity: 0.5;
-  }
-
-  .mobile-portrait-layer {
-    display: none;
   }
 
   .proshow-mobile .artist-portrait--arijit {
@@ -640,10 +561,6 @@ button {
     min-height: 0;
     padding: 0;
     scroll-snap-align: none;
-  }
-
-  .mobile-stage .connector-overlay {
-    display: block;
   }
 
   .mobile-stage .artist-board {
