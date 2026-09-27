@@ -63,15 +63,42 @@ function Header() {
   )
 }
 
-function ScheduleCard() {
+const SCHEDULE_DAYS = ["DAY 1", "DAY 2", "DAY 3"]
+
+// Tracks which artist is currently crossfaded into view within `ref`'s
+// scroll range, so the day tab can follow the same scroll progress that
+// drives the background/portrait crossfade (see useScrubCrossfade).
+function useActiveIndexOnScroll(ref, count) {
+  const [index, setIndex] = useState(0)
+
+  useLayoutEffect(() => {
+    const section = ref.current
+    if (!section || count < 2) return
+    const trigger = ScrollTrigger.create({
+      trigger: section,
+      start: "top top",
+      end: "bottom bottom",
+      onUpdate: (self) => setIndex(Math.round(self.progress * (count - 1))),
+    })
+    return () => trigger.kill()
+  }, [count])
+
+  return index
+}
+
+function ScheduleCard({ activeDay }) {
   return (
     <div className="schedule-card">
       <div className="schedule-days">
-        <button type="button">DAY 1</button>
-        <button className="is-active" type="button">
-          DAY 2
-        </button>
-        <button type="button">DAY 3</button>
+        {SCHEDULE_DAYS.map((label, i) => (
+          <button
+            key={label}
+            type="button"
+            className={activeDay === i ? "is-active" : ""}
+          >
+            {label}
+          </button>
+        ))}
       </div>
       <p>
         Brace yourselves for a magical night as the legendary Shreya Ghoshal
@@ -97,7 +124,7 @@ function useScrubCrossfade(ref, bgSel, portraitSel) {
       if (backgrounds.length > 1) gsap.set(backgrounds.slice(1), { autoAlpha: 0 })
       if (portraits.length > 1) gsap.set(portraits.slice(1), { yPercent: 100, autoAlpha: 0 })
       const timeline = gsap.timeline({
-        scrollTrigger: { trigger: section, start: "top top", end: "bottom bottom", scrub: 1.2, invalidateOnRefresh: true },
+        scrollTrigger: { trigger: section, start: "top top", end: "bottom bottom", scrub: 0.3, invalidateOnRefresh: true },
       })
       portraits.slice(1).forEach((incoming, index) => {
         timeline
@@ -382,13 +409,20 @@ export default function App() {
   // snap-type lives here (scoped to this page, removed on unmount).
   // Desktop .artist-page and mobile .mobile-page are the snap-start points.
   // Nested scroller avoided on purpose — it would detach GSAP ScrollTrigger.
+  // No scroll-smooth: with snap-mandatory, the browser glides to the next
+  // snap point on its own after every scroll release, and scroll-behavior:
+  // smooth eases that glide — that's what made the portrait feel slow to
+  // arrive. Dropping it lets the snap settle land immediately.
   useLayoutEffect(() => {
     const root = document.documentElement
-    root.classList.add("snap-y", "snap-mandatory", "scroll-smooth", "motion-reduce:snap-none")
-    return () => root.classList.remove("snap-y", "snap-mandatory", "scroll-smooth", "motion-reduce:snap-none")
+    root.classList.add("snap-y", "snap-mandatory", "motion-reduce:snap-none")
+    return () => root.classList.remove("snap-y", "snap-mandatory", "motion-reduce:snap-none")
   }, [])
 
   useScrubCrossfade(sectionRef, ".featured-bg-layer", ".featured-portrait-layer")
+  // ponytail: starts on DAY 2 (matches the original static markup) and
+  // advances to DAY 3 as the second artist scrolls into view.
+  const activeArtistIndex = useActiveIndexOnScroll(sectionRef, artists.length)
 
   return (
     <main ref={sectionRef} className="proshow-section" id="proshow">
@@ -418,7 +452,7 @@ export default function App() {
             </div>
           ))}
           <Header />
-          <ScheduleCard />
+          <ScheduleCard activeDay={activeArtistIndex + 1} />
         </div>
       </section>
 
