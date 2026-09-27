@@ -467,8 +467,8 @@ export default function Navbar() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding-block: calc(30px - var(--scroll-progress, 0) * 16px);
-          padding-inline: calc(40px - var(--scroll-progress, 0) * 14px);
+padding-block: calc(18px - var(--scroll-progress, 0) * 10px);
+padding-inline: calc(24px - var(--scroll-progress, 0) * 8px);
           background: rgba(8, 10, 14, calc(var(--scroll-progress, 0) * 0.05));
           -webkit-backdrop-filter: blur(calc(2px + var(--scroll-progress, 0) * 9px));
           font-family: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;

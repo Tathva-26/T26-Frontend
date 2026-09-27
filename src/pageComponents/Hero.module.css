@@ -191,6 +191,7 @@
   object-position: bottom;
   pointer-events: none;
   will-change: transform;
+  filter: brightness(0.55);
 }
 
 /* Distant floating island — moves least of the foreground layers
@@ -299,6 +300,80 @@
     115% 130% at 46% 40%,
     #ffffff 0%,
     #f7f9ff 38%,
+    #dce5fa 66%,
+    rgba(190, 210, 250, 0) 100%
+  );
+
+  /* restrained atmospheric glow */
+  box-shadow:
+    0 0 3px rgba(255, 255, 255, 0.95),
+    0 0 12px rgba(210, 225, 255, 0.42),
+    0 0 28px rgba(190, 210, 255, 0.18);
+
+  animation: portalFlicker 6.5s ease-in-out infinite;
+  will-change: transform;
+  transform-origin: center center;
+}
+
+.portal {
+  position: absolute;
+  z-index: 4;
+  overflow: visible;
+  border-radius: 3px;
+
+  background: radial-gradient(
+    115% 130% at 46% 40%,
+    #ffffff 0%,
+    #f7f9ff 38%,
+    #dce5fa 66%,
+    rgba(190, 210, 250, 0) 100%
+  );
+
+  /* tight luminous edge */
+  box-shadow:
+    0 0 2px rgba(255, 255, 255, 1),
+    0 0 9px rgba(220, 232, 255, 0.48),
+    0 0 22px rgba(195, 215, 255, 0.18);
+
+  animation: portalFlicker 6.5s ease-in-out infinite;
+  will-change: transform, filter;
+  transform-origin: center center;
+}
+
+/* Subtle directional atmospheric light.
+   Not a visible "glow shape" — just light bleeding into the scene. */
+.portal::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -18%;
+  right: -18%;
+  bottom: -10%;
+  height: 65%;
+
+  background: radial-gradient(
+    ellipse at 50% 35%,
+    rgba(205, 225, 255, 0.20) 0%,
+    rgba(190, 215, 255, 0.08) 38%,
+    rgba(180, 205, 255, 0) 72%
+  );
+
+  filter: blur(14px);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+/* Keep the old broad glow systems off for now */
+.portal {
+  position: absolute;
+  z-index: 4;
+  overflow: visible;
+  border-radius: 3px;
+
+  background: radial-gradient(
+    115% 130% at 46% 40%,
+    #ffffff 0%,
+    #f7f9ff 38%,
     #dce7ff 68%,
     rgba(190, 215, 255, 0) 100%
   );
@@ -309,61 +384,60 @@
     0 0 25px rgba(190, 215, 255, 0.5);
 
   animation: portalFlicker 6.5s ease-in-out infinite;
-  will-change: transform;
+  will-change: transform, filter;
   transform-origin: center center;
 }
 
 
-/* ACTUAL ATMOSPHERIC GLOW — pre-blurred gradient (no filter: blur needed,
-   so this layer is compositing-only when the portal scales). */
+/* ACTUAL ATMOSPHERIC GLOW */
 .portal::before {
   content: "";
   position: absolute;
 
-  left: -55%;
-  right: -55%;
-  top: -40%;
-  bottom: -35%;
+  left: -45%;
+  right: -45%;
+  top: -30%;
+  bottom: -25%;
 
   z-index: -1;
   pointer-events: none;
 
   background: radial-gradient(
     ellipse at center,
-    rgba(205, 225, 255, 0.43) 0%,
-    rgba(195, 220, 255, 0.32) 20%,
-    rgba(180, 210, 255, 0.18) 40%,
-    rgba(165, 195, 255, 0.08) 60%,
-    rgba(150, 185, 255, 0) 80%
+    rgba(205, 225, 255, 0.48) 0%,
+    rgba(190, 215, 255, 0.28) 28%,
+    rgba(170, 200, 255, 0.12) 52%,
+    rgba(150, 185, 255, 0) 75%
   );
 
+  filter: blur(18px);
   opacity: 0.9;
 }
 
 
-/* LIGHT FALLING ON THE GROUND — pre-blurred gradient (no filter: blur
-   needed, so this layer is compositing-only when the portal scales). */
+/* LIGHT FALLING ON THE GROUND */
 .portal::after {
   content: "";
   position: absolute;
 
-  left: -100%;
-  right: -100%;
-  bottom: -38%;
+  left: -90%;
+  right: -90%;
+  bottom: -32%;
 
-  height: 75%;
+  height: 65%;
 
   z-index: -1;
   pointer-events: none;
 
   background: radial-gradient(
     ellipse at center,
-    rgba(210, 230, 255, 0.38) 0%,
-    rgba(200, 225, 255, 0.28) 18%,
-    rgba(190, 215, 255, 0.15) 38%,
-    rgba(180, 205, 255, 0.06) 58%,
-    transparent 78%
+    rgba(210, 230, 255, 0.42) 0%,
+    rgba(195, 220, 255, 0.22) 30%,
+    rgba(180, 205, 255, 0.08) 52%,
+    transparent 75%
   );
+
+  filter: blur(12px);
 }
 
 
@@ -410,8 +484,8 @@
 
 
 @keyframes portalFlicker {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.95; }
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.05); }
 }
 
 /* Five separate glyphs (T1/A2/T3/H4/A5) sitting behind the portal,
@@ -433,19 +507,20 @@
   object-fit: contain; /* slightly out of phase with portalFlicker */
 }
 
-/* T1's wrapper — see the layout effect in Hero.jsx for how
-   --t1-safe-shift is computed. It's a static translateX correction
-   applied UNDER the GSAP scroll animation (which still animates the
-   .titleLetter img itself), so the two never fight: this wrapper
-   only nudges T1's rest position back into frame on aspect ratios
-   where .scene's horizontal crop would otherwise clip it, and does
-   nothing (0px) at the reference aspect ratio. */
+/* T1's wrapper. It used to apply its own extra corrective translateX
+   (--t1-safe-shift, computed in Hero.jsx) to keep the wordmark fully
+   visible on narrow aspect ratios — removed, because nudging T1
+   independently of the rest of .scene desynced it from every other
+   layer (the island in particular, which is meant to sit directly
+   above a specific letter). This wrapper is now purely structural: it
+   just carries T1's base position, and crops/scales/centers in
+   lockstep with the rest of .scene like every other layer. GSAP's
+   scroll parallax still animates the img (t1Ref) inside it directly.
+   */
 .t1SafeWrapper {
   position: absolute;
   z-index: 3;
   pointer-events: none;
-  transform: translateX(var(--t1-safe-shift, 0px));
-  will-change: transform;
 }
 
 .t1SafeWrapper .titleLetter {
@@ -468,42 +543,32 @@
 }
 
 /* ===============================
-   FIXED HERO CHROME — RESPONSIVE ANCHORING
+   FIXED HERO CHROME — EXACT ANCHORING
    ===============================
    Static UI overlaid on the scene: identity mark, coordinates, theme
    copy, experience list and the Enter control (see CHROME in
-   Hero.jsx for the original reference rem coordinates these are
-   derived from).
+   Hero.jsx for the reference rem coordinates these are derived from).
 
    These used to be absolutely positioned *inside* .scene, at those
    rem coordinates, which put them at the mercy of .scene's own
    cover-scale crop: .viewport centers .scene horizontally and
-   bottom-anchors it vertically (see .viewport/.scene above), so on
-   aspect ratios other than the reference, .scene's edges shift
-   relative to the actual viewport and anything positioned relative
-   to *its* box drifts along with them.
+   bottom-anchors it vertically (see .viewport/.scene above), so a
+   wide-aspect-ratio screen (the common case — most real browser
+   viewports crop .scene vertically from the top) could clip these
+   elements right off the top of the frame.
 
-   Each element here is instead `position: fixed` straight to the
-   real viewport (the same trick .fixedLogo already uses above) and
-   anchored with a margin from whichever screen edge it visually sits
-   nearest to, so that margin stays constant across other landscape
-   resolutions instead of drifting with the crop.
-
-   Deriving the margins: at the reference aspect ratio, .scene's
-   width fits the viewport exactly with no horizontal crop (the
-   common case for a real browser viewport — vertical browser chrome
-   eats into height more than anything eats into width, which nudges
-   the *effective* aspect ratio above the design's own 88.3125/49.0625
-   ≈ 1.8 more often than not). In that branch:
-     scale        = viewportWidth / 1413px            (1413px = 88.3125rem)
-     screenLeft   = leftRem  * 16 * scale = (leftRem  / 88.3125) * 100vw
-     screenTop    = viewportHeight - (49.0625 - topRem) * 16 * scale
-                  = 100vh - ((49.0625 - topRem) / 88.3125) * 100vw
-     screenBottom = (49.0625 - topRem - heightRem) * 16 * scale
-                  = ((49.0625 - topRem - heightRem) / 88.3125) * 100vw
-   (bottom is pure-vw with no vh term because .scene's bottom edge is
-   *always* flush with the viewport's bottom edge by construction —
-   see .viewport/.scene above — regardless of aspect ratio.)
+   Each element here is instead `position: fixed` straight to the real
+   viewport (the same trick .fixedLogo already uses above), which
+   guarantees it's always fully visible regardless of that crop. Its
+   exact left/top (or, for the Enter control, left/bottom) is computed
+   in the layout effect in Hero.jsx and written here as a plain pixel
+   value (--theme-left, --theme-top, etc.) — that computation maps a
+   local point in .scene's own coordinate space to its exact position
+   on screen for the *current* scale, so it stays correct whether the
+   aspect ratio crops .scene vertically (wide screens) or horizontally
+   (narrow ones), with nothing to hand-tune per device. The var()
+   fallback (used only before that effect has run once, e.g. the very
+   first paint) is just the reference-aspect approximation.
 
    Sizing is untouched: each element still scales via the very same
    --design-scale variable it inherited as a child of .scene (now
@@ -512,20 +577,6 @@
    the reference is identical to before. transform-origin matches the
    anchored corner, so that corner never moves as the block grows or
    shrinks with viewport size.
-
-   The clamp() floors/ceilings are generous safety rails (not the
-   primary value — the calc() term in the middle is), sized to
-   comfortably contain any realistic landscape laptop/desktop
-   viewport and only kick in for genuinely extreme window sizes.
-
-   Caveat: this assumes the reference is in the "width-driven, no
-   horizontal crop" branch above. If your reference viewport is
-   unusually short relative to its width (e.g. dev tools open, or a
-   non-standard window), it could actually be in the cropped branch
-   instead, in which case these coefficients would need to be
-   recomputed against vh rather than vw. If elements land a little
-   off on first check, tell me your reference viewport's approximate
-   width×height and I'll recompute the exact coefficients.
    =============================== */
 
 /* --- Theme copy: "DIFFERENT REALITIES. ONE EXHIBITION" + the journey
@@ -534,8 +585,8 @@
 .theme {
   position: fixed;
   z-index: 20;
-  top: clamp(8rem, calc(100vh - 39.5655vw), 27rem);
-  left: clamp(2.5rem, 3.6804vw, 8rem);
+  top: var(--theme-top, 14.125rem);
+  left: var(--theme-left, 3.6804vw);
   transform: scale(var(--design-scale, 1));
   transform-origin: top left;
   max-width: 10rem;
@@ -589,8 +640,8 @@
 .identity {
   position: fixed;
   z-index: 20;
-  top: clamp(10rem, calc(100vh - 36.3069vw), 34rem);
-  left: clamp(60rem, 90.7223vw, 196rem);
+  top: var(--identity-top, 17rem);
+  left: var(--identity-left, 90.7223vw);
   transform: scale(var(--design-scale, 1));
   transform-origin: top left;
   display: flex;
@@ -636,8 +687,8 @@
 .coords {
   position: fixed;
   z-index: 20;
-  top: clamp(16rem, calc(100vh - 26.8905vw), 54rem);
-  left: clamp(62rem, 93.2662vw, 201rem);
+  top: var(--coords-top, 25.3125rem);
+  left: var(--coords-left, 93.2662vw);
   transform: scale(var(--design-scale, 1));
   transform-origin: top left;
   text-align: center;
@@ -670,8 +721,8 @@
 .exhibits {
   position: fixed;
   z-index: 20;
-  top: clamp(26rem, calc(100vh - 12.739vw), 85rem);
-  left: clamp(57rem, 86.8264vw, 188rem);
+  top: var(--exhibits-top, 37.8125rem);
+  left: var(--exhibits-left, 86.8264vw);
   transform: scale(var(--design-scale, 1));
   transform-origin: top left;
   max-width: 9rem;
@@ -711,8 +762,8 @@
 .enterButton {
   position: fixed;
   z-index: 25;
-  bottom: clamp(4.5rem, 7.2186vw, 16rem);
-  left: clamp(5rem, 7.7148vw, 17rem);
+  bottom: var(--enter-bottom, 7.2186vw);
+  left: var(--enter-left, 7.7148vw);
   transform: scale(var(--design-scale, 1));
   transform-origin: bottom left;
   display: inline-flex;
