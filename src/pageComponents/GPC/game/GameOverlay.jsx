@@ -29,36 +29,26 @@ const screenRectStyle = {
  * around the console the whole time.
  *
  * `playing` flips true the INSTANT the console is clicked - not once the
- * zoom animation finishes. This does two things immediately, in parallel
- * with the zoom-in: `ConsoleScreenCanvas backgroundOnly` drops the
- * decorative ambient ship/enemies/bullets (only the starfield keeps
- * running), and `ConsoleFrame active` unpauses the real game. So what you
- * see enlarging is the real, playable game on the same starfield
- * background, not the ambient preview scene. Closing does the reverse
- * immediately: `playing` goes false as soon as exit is pressed, before the
- * shrink starts, so the ambient scene is what's animating on the way back
- * down.
+ * zoom animation finishes - so the ambient scene stops and the real game
+ * starts in parallel with the zoom, not gated on it settling.
  */
 export default function GameOverlay({ open, originRef, onClosed }) {
   const [playing, setPlaying] = useState(false);
   const [stats, setStats] = useState(INITIAL_STATS);
 
   const rootRef = useRef(null);
-  const groupRef = useRef(null); // the single element that grows/shrinks
-  const revealRef = useRef(null); // real HUD + exit button, as one fading unit
+  const groupRef = useRef(null);
+  const revealRef = useRef(null);
   const hasOpenedRef = useRef(false);
 
   const scale = useFitScale(GAME_BOX);
   const zoom = useZoomTransition({ originRef, groupRef, revealRef });
   useScrollLock(open);
 
-  // useLayoutEffect, not useEffect: the starting (collapsed) transform must be
-  // applied before the browser's first paint of this portal, or there's a
-  // one-frame flash of it at full size before the animation "catches up".
   useLayoutEffect(() => {
     if (!open || !scale || hasOpenedRef.current) return;
     hasOpenedRef.current = true;
-    setPlaying(true); // stop the ambient scene and start the game right away - not gated on the zoom finishing
+    setPlaying(true);
     zoom.play("in", () => {
       rootRef.current?.focus();
     });
@@ -84,6 +74,12 @@ export default function GameOverlay({ open, originRef, onClosed }) {
 
   if (!open) return null;
 
+  // Not visible until scale is measured - nothing in this subtree (raw
+  // console art included) can paint before this flips, so the cutout cover
+  // below never needs to "win a race" against the console image; both are
+  // gated behind the exact same visibility switch.
+  const isVisible = Boolean(scale);
+
   return createPortal(
     <div
       ref={rootRef}
@@ -99,14 +95,9 @@ export default function GameOverlay({ open, originRef, onClosed }) {
         style={{
           width: GAME_BOX.width * scale,
           height: GAME_BOX.height * scale,
-          visibility: scale ? "visible" : "hidden",
+          visibility: isVisible ? "visible" : "hidden",
         }}
       >
-        {/* unoptimized: this is the exact same file HeroLayers already shows
-            as a plain <img>, already cached by the browser by the time this
-            is clicked. Routing it through next/image's optimizer instead
-            requests a different, cold URL on first open - the delay you saw
-            between the screen and the bezel growing together. */}
         <Image
           src={ASSETS.console}
           alt=""
@@ -117,22 +108,17 @@ export default function GameOverlay({ open, originRef, onClosed }) {
           className="object-contain"
         />
 
-        {/* console.png's screen cutout has decorative art baked into the PNG
-            itself. Covers it for the one or two frames before the canvas
-            below actually starts painting (IntersectionObserver + sprite
-            loads are async). */}
+        {/* Pure CSS, opaque, no image fetch/decode/paint involved - cannot
+            ever lag behind the console art rendering, unlike an
+            <img>/<Image> which still needs a decode step. This guarantees
+            console.png's baked-in screen art is never exposed, even under
+            a slow first paint. */}
         <div
-          className="absolute overflow-hidden rounded-[18px] bg-cover bg-center"
-          style={{ ...screenRectStyle, backgroundImage: `url(${ASSETS.spaceShooterBackground})` }}
+          className="absolute overflow-hidden rounded-[18px] bg-[#050414]"
+          style={screenRectStyle}
           aria-hidden="true"
         />
 
-        {/* Rendered directly here, NOT wrapped in another screenRectStyle
-            div: it already positions + rounds itself with these same
-            percentages, so an outer wrapper double-applies the inset,
-            shrinking it into a stray rectangle - and overflow-hidden on such
-            a wrapper also clips the spill canvas's bezel bleed, which needs
-            to paint OUTSIDE this cutout. */}
         <ConsoleScreenCanvas backgroundOnly={playing} />
 
         <div ref={revealRef} className="absolute inset-0 opacity-0">
