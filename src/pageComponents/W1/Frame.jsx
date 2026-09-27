@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import "./w1.css";
 
 // Desktop Constants
 const desktopAssetBase = "https://c.animaapp.com/Dp7bguVy/img";
@@ -196,10 +197,12 @@ function MobileView() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [scale, setScale] = useState(1);
+  const [viewportHeight, setViewportHeight] = useState(917);
 
   useEffect(() => {
     const handleResize = () => {
       setScale(window.innerWidth / 412);
+      setViewportHeight(window.innerHeight);
     };
     handleResize(); // Initial calculate
     window.addEventListener("resize", handleResize);
@@ -208,13 +211,16 @@ function MobileView() {
 
   return (
     <main
-      className="block xl:hidden bg-[url(https://c.animaapp.com/UqxAlqQL/img/android-compact---16.png)] bg-cover bg-[50%_50%] w-full relative overflow-hidden"
-      style={{ minHeight: `${917 * scale}px` }}
+      className="block min-[1285px]:hidden bg-[url(https://c.animaapp.com/UqxAlqQL/img/android-compact---16.png)] bg-cover bg-[50%_50%] w-full relative overflow-hidden"
+      style={{ minHeight: `${Math.max(917 * scale, viewportHeight)}px` }}
       onClick={() => setSelectedCard(null)}
     >
-      <div 
-        className="w-[412px] h-[917px] absolute top-0 left-1/2 origin-top"
-        style={{ transform: `translateX(-50%) scale(${scale})` }}
+      <div
+        className="w-[412px] h-[917px] absolute left-1/2 origin-top"
+        style={{
+          top: `${Math.max((viewportHeight - 917 * scale) / 2, 0)}px`,
+          transform: `translateX(-50%) scale(${scale})`,
+        }}
       >
         <div 
           className={`absolute inset-0 bg-black/60 transition-opacity duration-500 z-10 ${
@@ -256,13 +262,13 @@ function MobileView() {
           role="img"
         >
           <img
-            className="absolute w-full h-[96.97%] top-[3.03%] left-0"
+            className="absolute w-full h-full top-0 left-0"
             alt=""
             aria-hidden="true"
             src="https://c.animaapp.com/UqxAlqQL/img/vector-26.svg"
           />
           <img
-            className="absolute w-[82.96%] h-[26.87%] top-[73.13%] left-[17.04%]"
+            className="absolute w-[66.94%] h-[17.37%] top-[73.13%] left-[17.04%]"
             alt=""
             aria-hidden="true"
             src="https://c.animaapp.com/UqxAlqQL/img/vector-27.svg"
@@ -279,7 +285,7 @@ function MobileView() {
             TATHVA 2026
           </span>
           <img
-            className="absolute w-[97.00%] h-[92.25%] top-[7.75%] left-[3.00%]"
+            className="absolute w-[95.04%] h-[56.72%] top-[8.06%] left-[3.10%]"
             alt=""
             aria-hidden="true"
             src="https://c.animaapp.com/UqxAlqQL/img/vector-28.svg"
@@ -309,15 +315,15 @@ function MobileView() {
 function DesktopView() {
   return (
     <main
-      className="hidden xl:flex events-container bg-[url(https://c.animaapp.com/Dp7bguVy/img/frame-48.png)] bg-cover bg-[50%_50%] w-full min-w-[1413px] min-h-[697px] relative justify-center overflow-hidden"
+      className="hidden min-[1285px]:flex events-container bg-[url(https://c.animaapp.com/Dp7bguVy/img/frame-48.png)] bg-cover bg-[50%_50%] w-full h-[max(697px,100svh)] relative items-center justify-center overflow-hidden"
       data-model-id="998:1701"
     >
       <div className="absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-500 pointer-events-none z-10 page-overlay"></div>
       <img src="/images/menu/border_left.png" alt="" className="absolute left-[30px] top-1/2 -translate-y-1/2 h-[50%] max-h-[350px] w-auto pointer-events-none z-50" />
       <img src="/images/menu/border_right.png" alt="" className="absolute right-[30px] top-1/2 -translate-y-1/2 h-[50%] max-h-[350px] w-auto pointer-events-none z-50" />
-      <div className="w-[1413px] h-full relative mx-auto">
+      <div className="w-[1413px] h-full relative mx-auto flex shrink-0 items-center justify-center">
         <section
-          className="absolute w-[988px] h-[590px] top-[68px] left-[213px] flex"
+          className="relative w-[988px] h-[590px] flex shrink-0"
           aria-label="Tathva events"
         >
           {desktopCards.map((card, index) => (
@@ -376,25 +382,26 @@ function DesktopView() {
           ))}
         </section>
         <header aria-label="Main navigation">
-          <a href="#top" aria-label="Tathva home">
-            <img
-              className="absolute top-[22px] left-[41px] w-[55px] h-[46px] aspect-[1.22] object-cover"
-              alt="Tathva"
-              src={`${desktopAssetBase}/tathvawhitelogo-1@2x.png`}
-            />
-          </a>
-          <button
-            type="button"
-            className="absolute top-[38px] left-[132px] w-[27px] cursor-pointer flex flex-col items-center gap-[5px]"
-            aria-label="Open navigation menu"
-          >
-            <span className="w-[60%] h-[2.5px] bg-white rounded-full"></span>
-            <span className="w-full h-[2.5px] bg-white rounded-full"></span>
-            <span className="w-[60%] h-[2.5px] bg-white rounded-full"></span>
-          </button>
-          <nav className="absolute top-[38px] left-[195px] w-[403px] h-3 flex">
-            {navigationItems.map((item, index) => (
-              <span
+          <div className="absolute top-0 left-0 w-full h-0 z-50 min-[1400px]:fixed min-[1400px]:left-0 min-[1400px]:top-0 pointer-events-none">
+            <a href="#top" aria-label="Tathva home" className="absolute top-[22px] left-[41px] max-[1400px]:left-[84px] transition-all duration-300 pointer-events-auto">
+              <img
+                className="w-[55px] h-[46px] aspect-[1.22] object-cover"
+                alt="Tathva"
+                src={`${desktopAssetBase}/tathvawhitelogo-1@2x.png`}
+              />
+            </a>
+            <button
+              type="button"
+              className="absolute top-[38px] left-[132px] max-[1400px]:left-[149px] transition-all duration-300 w-[27px] cursor-pointer flex flex-col items-center gap-[5px] pointer-events-auto"
+              aria-label="Open navigation menu"
+            >
+              <span className="w-[60%] h-[2.5px] bg-white rounded-full"></span>
+              <span className="w-full h-[2.5px] bg-white rounded-full"></span>
+              <span className="w-[60%] h-[2.5px] bg-white rounded-full"></span>
+            </button>
+            <nav className="absolute top-[38px] left-[195px] w-[403px] h-3 flex origin-left scale-[1.1] pointer-events-auto">
+              {navigationItems.map((item, index) => (
+                <span
                 key={item.label}
                 className={`flex items-start ${
                   index === 0
@@ -428,14 +435,15 @@ function DesktopView() {
                 )}
               </span>
             ))}
-          </nav>
+            </nav>
+          </div>
           <div
             id="top"
             className="absolute top-0 left-[653px] w-[99px] h-[33px] bg-[url(https://c.animaapp.com/Dp7bguVy/img/vector-26.svg)] bg-[100%_100%]"
             aria-label="Tathva 2026"
           >
             <img
-              className="absolute w-[82.96%] h-[26.87%] top-[73.13%] left-[17.04%]"
+              className="absolute w-[66.94%] h-[17.37%] top-[73.13%] left-[17.04%]"
               alt=""
               aria-hidden="true"
               src={`${desktopAssetBase}/vector-27.svg`}
@@ -452,7 +460,7 @@ function DesktopView() {
               TATHVA 2026
             </span>
             <img
-              className="absolute w-[97.00%] h-[92.25%] top-[7.75%] left-[3.00%]"
+              className="absolute w-[95.04%] h-[56.72%] top-[8.06%] left-[3.10%]"
               alt=""
               aria-hidden="true"
               src={`${desktopAssetBase}/vector-28.svg`}
