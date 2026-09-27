@@ -1,10 +1,6 @@
 "use client";
 
-<<<<<<< HEAD
-import { useLayoutEffect, useRef, useState } from "react";
-=======
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
->>>>>>> a3f03d5a494b69fe606f11c9f7f61df7e3fee159
 import Link from "next/link";
 import { gsap } from "gsap";
 import { Jockey_One } from "next/font/google";
@@ -33,8 +29,7 @@ const rightMenu = [
   { label: "CONTACT", href: "/contact" },
 ];
 
-<<<<<<< HEAD
-=======
+
 /* -----------------------------------------------------------------------
    Portal text hover (ported from the reference Navbar's FlipLink)
    -----------------------------------------------------------------------
@@ -238,7 +233,7 @@ function PortalText({ text }) {
   );
 }
 
->>>>>>> a3f03d5a494b69fe606f11c9f7f61df7e3fee159
+
 export default function TathvaMenu() {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -454,11 +449,7 @@ export default function TathvaMenu() {
                 font-normal
                 leading-none
                 tracking-[1px]
-<<<<<<< HEAD
-                text-[#999999]
-=======
-                text-[rgba(205,220,255,0.72)]]
->>>>>>> a3f03d5a494b69fe606f11c9f7f61df7e3fee159
+                text-[rgba(205,220,255,0.72)]
                 no-underline
                 opacity-0
                 transition-colors
@@ -485,11 +476,7 @@ export default function TathvaMenu() {
                 "
               />
 
-<<<<<<< HEAD
-              <span>{item.label}</span>
-=======
               <PortalText text={item.label} />
->>>>>>> a3f03d5a494b69fe606f11c9f7f61df7e3fee159
 
               <img
                 src="/images/menu/rightwave.png"
@@ -566,11 +553,7 @@ export default function TathvaMenu() {
                 font-normal
                 leading-none
                 tracking-[1px]
-<<<<<<< HEAD
-                text-[#999999]
-=======
                 text-[rgba(205,220,255,0.72)]
->>>>>>> a3f03d5a494b69fe606f11c9f7f61df7e3fee159
                 no-underline
                 opacity-0
                 transition-colors
@@ -597,11 +580,7 @@ export default function TathvaMenu() {
                 "
               />
 
-<<<<<<< HEAD
-              <span>{item.label}</span>
-=======
               <PortalText text={item.label} />
->>>>>>> a3f03d5a494b69fe606f11c9f7f61df7e3fee159
 
               <img
                 src="/images/menu/rightwave.png"
@@ -642,16 +621,12 @@ export default function TathvaMenu() {
           top-0
           z-20
           flex
-<<<<<<< HEAD
-          h-[38px]
-          w-[110px]
-=======
-          h-[68px]
+          h-auto
           w-[130px]
->>>>>>> a3f03d5a494b69fe606f11c9f7f61df7e3fee159
+          aspect-[100/28]
           -translate-x-1/2
           cursor-pointer
-          items-center
+          items-start
           justify-center
           border-0
           bg-transparent
@@ -670,20 +645,10 @@ export default function TathvaMenu() {
             w-full
             select-none
             object-contain
+            object-top
           "
         />
       </button>
-<<<<<<< HEAD
-    </div>
-  );
-}
-
-
-
-
-
-=======
-
       <style>{`
         .mlink-flip {
           display: block;
@@ -728,4 +693,3 @@ export default function TathvaMenu() {
     </div>
   );
 }
->>>>>>> a3f03d5a494b69fe606f11c9f7f61df7e3fee159

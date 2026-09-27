@@ -191,7 +191,6 @@
   object-position: bottom;
   pointer-events: none;
   will-change: transform;
-  filter: brightness(0.55);
 }
 
 /* Distant floating island — moves least of the foreground layers
@@ -300,80 +299,6 @@
     115% 130% at 46% 40%,
     #ffffff 0%,
     #f7f9ff 38%,
-    #dce5fa 66%,
-    rgba(190, 210, 250, 0) 100%
-  );
-
-  /* restrained atmospheric glow */
-  box-shadow:
-    0 0 3px rgba(255, 255, 255, 0.95),
-    0 0 12px rgba(210, 225, 255, 0.42),
-    0 0 28px rgba(190, 210, 255, 0.18);
-
-  animation: portalFlicker 6.5s ease-in-out infinite;
-  will-change: transform;
-  transform-origin: center center;
-}
-
-.portal {
-  position: absolute;
-  z-index: 4;
-  overflow: visible;
-  border-radius: 3px;
-
-  background: radial-gradient(
-    115% 130% at 46% 40%,
-    #ffffff 0%,
-    #f7f9ff 38%,
-    #dce5fa 66%,
-    rgba(190, 210, 250, 0) 100%
-  );
-
-  /* tight luminous edge */
-  box-shadow:
-    0 0 2px rgba(255, 255, 255, 1),
-    0 0 9px rgba(220, 232, 255, 0.48),
-    0 0 22px rgba(195, 215, 255, 0.18);
-
-  animation: portalFlicker 6.5s ease-in-out infinite;
-  will-change: transform, filter;
-  transform-origin: center center;
-}
-
-/* Subtle directional atmospheric light.
-   Not a visible "glow shape" — just light bleeding into the scene. */
-.portal::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  left: -18%;
-  right: -18%;
-  bottom: -10%;
-  height: 65%;
-
-  background: radial-gradient(
-    ellipse at 50% 35%,
-    rgba(205, 225, 255, 0.20) 0%,
-    rgba(190, 215, 255, 0.08) 38%,
-    rgba(180, 205, 255, 0) 72%
-  );
-
-  filter: blur(14px);
-  opacity: 0.75;
-  pointer-events: none;
-}
-
-/* Keep the old broad glow systems off for now */
-.portal {
-  position: absolute;
-  z-index: 4;
-  overflow: visible;
-  border-radius: 3px;
-
-  background: radial-gradient(
-    115% 130% at 46% 40%,
-    #ffffff 0%,
-    #f7f9ff 38%,
     #dce7ff 68%,
     rgba(190, 215, 255, 0) 100%
   );
@@ -384,60 +309,61 @@
     0 0 25px rgba(190, 215, 255, 0.5);
 
   animation: portalFlicker 6.5s ease-in-out infinite;
-  will-change: transform, filter;
+  will-change: transform;
   transform-origin: center center;
 }
 
 
-/* ACTUAL ATMOSPHERIC GLOW */
+/* ACTUAL ATMOSPHERIC GLOW — pre-blurred gradient (no filter: blur needed,
+   so this layer is compositing-only when the portal scales). */
 .portal::before {
   content: "";
   position: absolute;
 
-  left: -45%;
-  right: -45%;
-  top: -30%;
-  bottom: -25%;
+  left: -55%;
+  right: -55%;
+  top: -40%;
+  bottom: -35%;
 
   z-index: -1;
   pointer-events: none;
 
   background: radial-gradient(
     ellipse at center,
-    rgba(205, 225, 255, 0.48) 0%,
-    rgba(190, 215, 255, 0.28) 28%,
-    rgba(170, 200, 255, 0.12) 52%,
-    rgba(150, 185, 255, 0) 75%
+    rgba(205, 225, 255, 0.43) 0%,
+    rgba(195, 220, 255, 0.32) 20%,
+    rgba(180, 210, 255, 0.18) 40%,
+    rgba(165, 195, 255, 0.08) 60%,
+    rgba(150, 185, 255, 0) 80%
   );
 
-  filter: blur(18px);
   opacity: 0.9;
 }
 
 
-/* LIGHT FALLING ON THE GROUND */
+/* LIGHT FALLING ON THE GROUND — pre-blurred gradient (no filter: blur
+   needed, so this layer is compositing-only when the portal scales). */
 .portal::after {
   content: "";
   position: absolute;
 
-  left: -90%;
-  right: -90%;
-  bottom: -32%;
+  left: -100%;
+  right: -100%;
+  bottom: -38%;
 
-  height: 65%;
+  height: 75%;
 
   z-index: -1;
   pointer-events: none;
 
   background: radial-gradient(
     ellipse at center,
-    rgba(210, 230, 255, 0.42) 0%,
-    rgba(195, 220, 255, 0.22) 30%,
-    rgba(180, 205, 255, 0.08) 52%,
-    transparent 75%
+    rgba(210, 230, 255, 0.38) 0%,
+    rgba(200, 225, 255, 0.28) 18%,
+    rgba(190, 215, 255, 0.15) 38%,
+    rgba(180, 205, 255, 0.06) 58%,
+    transparent 78%
   );
-
-  filter: blur(12px);
 }
 
 
@@ -484,8 +410,8 @@
 
 
 @keyframes portalFlicker {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.05); }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.95; }
 }
 
 /* Five separate glyphs (T1/A2/T3/H4/A5) sitting behind the portal,

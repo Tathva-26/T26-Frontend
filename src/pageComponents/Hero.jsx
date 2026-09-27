@@ -7,7 +7,7 @@ import { useGSAP } from "@gsap/react";
 import styles from "./Hero.module.css";
 // import AtmosphericMist from "@/components/AtmosphericMist";
 
-const assetBase = "/images/Hero/";
+const assetBase = "/images/hero/";
 
 // ---------------------------------------------------------------------
 // SCENE LAYOUT — every position, size and parallax number lives here.
@@ -73,7 +73,7 @@ const LAYOUT = {
         // near ground's top edge (23rem vs. ground's 29rem) — reads as
         // a distant ridge rather than another copy of the same rocks.
         // Behind both the ground and the portal (see the CSS).
-        top:42, left: 0, width: 88.3125, height: 14,
+        top: 42, left: 0, width: 88.3125, height: 14,
         driftX: 0, driftY: -2, scaleTo: 1.25,
         z: 1, zLift: 0,
     },
@@ -134,7 +134,7 @@ const LAYOUT = {
         // strongest parallax in the scene. driftX carries her sideways
         // as the camera zooms in level with her and then passes —
         // flip the sign to send her the other way.
-        top: 36, left: 18.5, width: 54, height:15,
+        top: 36, left: 18.5, width: 54, height: 15,
         driftX: 1100, driftY: 1500, scaleTo: 15.55,
         z: 5, zLift: 10,
     },
@@ -188,8 +188,8 @@ export const Hero = ({ onEnter }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [hasEntered, setHasEntered] = useState(false);
     const [ripples, setRipples] = useState([]);
-//     const mistBackRef = useRef(null);
-// const mistFrontRef = useRef(null);
+    //     const mistBackRef = useRef(null);
+    // const mistFrontRef = useRef(null);
     const scrollerRef = useRef(null);
     const runwayRef = useRef(null);
     const viewportRef = useRef(null);
@@ -202,11 +202,6 @@ export const Hero = ({ onEnter }) => {
     const groundRef = useRef(null);
     const bgrocksRef = useRef(null);
     const t1Ref = useRef(null);
-    const a2Ref = useRef(null);
-    const t3Ref = useRef(null);
-    const h4Ref = useRef(null);
-    const a5Ref = useRef(null);
-    const v5Ref = useRef(null);
     const portalRef = useRef(null);
     const islandRef = useRef(null);
     const girlRef = useRef(null);
@@ -278,69 +273,69 @@ export const Hero = ({ onEnter }) => {
         const scene = sceneRef.current;
         const viewport = viewportRef.current;
         if (!scene || !viewport) return undefined;
-const updateDesignScale = () => {
-    const designWidth = scene.offsetWidth;
-    const designHeight = scene.offsetHeight;
-    const viewportWidth = viewport.clientWidth;
-    const viewportHeight = viewport.clientHeight;
-    if (!designWidth || !designHeight || !viewportWidth || !viewportHeight) {
-        return;
-    }
+        const updateDesignScale = () => {
+            const designWidth = scene.offsetWidth;
+            const designHeight = scene.offsetHeight;
+            const viewportWidth = viewport.clientWidth;
+            const viewportHeight = viewport.clientHeight;
+            if (!designWidth || !designHeight || !viewportWidth || !viewportHeight) {
+                return;
+            }
 
-    // Cover scale: guarantees the canvas fully fills the viewport in
-    // both dimensions (never leaves a gap) — kept as Math.max()
-    // deliberately, not swapped to Math.min(). Which axis "wins"
-    // depends on aspect ratio; the resulting overflow is cropped from
-    // the top only, via the bottom-anchored transform-origin + flex
-    // alignment in Hero.module.css, not by changing this formula.
-    designScaleRef.current = Math.max(
-        viewportWidth / designWidth,
-        viewportHeight / designHeight,
-    );
-    scene.style.setProperty("--design-scale", designScaleRef.current);
-    // The fixed HERO CHROME now lives outside .scene (as siblings of
-    // it, see the render below) so it can be position: fixed to the
-    // real viewport instead of scaling/cropping with the canvas. It
-    // still needs the same scale factor to keep its current size
-    // though, so mirror the variable onto the shared ancestor
-    // (.scroller) that both .scene and the chrome elements inherit
-    // from.
-    scrollerRef.current?.style.setProperty(
-        "--design-scale",
-        designScaleRef.current,
-    );
+            // Cover scale: guarantees the canvas fully fills the viewport in
+            // both dimensions (never leaves a gap) — kept as Math.max()
+            // deliberately, not swapped to Math.min(). Which axis "wins"
+            // depends on aspect ratio; the resulting overflow is cropped from
+            // the top only, via the bottom-anchored transform-origin + flex
+            // alignment in Hero.module.css, not by changing this formula.
+            designScaleRef.current = Math.max(
+                viewportWidth / designWidth,
+                viewportHeight / designHeight,
+            );
+            scene.style.setProperty("--design-scale", designScaleRef.current);
+            // The fixed HERO CHROME now lives outside .scene (as siblings of
+            // it, see the render below) so it can be position: fixed to the
+            // real viewport instead of scaling/cropping with the canvas. It
+            // still needs the same scale factor to keep its current size
+            // though, so mirror the variable onto the shared ancestor
+            // (.scroller) that both .scene and the chrome elements inherit
+            // from.
+            scrollerRef.current?.style.setProperty(
+                "--design-scale",
+                designScaleRef.current,
+            );
 
-    // T1 safety shift — .viewport centers .scene horizontally
-    // (justify-content: center), so on aspect ratios narrower than the
-    // scene's own ~1.8:1 design ratio, the scaled canvas ends up wider
-    // than the viewport and gets cropped evenly from both sides. Every
-    // other scene layer is either edge-to-edge on purpose (background,
-    // ground, bgrocks) or comfortably inset from the canvas edges
-    // (island, portal, girl), so that crop is invisible. T1 is the one
-    // layer that isn't: it spans nearly the full canvas width and
-    // starts flush with the canvas's own left edge, so a horizontal
-    // crop cuts directly into the start of the wordmark. Nudge T1 back
-    // by exactly the amount clipped (0 whenever the scene isn't
-    // horizontally cropped — the common wide-landscape case, which
-    // matches the reference exactly) so it stays fully visible and
-    // centered like the reference composition. This only sets a
-    // static base-position correction; the GSAP scroll parallax on the
-    // ref below is untouched.
-    const scaledWidth = designWidth * designScaleRef.current;
-    const cropPerSide = Math.max(0, (scaledWidth - viewportWidth) / 2);
-    // Capped so a pathological aspect ratio can't shove T1 wildly off
-    // its intended spot.
-    const cappedCropPerSide = Math.min(cropPerSide, viewportWidth * 0.15);
-    // Expressed in .scene's own local (pre-transform) pixels, since
-    // this shift lands on a child of .scene and will itself be
-    // multiplied by --design-scale again when painted.
-    scene.style.setProperty(
-        "--t1-safe-shift",
-        `${cappedCropPerSide / designScaleRef.current}px`,
-    );
+            // T1 safety shift — .viewport centers .scene horizontally
+            // (justify-content: center), so on aspect ratios narrower than the
+            // scene's own ~1.8:1 design ratio, the scaled canvas ends up wider
+            // than the viewport and gets cropped evenly from both sides. Every
+            // other scene layer is either edge-to-edge on purpose (background,
+            // ground, bgrocks) or comfortably inset from the canvas edges
+            // (island, portal, girl), so that crop is invisible. T1 is the one
+            // layer that isn't: it spans nearly the full canvas width and
+            // starts flush with the canvas's own left edge, so a horizontal
+            // crop cuts directly into the start of the wordmark. Nudge T1 back
+            // by exactly the amount clipped (0 whenever the scene isn't
+            // horizontally cropped — the common wide-landscape case, which
+            // matches the reference exactly) so it stays fully visible and
+            // centered like the reference composition. This only sets a
+            // static base-position correction; the GSAP scroll parallax on the
+            // ref below is untouched.
+            const scaledWidth = designWidth * designScaleRef.current;
+            const cropPerSide = Math.max(0, (scaledWidth - viewportWidth) / 2);
+            // Capped so a pathological aspect ratio can't shove T1 wildly off
+            // its intended spot.
+            const cappedCropPerSide = Math.min(cropPerSide, viewportWidth * 0.15);
+            // Expressed in .scene's own local (pre-transform) pixels, since
+            // this shift lands on a child of .scene and will itself be
+            // multiplied by --design-scale again when painted.
+            scene.style.setProperty(
+                "--t1-safe-shift",
+                `${cappedCropPerSide / designScaleRef.current}px`,
+            );
 
-    ScrollTrigger.refresh();
-};
+            ScrollTrigger.refresh();
+        };
 
         updateDesignScale();
 
@@ -403,48 +398,43 @@ const updateDesignScale = () => {
         // LAYOUT entry, so a simple parallax layer is fully defined by
         // its numbers alone — add a field in LAYOUT and it animates,
         // leave it out (or at 0) and it's skipped.
-const simpleParallax = (ref, config) => {
-    if (!ref.current) return;
-    const fromVars = { scale: 1, x: 0, y: 0 };
-    const toVars = { duration: 1, ease: "none" };
-    if (config.xPercent !== undefined) {
-        // Constant for the full tween — this is what keeps the
-        // element self-centered throughout, now that GSAP owns its
-        // transform instead of a CSS class.
-        fromVars.xPercent = config.xPercent;
-        toVars.xPercent = config.xPercent;
-    }
-    if (config.driftX) toVars.x = config.driftX;
-    if (config.driftY) toVars.y = config.driftY;
-    if (config.scaleTo !== undefined) toVars.scale = config.scaleTo;
-    if (config.opacityTo !== undefined) toVars.opacity = config.opacityTo;
-    if (config.zLift) {
-        toVars.zIndex = config.z + config.zLift;
-        toVars.snap = { zIndex: 1 };
-    }
-    tl.fromTo(ref.current, fromVars, toVars, 0);
-};
-// Girl's zLift would fight the mist's own static zIndex prop, so
-// only take the motion values, not the whole LAYOUT.girl config.
-// const mistFrontMotion = {
-//     driftX: LAYOUT.girl.driftX,
-//     driftY: LAYOUT.girl.driftY,
-//     scaleTo: LAYOUT.girl.scaleTo,
-// };
+        const simpleParallax = (ref, config) => {
+            if (!ref.current) return;
+            const fromVars = { scale: 1, x: 0, y: 0 };
+            const toVars = { duration: 1, ease: "none" };
+            if (config.xPercent !== undefined) {
+                // Constant for the full tween — this is what keeps the
+                // element self-centered throughout, now that GSAP owns its
+                // transform instead of a CSS class.
+                fromVars.xPercent = config.xPercent;
+                toVars.xPercent = config.xPercent;
+            }
+            if (config.driftX) toVars.x = config.driftX;
+            if (config.driftY) toVars.y = config.driftY;
+            if (config.scaleTo !== undefined) toVars.scale = config.scaleTo;
+            if (config.opacityTo !== undefined) toVars.opacity = config.opacityTo;
+            if (config.zLift) {
+                toVars.zIndex = config.z + config.zLift;
+                toVars.snap = { zIndex: 1 };
+            }
+            tl.fromTo(ref.current, fromVars, toVars, 0);
+        };
+        // Girl's zLift would fight the mist's own static zIndex prop, so
+        // only take the motion values, not the whole LAYOUT.girl config.
+        // const mistFrontMotion = {
+        //     driftX: LAYOUT.girl.driftX,
+        //     driftY: LAYOUT.girl.driftY,
+        //     scaleTo: LAYOUT.girl.scaleTo,
+        // };
 
-simpleParallax(backgroundRef, LAYOUT.background);
-simpleParallax(islandRef, LAYOUT.island);
-simpleParallax(groundRef, LAYOUT.ground);
-simpleParallax(bgrocksRef, LAYOUT.bgrocks);
-simpleParallax(t1Ref, LAYOUT.t1);
-simpleParallax(a2Ref, LAYOUT.a2);
-simpleParallax(t3Ref, LAYOUT.t3);
-simpleParallax(h4Ref, LAYOUT.h4);
-simpleParallax(a5Ref, LAYOUT.a5);
-simpleParallax(v5Ref, LAYOUT.v5)
-simpleParallax(girlRef, LAYOUT.girl);
-// simpleParallax(mistBackRef, LAYOUT.bgrocks);   // zooms exactly like the rock bg
-// simpleParallax(mistFrontRef, mistFrontMotion); // zooms exactly like the girl
+        simpleParallax(backgroundRef, LAYOUT.background);
+        simpleParallax(islandRef, LAYOUT.island);
+        simpleParallax(groundRef, LAYOUT.ground);
+        simpleParallax(bgrocksRef, LAYOUT.bgrocks);
+        simpleParallax(t1Ref, LAYOUT.t1);
+        simpleParallax(girlRef, LAYOUT.girl);
+        // simpleParallax(mistBackRef, LAYOUT.bgrocks);   // zooms exactly like the rock bg
+        // simpleParallax(mistFrontRef, mistFrontMotion); // zooms exactly like the girl
 
         // Title-letter opacity gets its own tween, starting partway
         // through the scroll instead of fading across the whole range
@@ -452,7 +442,7 @@ simpleParallax(girlRef, LAYOUT.girl);
         // simpleParallax's scale/driftX carries it across the island,
         // and only dissolves after. All five glyphs fade on the same
         // schedule; only their scale/drift differ.
-        [t1Ref, a2Ref, t3Ref, h4Ref, a5Ref, v5Ref].forEach((ref) => {
+        [t1Ref].forEach((ref) => {
             if (ref.current) {
                 tl.fromTo(
                     ref.current,
@@ -462,43 +452,43 @@ simpleParallax(girlRef, LAYOUT.girl);
                 );
             }
         });
-if (portalRef.current) {
-    tl.fromTo(
-        portalRef.current,
-        { scale: 1, x: 0, y: 0 },
-        {
-            scale: () => (
-                Math.max(
-                    viewportRef.current.clientWidth / portalRef.current.offsetWidth,
-                    viewportRef.current.clientHeight / portalRef.current.offsetHeight,
-                ) * LAYOUT.portal.zoomMultiplier
-            ) / (designScaleRef.current || 1),
-            x: () => (
-                sceneRef.current.offsetWidth / 2
-                - (portalRef.current.offsetLeft + portalRef.current.offsetWidth / 2)
-            ),
-            // Was `offsetHeight / 2 - portalCenterY`, which targets the
-            // scene's own center — correct only when the scene is
-            // center-anchored. Now that .scene is bottom-anchored, its
-            // local "center" no longer maps to the viewport's vertical
-            // center, so the target has to be solved for directly:
-            // it's the local-space point that, after the scene's own
-            // bottom-anchored transform, lands at viewportHeight / 2.
-            y: () => (
-                sceneRef.current.offsetHeight
-                - (portalRef.current.offsetTop + portalRef.current.offsetHeight / 2)
-                - (viewportRef.current.clientHeight / 2) / (designScaleRef.current || 1)
-            ),
-            ...(LAYOUT.portal.zLift ? {
-                zIndex: LAYOUT.portal.z + LAYOUT.portal.zLift,
-                snap: { zIndex: 1 },
-            } : null),
-            duration: 1,
-            ease: "none",
-        },
-        0,
-    );
-}
+        if (portalRef.current) {
+            tl.fromTo(
+                portalRef.current,
+                { scale: 1, x: 0, y: 0 },
+                {
+                    scale: () => (
+                        Math.max(
+                            viewportRef.current.clientWidth / portalRef.current.offsetWidth,
+                            viewportRef.current.clientHeight / portalRef.current.offsetHeight,
+                        ) * LAYOUT.portal.zoomMultiplier
+                    ) / (designScaleRef.current || 1),
+                    x: () => (
+                        sceneRef.current.offsetWidth / 2
+                        - (portalRef.current.offsetLeft + portalRef.current.offsetWidth / 2)
+                    ),
+                    // Was `offsetHeight / 2 - portalCenterY`, which targets the
+                    // scene's own center — correct only when the scene is
+                    // center-anchored. Now that .scene is bottom-anchored, its
+                    // local "center" no longer maps to the viewport's vertical
+                    // center, so the target has to be solved for directly:
+                    // it's the local-space point that, after the scene's own
+                    // bottom-anchored transform, lands at viewportHeight / 2.
+                    y: () => (
+                        sceneRef.current.offsetHeight
+                        - (portalRef.current.offsetTop + portalRef.current.offsetHeight / 2)
+                        - (viewportRef.current.clientHeight / 2) / (designScaleRef.current || 1)
+                    ),
+                    ...(LAYOUT.portal.zLift ? {
+                        zIndex: LAYOUT.portal.z + LAYOUT.portal.zLift,
+                        snap: { zIndex: 1 },
+                    } : null),
+                    duration: 1,
+                    ease: "none",
+                },
+                0,
+            );
+        }
         if (whiteoutRef.current) {
             tl.fromTo(
                 whiteoutRef.current,
@@ -507,7 +497,7 @@ if (portalRef.current) {
                 0.8,
             );
         }
-    }, { scope: scrollerRef });
+    });
 
     return (
         <main
@@ -516,15 +506,7 @@ if (portalRef.current) {
             tabIndex={0}
             aria-label="Scroll to move toward the black box"
         >
-        {/* Fixed viewport UI */}
-    <a
-        href="#home"
-        className={styles.fixedLogo}
-        style={{
-            backgroundImage: `url(${assetBase}tathvawhitelogo-1.svg)`,
-        }}
-        aria-label="Tathva home"
-    />
+            {/* Fixed viewport UI */}
 
             {/* ===============================================================
                 FIXED HERO CHROME (see CHROME above for the reference
@@ -661,33 +643,24 @@ if (portalRef.current) {
                         data-model-id="10:78"
                         aria-label="Tathva 26 Asteria"
                     >
-            {/* Hidden SVG filter behind the portal's edge — a touch of
-                procedural noise displaces the rim so it reads as an
-                unstable boundary of light rather than a drawn CSS
-                border. Zero-size definition only; doesn't render or
-                affect layout by itself. */}
-            <svg aria-hidden="true" focusable="false" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
-                <filter id="portalEdgeNoise" x="-40%" y="-40%" width="180%" height="180%">
-                    <feTurbulence type="fractalNoise" baseFrequency="0.015 0.05" numOctaves="2" seed="7" result="noise" />
-                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="7" xChannelSelector="R" yChannelSelector="G" />
-                </filter>
-            </svg>
 
-            {/* Every element below is positioned/sized straight from
+
+
+                        {/* Every element below is positioned/sized straight from
                 LAYOUT (see top of file) and rendered back-to-front by
                 depth: background (farthest) → island → ground → the
                 five title glyphs → portal → girl (nearest the camera).
                 background.png is now the actual environment;
                 .scroller's dark color only shows through before it
                 loads. */}
-            <div
-                ref={backgroundRef}
-                className={styles.background}
-                style={{ backgroundImage: `url(${assetBase}background1.png)` }}
-                aria-hidden="true"
-            />
+                        <div
+                            ref={backgroundRef}
+                            className={styles.background}
+                            style={{ backgroundImage: `url(${assetBase}background1.png)` }}
+                            aria-hidden="true"
+                        />
 
-            {/* Ambient light-streak backdrop. Has to live inside .scene,
+                        {/* Ambient light-streak backdrop. Has to live inside .scene,
             //     layered right above .background: .scene is its own
             //     stacking context (position: relative + z-index: 2) with
             //     an opaque full-bleed .background image, so anything
@@ -697,65 +670,65 @@ if (portalRef.current) {
             //     above the flat sky plate but below every other layer
             //     (island/ground/bgrocks/title/portal/girl, all z-index
             //     1+), reading as a distant field of drifting light. */}
-            {/* // <AmbientStars position="absolute" /> */}
+                        {/* // <AmbientStars position="absolute" /> */}
 
-            <div
-                ref={islandRef}
-                className={styles.islandWrap}
-                style={{
-                    top: `${LAYOUT.island.top}rem`,
-                    left: `${LAYOUT.island.left}rem`,
-                    width: `${LAYOUT.island.width}rem`,
-                    height: `${LAYOUT.island.height}rem`,
-                }}
-                aria-hidden="true"
-            >
-                {/* Independent, near-imperceptible float lives on the
+                        <div
+                            ref={islandRef}
+                            className={styles.islandWrap}
+                            style={{
+                                top: `${LAYOUT.island.top}rem`,
+                                left: `${LAYOUT.island.left}rem`,
+                                width: `${LAYOUT.island.width}rem`,
+                                height: `${LAYOUT.island.height}rem`,
+                            }}
+                            aria-hidden="true"
+                        >
+                            {/* Independent, near-imperceptible float lives on the
                     inner img (a plain CSS animation) so it never fights
                     the GSAP scroll transform applied to this wrapper. */}
-                <div className={styles.islandGlow} />
-                <img
-                    className={styles.island}
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}floatingisland.png`}
-                />
-            </div>
+                            <div className={styles.islandGlow} />
+                            <img
+                                className={styles.island}
+                                alt=""
+                                aria-hidden="true"
+                                src={`${assetBase}floatingisland.png`}
+                            />
+                        </div>
 
-            <div
-                ref={groundRef}
-                className={styles.groundWrap}
-                style={{
-                    top: `${LAYOUT.ground.top}rem`,
-                    left: `${LAYOUT.ground.left}rem`,
-                    width: `${LAYOUT.ground.width}rem`,
-                    height: `${LAYOUT.ground.height}rem`,
-                }}
-                aria-hidden="true"
-            >
-                <img
-                    className={styles.ground}
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}rockyground.png`}
-                />
-                {/* <div className={styles.groundLight} /> */}
-            </div>
+                        <div
+                            ref={groundRef}
+                            className={styles.groundWrap}
+                            style={{
+                                top: `${LAYOUT.ground.top}rem`,
+                                left: `${LAYOUT.ground.left}rem`,
+                                width: `${LAYOUT.ground.width}rem`,
+                                height: `${LAYOUT.ground.height}rem`,
+                            }}
+                            aria-hidden="true"
+                        >
+                            <img
+                                className={styles.ground}
+                                alt=""
+                                aria-hidden="true"
+                                src={`${assetBase}rockyground.png`}
+                            />
+                            {/* <div className={styles.groundLight} /> */}
+                        </div>
 
-            <img
-                ref={bgrocksRef}
-                className={styles.bgrocks}
-                style={{
-                    top: `${LAYOUT.bgrocks.top}rem`,
-                    left: `${LAYOUT.bgrocks.left}rem`,
-                    width: `${LAYOUT.bgrocks.width}rem`,
-                    height: `${LAYOUT.bgrocks.height}rem`,
-                }}
-                alt=""
-                aria-hidden="true"
-                src={`${assetBase}bgrocks.png`}
-            />
-{/* <AtmosphericMist
+                        <img
+                            ref={bgrocksRef}
+                            className={styles.bgrocks}
+                            style={{
+                                top: `${LAYOUT.bgrocks.top}rem`,
+                                left: `${LAYOUT.bgrocks.left}rem`,
+                                width: `${LAYOUT.bgrocks.width}rem`,
+                                height: `${LAYOUT.bgrocks.height}rem`,
+                            }}
+                            alt=""
+                            aria-hidden="true"
+                            src={`${assetBase}bgrocks.png`}
+                        />
+                        {/* <AtmosphericMist
     ref={mistBackRef}
     position="absolute"
     zIndex={15}
@@ -777,159 +750,97 @@ if (portalRef.current) {
     octaves={2}
     resolutionScale={0.4}
 /> */}
-{/* Five separate glyphs replacing the old "Tathva" <h1> — each one is
+                        {/* Five separate glyphs replacing the old "Tathva" <h1> — each one is
     its own parallax layer (see LAYOUT.t1..LAYOUT.a5 above), so they
     can be repositioned/re-timed independently instead of moving as a
     single block of text. Swap the src filenames below if the final
     assets end up named differently. */}
-{/* T1 is wrapped so a static horizontal "safety shift"
+                        {/* T1 is wrapped so a static horizontal "safety shift"
     (--t1-safe-shift, computed in the layout effect above) can
     compensate for the scene's horizontal crop on aspect ratios
     narrower than the design's own ~1.8:1, without touching the GSAP
     scroll animation below, which still targets the img (t1Ref)
     directly — same driftX/driftY/scaleTo as before. */}
-<div
-    className={styles.t1SafeWrapper}
-    style={{
-        top: `${LAYOUT.t1.top}rem`,
-        left: `${LAYOUT.t1.left}rem`,
-        width: `${LAYOUT.t1.width}rem`,
-        height: `${LAYOUT.t1.height}rem`,
-    }}
->
-    <img
-        ref={t1Ref}
-        className={styles.titleLetter}
-        alt=""
-        aria-hidden="true"
-        src={`${assetBase}T11.svg`}
-    />
-</div>
-<img
-    ref={a2Ref}
-    className={styles.titleLetter}
-    style={{
-        top: `${LAYOUT.a2.top}rem`,
-        left: `${LAYOUT.a2.left}rem`,
-        width: `${LAYOUT.a2.width}rem`,
-        height: `${LAYOUT.a2.height}rem`,
-    }}
-    alt=""
-    aria-hidden="true"
-    src={`${assetBase}A2.svg`}
-/>
-<img
-    ref={t3Ref}
-    className={styles.titleLetter}
-    style={{
-        top: `${LAYOUT.t3.top}rem`,
-        left: `${LAYOUT.t3.left}rem`,
-        width: `${LAYOUT.t3.width}rem`,
-        height: `${LAYOUT.t3.height}rem`,
-    }}
-    alt=""
-    aria-hidden="true"
-    src={`${assetBase}T3.svg`}
-/>
-<img
-    ref={h4Ref}
-    className={styles.titleLetter}
-    style={{
-        top: `${LAYOUT.h4.top}rem`,
-        left: `${LAYOUT.h4.left}rem`,
-        width: `${LAYOUT.h4.width}rem`,
-        height: `${LAYOUT.h4.height}rem`,
-    }}
-    alt=""
-    aria-hidden="true"
-    src={`${assetBase}H4.svg`}
-/>
-<img
-    ref={a5Ref}
-    className={styles.titleLetter}
-    style={{
-        top: `${LAYOUT.a5.top}rem`,
-        left: `${LAYOUT.a5.left}rem`,
-        width: `${LAYOUT.a5.width}rem`,
-        height: `${LAYOUT.a5.height}rem`,
-    }}
-    alt=""
-    aria-hidden="true"
-    src={`${assetBase}A5.svg`}
-/>
-<img
-    ref={v5Ref}
-    className={styles.titleLetter}
-    style={{
-        top: `${LAYOUT.v5.top}rem`,
-        left: `${LAYOUT.v5.left}rem`,
-        width: `${LAYOUT.v5.width}rem`,
-        height: `${LAYOUT.v5.height}rem`,
-    }}
-    alt=""
-    aria-hidden="true"
-    src={`${assetBase}V5.svg`}
-/>
+                        <div
+                            className={styles.t1SafeWrapper}
+                            style={{
+                                top: `${LAYOUT.t1.top}rem`,
+                                left: `${LAYOUT.t1.left}rem`,
+                                width: `${LAYOUT.t1.width}rem`,
+                                height: `${LAYOUT.t1.height}rem`,
+                            }}
+                        >
+                            <img
+                                ref={t1Ref}
+                                className={styles.titleLetter}
+                                alt=""
+                                aria-hidden="true"
+                                src={`${assetBase}T11.svg`}
+                            />
+                        </div>
 
-            <div
-                ref={portalRef}
-                className={styles.portal}
-                style={{
-                    top: `${LAYOUT.portal.top}rem`,
-                    left: `${LAYOUT.portal.left}rem`,
-                    width: `${LAYOUT.portal.width}rem`,
-                    height: `${LAYOUT.portal.height}rem`,
-                }}
-                aria-hidden="true"
-            >
-                {/* Painted in this order so the rim ends up crisp on
+
+                        <div
+                            ref={portalRef}
+                            className={styles.portal}
+                            style={{
+                                top: `${LAYOUT.portal.top}rem`,
+                                left: `${LAYOUT.portal.left}rem`,
+                                width: `${LAYOUT.portal.width}rem`,
+                                height: `${LAYOUT.portal.height}rem`,
+                            }}
+                            aria-hidden="true"
+                        >
+                            {/* Painted in this order so the rim ends up crisp on
                     top: wide haze, then the ground-facing pool, then
                     the noise-displaced edge. */}
-                <div className={styles.portalHaze} />
-                <div className={styles.portalGroundGlow} />
-                <div className={styles.portalRim} />
-            </div>
+                            <div className={styles.portalHaze} />
+                            <div className={styles.portalGroundGlow} />
+                            <div className={styles.portalRim} />
+                        </div>
 
-            <div
-                ref={girlRef}
-                className={styles.girlWrap}
-                style={{
-                    top: `${LAYOUT.girl.top}rem`,
-                    left: `${LAYOUT.girl.left}rem`,
-                    width: `${LAYOUT.girl.width}rem`,
-                    height: `${LAYOUT.girl.height}rem`,
-                }}
-                aria-hidden="true"
-            >
-                <img
-                    className={styles.girl}
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}girl4.png`}
-                />
-                {/* Rim light masked to her own alpha shape (same PNG),
+                        <div
+                            ref={girlRef}
+                            className={styles.girlWrap}
+                            style={{
+                                top: `${LAYOUT.girl.top}rem`,
+                                left: `${LAYOUT.girl.left}rem`,
+                                width: `${LAYOUT.girl.width}rem`,
+                                height: `${LAYOUT.girl.height}rem`,
+                            }}
+                            aria-hidden="true"
+                        >
+                            <img
+                                className={styles.girl}
+                                alt=""
+                                aria-hidden="true"
+                                src={`${assetBase}girl4.png`}
+                            />
+                            {/* Rim light masked to her own alpha shape (same PNG),
                     so it catches her silhouette's edge instead of
                     sitting over her like a rectangle. */}
-                <div
-                    className={styles.girlRim}
-                    style={{
-                        WebkitMaskImage: `url(${assetBase}girl.png)`,
-                        maskImage: `url(${assetBase}girl.png)`,
-                    }}
-                />
-                <div className={styles.girlContact} />
-            </div>
+                            <div
+                                className={styles.girlRim}
+                                style={{
+                                    WebkitMaskImage: `url(${assetBase}girl.png)`,
+                                    maskImage: `url(${assetBase}girl.png)`,
+                                }}
+                            />
+                            <div className={styles.girlContact} />
+                        </div>
 
 
 
-            <div ref={whiteoutRef} className={styles.whiteout} aria-hidden="true" />
+                        <div ref={whiteoutRef} className={styles.whiteout} aria-hidden="true" />
 
-            <span className="sr-only" role="status" aria-live="polite">
-                {hasEntered ? "Entering Tathva 26" : ""}
-            </span>
+                        <span className="sr-only" role="status" aria-live="polite">
+                            {hasEntered ? "Entering Tathva 26" : ""}
+                        </span>
                     </div>
                 </div>
             </section>
         </main>
     );
 };
+
+export default Hero;
