@@ -86,13 +86,8 @@ export function mountConsoleScreen(canvas, options = {}) {
 
   function resize() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
-    // offsetWidth/offsetHeight, not getBoundingClientRect(): the latter
-    // includes any CSS transform currently applied by an ancestor (e.g. the
-    // console's zoom animation), which changes every frame during that
-    // animation. Measuring the untransformed layout size instead means the
-    // canvas sizes itself once, correctly, and the transform scales that
-    // already-correct bitmap up/down for free - exactly like it does for a
-    // plain <img>, with nothing here trying to chase a moving target.
+    // Use offsetWidth/offsetHeight to avoid CSS transform complications
+    // from ancestor animations during measurement.
     const w = Math.max(1, canvas.offsetWidth);
     const h = Math.max(1, canvas.offsetHeight);
     if (w === cw && h === ch) return;

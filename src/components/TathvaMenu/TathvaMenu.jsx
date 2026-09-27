@@ -57,11 +57,7 @@ export default function TathvaMenu() {
       const leftItems = Array.from(leftColumnRef.current.children);
       const rightItems = Array.from(rightColumnRef.current.children);
 
-      /* -----------------------------------------------
-         INITIAL STATE
-      ------------------------------------------------ */
-
-      gsap.set(panelRef.current, {
+gsap.set(panelRef.current, {
         width: 110,
         height: 0,
       });
@@ -80,11 +76,7 @@ export default function TathvaMenu() {
         y: 0,
       });
 
-      /* -----------------------------------------------
-         MAIN MENU TIMELINE
-      ------------------------------------------------ */
-
-      const tl = gsap.timeline({
+const tl = gsap.timeline({
         paused: true,
       });
 
@@ -186,10 +178,6 @@ export default function TathvaMenu() {
         w-full
       "
     >
-      {/* =================================================
-          DARK MENU PANEL
-      ================================================= */}
-
       <div
         ref={panelRef}
         className="
@@ -398,10 +386,6 @@ export default function TathvaMenu() {
           ))}
         </nav>
       </div>
-
-      {/* =================================================
-          MAIN TATHVA TOP CENTER STRIP BUTTON
-      ================================================= */}
 
       <button
         ref={triggerRef}

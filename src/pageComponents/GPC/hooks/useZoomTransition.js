@@ -35,7 +35,7 @@ export function useZoomTransition({ originRef, groupRef, revealRef }) {
       if (!group || !reveal) return;
 
       timelineRef.current?.kill();
-      gsap.set(group, { clearProps: "transform" }); // measure at rest
+      gsap.set(group, { clearProps: "transform" });
 
       const rest = { x: 0, y: 0, scale: 1 };
       const collapsed = measureCollapsed();

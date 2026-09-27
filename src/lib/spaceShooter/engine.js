@@ -26,7 +26,7 @@ const spawnEnemy = () => ({
 });
 
 const createWorld = () => ({
-  phase: "ready", // "ready" | "playing" | "over"
+  phase: "ready", // Phase states
   score: 0,
   lives: RULES.lives,
   elapsed: 0,

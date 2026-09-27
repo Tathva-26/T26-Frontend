@@ -29,7 +29,6 @@ export default function HeroLayers({ consoleRef, onPlay }) {
         <img src={ASSETS.banner} alt="" className="h-full w-full object-cover object-bottom" />
       </div>
 
-      {/* Frame 1 only: HUD corner brackets around the banner. */}
       <div data-layer="brackets" className="pointer-events-none absolute left-0 top-[150px] h-[471px] w-full opacity-0">
         {CORNERS.map((position) => (
           <span key={position} className={`absolute h-24 w-24 border-[#4fb4e3] ${position}`} />
@@ -104,7 +103,6 @@ export default function HeroLayers({ consoleRef, onPlay }) {
 
         <ConsoleScreenCanvas />
 
-        {/* The console's real red button lights up flat - no gradient, no glow. */}
         <span
           aria-hidden="true"
           className="pointer-events-none absolute rounded-full bg-[#ff2020] opacity-0 blur-[6px] transition-all duration-150 group-hover:scale-150 group-hover:opacity-70 group-focus-within:scale-150 group-focus-within:opacity-70"

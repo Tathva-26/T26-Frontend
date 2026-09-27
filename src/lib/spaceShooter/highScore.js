@@ -6,7 +6,7 @@ export function loadHighScore() {
     const saved = Number.parseInt(window.localStorage.getItem(HIGH_SCORE_KEY) ?? "", 10);
     return Number.isFinite(saved) && saved > 0 ? saved : 0;
   } catch {
-    return 0; // storage blocked (private mode, disabled cookies)
+    return 0;
   }
 }
 
@@ -14,6 +14,5 @@ export function saveHighScore(score) {
   try {
     window.localStorage.setItem(HIGH_SCORE_KEY, String(score));
   } catch {
-    // storage blocked: the score simply will not persist
   }
 }
