@@ -94,8 +94,8 @@ function useScrubCrossfade(ref, bgSel, portraitSel) {
     const context = gsap.context(() => {
       const backgrounds = gsap.utils.toArray(bgSel)
       const portraits = portraitSel ? gsap.utils.toArray(portraitSel) : []
-      gsap.set(backgrounds.slice(1), { autoAlpha: 0 })
-      gsap.set(portraits.slice(1), { yPercent: 100, autoAlpha: 0 })
+      if (backgrounds.length > 1) gsap.set(backgrounds.slice(1), { autoAlpha: 0 })
+      if (portraits.length > 1) gsap.set(portraits.slice(1), { yPercent: 100, autoAlpha: 0 })
       const timeline = gsap.timeline({
         scrollTrigger: { trigger: section, start: "top top", end: "bottom bottom", scrub: 1.2, invalidateOnRefresh: true },
       })
