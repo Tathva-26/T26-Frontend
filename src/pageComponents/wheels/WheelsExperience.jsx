@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import styles from "./WheelsExperience.module.css";
+// import styles from "./WheelsExperience.module.css";
 
 const START_FRAME = 105;
 const END_FRAME = 240;
@@ -15,10 +15,24 @@ const getFramePath = (index) => {
   return `/wheels/frames/ezgif-frame-${frameNum}.webp`;
 };
 
+// =========================================================================
+// TV & ANIMATION ALIGNMENT CONFIGURATION
+// You can adjust these values anytime to manually fine-tune the alignment:
+// - fullscreenShiftX: horizontal shift in fullscreen (+ moves right, - moves left)
+// - fullscreenShiftY: vertical shift in fullscreen (+ moves down, - moves up)
+// - dockedShiftX: horizontal shift at final docked position (+ moves right, - moves left)
+// - dockedShiftY: vertical shift at final docked position (+ moves down, - moves up)
+// =========================================================================
+export const ALIGN_CONFIG = {
+  fullscreenShiftX: 0,
+  fullscreenShiftY: 0,
+  dockedShiftX: 0,
+  dockedShiftY: 50,
+};
+
 export default function WheelsExperience() {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
-  const canvasWrapperRef = useRef(null);
   const [loadProgress, setLoadProgress] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const imagesRef = useRef([]);
@@ -31,13 +45,17 @@ export default function WheelsExperience() {
   const wheelsRightRef = useRef(null);
   const wheelsTickerRef = useRef(null);
 
+  const tvContainerRef = useRef(null);
+  const tvFrameRef = useRef(null);
   const tvScreenRef = useRef(null);
   const wheelsTextRef = useRef(null);
-
-  const isScrollCompleteRef = useRef(false);
-  const canTriggerTvRef = useRef(false);
-  const tvTransitionStartedRef = useRef(false);
-  const tvTimelineRef = useRef(null);
+  const layoutMetricsRef = useRef({
+    startTvScale: 8,
+    startTvY: 0,
+    animTop: 0,
+    animW: 0,
+    animH: 0,
+  });
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -74,12 +92,19 @@ export default function WheelsExperience() {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
+      const parent = canvas.closest('.fixed');
+      const viewportWidth = parent ? parent.clientWidth : window.innerWidth;
+      const viewportHeight = parent ? parent.clientHeight : window.innerHeight;
       const isMobile = viewportWidth <= 768 || "ontouchstart" in window;
       const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.25 : 2);
-      const targetWidth = Math.max(1, Math.floor(viewportWidth * dpr));
-      const targetHeight = Math.max(1, Math.floor(viewportHeight * dpr));
+
+      const tvTargetWidth = Math.min(352, viewportWidth * 0.86);
+      const animW = tvTargetWidth * (1262 / 1672);
+      const animH = animW / ASPECT_RATIO;
+      const scaleCover = Math.max(viewportWidth / animW, viewportHeight / animH);
+
+      const targetWidth = Math.max(1, Math.floor(animW * scaleCover * dpr));
+      const targetHeight = Math.max(1, Math.floor(animH * scaleCover * dpr));
 
       if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
         canvas.width = targetWidth;
@@ -107,7 +132,40 @@ export default function WheelsExperience() {
       }
     };
 
+    const updateLayoutMetrics = () => {
+      const parent = tvContainerRef.current?.parentElement;
+      const vpW = parent ? parent.clientWidth : window.innerWidth;
+      const vpH = parent ? parent.clientHeight : window.innerHeight;
+      const tvTargetWidth = Math.min(352, vpW * 0.86);
+      const animW = tvTargetWidth * (1262 / 1672);
+      const animH = animW / ASPECT_RATIO;
+      const tvTop = Math.max(16, Math.min(32, vpH * 0.03));
+
+      // Native screen in tv.png: X=205..1466 (W=1262), Y=282..816 (H=535), Total=1672x941
+      const animTop = tvTop + (282 / 535) * animH;
+      const animCenterY = animTop + animH / 2;
+
+      const scaleCover = Math.max(vpW / animW, vpH / animH);
+      const startY = (vpH / 2) - animCenterY;
+
+      layoutMetricsRef.current = {
+        startTvScale: scaleCover,
+        startTvY: startY,
+        animTop,
+        animW,
+        animH,
+      };
+
+      const tvContainer = tvContainerRef.current;
+      if (tvContainer) {
+        tvContainer.style.top = `${animTop.toFixed(2)}px`;
+        tvContainer.style.width = `${animW.toFixed(2)}px`;
+        tvContainer.style.height = `${animH.toFixed(2)}px`;
+      }
+    };
+
     updateCanvasDimensions();
+    updateLayoutMetrics();
 
     let loadedCount = 0;
     const images = [];
@@ -120,9 +178,20 @@ export default function WheelsExperience() {
       if (!image || !image.complete || image.naturalWidth === 0) return false;
       if (coverRef.w <= 0 || coverRef.h <= 0) updateCanvasDimensions();
 
-      const scrollShiftX = coverRef.isMobile
-        ? Math.round(index * 2 * coverRef.dpr)
+      let panRatio = 1;
+      const SHRINK_START = 80;
+      const SHRINK_END = FRAME_COUNT - 1;
+      if (index > SHRINK_START) {
+        const shrinkProgress = (index - SHRINK_START) / (SHRINK_END - SHRINK_START);
+        const easeOut = 1 - shrinkProgress;
+        panRatio = easeOut * easeOut * (3 - 2 * easeOut);
+      }
+
+      const scrollShiftX = window.innerWidth <= 768
+        ? Math.round(index * 2 * panRatio * coverRef.dpr)
         : 0;
+        
+      context.clearRect(0, 0, canvas.width, canvas.height);
       context.drawImage(
         image,
         0,
@@ -194,49 +263,68 @@ export default function WheelsExperience() {
       wheelsTickerRef.current.style.transform = `translate3d(0, ${tickerY.toFixed(1)}px, 0)`;
     };
 
-    const triggerTvTransition = () => {
-      if (tvTransitionStartedRef.current) return;
-      tvTransitionStartedRef.current = true;
+    const updateTvShrinkAnimation = (currentFrame) => {
+      const tvContainer = tvContainerRef.current;
+      const tvFrame = tvFrameRef.current;
+      const tvScreen = tvScreenRef.current;
+      const wheelsText = wheelsTextRef.current;
+      if (!tvContainer || !tvFrame || !tvScreen) return;
 
-      const televisionRect = tvScreenRef.current?.getBoundingClientRect();
-      const canvasWrapper = canvasWrapperRef.current;
-      if (!televisionRect || !canvasWrapper || !wheelsTextRef.current) return;
+      const SHRINK_START = 80; // Starts earlier to slow down the animation speed
+      const SHRINK_END = FRAME_COUNT - 1; // 135 (frame 240)
 
-      const canvasRect = canvasWrapper.getBoundingClientRect();
-      const moveX = televisionRect.left + televisionRect.width / 2 - (canvasRect.left + canvasRect.width / 2);
-      const moveY = televisionRect.top + televisionRect.height / 2 - (canvasRect.top + canvasRect.height / 2);
-      const targetScale = Math.min(
-        televisionRect.width / canvasRect.width,
-        televisionRect.height / canvasRect.height,
-      ) * 0.95;
+      const { startTvScale, startTvY, animTop, animW, animH } = layoutMetricsRef.current;
 
-      tvTimelineRef.current?.kill();
-      const timeline = gsap.timeline({
-        onReverseComplete: () => {
-          tvTransitionStartedRef.current = false;
-          gsap.set(canvasWrapper, { clearProps: "transform,opacity" });
-          gsap.set(wheelsTextRef.current, { opacity: 0, scale: 0.85 });
-          canTriggerTvRef.current = false;
-        },
-      });
-      timeline.to(canvasWrapper, {
-        x: moveX,
-        y: moveY,
-        scale: targetScale,
-        opacity: 0,
-        duration: 2.2,
-        ease: "power2.out",
-      });
-      timeline.to(
-        wheelsTextRef.current,
-        { opacity: 1, scale: 1, duration: 1.2, ease: "power2.out" },
-        "-=0.8",
+      // Keep dimensions and top anchor strictly applied even through React re-renders
+      tvContainer.style.top = `${animTop.toFixed(2)}px`;
+      tvContainer.style.width = `${animW.toFixed(2)}px`;
+      tvContainer.style.height = `${animH.toFixed(2)}px`;
+
+      if (currentFrame <= SHRINK_START) {
+        const initX = ALIGN_CONFIG.fullscreenShiftX;
+        const initY = startTvY + ALIGN_CONFIG.fullscreenShiftY;
+        tvContainer.style.transform = `translate3d(${initX.toFixed(2)}px, ${initY.toFixed(2)}px, 0) scale(${startTvScale.toFixed(4)})`;
+        tvFrame.style.opacity = "0";
+        tvScreen.style.borderRadius = "0px";
+        if (wheelsText) {
+          wheelsText.style.opacity = "0";
+          wheelsText.style.transform = "scale(0.85)";
+        }
+        return;
+      }
+
+      const shrinkRatio = Math.min(
+        1,
+        Math.max(0, (currentFrame - SHRINK_START) / (SHRINK_END - SHRINK_START)),
       );
-      tvTimelineRef.current = timeline;
-    };
+      // Smoothstep easing for silky-smooth start and end
+      const curEase = shrinkRatio * shrinkRatio * (3 - 2 * shrinkRatio);
 
-    const reverseTvTransition = () => {
-      if (tvTransitionStartedRef.current) tvTimelineRef.current?.reverse();
+      // Single unified container transform: both TV and screen scale and move as one
+      const curTvScale = startTvScale + (1 - startTvScale) * curEase;
+      const curTvX = ALIGN_CONFIG.fullscreenShiftX * (1 - curEase) + ALIGN_CONFIG.dockedShiftX * curEase;
+      
+      // We want the final visual top to be -5px. Since the container is anchored at `animTop`,
+      // we translate by (-5 - animTop) to reach that visual position at the end.
+      const initY = startTvY + ALIGN_CONFIG.fullscreenShiftY;
+      const finalY = -5 - animTop + ALIGN_CONFIG.dockedShiftY;
+      const curTvY = initY * (1 - curEase) + finalY * curEase;
+      
+      tvContainer.style.transform = `translate3d(${curTvX.toFixed(2)}px, ${curTvY.toFixed(2)}px, 0) scale(${curTvScale.toFixed(4)})`;
+
+      // TV frame fades in over the first 20% of the shrink
+      const tvOpacity = Math.min(1, shrinkRatio / 0.2);
+      tvFrame.style.opacity = tvOpacity.toFixed(3);
+
+      // TV screen corners smoothly round to 6px
+      tvScreen.style.borderRadius = `${(curEase * 6).toFixed(1)}px`;
+
+      // Wheels text fades in near the very end
+      if (wheelsText) {
+        const textOpacity = Math.max(0, (shrinkRatio - 0.82) / 0.18);
+        wheelsText.style.opacity = textOpacity.toFixed(3);
+        wheelsText.style.transform = `scale(${(0.85 + 0.15 * textOpacity).toFixed(3)})`;
+      }
     };
 
     let animationFrameId;
@@ -265,17 +353,13 @@ export default function WheelsExperience() {
         }
       }
 
-      if (currentFrameRef.current >= FRAME_COUNT - 1.2 && targetFrameRef.current >= FRAME_COUNT - 1.2) {
-        if (!isScrollCompleteRef.current) {
-          isScrollCompleteRef.current = true;
-          timeoutIds.push(window.setTimeout(() => { canTriggerTvRef.current = true; }, 250));
-        }
-      }
       updateCinematicText(currentFrameRef.current / (FRAME_COUNT - 1));
+      updateTvShrinkAnimation(currentFrameRef.current);
       animationFrameId = requestAnimationFrame(renderLoop);
     };
     animationFrameId = requestAnimationFrame(renderLoop);
     updateCinematicText(0);
+    updateTvShrinkAnimation(0);
 
     let lastViewportWidth = window.innerWidth;
     let lastViewportHeight = window.innerHeight;
@@ -287,6 +371,8 @@ export default function WheelsExperience() {
       lastViewportWidth = viewportWidth;
       lastViewportHeight = viewportHeight;
       updateCanvasDimensions();
+      updateLayoutMetrics();
+      updateTvShrinkAnimation(currentFrameRef.current);
       renderFrame(lastDrawnFrameRef.current >= 0 ? lastDrawnFrameRef.current : 0);
     };
     window.addEventListener("resize", handleResize);
@@ -297,58 +383,9 @@ export default function WheelsExperience() {
       end: "bottom bottom",
       scrub: 0,
       onUpdate: (self) => {
-        if (tvTransitionStartedRef.current) {
-          targetFrameRef.current = FRAME_COUNT - 1;
-          if (self.progress < 0.985) reverseTvTransition();
-          return;
-        }
         targetFrameRef.current = self.progress * (FRAME_COUNT - 1);
-        if (self.progress >= 0.995) {
-          if (!isScrollCompleteRef.current) {
-            isScrollCompleteRef.current = true;
-            timeoutIds.push(window.setTimeout(() => { canTriggerTvRef.current = true; }, 250));
-          }
-        } else if (self.progress < 0.96) {
-          isScrollCompleteRef.current = false;
-          canTriggerTvRef.current = false;
-        }
       },
     });
-
-    const onNextScroll = () => {
-      if (isScrollCompleteRef.current && canTriggerTvRef.current && !tvTransitionStartedRef.current) triggerTvTransition();
-    };
-    const handleWheel = (event) => {
-      if (event.deltaY > 5) onNextScroll();
-      else if (event.deltaY < -5) reverseTvTransition();
-    };
-    let touchStartY = 0;
-    let touchHandled = false;
-    const handleTouchStart = (event) => {
-      if (event.touches.length > 0) {
-        touchStartY = event.touches[0].clientY;
-        touchHandled = false;
-      }
-    };
-    const handleTouchMove = (event) => {
-      if (event.touches.length === 0 || touchHandled) return;
-      const deltaY = touchStartY - event.touches[0].clientY;
-      if (deltaY > 25 && isScrollCompleteRef.current && canTriggerTvRef.current && !tvTransitionStartedRef.current) {
-        touchHandled = true;
-        onNextScroll();
-      } else if (deltaY < -25 && tvTransitionStartedRef.current) {
-        touchHandled = true;
-        reverseTvTransition();
-      }
-    };
-    const handleKeyDown = (event) => {
-      if (["ArrowDown", "PageDown", " "].includes(event.key)) onNextScroll();
-      else if (["ArrowUp", "PageUp"].includes(event.key)) reverseTvTransition();
-    };
-    window.addEventListener("wheel", handleWheel, { passive: true });
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
-    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       isActive = false;
@@ -356,12 +393,7 @@ export default function WheelsExperience() {
       timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
       images.forEach((image) => { image.onload = null; image.onerror = null; });
       window.removeEventListener("resize", handleResize);
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("keydown", handleKeyDown);
       trigger.kill();
-      tvTimelineRef.current?.kill();
       Object.assign(document.documentElement.style, {
         height: documentStyles.htmlHeight,
         overflow: documentStyles.htmlOverflow,
@@ -379,39 +411,70 @@ export default function WheelsExperience() {
   }, []);
 
   return (
-    <div ref={containerRef} className={styles.container}>
-      <div className={styles.viewport}>
-        <div className={styles.tv}>
-          <img src="/wheels/tv.png" alt="TV" className={styles.tvImage} />
-          <div ref={tvScreenRef} className={styles.tvScreen}>
-            <span ref={wheelsTextRef} className={styles.tvTitle}>Wheels</span>
+    <div ref={containerRef} className="relative flex-none h-[700vh] bg-black">
+      <style>{`
+        @keyframes ticker-marquee {
+          from { transform: translate3d(0, 0, 0); }
+          to { transform: translate3d(-50%, 0, 0); }
+        }
+      `}</style>
+      <div className="fixed inset-0 w-screen h-screen h-[100dvh] overflow-hidden bg-black">
+        {/* Source of truth: Animation Viewport Unit */}
+        <div
+          ref={tvContainerRef}
+          style={{ transformOrigin: "center center" }}
+          className="absolute left-0 right-0 mx-auto pointer-events-none will-change-transform z-10"
+        >
+          {/* TV Outer Frame: scaled and positioned around the animation viewport */}
+          <img
+            ref={tvFrameRef}
+            src="/wheels/tv.png"
+            alt="TV"
+            className="absolute pointer-events-none select-none z-10 opacity-0"
+            style={{
+              left: "-16.244%",
+              top: "-52.710%",
+              width: "132.488%",
+              height: "175.888%",
+              maxWidth: "none",
+            }}
+          />
+
+          {/* Animation Viewport / TV Inner Screen */}
+          <div
+            ref={tvScreenRef}
+            className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-20 flex items-center justify-center rounded-[6px]"
+          >
+            <canvas ref={canvasRef} className="block w-full h-full object-cover" />
+            <span
+              ref={wheelsTextRef}
+              className="absolute z-20 text-white font-['Space_Grotesk',sans-serif] text-[clamp(1.5rem,3.5vw,2.5rem)] font-bold leading-none tracking-[-0.02em] text-center [text-shadow:0_0_16px_rgba(255,255,255,0.45)] uppercase select-none opacity-0 scale-[0.85]"
+            >
+              Wheels
+            </span>
           </div>
         </div>
 
-        <div ref={canvasWrapperRef} className={styles.canvasWrapper}>
-          <canvas ref={canvasRef} className={styles.canvas} />
-        </div>
-
-        <div className={styles.overlay}>
-          <div ref={wheelsSceneRef} className={styles.scene}>
-            <div className={styles.topRow}>
-              <div ref={wheelsLeftRef} className={styles.leftTitle}>
-                <img src="/wheels/Wheels.svg" alt="Wheels" className={styles.headingImage} />
-                <img src="/wheels/Auto Show.svg" alt="Auto Show" className={styles.subtitleImage} />
+        <div className="absolute inset-0 z-30 overflow-hidden pointer-events-none">
+          <div ref={wheelsSceneRef} className="absolute inset-0 flex flex-col justify-between p-[clamp(28px,4.5vw,64px)] max-md:px-[clamp(16px,4vw,20px)] max-md:py-[clamp(16px,4vw,24px)] pointer-events-none will-change-[transform,opacity]">
+            <div className="flex w-full items-start justify-between gap-8 max-md:relative max-md:gap-3">
+              <div ref={wheelsLeftRef} className="flex max-w-[65%] flex-col will-change-transform max-md:max-w-[58%]">
+                <img src="/wheels/Wheels.svg" alt="Wheels" className="block w-[clamp(180px,24vw,334px)] h-auto object-contain opacity-95 max-md:w-[clamp(130px,38vw,190px)]" />
+                <img src="/wheels/Auto Show.svg" alt="Auto Show" className="block w-[clamp(100px,13vw,183px)] h-auto mt-2 object-contain opacity-95 max-md:w-[clamp(72px,21vw,105px)] max-md:mt-1" />
               </div>
-              <div ref={wheelsRightRef} className={styles.rightInfo}>
-                <p><span className={styles.infoLabel}>Prototype</span><span className={styles.prototypeColon}>:</span><br />1981 DeLorean</p>
-                <p><span className={styles.infoLabel}>Status:</span> Operational</p>
-                <p><span className={styles.infoLabel}>Power Source:</span> Mr. Fusion™ Reactor</p>
-                <p><span className={styles.infoLabel}>Objective:</span><br />Bend the continuum. Revisit the impossible.</p>
-                <p><span className={styles.infoLabel}>Function:</span> Temporal displacement via flux synchronization</p>
+              <div ref={wheelsRightRef} className="absolute top-[160px] right-[82px] block w-[152px] h-[455px] text-white font-['VCR_OSD_Mono',monospace] text-[17.141px] font-normal leading-normal text-right whitespace-pre-wrap opacity-90 will-change-transform max-md:top-[clamp(8px,1.5vh,20px)] max-md:right-0 max-md:w-[clamp(130px,38vw,175px)] max-md:h-auto max-md:text-[clamp(11.5px,2.9vw,13.5px)] max-md:leading-[1.38]">
+                <p className="m-0 mb-[1em] last:mb-0 max-md:mb-[0.55em] max-md:last:mb-0"><span className="text-[#a682d3] max-md:text-[clamp(12px,3.1vw,14px)] max-md:tracking-[0.01em]">Prototype</span><span className="text-[#634b7d]">:</span><br />1981 DeLorean</p>
+                <p className="m-0 mb-[1em] last:mb-0 max-md:mb-[0.55em] max-md:last:mb-0"><span className="text-[#a682d3] max-md:text-[clamp(12px,3.1vw,14px)] max-md:tracking-[0.01em]">Status:</span> Operational</p>
+                <p className="m-0 mb-[1em] last:mb-0 max-md:mb-[0.55em] max-md:last:mb-0"><span className="text-[#a682d3] max-md:text-[clamp(12px,3.1vw,14px)] max-md:tracking-[0.01em]">Power Source:</span> Mr. Fusion™ Reactor</p>
+                <p className="m-0 mb-[1em] last:mb-0 max-md:mb-[0.55em] max-md:last:mb-0"><span className="text-[#a682d3] max-md:text-[clamp(12px,3.1vw,14px)] max-md:tracking-[0.01em]">Objective:</span><br />Bend the continuum. Revisit the impossible.</p>
+                <p className="m-0 mb-[1em] last:mb-0 max-md:mb-[0.55em] max-md:last:mb-0"><span className="text-[#a682d3] max-md:text-[clamp(12px,3.1vw,14px)] max-md:tracking-[0.01em]">Function:</span> Temporal displacement via flux synchronization</p>
               </div>
             </div>
-            <div ref={wheelsTickerRef} className={styles.tickerContainer}>
-              <div className={styles.tickerTrack}>
+            <div ref={wheelsTickerRef} className="absolute bottom-[22px] left-[193px] flex w-[1028px] max-w-[calc(100vw-220px)] h-[47px] items-center overflow-hidden [-webkit-mask-image:linear-gradient(to_right,transparent,#000_30px,#000_calc(100%-30px),transparent)] [mask-image:linear-gradient(to_right,transparent,#000_30px,#000_calc(100%-30px),transparent)] will-change-transform max-md:right-0 max-md:bottom-[max(16px,env(safe-area-inset-bottom,16px))] max-md:left-0 max-md:w-[calc(100vw-clamp(24px,6vw,40px))] max-md:h-8 max-md:mx-auto max-md:[-webkit-mask-image:linear-gradient(to_right,transparent,#000_16px,#000_calc(100%-16px),transparent)] max-md:[mask-image:linear-gradient(to_right,transparent,#000_16px,#000_calc(100%-16px),transparent)] max-md:[transform:translateZ(0)]">
+              <div className="flex w-max items-center whitespace-nowrap animate-[ticker-marquee_16s_linear_infinite] max-md:[animation-duration:12s] will-change-transform">
                 {[0, 1, 2, 3].map((index) => (
-                  <span key={index} className={styles.tickerContent}>
-                    <span className={styles.tickerBullet}>•</span> 09 OCT 2026 11:00 AM <span className={styles.tickerBullet}>•</span> RALLIES <span className={styles.tickerBullet}>•</span> CAR REVEALS <span className={styles.tickerBullet}>•</span> STUNTS&nbsp;&nbsp;
+                  <span key={index} className="inline-flex items-center text-white font-['VCR_OSD_Mono',monospace] text-[30px] font-normal leading-[36.5px] tracking-[0.04em] whitespace-nowrap opacity-95 max-md:text-[clamp(13px,3.6vw,17px)] max-md:leading-normal">
+                    <span className="inline-block mx-2 text-[#a682d3] [text-shadow:0_0_10px_rgba(166,130,211,0.55)] max-md:mx-1 max-md:[text-shadow:0_0_6px_rgba(166,130,211,0.55)]">•</span> 09 OCT 2026 11:00 AM <span className="inline-block mx-2 text-[#a682d3] [text-shadow:0_0_10px_rgba(166,130,211,0.55)] max-md:mx-1 max-md:[text-shadow:0_0_6px_rgba(166,130,211,0.55)]">•</span> RALLIES <span className="inline-block mx-2 text-[#a682d3] [text-shadow:0_0_10px_rgba(166,130,211,0.55)] max-md:mx-1 max-md:[text-shadow:0_0_6px_rgba(166,130,211,0.55)]">•</span> CAR REVEALS <span className="inline-block mx-2 text-[#a682d3] [text-shadow:0_0_10px_rgba(166,130,211,0.55)] max-md:mx-1 max-md:[text-shadow:0_0_6px_rgba(166,130,211,0.55)]">•</span> STUNTS&nbsp;&nbsp;
                   </span>
                 ))}
               </div>
@@ -420,8 +483,8 @@ export default function WheelsExperience() {
         </div>
 
         {!isLoaded && (
-          <div className={styles.loadingBar}>
-            <div className={styles.loadingProgress} style={{ width: `${loadProgress}%` }} />
+          <div className="absolute bottom-[30px] left-1/2 z-20 w-[200px] h-1 overflow-hidden rounded-[2px] bg-white/10 -translate-x-1/2">
+            <div className="h-full bg-white transition-[width] duration-100 ease-linear" style={{ width: `${loadProgress}%` }} />
           </div>
         )}
       </div>
