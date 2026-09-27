@@ -1,5 +1,4 @@
 import "./globals.css";
-import "../components/Ticket/tailwind.css";
 
 export const metadata = {
   title: "Tech Conclave - Tathva '26",
