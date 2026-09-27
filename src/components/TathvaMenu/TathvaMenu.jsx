@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { gsap } from "gsap";
 import { Jockey_One } from "next/font/google";
 
@@ -253,9 +254,11 @@ export default function TathvaMenu() {
                 ${jockeyOne.className}
               `}
             >
-              <img
+              <Image
                 src="/images/menu/leftwave.png"
                 alt=""
+                width={37}
+                height={31}
                 draggable={false}
                 className="
                   pointer-events-none
@@ -273,9 +276,11 @@ export default function TathvaMenu() {
 
               <span>{item.label}</span>
 
-              <img
+              <Image
                 src="/images/menu/rightwave.png"
                 alt=""
+                width={37}
+                height={31}
                 draggable={false}
                 className="
                   pointer-events-none
@@ -357,9 +362,11 @@ export default function TathvaMenu() {
                 ${jockeyOne.className}
               `}
             >
-              <img
+              <Image
                 src="/images/menu/leftwave.png"
                 alt=""
+                width={37}
+                height={31}
                 draggable={false}
                 className="
                   pointer-events-none
@@ -377,9 +384,11 @@ export default function TathvaMenu() {
 
               <span>{item.label}</span>
 
-              <img
+              <Image
                 src="/images/menu/rightwave.png"
                 alt=""
+                width={37}
+                height={31}
                 draggable={false}
                 className="
                   pointer-events-none
@@ -428,9 +437,11 @@ export default function TathvaMenu() {
           outline-none
         "
       >
-        <img
+        <Image
           src="/images/menu/tathva.png"
           alt="Tathva 26"
+          width={100}
+          height={28}
           draggable={false}
           className="
             pointer-events-none
