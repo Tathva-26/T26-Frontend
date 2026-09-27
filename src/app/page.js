@@ -1,7 +1,10 @@
 import HorizontalGallery from '@/pageComponents/HorizontalGallery/HorizontalGallery'
 import ProfilePage from '@/pageComponents/ProfilePage/ProfilePage'
 import WheelsExperience from '@/pageComponents/wheels/WheelsExperience'
-import { UNDERLAY_LEAD_IN_VH, UNDERLAY_VH } from '@/pageComponents/wheels/robowarsHandoff'
+import {
+  UNDERLAY_LEAD_IN_VH,
+  UNDERLAY_VH,
+} from '@/pageComponents/wheels/robowarsHandoff'
 import { RobowarsHero } from '@/pageComponents/Robowars'
 
 export default function Home() {

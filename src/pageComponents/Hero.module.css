@@ -1,0 +1,845 @@
+/* ===============================
+   SCROLL ARCHITECTURE
+   =============================== */
+
+.scroller {
+  --scene-height: 100vh;
+  position: relative;
+  width: 100%;
+  height: var(--scene-height);
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #080808;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+@supports (height: 100svh) {
+  .scroller {
+    --scene-height: 100svh;
+  }
+}
+
+.scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.runway {
+  position: relative;
+  width: 100%;
+  height: calc(var(--scene-height) * 4);
+}
+
+.viewport {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: var(--scene-height);
+  overflow: hidden;
+  display: flex;
+  /* Bottom-anchor instead of center: on landscape ratios wider than
+     the ~1.8:1 design canvas, the cover-scaled scene is taller than
+     the viewport. That extra height must come off the top
+     (sky/background) only — never the bottom (ground/portal/girl). */
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* ===============================
+   RESPONSIVE DESIGN-SPACE SCALING
+   =============================== */
+
+.scene {
+  position: relative;
+  z-index: 2;
+  width: 88.3125rem;
+  height: 49.0625rem;
+  min-width: 88.3125rem;
+  min-height: 49.0625rem;
+  flex-shrink: 0;
+  background: transparent;
+  transform: scale(var(--design-scale, 1));
+  /* Scale from the bottom-center so growing the scene never moves its
+     bottom edge. Paired with align-items: flex-end above, the scene's
+     bottom stays flush with the viewport's bottom at every aspect
+     ratio — only the top ever crops. */
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+/* ===============================
+   FIXED VIEWPORT UI
+   =============================== */
+
+.fixedLogo {
+  position: fixed;
+  top: clamp(16px, 2.5vw, 32px);
+  left: clamp(16px, 2.5vw, 32px);
+
+  width: 55px;
+  height: 46px;
+
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  z-index: 1000;
+  display: block;
+  pointer-events: auto;
+}
+
+.fixedRegister {
+  position: fixed;
+  top: clamp(16px, 2.5vw, 32px);
+  right: clamp(16px, 2.5vw, 32px);
+
+  width: 174px;
+  height: 28px;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  z-index: 1000;
+
+  color: white;
+  text-decoration: none;
+}
+
+.fixedRegisterLine {
+  width: 101px;
+  height: 2px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.fixedRegister span {
+  font-family: 'Instrument_Serif', Helvetica, sans-serif;
+  font-style: italic;
+  font-size: 21.5px;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ===============================
+   BACKGROUND ENVIRONMENT
+   The primary environment plate (background.png) — deep space, stars,
+   whatever the art provides. This is the source of truth for the sky;
+   nothing else in this file should paint clouds/stars/moon on top of
+   it. Sits behind the island and gets only the barest scroll drift so
+   it reads as physically distant rather than glued to the viewport.
+   =============================== */
+
+.background {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  will-change: transform;
+}
+/* ===============================
+   GROUND
+   Low, distant rock silhouette, standing on the same ground the portal
+   does. Sized (see LAYOUT.ground in Hero.jsx) to run off the bottom of
+   the canvas so its own image edge is never visible.
+   =============================== */
+
+.groundWrap {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.ground {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Portal light pooling onto the ground near the portal's own
+   footprint, plus a faint horizon haze — both screened on so they read
+   as light adding onto the rock rather than a painted patch. */
+.groundLight {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(38% 65% at 46% 0%, rgba(205, 222, 255, 0.4), rgba(205, 222, 255, 0) 72%),
+    linear-gradient(to bottom, rgba(150, 175, 230, 0) 0%, rgba(150, 175, 230, 0.12) 14%, rgba(150, 175, 230, 0) 42%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* A second, farther ground layer — a distant ridge that only pokes up
+   just above the near rocks, reading as depth rather than a duplicate
+   of .ground. z-index keeps it behind both .groundWrap and .portal;
+   the dimmed brightness sells the extra distance/haze. */
+.bgrocks {
+  position: absolute;
+  z-index: 1;
+  object-fit: cover;
+  object-position: bottom;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Distant floating island — moves least of the foreground layers
+   (only the environment plate behind it moves less). The wrapper
+   carries the scroll parallax (GSAP); the inner img carries its own
+   slow, independent drift as a plain CSS animation so the two never
+   fight over the transform property. */
+.islandWrap {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.island {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  animation: islandFloat 50s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Extremely slow, small drift + rotation — "massive structure gently
+   suspended," not a bob or a loop you can catch happening. */
+@keyframes islandFloat {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(0.2rem, -1.1rem) rotate(0.7deg); }
+}
+/* Soft atmospheric bloom around the island, independent of whatever
+   waterfall/window highlights are baked into the asset itself. */
+
+/* Foreground figure standing to the side of the portal, watching it —
+   nearest layer to the camera, so it sits above the portal and carries
+   the strongest parallax. */
+.girlWrap {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.girl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom;
+  pointer-events: none;
+}
+
+/* Cool rim light along her portal-facing side, masked to her own PNG
+   alpha so it catches her silhouette's edge instead of sitting over
+   her like a rectangle. Low opacity and screened on — she stays a
+   dark silhouette, this only lifts the one edge. */
+.girlRim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, rgba(210, 225, 255, 0.55) 0%, rgba(210, 225, 255, 0) 24%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: bottom;
+  mask-position: bottom;
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
+  mix-blend-mode: screen;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Contact shadow + haze at her feet, so she reads as standing on the
+   rock rather than pasted over it. */
+.girlContact {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: -4%;
+  height: 16%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0) 75%);
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+/* ===============================
+   PORTAL
+   A doorway of light standing on the ground. Grown entirely with CSS
+   from four layers — the bright core (.portal itself), a wide outer
+   haze, a ground-facing light pool, and a noise-displaced rim — then
+   scaled up as one unit by the scroll tween in Hero.jsx until it fills
+   the screen. See LAYOUT.portal / the portal tween in Hero.jsx for the
+   zoom math; nothing here should change how big or fast it grows.
+   =============================== */
+
+.portal {
+  position: absolute;
+  z-index: 4;
+  overflow: visible;
+  border-radius: 3px;
+
+  background: radial-gradient(
+    115% 130% at 46% 40%,
+    #ffffff 0%,
+    #f7f9ff 38%,
+    #dce7ff 68%,
+    rgba(190, 215, 255, 0) 100%
+  );
+
+  box-shadow:
+    0 0 2px rgba(255, 255, 255, 1),
+    0 0 10px rgba(220, 232, 255, 0.8),
+    0 0 25px rgba(190, 215, 255, 0.5);
+
+  animation: portalFlicker 6.5s ease-in-out infinite;
+  will-change: transform;
+  transform-origin: center center;
+}
+
+
+/* ACTUAL ATMOSPHERIC GLOW — pre-blurred gradient (no filter: blur needed,
+   so this layer is compositing-only when the portal scales). */
+.portal::before {
+  content: "";
+  position: absolute;
+
+  left: -55%;
+  right: -55%;
+  top: -40%;
+  bottom: -35%;
+
+  z-index: -1;
+  pointer-events: none;
+
+  background: radial-gradient(
+    ellipse at center,
+    rgba(205, 225, 255, 0.43) 0%,
+    rgba(195, 220, 255, 0.32) 20%,
+    rgba(180, 210, 255, 0.18) 40%,
+    rgba(165, 195, 255, 0.08) 60%,
+    rgba(150, 185, 255, 0) 80%
+  );
+
+  opacity: 0.9;
+}
+
+
+/* LIGHT FALLING ON THE GROUND — pre-blurred gradient (no filter: blur
+   needed, so this layer is compositing-only when the portal scales). */
+.portal::after {
+  content: "";
+  position: absolute;
+
+  left: -100%;
+  right: -100%;
+  bottom: -38%;
+
+  height: 75%;
+
+  z-index: -1;
+  pointer-events: none;
+
+  background: radial-gradient(
+    ellipse at center,
+    rgba(210, 230, 255, 0.38) 0%,
+    rgba(200, 225, 255, 0.28) 18%,
+    rgba(190, 215, 255, 0.15) 38%,
+    rgba(180, 205, 255, 0.06) 58%,
+    transparent 78%
+  );
+}
+
+
+/* Disable the old broad glow layers */
+.portalHaze,
+.portalGroundGlow {
+  display: none;
+}
+/* Wide, soft volumetric bloom well outside the rectangle — kept low-
+   opacity, blurred and screened onto the scene instead of an opaque
+   painted shape, so it stays "extremely bright" without reading as
+   excessive bloom. */
+/* .portalHaze {
+  position: absolute;
+  inset: -55% -70%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(200, 220, 255, 0.38), rgba(160, 185, 255, 0.13) 55%, rgba(140, 170, 255, 0) 78%);
+  filter: blur(6px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+} */
+
+/* Pool of light where the portal meets the ground — wider than the
+   portal and biased downward, so the glow reads as falling onto a
+   surface rather than radiating evenly in every direction. */
+/* .portalGroundGlow {
+  position: absolute;
+  left: 50%;
+  bottom: -18%;
+  width: 260%;
+  height: 46%;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgba(210, 225, 255, 0.55), rgba(190, 210, 255, 0.2) 55%, rgba(180, 200, 255, 0) 80%);
+  filter: blur(4px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+} */
+
+/* Extremely bright, slightly irregular edge. The SVG displacement
+   filter (defined inline in Hero.jsx, id="portalEdgeNoise") warps the
+   rectangle's boundary so it reads as an edge of light/energy rather
+   than a drawn CSS border. Browsers that can't apply the filter still
+   get a clean bright rim as a fallback. */
+
+
+@keyframes portalFlicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.95; }
+}
+
+/* Five separate glyphs (T1/A2/T3/H4/A5) sitting behind the portal,
+   replacing the old real-text "Tathva" <h1>. Position/size/motion for
+   each one live in LAYOUT.t1..LAYOUT.a5 in Hero.jsx; this just sets
+   the shared depth and glow treatment. Since these are images now
+   rather than live text, the old background-clip gradient-fill trick
+   doesn't apply — a drop-shadow stack does the same "lit by the
+   portal" glow job on the SVGs' own alpha instead, so the fallback
+   block the text version needed is gone too. */
+.titleLetter {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform, opacity;
+  transform-origin: center center;
+
+  object-fit: contain; /* slightly out of phase with portalFlicker */
+}
+
+/* T1's wrapper — see the layout effect in Hero.jsx for how
+   --t1-safe-shift is computed. It's a static translateX correction
+   applied UNDER the GSAP scroll animation (which still animates the
+   .titleLetter img itself), so the two never fight: this wrapper
+   only nudges T1's rest position back into frame on aspect ratios
+   where .scene's horizontal crop would otherwise clip it, and does
+   nothing (0px) at the reference aspect ratio. */
+.t1SafeWrapper {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  transform: translateX(var(--t1-safe-shift, 0px));
+  will-change: transform;
+}
+
+.t1SafeWrapper .titleLetter {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Fades the whole scene to white as the portal finishes swallowing the
+   viewport, so the handoff into the next section reads as passing
+   through rather than a hard cut. */
+.whiteout {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: #f5f8ff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ===============================
+   FIXED HERO CHROME — RESPONSIVE ANCHORING
+   ===============================
+   Static UI overlaid on the scene: identity mark, coordinates, theme
+   copy, experience list and the Enter control (see CHROME in
+   Hero.jsx for the original reference rem coordinates these are
+   derived from).
+
+   These used to be absolutely positioned *inside* .scene, at those
+   rem coordinates, which put them at the mercy of .scene's own
+   cover-scale crop: .viewport centers .scene horizontally and
+   bottom-anchors it vertically (see .viewport/.scene above), so on
+   aspect ratios other than the reference, .scene's edges shift
+   relative to the actual viewport and anything positioned relative
+   to *its* box drifts along with them.
+
+   Each element here is instead `position: fixed` straight to the
+   real viewport (the same trick .fixedLogo already uses above) and
+   anchored with a margin from whichever screen edge it visually sits
+   nearest to, so that margin stays constant across other landscape
+   resolutions instead of drifting with the crop.
+
+   Deriving the margins: at the reference aspect ratio, .scene's
+   width fits the viewport exactly with no horizontal crop (the
+   common case for a real browser viewport — vertical browser chrome
+   eats into height more than anything eats into width, which nudges
+   the *effective* aspect ratio above the design's own 88.3125/49.0625
+   ≈ 1.8 more often than not). In that branch:
+     scale        = viewportWidth / 1413px            (1413px = 88.3125rem)
+     screenLeft   = leftRem  * 16 * scale = (leftRem  / 88.3125) * 100vw
+     screenTop    = viewportHeight - (49.0625 - topRem) * 16 * scale
+                  = 100vh - ((49.0625 - topRem) / 88.3125) * 100vw
+     screenBottom = (49.0625 - topRem - heightRem) * 16 * scale
+                  = ((49.0625 - topRem - heightRem) / 88.3125) * 100vw
+   (bottom is pure-vw with no vh term because .scene's bottom edge is
+   *always* flush with the viewport's bottom edge by construction —
+   see .viewport/.scene above — regardless of aspect ratio.)
+
+   Sizing is untouched: each element still scales via the very same
+   --design-scale variable it inherited as a child of .scene (now
+   mirrored onto .scroller in the layout effect so these siblings can
+   read it too), applied as its own transform so the visual size at
+   the reference is identical to before. transform-origin matches the
+   anchored corner, so that corner never moves as the block grows or
+   shrinks with viewport size.
+
+   The clamp() floors/ceilings are generous safety rails (not the
+   primary value — the calc() term in the middle is), sized to
+   comfortably contain any realistic landscape laptop/desktop
+   viewport and only kick in for genuinely extreme window sizes.
+
+   Caveat: this assumes the reference is in the "width-driven, no
+   horizontal crop" branch above. If your reference viewport is
+   unusually short relative to its width (e.g. dev tools open, or a
+   non-standard window), it could actually be in the cropped branch
+   instead, in which case these coefficients would need to be
+   recomputed against vh rather than vw. If elements land a little
+   off on first check, tell me your reference viewport's approximate
+   width×height and I'll recompute the exact coefficients.
+   =============================== */
+
+/* --- Theme copy: "DIFFERENT REALITIES. ONE EXHIBITION" + the journey
+   line, with the planet mark riding alongside the headline.
+   Anchored top-left (design left: 3.25rem, top: 14.125rem). --- */
+.theme {
+  position: fixed;
+  z-index: 20;
+  top: clamp(8rem, calc(100vh - 39.5655vw), 27rem);
+  left: clamp(2.5rem, 3.6804vw, 8rem);
+  transform: scale(var(--design-scale, 1));
+  transform-origin: top left;
+  max-width: 10rem;
+  padding-left: 1rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+
+.themeHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.themePlanet {
+  width: 4rem;
+  height: 4rem;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.themeTitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Hammersmith One', Helvetica, sans-serif;
+  font-size: 16.633px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.themeCopy {
+  margin: 0.75rem 0 0;
+  max-width: 8.5rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Hammersmith One', Helvetica, sans-serif;
+  font-size: 7.1px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* --- Identity mark: "TATHVA 26 / ASTERIA", rotated on its side, plus
+   the small wing mark underneath.
+   Anchored top-left (design left: 80.125rem, top: 17rem) — left
+   rather than right because the block's own rendered width isn't
+   known ahead of time (auto-sized from its content), so mirroring it
+   off the right edge would need that width to be accurate; anchoring
+   from its actual left edge, as originally authored, needs no such
+   assumption. --- */
+.identity {
+  position: fixed;
+  z-index: 20;
+  top: clamp(10rem, calc(100vh - 36.3069vw), 34rem);
+  left: clamp(60rem, 90.7223vw, 196rem);
+  transform: scale(var(--design-scale, 1));
+  transform-origin: top left;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  pointer-events: none;
+}
+
+.identityLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transform: rotate(90deg);
+  white-space: nowrap;
+}
+
+.identityLabel span {
+  color: #fff;
+  font-family: 'Hammersmith One', Helvetica, sans-serif;
+  font-size: 11.631px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.identityDivider {
+  width: 1px;
+  height: 0.5rem;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.identityMark {
+  padding-top: 2rem;
+  width: 3rem;
+  height: auto;
+  object-fit: contain;
+}
+
+/* --- Coordinates: the ellipse mark with lat/long underneath.
+   Anchored top-left (design left: 82.375rem, top: 25.3125rem), same
+   reasoning as .identity above. --- */
+.coords {
+  position: fixed;
+  z-index: 20;
+  top: clamp(16rem, calc(100vh - 26.8905vw), 54rem);
+  left: clamp(62rem, 93.2662vw, 201rem);
+  transform: scale(var(--design-scale, 1));
+  transform-origin: top left;
+  text-align: center;
+  pointer-events: none;
+}
+
+.coordsRing {
+  display: block;
+  width: 3.25rem;
+  height: 3.25rem;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.coordsText {
+  margin: 0.5rem 0 0;
+  color: #fff;
+  font-family: 'Hammersmith One', Helvetica, sans-serif;
+  font-size: 7.6px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* --- Experience list: the star mark + EXHIBITS / WORLDS /
+   EXPERIENCES / CONNECT.
+   Anchored top-left (design left: 76.6875rem, top: 37.8125rem), same
+   reasoning as .identity above. --- */
+.exhibits {
+  position: fixed;
+  z-index: 20;
+  top: clamp(26rem, calc(100vh - 12.739vw), 85rem);
+  left: clamp(57rem, 86.8264vw, 188rem);
+  transform: scale(var(--design-scale, 1));
+  transform-origin: top left;
+  max-width: 9rem;
+  padding-left: 1rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+
+.exhibitsStar {
+  display: block;
+  width: 1.3125rem;
+  height: 1.3125rem;
+  margin-bottom: 0.75rem;
+}
+
+.exhibitsList {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Hammersmith One', Helvetica, sans-serif;
+  font-size: 16.633px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* --- Enter control: idle is a white pill with black type, hover
+   inverts to a black pill with white type, and every click drops a
+   ripple that reads off the button's own current text color, so it
+   stays correct in either state without extra rules.
+   Anchored bottom-left (design left: 6.8125rem; bottom computed from
+   top: 39.625rem + height: 3.0625rem, since — unlike the four
+   elements above — the button's size IS known, so its true distance
+   from the canvas's bottom edge can be mirrored exactly, and bottom
+   is the more robust anchor here: .scene's bottom edge is always
+   flush with the viewport's, with no crop-offset uncertainty the way
+   top has). Width/height stay driven by CHROME.enter in Hero.jsx. --- */
+.enterButton {
+  position: fixed;
+  z-index: 25;
+  bottom: clamp(4.5rem, 7.2186vw, 16rem);
+  left: clamp(5rem, 7.7148vw, 17rem);
+  transform: scale(var(--design-scale, 1));
+  transform-origin: bottom left;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 0.085rem;
+  background: #000000;
+  color: #fffcfc;
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.15),
+    0 12px 28px rgba(0, 0, 0, 0.35);
+  transition: background 0.35s ease, color 0.35s ease, box-shadow 0.35s ease, transform 0.2s ease, opacity 0.35s ease;
+}
+
+.enterButton:hover {
+  background: #fff;
+  color: #000;
+  transform: scale(var(--design-scale, 1)) translateY(-2px);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 16px 32px rgba(0, 0, 0, 0.5);
+}
+
+.enterButton:active {
+  transform: scale(var(--design-scale, 1)) translateY(0) scale(0.96);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+.enterButton:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.enterBracket {
+  display: inline-block;
+  width: px;
+  height: 38px;
+
+  border-left: 2px solid currentColor;
+  border-top: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+
+  font-size: 0;
+  line-height: 0;
+  transform: none;
+}
+.enterBracket.right {
+  border-left: none;
+  border-right: 1px solid currentColor;
+}
+.enterLabel {
+  color: inherit;
+  font-family: 'Intel One Mono', Helvetica, sans-serif;
+  font-size: 22.735px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.enterArrow {
+  color: inherit;
+  font-family: 'Intel One Mono', Helvetica, sans-serif;
+  font-size: 22.735px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+  margin-left: -0.3rem;
+}
+
+.ripple {
+  position: absolute;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin: -0.375rem 0 0 -0.375rem;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.35;
+  transform: scale(0);
+  animation: rippleGrow 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes rippleGrow {
+  to {
+    transform: scale(20);
+    opacity: 0;
+  }
+}
+
+/* ===============================
+   RESPONSIVE
+   =============================== */
+
+@media (max-width: 900px) {
+  .fixedRegister {
+    width: 155px;
+  }
+
+  .fixedRegisterLine {
+    width: 82px;
+  }
+}
+
+@media (max-width: 600px) {
+  .fixedLogo {
+    width: 48px;
+    height: 40px;
+  }
+
+  .fixedRegister {
+    width: 125px;
+    gap: 6px;
+  }
+
+  .fixedRegisterLine {
+    width: 60px;
+  }
+
+  .fixedRegister span {
+    font-size: 18px;
+  }
+}
