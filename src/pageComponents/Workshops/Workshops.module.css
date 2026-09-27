@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
+
+@font-face {
+  font-family: 'Workshops Fragment Serif';
+  src: url('/fonts/PPFragment-SerifExtraBold.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+.fragmentSerif {
+  font-family: 'Workshops Fragment Serif', serif;
+}
+
+.jaro {
+  font-family: 'Jaro', sans-serif;
+}
