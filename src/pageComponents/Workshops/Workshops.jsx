@@ -438,7 +438,7 @@ const FOCUS_EDGE_HIGHLIGHT_LEFT = "rgba(255,255,255,0.11)";
 
 // Surrounding-card "make room" response — Step 4
 const GRID_GAP_PX = 32;
-const MAX_SURROUND_DISPLACEMENT = 100;
+const MAX_SURROUND_DISPLACEMENT = 0;
 const FALLOFF_STRENGTH = 0.4;
 const NEAR_LAG = 0.001;
 const FAR_LAG = 0.015;
@@ -2038,6 +2038,7 @@ export default function WorkshopsPage() {
                 height={36}
                 priority
                 className="object-contain h-8 sm:h-9 w-auto group-hover:scale-105 transition-transform"
+                style={{ width: "auto", height: "auto" }}
               />
             </div>
 
@@ -2369,7 +2370,7 @@ export default function WorkshopsPage() {
 
                           <div
                             key={workshop.id}
-                            className="relative"
+                            className="group relative"
                             ref={(el) => {
                               if (el) slotRefs.current[workshop.id] = el;
                               else delete slotRefs.current[workshop.id];
@@ -2386,6 +2387,8 @@ export default function WorkshopsPage() {
                             onMouseMove={(e) => handleCardMove(workshop.id, e)}
                             onMouseLeave={() => handleCardLeave(workshop.id)}
                           >
+                            {/* Static hit area to prevent hover flicker during 3D tilt */}
+                            <div className="absolute inset-0 z-50" />
                             <div
                               ref={(el) => {
                                 if (el) floatRefs.current[workshop.id] = el;
@@ -2401,7 +2404,7 @@ export default function WorkshopsPage() {
                                   if (el) cardRefs.current[workshop.id] = el;
                                   else delete cardRefs.current[workshop.id];
                                 }}
-                                className="group relative aspect-[0.9825] w-full overflow-hidden bg-[#0d101c]"
+                                className="relative aspect-[0.9825] w-full overflow-hidden bg-[#0d101c]"
                                 style={{
                                   transformStyle: "preserve-3d",
                                   transformOrigin: "center center",
@@ -2424,14 +2427,7 @@ export default function WorkshopsPage() {
                                   }}
                                 >
 
-                                  {/* Step 9 — digital activation pixelated overlay */}
-                                  <div
-                                    ref={(el) => {
-                                      if (el) activationOverlayRefs.current[workshop.id] = el;
-                                      else delete activationOverlayRefs.current[workshop.id];
-                                    }}
-                                    className="workshop-activation-overlay pointer-events-none absolute inset-0 z-10"
-                                  />
+                                  {/* Step 9 — digital activation pixelated overlay (removed) */}
 
                                   {/* Step 10 — continuous digital pulse overlay */}
                                   <div
@@ -2444,7 +2440,7 @@ export default function WorkshopsPage() {
 
                                   {/* CARD VISUAL ARTWORK */}
                                   <div
-                                    className="absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-slate-900"
+                                    className="absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-[#08090e]"
                                     style={{
                                       maskImage: "url('/images/workshops/workshop-card-image.png')",
                                       WebkitMaskImage: "url('/images/workshops/workshop-card-image.png')",
@@ -2456,18 +2452,32 @@ export default function WorkshopsPage() {
                                       WebkitMaskSize: "100% 100%",
                                     }}
                                   >
-                                    <Image
-                                      src={workshop.image}
-                                      alt={workshop.fullTitle}
-                                      fill
-                                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                      className="object-cover object-center transition-transform duration-500 ease-out"
-                                    />
+                                    <div className="absolute inset-0 p-5 ">
+                                      <Image
+                                        src="/images/workshops/astronaut-outline.png"
+                                        alt="Astronaut Outline"
+                                        fill
+                                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                        className="object-contain object-center"
+                                      />
+                                    </div>
+                                    
+                                    <div 
+                                      className="absolute inset-0 transition-all duration-500 ease-in-out group-hover:duration-[1500ms] [clip-path:ellipse(150%_100%_at_50%_-100%)] group-hover:[clip-path:ellipse(150%_100%_at_50%_100%)]"
+                                    >
+                                      <Image
+                                        src={workshop.image}
+                                        alt={workshop.fullTitle}
+                                        fill
+                                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                        className="object-cover object-center transition-transform duration-500 group-hover:duration-[1500ms] ease-out"
+                                      />
+                                    </div>
                                   </div>
 
                                   {/* BACKGROUND CUTOUT OUTSIDE THE BORDER */}
                                   <div
-                                    className="pointer-events-none absolute inset-0 z-15 bg-[#06070d]"
+                                    className="pointer-events-none absolute inset-0 z-15 bg-[#08090e]"
                                     style={{
                                       clipPath:
                                         "polygon(32.18% 90.64%, 100% 90.64%, 100% 100%, 23.29% 100%, 24.64% 99%)",
@@ -2490,11 +2500,16 @@ export default function WorkshopsPage() {
                                   </div>
 
                                   <div className="pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30">
-                                    <img
-                                      src="/images/workshops/workshop-card-border.svg"
-                                      alt=""
-                                      className="absolute inset-[-0.38%] h-full w-full"
-                                    />
+                                    <svg 
+                                      preserveAspectRatio="none" 
+                                      overflow="visible" 
+                                      className="absolute inset-[-0.38%] h-full w-full stroke-[#ffffff] transition-colors duration-500 group-hover:duration-[1500ms] group-hover:stroke-[#00f3ff]"
+                                      viewBox="0 0 135.239 135.639" 
+                                      fill="none" 
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path d="M0.510216 132.629V61.5188V3.01022C0.510216 1.6295 1.62951 0.510216 3.01022 0.510216H132.229C133.61 0.510216 134.729 1.6295 134.729 3.01022V120.427C134.729 121.808 133.61 122.927 132.229 122.927H43.5146C42.7568 122.927 42.04 123.271 41.5655 123.862L33.2653 134.195C32.7907 134.785 32.0739 135.129 31.3162 135.129H3.01022C1.6295 135.129 0.510216 134.01 0.510216 132.629Z" strokeWidth="1.02043"/>
+                                    </svg>
                                   </div>
 
                                 </div>
@@ -2554,6 +2569,12 @@ export default function WorkshopsPage() {
 
       {/* GSAP SPECIFIC CSS */}
       <style jsx global>{`
+        .workshop-image-reveal {
+          clip-path: ellipse(150% 100% at 50% -100%);
+        }
+        .group:hover .workshop-image-reveal {
+          clip-path: ellipse(150% 100% at 50% 100%);
+        }
         .workshop-pulse-overlay {
           background: radial-gradient(
             circle calc(var(--pulse-radius) * 1px) at calc(var(--pulse-x) * 1%) calc(var(--pulse-y) * 1%),
@@ -2601,7 +2622,7 @@ export default function WorkshopsPage() {
       {selectedWorkshop && (
 
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#06050b] bg-cover bg-center p-4 text-white animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#06070d] bg-cover bg-center p-4 text-white animate-in fade-in duration-200"
           style={{ backgroundImage: "url('/images/workshop-detail-bg.png')" }}
           onClick={() => setSelectedWorkshop(null)}
         >

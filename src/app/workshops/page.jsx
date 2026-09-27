@@ -1,1 +1,5 @@
-export { default } from "../../pageComponents/Workshops/Workshops";
+import Workshops from "../../pageComponents/Workshops/Workshops";
+
+export default function Page() {
+  return <Workshops />;
+}
