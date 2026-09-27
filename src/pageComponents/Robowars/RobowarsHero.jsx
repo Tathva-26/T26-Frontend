@@ -367,6 +367,21 @@ export default function RobowarsHero({ leadInVh = 0 }) {
         });
       };
 
+      // Quick camera-shake on the whole section, played once each time the
+      // scrub crosses the point where the two robots meet at center.
+      const triggerCollisionShake = () => {
+        const target = sectionRef.current;
+        if (!target) return;
+        gsap
+          .timeline()
+          .to(target, { x: 14, y: -8, duration: 0.05, ease: "power1.out" })
+          .to(target, { x: -12, y: 8, duration: 0.06 })
+          .to(target, { x: 9, y: -6, duration: 0.06 })
+          .to(target, { x: -6, y: 4, duration: 0.07 })
+          .to(target, { x: 3, y: -2, duration: 0.07 })
+          .to(target, { x: 0, y: 0, duration: 0.09, ease: "power2.out" });
+      };
+
       const buildTimeline = () => {
         const timeline = gsap.timeline({
           defaults: { ease: "none" },
@@ -389,6 +404,9 @@ export default function RobowarsHero({ leadInVh = 0 }) {
             },
             0
           )
+          // Robots finish arriving at center (their tween above ends) right
+          // here — that's the moment they "collide".
+          .call(triggerCollisionShake, [], 0.5)
           .to(
             ".robowars-title-left, .robowars-title-right",
             {
@@ -477,7 +495,13 @@ export default function RobowarsHero({ leadInVh = 0 }) {
         Robo Wars Enter Arena
       </h1>
 
-      <div className="sticky top-0 h-[100dvh] min-h-[560px] w-full overflow-hidden">
+      <div
+        data-robowars-stage
+        className="sticky top-0 h-[100dvh] min-h-[560px] w-full overflow-hidden will-change-transform"
+      >
+        {/* Zoomed in by default; WheelsExperience scales this back down to 1
+            as the docking TV's backdrop fades, so the arena zooms out in sync
+            with the TV shrinking instead of popping in at full size early. */}
         <DesktopFrame className="hidden w-screen xl:block" />
         <DesktopFrame className="hidden w-[112vw] md:block xl:hidden" scale="tablet" />
         <MobileFrame />

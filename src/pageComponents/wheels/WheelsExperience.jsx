@@ -73,6 +73,9 @@ export default function WheelsExperience({ revealUnderlay = false }) {
     dockScale: 1,
     dockX: 0,
     dockY: 0,
+    robowarsOriginX: 50,
+    robowarsOriginY: 50,
+    robowarsZoomStart: 1,
   });
 
   useEffect(() => {
@@ -80,6 +83,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
     ScrollTrigger.config({ ignoreMobileResize: true });
 
     const scroller = document.querySelector('.main-scroll') || window;
+    const robowarsStage = revealUnderlay ? document.querySelector('[data-robowars-stage]') : null;
 
     const coverRef = { x: 0, y: 0, w: 0, h: 0, dpr: 1, isMobile: false };
     const timeoutIds = [];
@@ -160,6 +164,16 @@ export default function WheelsExperience({ revealUnderlay = false }) {
         dockY: dock
           ? dock.y + dock.height / 2 - animCenterY
           : -5 - animTop + ALIGN_CONFIG.dockedShiftY,
+        // Zoom out around the TV's docked screen position, so the background
+        // reveal reads as the camera pulling back from that spot. The start
+        // scale is a "cover" fit of that same rect over the whole viewport —
+        // matching exactly what the wheels TV itself is showing there — so
+        // the crop alone hides the rest of the arena with no separate
+        // darkening overlay needed; zooming out from it just pulls the
+        // camera back to reveal more of the arena for real.
+        robowarsOriginX: dock ? ((dock.x + dock.width / 2) / vpW) * 100 : 50,
+        robowarsOriginY: dock ? ((dock.y + dock.height / 2) / vpH) * 100 : 50,
+        robowarsZoomStart: dock ? Math.max(vpW / dock.width, vpH / dock.height) : 1,
       };
 
       const tvContainer = tvContainerRef.current;
@@ -279,15 +293,31 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       const SHRINK_START = SHRINK_START_FRAME; // Starts earlier to slow down the animation speed
       const SHRINK_END = FRAME_COUNT - 1; // 135 (frame 240)
 
-      const { startTvScale, startTvY, animTop, animW, animH, dockScale, dockX, dockY } =
-        layoutMetricsRef.current;
+      const {
+        startTvScale,
+        startTvY,
+        animTop,
+        animW,
+        animH,
+        dockScale,
+        dockX,
+        dockY,
+        robowarsOriginX,
+        robowarsOriginY,
+        robowarsZoomStart,
+      } = layoutMetricsRef.current;
 
       // Keep dimensions and top anchor strictly applied even through React re-renders
       tvContainer.style.top = `${animTop.toFixed(2)}px`;
       tvContainer.style.width = `${animW.toFixed(2)}px`;
       tvContainer.style.height = `${animH.toFixed(2)}px`;
 
+      if (robowarsStage) {
+        robowarsStage.style.transformOrigin = `${robowarsOriginX.toFixed(2)}% ${robowarsOriginY.toFixed(2)}%`;
+      }
+
       if (currentFrame <= SHRINK_START) {
+        if (robowarsStage) robowarsStage.style.transform = `scale(${robowarsZoomStart.toFixed(4)})`;
         const initX = ALIGN_CONFIG.fullscreenShiftX;
         const initY = startTvY + ALIGN_CONFIG.fullscreenShiftY;
         tvContainer.style.transform = `translate3d(${initX.toFixed(2)}px, ${initY.toFixed(2)}px, 0) scale(${startTvScale.toFixed(4)})`;
@@ -323,9 +353,19 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       // TV screen corners smoothly round to 6px
       tvScreen.style.borderRadius = `${(curEase * 6).toFixed(1)}px`;
 
-      // Black backdrop around the TV fades out as it shrinks, revealing Robowars
+      // No darkening overlay at all once the TV starts shrinking: Robowars is
+      // hidden purely by the zoom crop (robowarsZoomStart is a "cover" fit of
+      // the TV's own screen rect, so at curEase 0 the crop shows only that
+      // rect, identical to what the wheels TV is displaying there) and it
+      // zooms out in lockstep with the TV's own shrink easing, so the arena
+      // is progressively and fully revealed with no black overlay involved.
       if (revealUnderlay && backdropRef.current) {
-        backdropRef.current.style.opacity = (1 - curEase).toFixed(3);
+        backdropRef.current.style.opacity = "0";
+      }
+
+      if (robowarsStage) {
+        const robowarsScale = robowarsZoomStart + (1 - robowarsZoomStart) * curEase;
+        robowarsStage.style.transform = `scale(${robowarsScale.toFixed(4)})`;
       }
 
       // Wheels text fades in near the very end
@@ -391,8 +431,13 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       }
       // Once the screen is nearly black, fade the whole TV out onto the
       // identical Robowars prop underneath so nothing slides away on unpin.
+      // Driven by the raw (unlerped) scroll progress rather than the smoothed
+      // currentFadeRef: the lerp can still be catching up right as the pin
+      // releases, leaving a faint leftover TV that visibly scrolls/"lifts"
+      // away with the page once Wheels unpins. Tying it directly to scroll
+      // guarantees it's fully gone by the moment that happens.
       if (revealUnderlay && tvContainerRef.current) {
-        const tvFadeOut = Math.min(1, Math.max(0, (currentFadeRef.current - 0.6) / 0.4));
+        const tvFadeOut = Math.min(1, Math.max(0, (targetFadeRef.current - 0.6) / 0.4));
         tvContainerRef.current.style.opacity = (1 - tvFadeOut).toFixed(3);
       }
 
