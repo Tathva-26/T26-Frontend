@@ -15,8 +15,8 @@ const STAR_COUNT = 90;
 const ENEMY_COUNT = 4;
 const SHIP = { size: 46, y: H - 70 };
 const ENEMY_SIZE = 38;
-const BULLET = { width: 4, height: 14, speed: 260 };
-const FIRE_INTERVAL = [0.9, 1.7]; // seconds between shots, randomized
+const BULLET = { width: 4, height: 14, speed: 340 };
+const FIRE_INTERVAL = [0.5, 1.0]; // seconds between shots, randomized
 const MAX_DELTA = 0.05; // clamp dt so a backgrounded tab doesn't jump on return
 
 const loadSprite = (src) => Object.assign(new Image(), { src });
@@ -26,14 +26,14 @@ const createStars = () =>
     x: randomBetween(0, W),
     y: randomBetween(0, H),
     size: randomBetween(0.6, 2),
-    speed: randomBetween(10, 40),
+    speed: randomBetween(20, 65),
     phase: randomBetween(0, Math.PI * 2),
   }));
 
 const createEnemy = (startAboveScreen) => ({
   x: randomBetween(50, W - 50),
   y: startAboveScreen ? randomBetween(-420, -ENEMY_SIZE) : randomBetween(-160, -ENEMY_SIZE),
-  speed: randomBetween(35, 75),
+  speed: randomBetween(55, 110),
 });
 
 const overlaps = (a, b, sizeA, sizeB) =>
@@ -49,12 +49,20 @@ const overlaps = (a, b, sizeA, sizeB) =>
  * meant to be shown blurred + screen-blended over the console's bezel so
  * the screen's own light bleeds onto the plastic around it.
  *
+ * `options.isBackgroundOnly`, if given, is called once per frame. While it
+ * returns true, the decorative ship/enemies/bullets stop drawing and only
+ * the starfield keeps animating - used when this same canvas is showing
+ * through underneath the real, player-controlled game (SpaceShooterCanvas,
+ * drawn on top with a transparent clear) as its background, so the two
+ * ships/enemy sets don't visually collide.
+ *
  * Returns a cleanup function.
  */
 export function mountConsoleScreen(canvas, options = {}) {
   const ctx = canvas.getContext("2d");
   const spill = options.spill ?? null;
   const sctx = spill?.getContext("2d") ?? null;
+  const isBackgroundOnly = options.isBackgroundOnly ?? (() => false);
   const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
   const sprites = {
@@ -78,9 +86,15 @@ export function mountConsoleScreen(canvas, options = {}) {
 
   function resize() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
-    const rect = canvas.getBoundingClientRect();
-    const w = Math.max(1, Math.round(rect.width));
-    const h = Math.max(1, Math.round(rect.height));
+    // offsetWidth/offsetHeight, not getBoundingClientRect(): the latter
+    // includes any CSS transform currently applied by an ancestor (e.g. the
+    // console's zoom animation), which changes every frame during that
+    // animation. Measuring the untransformed layout size instead means the
+    // canvas sizes itself once, correctly, and the transform scales that
+    // already-correct bitmap up/down for free - exactly like it does for a
+    // plain <img>, with nothing here trying to chase a moving target.
+    const w = Math.max(1, canvas.offsetWidth);
+    const h = Math.max(1, canvas.offsetHeight);
     if (w === cw && h === ch) return;
     cw = w;
     ch = h;
@@ -116,7 +130,7 @@ export function mountConsoleScreen(canvas, options = {}) {
   }
 
   function updateShip() {
-    return { x: W / 2 + Math.sin(t * 0.6) * 150, y: SHIP.y };
+    return { x: W / 2 + Math.sin(t * 0.9) * 150, y: SHIP.y };
   }
 
   function updateEnemies(dt) {
@@ -193,16 +207,20 @@ export function mountConsoleScreen(canvas, options = {}) {
 
   function drawFrame(dt) {
     drawBackground(dt);
-    const shipPos = updateShip();
-    updateEnemies(dt);
-    fire(dt, shipPos);
-    updateBullets(dt);
-    updateParticles(dt);
 
-    enemies.forEach((enemy) => drawSprite(sprites.enemy, enemy.x, enemy.y, ENEMY_SIZE));
-    drawParticles();
-    bullets.forEach((bullet) => drawSprite(sprites.bullet, bullet.x, bullet.y, BULLET.height));
-    drawSprite(sprites.ship, shipPos.x, shipPos.y, SHIP.size);
+    if (!isBackgroundOnly()) {
+      const shipPos = updateShip();
+      updateEnemies(dt);
+      fire(dt, shipPos);
+      updateBullets(dt);
+      updateParticles(dt);
+
+      enemies.forEach((enemy) => drawSprite(sprites.enemy, enemy.x, enemy.y, ENEMY_SIZE));
+      drawParticles();
+      bullets.forEach((bullet) => drawSprite(sprites.bullet, bullet.x, bullet.y, BULLET.height));
+      drawSprite(sprites.ship, shipPos.x, shipPos.y, SHIP.size);
+    }
+
     drawVignette();
 
     if (sctx && spill) sctx.drawImage(canvas, 0, 0, spill.width, spill.height);
