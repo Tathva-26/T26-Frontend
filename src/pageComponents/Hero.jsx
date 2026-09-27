@@ -54,9 +54,9 @@ const LAYOUT = {
     },
     island: {
         // Distant, upper-right of center — barely moves at all.
-        top: 0, left: 34.85, width: 37, height: 37,
-        driftX: 0, driftY: -20, scaleTo: 1.04,
-        z: 4, zLift: 0,
+        top: 5.2, left: 38.4, width: 35, height: 37,
+        driftX: 100, driftY: -100, scaleTo: 1.04,
+        z: 1, zLift: 0,
     },
     ground: {
         // The portal's own depth. Sized to run off the bottom of the
@@ -73,7 +73,7 @@ const LAYOUT = {
         // near ground's top edge (23rem vs. ground's 29rem) — reads as
         // a distant ridge rather than another copy of the same rocks.
         // Behind both the ground and the portal (see the CSS).
-        top:39, left: 0, width: 88.3125, height: 14,
+        top:42, left: 0, width: 88.3125, height: 14,
         driftX: 0, driftY: -2, scaleTo: 1.25,
         z: 1, zLift: 0,
     },
@@ -88,9 +88,13 @@ const LAYOUT = {
     // block. top/left/width/height lay the five letters out in a row
     // roughly where the old centered title sat — purely a first guess,
     // same as every number below. Tune freely.
+    //
+    // Only T1 is actually shown (it renders the full "TATHVA" wordmark
+    // on its own); a2/t3/h4/v5/a5 are kept for reference but are not
+    // required to be visible or individually responsive.
     t1: {
-        top: 16.5, left: -2, width: 75, height: 16.6,
-        driftX: 160, driftY: -665, scaleTo: 3.85,
+        top: 19.5, left: -0, width: 77, height: 20.6,
+        driftX: 0, driftY: -1065, scaleTo: 5.85,
         z: 3, zLift: 0,
     },
     //clean up hanin
@@ -120,7 +124,7 @@ const LAYOUT = {
         z: 3, zLift: 0,
     },
     portal: {
-        top: 27.5, left: 34.25, width: 11.125, height: 30.1875,
+        top: 29.5, left: 36.25, width: 9.125, height: 20.1875,
         zoomMultiplier: 1.04, // slight overshoot so it fully covers the viewport at scroll end
         z: 4, zLift: 0,
     },
@@ -130,10 +134,32 @@ const LAYOUT = {
         // strongest parallax in the scene. driftX carries her sideways
         // as the camera zooms in level with her and then passes —
         // flip the sign to send her the other way.
-        top: 32, left: 13.5, width: 64, height:18,
-        driftX: 1100, driftY: 2100, scaleTo: 15.55,
+        top: 36, left: 18.5, width: 54, height:15,
+        driftX: 1100, driftY: 1500, scaleTo: 15.55,
         z: 5, zLift: 10,
     },
+};
+
+// ---------------------------------------------------------------------
+// FIXED HERO CHROME — static UI overlaid on the scene (identity mark,
+// coordinates, theme copy, experience list, Enter control).
+//
+// These numbers are now used only as the *source reference* for the
+// viewport-anchored CSS in Hero.module.css (.theme/.identity/.coords/
+// .exhibits/.enterButton) — see the comment block above those rules
+// for how each rem value below was converted into a vw/vh-based
+// anchor. They are no longer applied directly as inline top/left,
+// because that's exactly what let these elements drift with the
+// .scene box's internal crop on aspect ratios other than the
+// reference. CHROME.enter.width/height are still applied directly
+// (size doesn't have the same crop problem left/top position did).
+// ---------------------------------------------------------------------
+const CHROME = {
+    identity: { top: 17, left: 80.125 },
+    coords: { top: 25.3125, left: 82.375 },
+    exhibits: { top: 37.8125, left: 76.6875 },
+    theme: { top: 14.125, left: 3.25 },
+    enter: { top: 39.625, left: 6.8125, width: 11.0625, height: 3.0625 },
 };
 
 // const navigationItems = [
@@ -161,6 +187,7 @@ const LAYOUT = {
 export const Hero = ({ onEnter }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [hasEntered, setHasEntered] = useState(false);
+    const [ripples, setRipples] = useState([]);
 //     const mistBackRef = useRef(null);
 // const mistFrontRef = useRef(null);
     const scrollerRef = useRef(null);
@@ -185,6 +212,17 @@ export const Hero = ({ onEnter }) => {
     const girlRef = useRef(null);
     const whiteoutRef = useRef(null);
 
+    // Fixed HERO CHROME refs — these elements now live outside .scene
+    // (see the render below) as their own position:fixed elements, so
+    // they can be anchored straight to the viewport instead of
+    // drifting with .scene's internal crop. Refs are needed so the
+    // scroll timeline below can fade them out together.
+    const identityRef = useRef(null);
+    const coordsRef = useRef(null);
+    const themeRef = useRef(null);
+    const exhibitsRef = useRef(null);
+    const enterRef = useRef(null);
+
     // Current "cover" scale applied to the fixed-size (353.25 × 196.25)
     // design canvas so it always fills the viewport (see the layout
     // effect below + .scene in Hero.module.css). Every absolutely
@@ -200,6 +238,24 @@ export const Hero = ({ onEnter }) => {
         if (typeof onEnter === "function") {
             onEnter();
         }
+    };
+
+    // Enter button click: drop a ripple at the click point (it reads
+    // off the button's own currentColor, so it's white-on-black or
+    // black-on-white automatically depending on hover state) and then
+    // run the normal enter flow.
+    const handleEnterClick = (event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const ripple = {
+            id: `${Date.now()}-${Math.random()}`,
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
+        };
+        setRipples((current) => [...current, ripple]);
+        window.setTimeout(() => {
+            setRipples((current) => current.filter((r) => r.id !== ripple.id));
+        }, 650);
+        handleEnter();
     };
 
     // The scroll tween below checks progress against a threshold to
@@ -222,23 +278,69 @@ export const Hero = ({ onEnter }) => {
         const scene = sceneRef.current;
         const viewport = viewportRef.current;
         if (!scene || !viewport) return undefined;
+const updateDesignScale = () => {
+    const designWidth = scene.offsetWidth;
+    const designHeight = scene.offsetHeight;
+    const viewportWidth = viewport.clientWidth;
+    const viewportHeight = viewport.clientHeight;
+    if (!designWidth || !designHeight || !viewportWidth || !viewportHeight) {
+        return;
+    }
 
-        const updateDesignScale = () => {
-            const designWidth = scene.offsetWidth;
-            const designHeight = scene.offsetHeight;
-            const viewportWidth = viewport.clientWidth;
-            const viewportHeight = viewport.clientHeight;
-            if (!designWidth || !designHeight || !viewportWidth || !viewportHeight) {
-                return;
-            }
+    // Cover scale: guarantees the canvas fully fills the viewport in
+    // both dimensions (never leaves a gap) — kept as Math.max()
+    // deliberately, not swapped to Math.min(). Which axis "wins"
+    // depends on aspect ratio; the resulting overflow is cropped from
+    // the top only, via the bottom-anchored transform-origin + flex
+    // alignment in Hero.module.css, not by changing this formula.
+    designScaleRef.current = Math.max(
+        viewportWidth / designWidth,
+        viewportHeight / designHeight,
+    );
+    scene.style.setProperty("--design-scale", designScaleRef.current);
+    // The fixed HERO CHROME now lives outside .scene (as siblings of
+    // it, see the render below) so it can be position: fixed to the
+    // real viewport instead of scaling/cropping with the canvas. It
+    // still needs the same scale factor to keep its current size
+    // though, so mirror the variable onto the shared ancestor
+    // (.scroller) that both .scene and the chrome elements inherit
+    // from.
+    scrollerRef.current?.style.setProperty(
+        "--design-scale",
+        designScaleRef.current,
+    );
 
-            designScaleRef.current = Math.max(
-                viewportWidth / designWidth,
-                viewportHeight / designHeight,
-            );
-            scene.style.setProperty("--design-scale", designScaleRef.current);
-            ScrollTrigger.refresh();
-        };
+    // T1 safety shift — .viewport centers .scene horizontally
+    // (justify-content: center), so on aspect ratios narrower than the
+    // scene's own ~1.8:1 design ratio, the scaled canvas ends up wider
+    // than the viewport and gets cropped evenly from both sides. Every
+    // other scene layer is either edge-to-edge on purpose (background,
+    // ground, bgrocks) or comfortably inset from the canvas edges
+    // (island, portal, girl), so that crop is invisible. T1 is the one
+    // layer that isn't: it spans nearly the full canvas width and
+    // starts flush with the canvas's own left edge, so a horizontal
+    // crop cuts directly into the start of the wordmark. Nudge T1 back
+    // by exactly the amount clipped (0 whenever the scene isn't
+    // horizontally cropped — the common wide-landscape case, which
+    // matches the reference exactly) so it stays fully visible and
+    // centered like the reference composition. This only sets a
+    // static base-position correction; the GSAP scroll parallax on the
+    // ref below is untouched.
+    const scaledWidth = designWidth * designScaleRef.current;
+    const cropPerSide = Math.max(0, (scaledWidth - viewportWidth) / 2);
+    // Capped so a pathological aspect ratio can't shove T1 wildly off
+    // its intended spot.
+    const cappedCropPerSide = Math.min(cropPerSide, viewportWidth * 0.15);
+    // Expressed in .scene's own local (pre-transform) pixels, since
+    // this shift lands on a child of .scene and will itself be
+    // multiplied by --design-scale again when painted.
+    scene.style.setProperty(
+        "--t1-safe-shift",
+        `${cappedCropPerSide / designScaleRef.current}px`,
+    );
+
+    ScrollTrigger.refresh();
+};
 
         updateDesignScale();
 
@@ -273,6 +375,29 @@ export const Hero = ({ onEnter }) => {
                 },
             },
         });
+
+        // CHROME fade — tied to this same scrubbed timeline/progress,
+        // so it's perfectly in sync with the portal zoom rather than
+        // running on its own clock. Fades out early and is fully gone
+        // well before the portal dominates the frame (whiteout doesn't
+        // start until 0.8, auto-enter fires at 0.985), so there's never
+        // a moment where static UI sits awkwardly over the zoomed-in
+        // portal, and never a hard cut.
+        const chromeTargets = [
+            themeRef.current,
+            identityRef.current,
+            coordsRef.current,
+            exhibitsRef.current,
+            enterRef.current,
+        ].filter(Boolean);
+        if (chromeTargets.length) {
+            tl.fromTo(
+                chromeTargets,
+                { opacity: 1 },
+                { opacity: 0, duration: 0.4, ease: "power1.out" },
+                0,
+            );
+        }
 
         // Reads driftX/driftY/scaleTo/opacityTo/zLift straight off a
         // LAYOUT entry, so a simple parallax layer is fully defined by
@@ -337,37 +462,43 @@ simpleParallax(girlRef, LAYOUT.girl);
                 );
             }
         });
-
-        if (portalRef.current) {
-            tl.fromTo(
-                portalRef.current,
-                { scale: 1, x: 0, y: 0 },
-                {
-                    scale: () => (
-                        Math.max(
-                            viewportRef.current.clientWidth / portalRef.current.offsetWidth,
-                            viewportRef.current.clientHeight / portalRef.current.offsetHeight,
-                        ) * LAYOUT.portal.zoomMultiplier
-                    ) / (designScaleRef.current || 1),
-                    x: () => (
-                        sceneRef.current.offsetWidth / 2
-                        - (portalRef.current.offsetLeft + portalRef.current.offsetWidth / 2)
-                    ),
-                    y: () => (
-                        sceneRef.current.offsetHeight / 2
-                        - (portalRef.current.offsetTop + portalRef.current.offsetHeight / 2)
-                    ),
-                    ...(LAYOUT.portal.zLift ? {
-                        zIndex: LAYOUT.portal.z + LAYOUT.portal.zLift,
-                        snap: { zIndex: 1 },
-                    } : null),
-                    duration: 1,
-                    ease: "none",
-                },
-                0,
-            );
-        }
-
+if (portalRef.current) {
+    tl.fromTo(
+        portalRef.current,
+        { scale: 1, x: 0, y: 0 },
+        {
+            scale: () => (
+                Math.max(
+                    viewportRef.current.clientWidth / portalRef.current.offsetWidth,
+                    viewportRef.current.clientHeight / portalRef.current.offsetHeight,
+                ) * LAYOUT.portal.zoomMultiplier
+            ) / (designScaleRef.current || 1),
+            x: () => (
+                sceneRef.current.offsetWidth / 2
+                - (portalRef.current.offsetLeft + portalRef.current.offsetWidth / 2)
+            ),
+            // Was `offsetHeight / 2 - portalCenterY`, which targets the
+            // scene's own center — correct only when the scene is
+            // center-anchored. Now that .scene is bottom-anchored, its
+            // local "center" no longer maps to the viewport's vertical
+            // center, so the target has to be solved for directly:
+            // it's the local-space point that, after the scene's own
+            // bottom-anchored transform, lands at viewportHeight / 2.
+            y: () => (
+                sceneRef.current.offsetHeight
+                - (portalRef.current.offsetTop + portalRef.current.offsetHeight / 2)
+                - (viewportRef.current.clientHeight / 2) / (designScaleRef.current || 1)
+            ),
+            ...(LAYOUT.portal.zLift ? {
+                zIndex: LAYOUT.portal.z + LAYOUT.portal.zLift,
+                snap: { zIndex: 1 },
+            } : null),
+            duration: 1,
+            ease: "none",
+        },
+        0,
+    );
+}
         if (whiteoutRef.current) {
             tl.fromTo(
                 whiteoutRef.current,
@@ -395,25 +526,133 @@ simpleParallax(girlRef, LAYOUT.girl);
         aria-label="Tathva home"
     />
 
- <a
-    href="#register"
-    className={`${styles.fixedRegister} group flex items-center justify-center gap-3 px-6 py-2.5 bg-white/5 backdrop-blur-md border border-white/20 rounded-full transition-all duration-300 hover:bg-white/10 hover:border-white/50 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50`}
-    aria-label="Register for Tathva 26"
->
+            {/* ===============================================================
+                FIXED HERO CHROME (see CHROME above for the reference
+                positions these are derived from) — the identity mark +
+                coordinates on the right, the theme copy on the left, the
+                experience list bottom-right, and the Enter control.
+                Rendered here, as siblings of .runway/.scene rather than
+                children of .scene, so they're position: fixed straight to
+                the real viewport (same trick as .fixedLogo above) instead
+                of living inside the scaled/cropped design canvas. See the
+                .theme/.identity/.coords/.exhibits/.enterButton rules in
+                Hero.module.css for how each one is anchored. None of these
+                are wired into the scroll tween's *motion*, so they stay put
+                on screen while the scene behind them zooms — only their
+                opacity is tied to the same timeline (see "CHROME fade"
+                above), so they fade away as the scroll begins.
+               =============================================================== */}
 
-    {/* Typography pulled from your design spec */}
-    <span className="font-['Instrument_Serif',Helvetica] italic text-[21.5px] font-normal text-white tracking-wide leading-none mt-1">
-        Register
-    </span>
+            <section
+                ref={themeRef}
+                className={styles.theme}
+                aria-labelledby="hero-theme-title"
+            >
+                <div className={styles.themeHeading}>
+                    <h1 id="hero-theme-title" className={styles.themeTitle}>
+                        DIFFERENT REALITIES.
+                        <br />
+                        ONE EXHIBITION
+                    </h1>
+                    <img
+                        className={styles.themePlanet}
+                        alt=""
+                        aria-hidden="true"
+                        src={`${assetBase}planeticon.png`}
+                    />
+                </div>
+                <p className={styles.themeCopy}>
+                    A journey through technologies, cultures and possibilities beyond our own
+                </p>
+            </section>
 
-    {/* Arrow that slides right on hover */}
-    <img
-        className="w-5 h-5 opacity-70 transition-all duration-300 group-hover:translate-x-1.5 group-hover:opacity-100"
-        alt=""
-        aria-hidden="true"
-        src={`${assetBase}arrow-right.png`} 
-    />
-</a>
+            <aside
+                ref={identityRef}
+                className={styles.identity}
+                aria-label="Tathva 26, Asteria"
+            >
+                <div className={styles.identityLabel}>
+                    <span>TATHVA 26</span>
+                    <span className={styles.identityDivider} aria-hidden="true" />
+                    <span>ASTERIA</span>
+                </div>
+                <img
+                    className={styles.identityMark}
+                    alt=""
+                    aria-hidden="true"
+                    src={`${assetBase}butterfly.png`}
+                />
+            </aside>
+
+            <div
+                ref={coordsRef}
+                className={styles.coords}
+                aria-label="Location 11.321973 degrees north, 75.935386 degrees east"
+            >
+                <img
+                    className={styles.coordsRing}
+                    alt=""
+                    aria-hidden="true"
+                    src={`${assetBase}ellipse.svg`}
+                />
+                <p className={styles.coordsText}>
+                    11.321973° N
+                    <br />
+                    75.935386° E
+                </p>
+            </div>
+
+            <section
+                ref={exhibitsRef}
+                className={styles.exhibits}
+                aria-label="Event experiences"
+            >
+                <svg
+                    className={styles.exhibitsStar}
+                    width="21"
+                    height="21"
+                    viewBox="0 0 21 21"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                >
+                    <path d="M6.59074 8.61492L4.86607 9.21034L2.52546 9.68257L6.0778e-05 9.99054L2.73802 10.3493L4.46821 10.6245L6.20308 11.146L7.88844 12.3051L8.79452 13.52L9.42255 15.2331L9.93909 17.5643L10.2949 20.0834L10.6904 17.4676L11.0154 15.746L11.5602 13.8505L12.7287 12.3051L13.9009 11.4072L15.646 10.7708L18.0688 10.3807L20.6396 9.99056L17.8982 9.6589L16.1654 9.40083L14.4254 8.89648L12.7287 7.75414L11.8106 6.54823L11.1657 4.84147L10.6261 2.51546L10.2454 0L9.87581 2.61966L9.56783 4.34432L9.01348 6.06899L7.82264 7.73205L6.59074 8.61492Z" fill="white" />
+                </svg>
+                <p className={styles.exhibitsList}>
+                    EXHIBITS
+                    <br />
+                    WORLDS
+                    <br />
+                    EXPERIENCES
+                    <br />
+                    CONNECT
+                </p>
+            </section>
+
+            <button
+                ref={enterRef}
+                type="button"
+                onClick={handleEnterClick}
+                className={styles.enterButton}
+                style={{
+                    width: `${CHROME.enter.width}rem`,
+                    height: `${CHROME.enter.height}rem`,
+                }}
+                aria-label="Enter Tathva 26"
+            >
+                <span className={styles.enterLabel}>Enter</span>
+                <span className={styles.enterArrow} aria-hidden="true">→</span>
+                {/* <span className={styles.enterBracket} aria-hidden="true">]</span> */}
+                {ripples.map((ripple) => (
+                    <span
+                        key={ripple.id}
+                        className={styles.ripple}
+                        style={{ left: ripple.x, top: ripple.y }}
+                        aria-hidden="true"
+                    />
+                ))}
+            </button>
+
             <section ref={runwayRef} className={styles.runway}>
                 <div ref={viewportRef} className={styles.viewport}>
                     <div
@@ -444,7 +683,7 @@ simpleParallax(girlRef, LAYOUT.girl);
             <div
                 ref={backgroundRef}
                 className={styles.background}
-                style={{ backgroundImage: `url(${assetBase}backgroundd.jpg)` }}
+                style={{ backgroundImage: `url(${assetBase}background1.png)` }}
                 aria-hidden="true"
             />
 
@@ -479,7 +718,7 @@ simpleParallax(girlRef, LAYOUT.girl);
                     className={styles.island}
                     alt=""
                     aria-hidden="true"
-                    src={`${assetBase}floatingisland.svg`}
+                    src={`${assetBase}floatingisland.png`}
                 />
             </div>
 
@@ -543,19 +782,29 @@ simpleParallax(girlRef, LAYOUT.girl);
     can be repositioned/re-timed independently instead of moving as a
     single block of text. Swap the src filenames below if the final
     assets end up named differently. */}
-<img
-    ref={t1Ref}
-    className={styles.titleLetter}
+{/* T1 is wrapped so a static horizontal "safety shift"
+    (--t1-safe-shift, computed in the layout effect above) can
+    compensate for the scene's horizontal crop on aspect ratios
+    narrower than the design's own ~1.8:1, without touching the GSAP
+    scroll animation below, which still targets the img (t1Ref)
+    directly — same driftX/driftY/scaleTo as before. */}
+<div
+    className={styles.t1SafeWrapper}
     style={{
         top: `${LAYOUT.t1.top}rem`,
         left: `${LAYOUT.t1.left}rem`,
         width: `${LAYOUT.t1.width}rem`,
         height: `${LAYOUT.t1.height}rem`,
     }}
-    alt=""
-    aria-hidden="true"
-    src={`${assetBase}tathva.svg`}
-/>
+>
+    <img
+        ref={t1Ref}
+        className={styles.titleLetter}
+        alt=""
+        aria-hidden="true"
+        src={`${assetBase}T11.svg`}
+    />
+</div>
 <img
     ref={a2Ref}
     className={styles.titleLetter}
@@ -674,242 +923,7 @@ simpleParallax(girlRef, LAYOUT.girl);
 
 
             <div ref={whiteoutRef} className={styles.whiteout} aria-hidden="true" />
-{/* 
-            <button
-                type="button"
-                onClick={handleEnter}
-                className="absolute top-158.5 left-27.25 w-44.25 h-12.25 bg-[#00000099] rounded-[10.97px] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white z-25"
-                aria-label="Enter Tathva 26"
-            >
-                <span
-                    className="left-0.5 absolute -top-0.75 font-['Instrument_Serif',Helvetica] font-normal text-white text-[41.3px] text-center tracking-normal leading-[normal]"
-                    aria-hidden="true"
-                >
 
-                </span>
-                <span
-                    className="left-39.25 -rotate-180 absolute -top-0.75 font-['Instrument_Serif',Helvetica] font-normal text-white text-[41.3px] text-center tracking-normal leading-[normal]"
-                    aria-hidden="true"
-                >
-
-                </span>
-                <span className="absolute top-2.25 left-11.75 font-['Intel_One_Mono',Helvetica] text-[22.7px] text-center font-normal text-white tracking-normal leading-[normal]">
-                    Enter
-                </span>
-                <img
-                    className="absolute top-3.75 left-28.75 w-5.75 h-5.75"
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}arrow-right.svg`}
-                />
-            </button> */}
-            {/* <a
-                href="#home"
-                className="absolute top-5.5 left-9.25 w-13.75 h-11.5 bg-cover bg-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                style={{ backgroundImage: `url(${assetBase}tathvawhitelogo-1.svg)` }}
-                aria-label="Tathva home"
-            />
-            <a
-                href="#register"
-                className="absolute top-6 left-336 w-13.25 h-13.25 bg-size-[100%_100%] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                style={{ backgroundImage: `url(${assetBase}akar-icons-arrow-down-right.svg)` }}
-                aria-label="Register for Tathva 26"
-            /> */}
-            {/* <button
-                type="button"
-                className="absolute top-8.5 left-32 w-6.75 h-4.5 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-                onClick={() => setIsMenuOpen((currentValue) => !currentValue)}
-                aria-label="Toggle navigation menu"
-                aria-expanded={isMenuOpen}
-                aria-controls="primary-navigation"
-            >
-                <img
-                    className="absolute w-[81.48%] h-[88.89%] top-[11.11%] left-[18.52%]"
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}line-55.svg`}
-                />
-                <img
-                    className="absolute w-full h-[55.56%] top-[44.44%] left-0"
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}line-54.svg`}
-                />
-                <img
-                    className="absolute w-[81.48%] h-[16.67%] top-[83.33%] left-[18.52%]"
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}line-55.svg`}
-                />
-            </button> */}
-            {/* <a
-                href="#register"
-                className="absolute top-8 left-291.75 w-43.25 h-7 flex gap-2.25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                aria-label="Register for Tathva 26"
-            >
-                <img
-                    className="mt-2.75 w-[101.01px] h-0.5 object-cover"
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}line-56.svg`}
-                />
-                <span className="w-15.25 h-7 font-['Instrument_Serif',Helvetica] italic text-[21.5px] font-normal text-white tracking-normal leading-[normal]">
-                    Register
-                </span>
-            </a> */}
-            {/* <aside
-                className="absolute top-33.75 left-330.25 w-11.25 h-50 flex flex-col gap-[72.1px]"
-                aria-label="Event identity"
-            >
-                <div className="ml-[-50.5px] w-39.75 h-[10.8px] mt-[72.1px] flex rotate-90">
-                    <span className="mt-[0.5px] w-[59.95px] h-[9.72px] ml-0 font-['Hammersmith_One',Helvetica] font-normal text-white text-[11.6px] tracking-normal leading-[normal] whitespace-nowrap">
-                        TATHVA 26
-                    </span>
-                    <img
-                        className="mt-1 w-[8.4px] h-[5.85px] ml-[19.8px] -rotate-90"
-                        alt=""
-                        aria-hidden="true"
-                        src={`${assetBase}line-57.svg`}
-                    />
-                    <span className="mt-0 w-[49.69px] h-[9.72px] ml-[17.2px] font-['Hammersmith_One',Helvetica] font-normal text-white text-[11.6px] tracking-normal leading-[normal] whitespace-nowrap">
-                        ASTERIA
-                    </span>
-                </div>
-                <img
-                    className="w-11.25 h-11.25 aspect-[1] object-cover"
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}f976fdb645ffe30426c2c5ae0ce7bf9a-removebg-preview-1@2x.png`}
-                />
-            </aside> */}
-            {/* <section
-                className="absolute top-24.5 left-13 w-44.5 h-37"
-                aria-labelledby="hero-theme-title"
-            >
-                <img
-                    className="absolute top-0 left-px w-px h-37"
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}line-58.svg`}
-                />
-                <h1
-                    id="hero-theme-title"
-                    className="absolute top-8.75 left-5.75 w-37.75 font-['Hammersmith_One',Helvetica] font-normal text-[#ffffff99] text-[16.6px] tracking-normal leading-[normal]"
-                >
-                    DIFFERENT REALITIES.
-                    <br />
-                    ONE EXHIBITION
-                </h1>
-                <p className="absolute top-25.75 left-5.75 w-27.25 font-['Hammersmith_One',Helvetica] font-normal text-[#ffffff99] text-[7.1px] tracking-normal leading-[normal]">
-                    A journey through technologies , cultures and possibilities beyond our
-                    own
-                </p>
-                <img
-                    className="absolute top-4 left-23 w-18 h-18 aspect-[1] object-cover"
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}5c08252bd438d0b5cfb303ee8aa738ca-removebg-preview-1@2x.png`}
-                />
-            </section> */}
-            {/* <nav
-                id="primary-navigation"
-                className="absolute top-9.5 left-47.75 w-100.75 h-3 flex"
-                aria-label="Primary navigation"
-                hidden={isMenuOpen}
-            >
-                {navigationItems.map((item, index) => (
-                    <div key={item.label} className={`flex ${index === 0 ? "" : ""}`}>
-                        <a
-                            href={item.href}
-                            className={`${index === 1 ? "mt-px" : "mt-0"} ${item.textClass} h-2.5 ${index === 0
-                                ? "ml-0"
-                                : index === 1
-                                    ? "ml-[12.7px]"
-                                    : index === 2
-                                        ? "ml-[9.7px]"
-                                        : "ml-[10.2px]"
-                                } font-['Hammersmith_One',Helvetica] font-normal text-white text-[11.6px] tracking-normal leading-[normal] whitespace-nowrap focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white`}
-                        >
-                            {item.label}
-                        </a>
-                        {item.arrow ? (
-                            <img
-                                className={
-                                    index === 0
-                                        ? "mt-0.75 w-[5.95px] h-[8.4px] ml-[12.4px]"
-                                        : index === 1
-                                            ? "mt-1 w-[5.95px] h-[8.4px] ml-[14.3px]"
-                                            : "mt-[3.9px] w-[5.95px] h-[8.4px] ml-[14.8px]"
-                                }
-                                alt=""
-                                aria-hidden="true"
-                                src={`${assetBase}${item.arrow}`}
-                            />
-                        ) : null}
-                    </div>
-                ))}
-            </nav> */}
-            {/* {isMenuOpen ? (
-                <nav
-                    className="absolute top-17 left-32 z-10 flex w-46.25 flex-col gap-3 bg-[#080808]/95 p-4 font-['Hammersmith_One',Helvetica] text-[11.6px] text-white"
-                    aria-label="Expanded navigation menu"
-                >
-                    {navigationItems.map((item) => (
-                        <a
-                            key={item.label}
-                            href={item.href}
-                            onClick={() => setIsMenuOpen(false)}
-                            className="focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white"
-                        >
-                            {item.label}
-                        </a>
-                    ))}
-                </nav>
-            ) : null} */}
-
-            {/* <section
-                className="absolute top-151.25 left-306.75 w-35.5 h-31.5 z-25"
-                aria-label="Event experiences"
-            >
-                <div className="absolute top-2.5 left-2.5 w-33.5 h-29 flex gap-[16.4px]">
-                    <img
-                        className="w-px h-29"
-                        alt=""
-                        aria-hidden="true"
-                        src={`${assetBase}line-58-2.svg`}
-                    />
-                    <p className="mt-[27.4px] w-[114.55px] h-[72.11px] font-['Hammersmith_One',Helvetica] font-normal text-[#ffffff99] text-[16.6px] tracking-normal leading-[normal]">
-                        EXHIBITS
-                        <br />
-                        WORLDS
-                        <br />
-                        EXPERIENCES <br />
-                        CONNECT
-                    </p>
-                </div>
-                <img
-                    className="absolute top-0 left-0 w-5.25 h-5"
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}vector-22.svg`}
-                />
-            </section> */}
-            {/* <aside
-                className="absolute top-89.25 left-329.5 w-13.5 h-19 z-25"
-                aria-label="Location 11.321973 degrees north, 75.935386 degrees east"
-            >
-                <div className="absolute top-0 left-0 w-12.75 h-12.25 rounded-[25.5px/24.5px] border border-solid border-white" />
-                <img
-                    className="absolute top-4.75 left-5 w-3 h-3"
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}vector-22-1.svg`}
-                />
-                <p className="absolute top-14 left-0 w-13 font-['Hammersmith_One',Helvetica] font-normal text-white text-[7.6px] text-center tracking-normal leading-[normal]">
-                    11.321973° N <br />
-                    75.935386° E
-                </p>
-            </aside> */}
             <span className="sr-only" role="status" aria-live="polite">
                 {hasEntered ? "Entering Tathva 26" : ""}
             </span>
