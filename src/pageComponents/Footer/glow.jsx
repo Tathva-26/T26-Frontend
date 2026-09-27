@@ -160,6 +160,8 @@ export function GlowLetters({
   fontFamily = '"Inter", "system-ui", -apple-system, sans-serif',
   fontWeight = 800,
   fontSize,
+  measureRef = null,
+  baseFontSize = null,
   textYOffset = 0,
   radius = 175,
   intensity = 0.95,
@@ -180,6 +182,9 @@ export function GlowLetters({
     const baseLayer = document.createElement("canvas");
     const litCanvas = document.createElement("canvas");
     const litCtx = litCanvas.getContext("2d");
+    // Holds the trailing, blurred blobs used as the spotlight mask below.
+    const gooCanvas = document.createElement("canvas");
+    const gooCtx = gooCanvas.getContext("2d");
     let textCtx = null;
 
     // Subtle grain texture
@@ -215,7 +220,11 @@ export function GlowLetters({
       clientY: -9999,
       inside: false,
     };
-    const lens = { x: 0, y: 0 };
+    const lens = { x: 0, y: 0, vx: 0, vy: 0 };
+    // A short chain of followers, each lagging the one before it, so the
+    // blob stretches into a gooey trail instead of staying a rigid circle.
+    const TRAIL_LEN = 5;
+    const trail = Array.from({ length: TRAIL_LEN }, () => ({ x: 0, y: 0 }));
 
     const look = { ramp: RAMP, angle: 0, spin: 0.45, phase: 0, slide: 0.4 };
     const newLook = () => {
@@ -246,6 +255,10 @@ export function GlowLetters({
       litCanvas.height = ch;
       litCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+      gooCanvas.width = cw;
+      gooCanvas.height = ch;
+      gooCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
       textLayer.width = cw;
       textLayer.height = ch;
       textCtx = textLayer.getContext("2d", { willReadFrequently: true });
@@ -260,15 +273,39 @@ export function GlowLetters({
         }
         textCtx.drawImage(img, (w - dw) / 2, h * textY - dh / 2, dw, dh);
       } else {
-        const probe = 120;
-        textCtx.font = `${fontWeight} ${probe}px ${fontFamily}`;
-        const mw = textCtx.measureText(text).width || 1;
-        const fontPx = fontSize ?? Math.min((w * textFit * probe) / mw, h * 0.85);
+        let fontPx;
+        if (measureRef && measureRef.current) {
+          // Mirror the actual rendered text size (its CSS may shrink responsively)
+          // so the glow always matches what's visible, at every breakpoint.
+          fontPx = parseFloat(window.getComputedStyle(measureRef.current).fontSize) || fontSize;
+        }
+        if (!fontPx) {
+          const probe = 120;
+          textCtx.font = `${fontWeight} ${probe}px ${fontFamily}`;
+          const mw = textCtx.measureText(text).width || 1;
+          fontPx = fontSize ?? Math.min((w * textFit * probe) / mw, h * 0.85);
+        }
+        // Scale the tuned pixel offset with the font size so it stays
+        // proportionally correct at every breakpoint instead of only at
+        // the size it was tuned against.
+        const offset = baseFontSize ? textYOffset * (fontPx / baseFontSize) : textYOffset;
+
         textCtx.font = `${fontWeight} ${fontPx}px ${fontFamily}`;
         textCtx.textAlign = "center";
-        textCtx.textBaseline = "middle";
         textCtx.fillStyle = "#ffffff";
-        textCtx.fillText(text, w / 2, h * textY + textYOffset);
+
+        // "middle" baseline centers on the font's ascent/descent metrics,
+        // which include whitespace above/below the glyphs themselves and
+        // can sit noticeably lower than the visible (stroked) DOM text,
+        // clipping the glow off the top of the letters. Measure the real
+        // ink extents instead and center THAT on the target row.
+        textCtx.textBaseline = "alphabetic";
+        const targetY = h * textY + offset;
+        const metrics = textCtx.measureText(text);
+        const ascent = metrics.actualBoundingBoxAscent || fontPx * 0.72;
+        const descent = metrics.actualBoundingBoxDescent || 0;
+        const baselineY = targetY + (ascent - descent) / 2;
+        textCtx.fillText(text, w / 2, baselineY);
       }
 
       // Pre-sample letter pixel locations for lightning-fast coverage checking
@@ -344,10 +381,29 @@ export function GlowLetters({
         if (scale < 0.003) scale = 0;
       }
 
-      // Follow cursor with silky damping
-      const f = reduceMotion ? 1 : follow;
-      lens.x += (pointer.x - lens.x) * f;
-      lens.y += (pointer.y - lens.y) * f;
+      // Follow the cursor on a soft spring so the light lags behind, then
+      // overshoots and settles rather than sliding straight to a stop.
+      if (reduceMotion) {
+        lens.x = pointer.x;
+        lens.y = pointer.y;
+      } else {
+        const stiffness = follow * 0.12;
+        const damping = 0.86;
+        lens.vx = (lens.vx + (pointer.x - lens.x) * stiffness) * damping;
+        lens.vy = (lens.vy + (pointer.y - lens.y) * stiffness) * damping;
+        lens.x += lens.vx;
+        lens.y += lens.vy;
+      }
+
+      // Chain of laggier followers behind the head, stretching the blob
+      // into a gooey trail (merged below via blurred, overlapping blobs).
+      trail[0].x = lens.x;
+      trail[0].y = lens.y;
+      for (let i = 1; i < trail.length; i++) {
+        const chase = reduceMotion ? 1 : 0.5;
+        trail[i].x += (trail[i - 1].x - trail[i].x) * chase;
+        trail[i].y += (trail[i - 1].y - trail[i].y) * chase;
+      }
 
       ctx.clearRect(0, 0, w, h);
 
@@ -400,16 +456,27 @@ export function GlowLetters({
         litCtx.fillRect(rx, ry, rw, rh);
         litCtx.globalAlpha = 1;
 
-        // C. Radial spotlight mask (sharp center, soft vignette rim)
+        // C. Gooey spotlight mask: layer soft blurred blobs along the
+        // trailing chain so their edges bleed into each other, reading as
+        // one drifting, merging shape instead of a hard-edged circle.
+        gooCtx.clearRect(rx, ry, rw, rh);
+        gooCtx.globalCompositeOperation = "source-over";
+        gooCtx.fillStyle = "#fff";
+        gooCtx.filter = `blur(${Math.max(4, currentRadius * 0.18)}px)`;
+        for (let i = 0; i < trail.length; i++) {
+          const t = i / (trail.length - 1);
+          const blobRadius = currentRadius * (0.62 - t * 0.3);
+          if (blobRadius <= 0) continue;
+          gooCtx.globalAlpha = 1 - t * 0.35;
+          gooCtx.beginPath();
+          gooCtx.arc(trail[i].x, trail[i].y, blobRadius, 0, Math.PI * 2);
+          gooCtx.fill();
+        }
+        gooCtx.filter = "none";
+        gooCtx.globalAlpha = 1;
+
         litCtx.globalCompositeOperation = "destination-in";
-        const mg = litCtx.createRadialGradient(lens.x, lens.y, 0, lens.x, lens.y, currentRadius);
-        mg.addColorStop(0, "rgba(0,0,0,1)");
-        mg.addColorStop(0.68, "rgba(0,0,0,1)");
-        mg.addColorStop(0.88, "rgba(0,0,0,0.85)");
-        mg.addColorStop(0.98, "rgba(0,0,0,0.15)");
-        mg.addColorStop(1, "rgba(0,0,0,0)");
-        litCtx.fillStyle = mg;
-        litCtx.fillRect(rx, ry, rw, rh);
+        litCtx.drawImage(gooCanvas, rx * dpr, ry * dpr, rw * dpr, rh * dpr, rx, ry, rw, rh);
 
         // D. Restrict strictly to letters geometry
         litCtx.drawImage(textLayer, rx * dpr, ry * dpr, rw * dpr, rh * dpr, rx, ry, rw, rh);
@@ -450,6 +517,12 @@ export function GlowLetters({
           newLook();
           lens.x = x;
           lens.y = y;
+          lens.vx = 0;
+          lens.vy = 0;
+          trail.forEach((p) => {
+            p.x = x;
+            p.y = y;
+          });
         }
       } else {
         // Spotlight is currently open: STAY open as long as any letter falls within the spotlight radius!
@@ -516,7 +589,7 @@ export function GlowLetters({
       document.documentElement.removeEventListener("pointerleave", onPointerLeave);
       window.removeEventListener("blur", onPointerLeave);
     };
-  }, [text, imageSrc, textColor, textFit, textY, fontFamily, fontWeight, fontSize, textYOffset, radius, intensity, follow, growSpeed, shrinkSpeed]);
+  }, [text, imageSrc, textColor, textFit, textY, fontFamily, fontWeight, fontSize, measureRef, baseFontSize, textYOffset, radius, intensity, follow, growSpeed, shrinkSpeed]);
 
   return (
     <canvas
