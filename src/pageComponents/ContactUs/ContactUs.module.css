@@ -301,6 +301,11 @@
 }
 
 @media (max-width: 680px) {
+  .brand {
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
   .header {
     width: calc(100% - 36px);
     min-height: 46px;
