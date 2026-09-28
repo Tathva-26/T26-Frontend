@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import Image from "next/image";
 import localFont from "next/font/local";
 import gsap from "gsap";
@@ -318,11 +318,10 @@ export default function RobowarsHero({ leadInVh = 0 }) {
   const sectionRef = useRef(null);
   const timelineRef = useRef(null);
 
-  useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-
+  useGSAP(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let media;
+    let refreshTimer;
 
     const ctx = gsap.context(() => {
       const pieces = gsap.utils.toArray(".robowars-motion");
@@ -453,11 +452,24 @@ export default function RobowarsHero({ leadInVh = 0 }) {
       });
     }, sectionRef);
 
+    const refreshTrigger = () => {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 150);
+    };
+
+    const animationFrame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
+    window.addEventListener("orientationchange", refreshTrigger);
+    window.visualViewport?.addEventListener("resize", refreshTrigger);
+
     return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(refreshTimer);
+      window.removeEventListener("orientationchange", refreshTrigger);
+      window.visualViewport?.removeEventListener("resize", refreshTrigger);
       media?.revert();
       ctx.revert();
     };
-  }, []);
+  }, { scope: sectionRef });
 
   return (
     <section
@@ -477,11 +489,12 @@ export default function RobowarsHero({ leadInVh = 0 }) {
         Robo Wars Enter Arena
       </h1>
 
-      <div className="sticky top-0 h-[100dvh] min-h-[560px] w-full overflow-hidden">
-        <DesktopFrame className="hidden w-screen xl:block" />
-        <DesktopFrame className="hidden w-[112vw] md:block xl:hidden" scale="tablet" />
-        <MobileFrame />
-      </div>
-    </section>
+        <div className="sticky top-0 h-[100dvh] min-h-[560px] w-full overflow-hidden">
+          <DesktopFrame className="hidden w-screen xl:block" />
+          <DesktopFrame className="hidden w-[112vw] md:block xl:hidden" scale="tablet" />
+          <MobileFrame />
+        </div>
+      </section>
+    </div>
   );
 }

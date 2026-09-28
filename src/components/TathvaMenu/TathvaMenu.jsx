@@ -232,6 +232,8 @@ function PortalText({ text }) {
   )
 }
 
+const allMenuItems = [...leftMenu, ...rightMenu];
+
 export default function TathvaMenu() {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -244,6 +246,21 @@ export default function TathvaMenu() {
   const rightColumnRef = useRef(null)
 
   const timelineRef = useRef(null)
+
+  // Close menus on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        if (isMobileOpen) setIsMobileOpen(false);
+        if (isOpen && timelineRef.current) {
+          timelineRef.current.reverse();
+          setIsOpen(false);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMobileOpen, isOpen]);
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
@@ -261,7 +278,7 @@ export default function TathvaMenu() {
       const rightItems = Array.from(rightColumnRef.current.children)
 
       /* -----------------------------------------------
-         INITIAL STATE
+         INITIAL STATE (Desktop)
       ------------------------------------------------ */
 
       gsap.set(panelRef.current, {
@@ -284,7 +301,7 @@ export default function TathvaMenu() {
       })
 
       /* -----------------------------------------------
-         MAIN MENU TIMELINE
+         MAIN MENU TIMELINE (Desktop)
       ------------------------------------------------ */
 
       const tl = gsap.timeline({
@@ -359,7 +376,7 @@ export default function TathvaMenu() {
   }, [])
 
   /* =====================================================
-     OPEN / CLOSE MENU
+     OPEN / CLOSE DESKTOP MENU
   ===================================================== */
 
   const toggleMenu = () => {
@@ -390,7 +407,238 @@ export default function TathvaMenu() {
       '
     >
       {/* =================================================
-          DARK MENU PANEL
+          MOBILE NAVIGATION HEADER & HAMBURGER (Mobile only)
+      ================================================= */}
+      <header
+        className="
+          pointer-events-auto
+          fixed
+          top-0
+          left-0
+          right-0
+          z-[10002]
+          flex
+          h-14
+          items-center
+          bg-[#2E2E2F]
+          px-3
+          shadow-lg
+          border-b
+          border-white/10
+          md:hidden
+        "
+      >
+        {/* Left: Hamburger Button */}
+        <button
+          type="button"
+          onClick={() => setIsMobileOpen((prev) => !prev)}
+          aria-label={isMobileOpen ? "Close menu" : "Open menu"}
+          aria-expanded={isMobileOpen}
+          className="
+            flex
+            h-10
+            w-10
+            items-center
+            justify-center
+            rounded-md
+            p-2
+            text-white
+            hover:bg-white/10
+            focus:outline-none
+            transition-colors
+          "
+        >
+          <span className="sr-only">Toggle navigation menu</span>
+          <div className="relative flex h-4 w-5 flex-col justify-between">
+            <span
+              className={`
+                h-0.5
+                w-full
+                rounded-full
+                bg-white
+                transition-all
+                duration-300
+                ease-in-out
+                ${isMobileOpen ? "translate-y-[7px] rotate-45" : ""}
+              `}
+            />
+            <span
+              className={`
+                h-0.5
+                w-full
+                rounded-full
+                bg-white
+                transition-all
+                duration-200
+                ease-in-out
+                ${isMobileOpen ? "opacity-0 scale-x-0" : "opacity-100"}
+              `}
+            />
+            <span
+              className={`
+                h-0.5
+                w-full
+                rounded-full
+                bg-white
+                transition-all
+                duration-300
+                ease-in-out
+                ${isMobileOpen ? "-translate-y-[7px] -rotate-45" : ""}
+              `}
+            />
+          </div>
+        </button>
+      </header>
+
+      {/* =================================================
+          MOBILE MENU BACKDROP OVERLAY
+      ================================================= */}
+      <div
+        onClick={() => setIsMobileOpen(false)}
+        style={{
+          backgroundColor: "rgba(0, 0, 0, 0.35)",
+          backdropFilter: "blur(3px)",
+          WebkitBackdropFilter: "blur(3px)",
+        }}
+        className={`
+          pointer-events-auto
+          fixed
+          inset-0
+          top-14
+          z-[10000]
+          transition-opacity
+          duration-[250ms]
+          ease
+          md:hidden
+          ${isMobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
+        `}
+        aria-hidden="true"
+      />
+
+      {/* =================================================
+          MOBILE MENU PANEL (Left side only)
+      ================================================= */}
+      <aside
+        className={`
+          pointer-events-auto
+          fixed
+          top-14
+          left-0
+          bottom-0
+          z-[10001]
+          flex
+          w-[75%]
+          max-w-[280px]
+          flex-col
+          bg-[#2E2E2F]
+          shadow-2xl
+          border-r
+          border-white/10
+          transition-transform
+          duration-300
+          ease-in-out
+          md:hidden
+          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        <nav
+          className="
+            flex-1
+            overflow-y-auto
+            px-4
+            py-[22px]
+            pb-12
+            flex
+            flex-col
+            items-start
+            gap-[14px]
+          "
+        >
+          {allMenuItems.map((item, idx) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              onClick={() => setIsMobileOpen(false)}
+              style={{
+                transitionDelay: isMobileOpen
+                  ? `${(0.05 + idx * 0.06).toFixed(2)}s`
+                  : "0s",
+              }}
+              className={`
+                group
+                relative
+                flex
+                w-full
+                items-center
+                justify-start
+                gap-2.5
+                px-2
+                py-1.5
+                rounded-lg
+                text-left
+                text-[19px]
+                font-normal
+                tracking-[1.5px]
+                text-[#999999]
+                no-underline
+                transition-all
+                duration-300
+                ease
+                hover:text-white
+                hover:bg-white/5
+                active:text-[#00E564]
+                font-jockey
+                ${
+                  isMobileOpen
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-[10px]"
+                }
+              `}
+            >
+              <img
+                src="/images/menu/leftwave.png"
+                alt=""
+                draggable={false}
+                className="
+                  pointer-events-none
+                  h-[12px]
+                  w-auto
+                  object-contain
+                  opacity-0
+                  transition-all
+                  duration-200
+                  group-hover:opacity-100
+                  group-hover:translate-x-0
+                  -translate-x-1
+                "
+              />
+
+              <span>{item.label}</span>
+
+              <img
+                src="/images/menu/rightwave.png"
+                alt=""
+                draggable={false}
+                className="
+                  pointer-events-none
+                  h-[12px]
+                  w-auto
+                  object-contain
+                  opacity-0
+                  transition-all
+                  duration-200
+                  group-hover:opacity-100
+                  group-hover:translate-x-0
+                  translate-x-1
+                "
+              />
+            </Link>
+          ))}
+        </nav>
+      </aside>
+
+      {/* =================================================
+          DESKTOP DARK MENU PANEL (Hidden on mobile)
       ================================================= */}
 
       <div
@@ -400,7 +648,8 @@ export default function TathvaMenu() {
           absolute
           left-1/2
           top-0
-          flex
+          hidden
+          md:flex
           -translate-x-1/2
           justify-center
           overflow-hidden
@@ -435,7 +684,7 @@ export default function TathvaMenu() {
               onClick={() => {
                 if (isOpen) toggleMenu()
               }}
-              className={`
+              className="
                 group
                 relative
                 flex
@@ -453,8 +702,8 @@ export default function TathvaMenu() {
                 transition-colors
                 duration-200
                 hover:text-white
-                ${jockeyOne.className}
-              `}
+                font-jockey
+              "
             >
               <img
                 src='/images/menu/leftwave.png'
@@ -539,7 +788,7 @@ export default function TathvaMenu() {
               onClick={() => {
                 if (isOpen) toggleMenu()
               }}
-              className={`
+              className="
                 group
                 relative
                 flex
@@ -557,8 +806,8 @@ export default function TathvaMenu() {
                 transition-colors
                 duration-200
                 hover:text-white
-                ${jockeyOne.className}
-              `}
+                font-jockey
+              "
             >
               <img
                 src='/images/menu/leftwave.png'
@@ -603,7 +852,7 @@ export default function TathvaMenu() {
       </div>
 
       {/* =================================================
-          MAIN TATHVA TOP CENTER STRIP BUTTON
+          DESKTOP MAIN TATHVA TOP CENTER STRIP BUTTON (Hidden on mobile)
       ================================================= */}
 
       <button
