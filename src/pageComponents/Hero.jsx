@@ -1,5 +1,4 @@
 "use client";
-import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -25,7 +24,7 @@ const LAYOUT = {
         z: 0, zLift: 0,
     },
     island: {
-        top: 4.2, left: 38.8, width: 32, height: 37,
+        top: 1, left: 37.8, width: 40, height: 37,
         driftX: 100, driftY: -100, scaleTo: 1.04,
         z: 1, zLift: 0,
     },
@@ -41,7 +40,7 @@ const LAYOUT = {
     },
     // T1 renders the full "TATHVA" wordmark on its own.
     t1: {
-        top: 18.5, left: 1, width: 77, height: 20.6,
+        top: 14.5, left: -1, width: 80, height: 30.6,
         driftX: 0, driftY: -1065, scaleTo: 5.85,
         z: 3, zLift: 0,
     },
@@ -70,7 +69,6 @@ const MOTION = {
     portal: { scrub: 0.18, ease: "none" },
     girl: { scrub: 1.3, ease: "power1.inOut" },
     chrome: { scrub: 0.0001, ease: "power1.out" },
-    whiteout: { scrub: 0.2, ease: "power1.in" },
 };
 
 // ---------------------------------------------------------------------
@@ -156,8 +154,6 @@ export const Hero = ({ onEnter }) => {
     const portalRef = useRef(null);
     const islandRef = useRef(null);
     const girlRef = useRef(null);
-    const whiteoutRef = useRef(null);
-
     const identityRef = useRef(null);
     const coordsRef = useRef(null);
     const themeRef = useRef(null);
@@ -168,13 +164,10 @@ export const Hero = ({ onEnter }) => {
     const designScaleRef = useRef(1);
 
     const handleEnter = () => {
-        if (redirectedRef.current) return;
-        redirectedRef.current = true;
         setHasEntered(true);
         if (typeof onEnter === "function") {
             onEnter();
         }
-        router.push("/page2");
     };
 
     // Route through a ref so the scroll trigger always calls the latest
@@ -183,19 +176,11 @@ export const Hero = ({ onEnter }) => {
     useEffect(() => {
         handleEnterRef.current = handleEnter;
     });
-    const router = useRouter();
-    const redirectedRef = useRef(false);
 
-    useEffect(() => {
-        router.prefetch("/page2");
-    }, [router]);
-    // Enter click: ripple at the click point, then animate scrollTop to
-    // the bottom of the runway so the cinematic plays. The scroll
-    // watcher fires handleEnter at progress > 0.985; onComplete
-    // guarantees it. handleEnter is guarded by hasEntered.
+    // Enter click: ripple at the click point, then animate the hero
+    // scroll runway to its end (portal zoom), then let the page scroll
+    // naturally to the Frame section below.
     const handleEnterClick = (event) => {
-        if (hasEntered) return;
-
         const rect = event.currentTarget.getBoundingClientRect();
         const ripple = {
             id: `${Date.now()}-${Math.random()}`,
@@ -209,7 +194,7 @@ export const Hero = ({ onEnter }) => {
 
         const scrollerEl = scrollerRef.current;
         if (!scrollerEl) {
-            handleEnter();
+            handleEnterRef.current?.();
             return;
         }
 
@@ -244,6 +229,11 @@ export const Hero = ({ onEnter }) => {
     // SMOOTH (INERTIAL) WHEEL SCROLLING — wheel input sets a target; the
     // real scrollTop eases toward it every frame. Touch, keyboard and
     // scrollbar dragging stay native. Skipped for reduced-motion.
+    //
+    // PERF: the per-frame ticker callback is only registered while there
+    // is distance left to cover (wheel input starts it, settling stops
+    // it). Previously it ran — and read scrollTop — on every frame for
+    // the life of the page, including at rest.
     // ---------------------------------------------------------------------
     useEffect(() => {
         const scrollerEl = scrollerRef.current;
@@ -265,11 +255,24 @@ export const Hero = ({ onEnter }) => {
 
         let targetScroll = scrollerEl.scrollTop;
         let lastWritten = scrollerEl.scrollTop;
+        let ticking = false;
 
         const resyncIfMovedExternally = () => {
             if (Math.abs(scrollerEl.scrollTop - lastWritten) > 1) {
                 targetScroll = scrollerEl.scrollTop;
             }
+        };
+
+        const startTicking = () => {
+            if (ticking) return;
+            ticking = true;
+            gsap.ticker.add(tick);
+        };
+
+        const stopTicking = () => {
+            if (!ticking) return;
+            ticking = false;
+            gsap.ticker.remove(tick);
         };
 
         const handleWheel = (event) => {
@@ -281,6 +284,7 @@ export const Hero = ({ onEnter }) => {
                 getMaxScroll(),
                 targetScroll + normalizeDeltaY(event),
             );
+            startTicking();
         };
 
         const tick = () => {
@@ -289,19 +293,23 @@ export const Hero = ({ onEnter }) => {
             const delta = targetScroll - current;
             if (Math.abs(delta) < 0.05) {
                 lastWritten = current;
+                stopTicking();
                 return;
             }
             const next = current + delta * Math.min(1, SMOOTHING * gsap.ticker.deltaRatio());
             scrollerEl.scrollTop = next;
             lastWritten = next;
+            // If the browser snapped the write back to where we started
+            // (sub-pixel step on a whole-pixel scroller) we can't get any
+            // closer, so stop instead of spinning every frame.
+            if (scrollerEl.scrollTop === current) stopTicking();
         };
 
         scrollerEl.addEventListener("wheel", handleWheel, { passive: false });
-        gsap.ticker.add(tick);
 
         return () => {
             scrollerEl.removeEventListener("wheel", handleWheel);
-            gsap.ticker.remove(tick);
+            stopTicking();
         };
     }, []);
 
@@ -317,10 +325,20 @@ export const Hero = ({ onEnter }) => {
 
     // Cover-scale the design canvas to the viewport and anchor the fixed
     // chrome to exact screen pixels. Re-runs on breakpoint change.
+    //
+    // PERF: everything here is a pure function of the five inputs in
+    // `key`. ResizeObserver fires once right after observe() with the size
+    // we just handled, and can fire again for unchanged inputs, so we skip
+    // those (each pass restyles the subtree via the CSS variables). The
+    // full ScrollTrigger.refresh() is coalesced into one trailing call
+    // instead of running for every observer notification.
     useLayoutEffect(() => {
         const scene = sceneRef.current;
         const viewport = viewportRef.current;
         if (!scene || !viewport) return undefined;
+
+        let lastKey = "";
+        let refreshTimer = 0;
 
         const updateDesignScale = () => {
             const designWidth = scene.offsetWidth;
@@ -330,6 +348,12 @@ export const Hero = ({ onEnter }) => {
             if (!designWidth || !designHeight || !viewportWidth || !viewportHeight) {
                 return;
             }
+
+            const mobileMode = window.matchMedia("(max-width: 768px)").matches;
+
+            const key = `${designWidth}|${designHeight}|${viewportWidth}|${viewportHeight}|${mobileMode}`;
+            if (key === lastKey) return;
+            lastKey = key;
 
             // Cover scale (Math.max on purpose). Overflow is cropped from
             // the top only, via the bottom-anchored origin in the CSS.
@@ -344,7 +368,6 @@ export const Hero = ({ onEnter }) => {
 
             // Chrome anchoring — maps a local point in .scene's design
             // space to its exact screen position at the current scale.
-            const mobileMode = window.matchMedia("(max-width: 768px)").matches;
             const canvasW = mobileMode ? 24.375 : 88.3125;
             const chrome = mobileMode ? CHROME_MOBILE : CHROME;
             const remToPx = designWidth / canvasW;
@@ -374,7 +397,8 @@ export const Hero = ({ onEnter }) => {
                 set("--enter-bottom", toScreenBottom(chrome.enter.top + chrome.enter.height));
             }
 
-            ScrollTrigger.refresh();
+            window.clearTimeout(refreshTimer);
+            refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 100);
         };
 
         updateDesignScale();
@@ -382,7 +406,10 @@ export const Hero = ({ onEnter }) => {
         const resizeObserver = new ResizeObserver(updateDesignScale);
         resizeObserver.observe(viewport);
 
-        return () => resizeObserver.disconnect();
+        return () => {
+            resizeObserver.disconnect();
+            window.clearTimeout(refreshTimer);
+        };
     }, [isMobile]);
 
     // Scroll-driven scene. Every layer gets its own ScrollTrigger sharing
@@ -407,6 +434,10 @@ export const Hero = ({ onEnter }) => {
         });
 
         // Chrome fade: gone within the first 10% of the runway.
+        // PERF: no animation is attached here, so scrub/invalidateOnRefresh
+        // did nothing. quickSetter writes opacity directly (no tween object
+        // per call), and we skip the write when the value hasn't changed —
+        // i.e. for the whole runway after the fade has finished.
         const chromeTargets = [
             themeRef.current,
             identityRef.current,
@@ -416,13 +447,15 @@ export const Hero = ({ onEnter }) => {
         ].filter(Boolean);
 
         if (chromeTargets.length) {
+            const setChromeOpacity = gsap.quickSetter(chromeTargets, "opacity");
+            let lastChromeOpacity = -1;
             ScrollTrigger.create({
                 ...scrollTriggerBase,
-                scrub: true,
-                invalidateOnRefresh: true,
                 onUpdate: (self) => {
-                    const fadeProgress = gsap.utils.clamp(0, 1, self.progress / 0.10);
-                    gsap.set(chromeTargets, { opacity: 1 - fadeProgress });
+                    const opacity = 1 - gsap.utils.clamp(0, 1, self.progress / 0.10);
+                    if (opacity === lastChromeOpacity) return;
+                    lastChromeOpacity = opacity;
+                    setChromeOpacity(opacity);
                 },
             });
         }
@@ -484,6 +517,19 @@ export const Hero = ({ onEnter }) => {
                     p.bottom >= v.bottom - 1
                 );
             };
+
+            let coverScaleFloor = 0;
+            const portalTargetScale = () => {
+                const target = (
+                    Math.max(
+                        viewportRef.current.clientWidth / portalRef.current.offsetWidth,
+                        viewportRef.current.clientHeight / portalRef.current.offsetHeight,
+                    ) * L.portal.zoomMultiplier
+                ) / (designScaleRef.current || 1);
+                coverScaleFloor = (target / L.portal.zoomMultiplier) * 0.9;
+                return target;
+            };
+
             gsap.timeline({
                 scrollTrigger: {
                     ...scrollTriggerBase,
@@ -491,24 +537,20 @@ export const Hero = ({ onEnter }) => {
                     invalidateOnRefresh: true,
                 },
                 onUpdate: () => {
+                    const portalEl = portalRef.current;
+                    if (!portalEl) return;
+                    if (gsap.getProperty(portalEl, "scaleX") < coverScaleFloor) return;
                     if (portalCoversViewport()) handleEnterRef.current?.();
                 },
             }).fromTo(
                 portalRef.current,
                 { scale: 1, x: 0, y: 0 },
                 {
-                    scale: () => (
-                        Math.max(
-                            viewportRef.current.clientWidth / portalRef.current.offsetWidth,
-                            viewportRef.current.clientHeight / portalRef.current.offsetHeight,
-                        ) * L.portal.zoomMultiplier
-                    ) / (designScaleRef.current || 1),
+                    scale: portalTargetScale,
                     x: () => (
                         sceneRef.current.offsetWidth / 2
                         - (portalRef.current.offsetLeft + portalRef.current.offsetWidth / 2)
                     ),
-                    // .scene is bottom-anchored, so solve for the local point
-                    // that lands at viewportHeight / 2 after its transform.
                     y: () => (
                         sceneRef.current.offsetHeight
                         - (portalRef.current.offsetTop + portalRef.current.offsetHeight / 2)
@@ -524,21 +566,6 @@ export const Hero = ({ onEnter }) => {
                 0,
             );
         }
-
-        if (whiteoutRef.current) {
-            gsap.timeline({
-                scrollTrigger: {
-                    ...scrollTriggerBase,
-                    scrub: MOTION.whiteout.scrub,
-                    invalidateOnRefresh: true,
-                },
-            }).fromTo(
-                whiteoutRef.current,
-                { opacity: 0 },
-                { opacity: 1, duration: 0.3, ease: MOTION.whiteout.ease },
-                0.8,
-            );
-        }
     }, { scope: scrollerRef, dependencies: [isMobile], revertOnUpdate: true });
 
     const activeLayout = isMobile ? LAYOUT_MOBILE : LAYOUT;
@@ -546,6 +573,7 @@ export const Hero = ({ onEnter }) => {
 
     return (
         <main
+            id="hero-scroller"
             ref={scrollerRef}
             className={styles.scroller}
             tabIndex={0}
@@ -812,17 +840,9 @@ export const Hero = ({ onEnter }) => {
                                 aria-hidden="true"
                                 src={`${assetBase}girl4.png`}
                             />
-                            <div
-                                className={styles.girlRim}
-                                style={{
-                                    WebkitMaskImage: `url(${assetBase}girl.png)`,
-                                    maskImage: `url(${assetBase}girl.png)`,
-                                }}
-                            />
                             <div className={styles.girlContact} />
                         </div>
 
-                        <div ref={whiteoutRef} className={styles.whiteout} aria-hidden="true" />
 
                         <span className="sr-only" role="status" aria-live="polite">
                             {hasEntered ? "Entering Tathva 26" : ""}
