@@ -52,6 +52,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
   const lastDrawnFrameRef = useRef(-1);
   const fadeOverlayRef = useRef(null);
   const backdropRef = useRef(null);
+  const introVignetteRef = useRef(null);
   const targetFadeRef = useRef(0);
   const currentFadeRef = useRef(0);
 
@@ -376,6 +377,37 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       }
     };
 
+    const updateIntroVignette = (currentFrame) => {
+      const vignette = introVignetteRef.current;
+      const canvas = canvasRef.current;
+      const INTRO_FRAME_COUNT = 16;
+
+      if (currentFrame >= INTRO_FRAME_COUNT) {
+        if (vignette && vignette.style.opacity !== "0") {
+          vignette.style.opacity = "0";
+          vignette.style.visibility = "hidden";
+        }
+        if (canvas && canvas.style.filter) {
+          canvas.style.filter = "";
+        }
+        return;
+      }
+
+      const progress = Math.min(1, Math.max(0, currentFrame / INTRO_FRAME_COUNT));
+      const ease = progress * progress * (3 - 2 * progress);
+      const factor = 1 - ease;
+
+      if (vignette) {
+        vignette.style.visibility = "visible";
+        vignette.style.opacity = factor.toFixed(3);
+      }
+
+      if (canvas) {
+        const brightness = 0.68 + 0.32 * (1 - factor);
+        canvas.style.filter = `brightness(${brightness.toFixed(3)})`;
+      }
+    };
+
     // Pause the render loop entirely while this section is nowhere near the
     // viewport, so it doesn't keep drawing to canvas + writing styles forever
     // while the user is scrolled somewhere else on the page.
@@ -441,6 +473,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
 
       updateCinematicText(currentFrameRef.current / (FRAME_COUNT - 1));
       updateTvShrinkAnimation(currentFrameRef.current);
+      updateIntroVignette(currentFrameRef.current);
 
       const fadeDifference = targetFadeRef.current - currentFadeRef.current;
       currentFadeRef.current = Math.abs(fadeDifference) > 0.001
@@ -466,6 +499,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
     animationFrameId = requestAnimationFrame(renderLoop);
     updateCinematicText(0);
     updateTvShrinkAnimation(0);
+    updateIntroVignette(0);
 
     let lastViewportWidth = window.innerWidth;
     let lastViewportHeight = window.innerHeight;
@@ -479,6 +513,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       updateCanvasDimensions();
       updateLayoutMetrics();
       updateTvShrinkAnimation(currentFrameRef.current);
+      updateIntroVignette(currentFrameRef.current);
       renderFrame(lastDrawnFrameRef.current >= 0 ? lastDrawnFrameRef.current : 0);
     };
     window.addEventListener("resize", handleResize);
@@ -568,6 +603,16 @@ export default function WheelsExperience({ revealUnderlay = false }) {
           </div>
         </div>
 
+        {/* Intro dark vignette & brightness overlay for first 15 frames */}
+        <div
+          ref={introVignetteRef}
+          className="pointer-events-none absolute inset-0 z-20 will-change-[opacity]"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0.96) 100%)",
+          }}
+        />
+
         <div className="absolute inset-0 z-30 overflow-hidden pointer-events-none">
           <div ref={wheelsSceneRef} className="absolute inset-0 flex flex-col justify-between p-[clamp(28px,4.5vw,64px)] max-md:px-[clamp(16px,4vw,20px)] max-md:py-[clamp(16px,4vw,24px)] pointer-events-none will-change-[transform,opacity]">
             <div className="flex w-full items-start justify-between gap-8 max-md:relative max-md:gap-3">
@@ -596,7 +641,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
         </div>
 
         {!isLoaded && (
-          <div className="absolute bottom-[30px] left-1/2 z-20 w-[200px] h-1 overflow-hidden rounded-[2px] bg-white/10 -translate-x-1/2">
+          <div className="absolute bottom-[30px] left-1/2 z-30 w-[200px] h-1 overflow-hidden rounded-[2px] bg-white/10 -translate-x-1/2">
             <div className="h-full bg-white transition-[width] duration-100 ease-linear" style={{ width: `${loadProgress}%` }} />
           </div>
         )}
