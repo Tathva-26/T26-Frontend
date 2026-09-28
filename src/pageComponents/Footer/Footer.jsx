@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { Bebas_Neue, Varela } from 'next/font/google'
 import { GlowLetters } from './glow'
+import { DotsBackground } from '@/components/AmbientBackground'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
@@ -19,8 +20,6 @@ const varela = Varela({
   subsets: ['latin'],
   variable: '--font-varela',
 })
-
-const EVENT_DATE = new Date('2026-11-13T00:00:00')
 
 const linkColumns = [
   {
@@ -37,60 +36,16 @@ const linkColumns = [
   },
 ]
 
-function useCountdown(target) {
-  const [timeLeft, setTimeLeft] = useState({
-    d: '00',
-    h: '00',
-    m: '00',
-    s: '00',
-  })
-
-  useEffect(() => {
-    const tick = () => {
-      const diff = Math.max(0, target.getTime() - Date.now())
-      const totalSeconds = Math.floor(diff / 1000)
-
-      const d = Math.floor(totalSeconds / 86400)
-      const h = Math.floor((totalSeconds % 86400) / 3600)
-      const m = Math.floor((totalSeconds % 3600) / 60)
-      const s = totalSeconds % 60
-
-      const pad = (n) => n.toString().padStart(2, '0')
-      setTimeLeft({ d: pad(d), h: pad(h), m: pad(m), s: pad(s) })
-    }
-
-    tick()
-    const interval = setInterval(tick, 1000)
-    return () => clearInterval(interval)
-  }, [target])
-
-  return timeLeft
-}
-
-function CountdownUnit({ value }) {
-  const ref = useRef(null)
-  const previous = useRef(value)
-
-  useGSAP(() => {
-    if (previous.current !== value) {
-      gsap.fromTo(
-        ref.current,
-        { y: -8, opacity: 0.4, scale: 0.9 },
-        { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(2)' },
-      )
-      previous.current = value
-    }
-  }, [value])
-
-  return <span ref={ref}>{value}</span>
-}
-
 function FooterLink({ label }) {
   const arrowRef = useRef(null)
   const textRef = useRef(null)
   const { contextSafe } = useGSAP()
 
-  const onEnter = contextSafe(() => {
+  const onEnter = contextSafe((e) => {
+    // Touch browsers fire synthetic pointerenter/mouseenter on tap with no
+    // matching leave until the next tap elsewhere, which left the hover
+    // state visually "stuck" on mobile — only real mice trigger it.
+    if (e.pointerType && e.pointerType !== 'mouse') return
     gsap.to(textRef.current, {
       x: 3,
       color: '#F19EDC',
@@ -105,7 +60,8 @@ function FooterLink({ label }) {
     })
   })
 
-  const onLeave = contextSafe(() => {
+  const onLeave = contextSafe((e) => {
+    if (e.pointerType && e.pointerType !== 'mouse') return
     gsap.to(textRef.current, {
       x: 0,
       color: '#FFFFFF',
@@ -123,8 +79,8 @@ function FooterLink({ label }) {
   return (
     <a
       href='#'
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
+      onPointerEnter={onEnter}
+      onPointerLeave={onLeave}
       className='relative flex min-h-[38px] w-full items-center justify-between gap-4 rounded px-1 py-1 font-varela text-[12px] tracking-[0.14em] text-white transition-colors active:bg-white/5 sm:min-h-[20px]'
     >
       <span ref={textRef}>{label}</span>
@@ -191,8 +147,6 @@ function MobileNavAccordion({ column, index }) {
 }
 
 export default function Footer() {
-  const { h, m, s } = useCountdown(EVENT_DATE)
-
   const rootRef = useRef(null)
   const panelRef = useRef(null)
   const headlineRef = useRef(null)
@@ -201,6 +155,7 @@ export default function Footer() {
     () => {
       const tl = gsap.timeline({
         scrollTrigger: {
+          scroller: document.querySelector('.main-scroll') || window,
           trigger: rootRef.current,
           start: 'top 85%',
           once: true,
@@ -229,11 +184,6 @@ export default function Footer() {
           },
           '-=0.4',
         )
-        .from(
-          '.footer-countdown',
-          { scale: 0.85, opacity: 0, duration: 0.5, ease: 'back.out(1.7)' },
-          '-=0.3',
-        )
     },
     { scope: rootRef },
   )
@@ -243,6 +193,7 @@ export default function Footer() {
       ref={rootRef}
       className={`${bebasNeue.variable} ${varela.variable} footer-typography relative mt-auto w-full overflow-hidden bg-transparent pb-4 pt-4 text-white lg:pb-5 lg:pt-6`}
     >
+      <DotsBackground />
       <style>{`
         @font-face {
           font-family: 'Akira Expanded';
@@ -273,31 +224,6 @@ export default function Footer() {
           color: transparent;
           -webkit-text-stroke: 1.5px #444444;
         }
-        .footer-typography .footer-countdown > p {
-          font-family: var(--font-bebas), sans-serif;
-          font-weight: 400;
-          font-style: normal;
-          font-size: 27.95px;
-          line-height: 100%;
-          letter-spacing: 0;
-        }
-        .footer-typography .footer-countdown > div {
-          font-family: 'Akira Expanded', 'Anton', sans-serif;
-          font-weight: 800;
-          font-style: normal;
-          font-size: 48.6px;
-          line-height: 100%;
-          letter-spacing: 0.08em;
-        }
-        .footer-typography .footer-countdown > div span {
-          font-family: 'Akira Expanded', 'Anton', sans-serif;
-          font-weight: 800;
-          font-style: normal;
-          font-size: 48.6px;
-          line-height: 100%;
-          letter-spacing: 0.08em;
-        }
-
         .footer-panel-shape-mobile {
           display: none;
         }
@@ -320,14 +246,9 @@ export default function Footer() {
           }
 
           .footer-typography .footer-newsletter,
-          .footer-typography .footer-navigation,
-          .footer-typography .footer-countdown {
+          .footer-typography .footer-navigation {
             min-width: 0;
             width: 100%;
-          }
-
-          .footer-typography .footer-countdown {
-            padding-bottom: 0.5rem;
           }
         }
 
@@ -360,11 +281,6 @@ export default function Footer() {
 
           .footer-typography .footer-navigation {
             gap: 0.25rem;
-          }
-
-          .footer-typography .footer-countdown > div,
-          .footer-typography .footer-countdown > div span {
-            font-size: clamp(34px, 12vw, 48.6px);
           }
 
           .footer-typography .footer-bottom-labels {
@@ -525,16 +441,6 @@ export default function Footer() {
               ))}
             </div>
 
-            {/* COUNTDOWN */}
-            <div className='footer-countdown self-center text-center pt-2 sm:pt-0'>
-              <p className='font-bebas text-[20px] sm:text-[22px] lg:text-[24px] leading-[24px] tracking-[0.05em] text-white'>
-                DAYS TO GO
-              </p>
-              <div className='mt-1.5 whitespace-nowrap font-akira text-[48.6px] font-extrabold leading-none tracking-[0.08em] text-white'>
-                <CountdownUnit value={h} />:<CountdownUnit value={m} />:
-                <CountdownUnit value={s} />
-              </div>
-            </div>
           </div>
         </div>
 

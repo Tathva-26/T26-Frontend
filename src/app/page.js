@@ -1,23 +1,35 @@
-import HorizontalGallery from '@/pageComponents/HorizontalGallery/HorizontalGallery'
 import ProfilePage from '@/pageComponents/ProfilePage/ProfilePage'
+import HorizontalGallery from '@/pageComponents/HorizontalGallery/HorizontalGallery'
+import ProshowCarousel from '@/pageComponents/ProshowCarousel/ProshowCarousel'
+import ArtistShowcase from '@/pageComponents/Artist'
 import WheelsExperience from '@/pageComponents/wheels/WheelsExperience'
-import {
-  UNDERLAY_LEAD_IN_VH,
-  UNDERLAY_VH,
-} from '@/pageComponents/wheels/robowarsHandoff'
-import { RobowarsHero } from '@/pageComponents/Robowars'
+import Lead from '@/pageComponents/Team/Lead'
+import Frontend from '@/pageComponents/Team/Frontend'
+import Backend from '@/pageComponents/Team/Backend'
+import Uiux from '@/pageComponents/Team/UIUX'
+import Accommodation from '@/pageComponents/Accomodation/Accommodation'
+import Expo from '@/pageComponents/Expo/Expo'
+import Footer from '@/pageComponents/Footer/Footer'
+import RobowarsPage from './robowars/page'
+import SmoothScroll from '@/components/SmoothScroll'
 
 export default function Home() {
   return (
-    <div className='main-scroll relative h-dvh w-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] bg-black'>
-      <ProfilePage />
+    <div className='main-scroll relative h-dvh w-full overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-black'>
+      <SmoothScroll />
+      {/* <ProfilePage /> */}
       <HorizontalGallery />
+      <ProshowCarousel />
+      <ArtistShowcase />
       <WheelsExperience revealUnderlay />
-      {/* Robowars is pulled up and pinned underneath Wheels, which fades its
-          backdrop out as the TV shrinks so Robowars shows through */}
-      <div className='relative z-0' style={{ marginTop: `-${UNDERLAY_VH}vh` }}>
-        <RobowarsHero leadInVh={UNDERLAY_LEAD_IN_VH} />
-      </div>
+      <RobowarsPage />
+      <Lead />
+      <Frontend />
+      <Backend />
+      <Uiux />
+      <Accommodation />
+      <Expo />
+      <Footer />
     </div>
   )
 }

@@ -259,7 +259,11 @@ export default function HorizontalGallery() {
             trigger: container,
             start: 'top bottom',
             end: 'bottom top',
-            scrub: 1,
+            // Lenis (added globally) already smooths the scroll position
+            // itself, so a numeric scrub here compounds a second, separate
+            // second of catch-up lag on top of that — `true` tracks the
+            // already-smoothed position directly instead of double-lagging.
+            scrub: true,
             invalidateOnRefresh: true,
           },
         });

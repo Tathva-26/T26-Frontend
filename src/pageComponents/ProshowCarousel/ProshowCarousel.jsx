@@ -504,7 +504,7 @@ const CarouselItem = memo(function CarouselItem({
     <button
       type="button"
       tabIndex={isCenter ? 0 : -1}
-      className="item absolute inset-0 cursor-grab touch-none overflow-hidden rounded-full border-0 bg-[#120b22] p-0 outline-none [-webkit-tap-highlight-color:transparent] active:cursor-grabbing"
+      className="item absolute inset-0 cursor-grab touch-pan-y overflow-hidden rounded-full border-0 bg-[#120b22] p-0 outline-none [-webkit-tap-highlight-color:transparent] active:cursor-grabbing"
       style={{ willChange: isFar ? "auto" : "transform, opacity" }}
       ref={handleRef}
       aria-label={isCenter ? `${artist.name}, hold to play` : `Show ${artist.name}`}
@@ -896,7 +896,13 @@ function ProshowCarousel() {
     let settle = 0;
     let dir = 0;
     const onWheel = (e) => {
-      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+      // Require deltaX to clearly dominate (not just edge it out) before
+      // hijacking the wheel event for carousel rotation — a mostly-vertical
+      // trackpad scroll naturally carries some horizontal jitter, and with a
+      // tie-breaking threshold that jitter was intermittently swallowing
+      // page-scroll wheel ticks, making scrolling past this section feel like
+      // it randomly stalls.
+      if (Math.abs(e.deltaX) < 4 || Math.abs(e.deltaX) <= Math.abs(e.deltaY) * 2) return;
       e.preventDefault();
       cancel();
       dir = Math.sign(e.deltaX);
@@ -1025,7 +1031,7 @@ function ProshowCarousel() {
   return (
     <main
       ref={pageRef}
-      className="proshow-carousel relative grid h-dvh w-full touch-none select-none grid-rows-[auto_minmax(0,1fr)_auto_auto_auto] items-center justify-items-center overflow-hidden overscroll-none bg-[radial-gradient(ellipse_at_50%_45%,#100e18_0%,#0a0912_55%,#050408_100%)] px-4 pt-[clamp(14px,3dvh,32px)] pb-[clamp(28px,7dvh,64px)] text-white [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [--c:clamp(180px,min(38dvh,36vw),470px)] [--o1:0.6] [--o2:0.4] [--x1:0.8] [--x2:1.32] [--x3:1.7] max-lg:[--c:clamp(170px,min(40dvh,52vw),420px)] max-lg:[--x1:0.84] max-lg:[--x2:1.38] max-sm:pb-[92px] max-sm:[--c:min(58vw,40dvh)] max-sm:[--o1:0.78] max-sm:[--o2:0] max-sm:[--x1:0.65] max-sm:[--x2:1.4]"
+      className="proshow-carousel relative grid h-dvh w-full touch-pan-y select-none grid-rows-[auto_minmax(0,1fr)_auto_auto_auto] items-center justify-items-center overflow-hidden bg-[radial-gradient(ellipse_at_50%_45%,#100e18_0%,#0a0912_55%,#050408_100%)] px-4 pt-[clamp(14px,3dvh,32px)] pb-[clamp(28px,7dvh,64px)] text-white [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [--c:clamp(180px,min(38dvh,36vw),470px)] [--o1:0.6] [--o2:0.4] [--x1:0.8] [--x2:1.32] [--x3:1.7] max-lg:[--c:clamp(170px,min(40dvh,52vw),420px)] max-lg:[--x1:0.84] max-lg:[--x2:1.38] max-sm:pb-[92px] max-sm:[--c:min(58vw,40dvh)] max-sm:[--o1:0.78] max-sm:[--o2:0] max-sm:[--x1:0.65] max-sm:[--x2:1.4]"
     >
       <style>{carouselStyles}</style>
       <BackgroundLayers />
@@ -1039,7 +1045,7 @@ function ProshowCarousel() {
       </h1>
 
       <section
-        className="relative z-1 grid h-full min-h-0 w-full touch-none place-items-center py-[clamp(10px,2.5dvh,28px)]"
+        className="relative z-1 grid h-full min-h-0 w-full touch-pan-y place-items-center py-[clamp(10px,2.5dvh,28px)]"
         aria-roledescription="carousel"
         aria-label="Proshow artists"
         onPointerMove={onPointerMove}

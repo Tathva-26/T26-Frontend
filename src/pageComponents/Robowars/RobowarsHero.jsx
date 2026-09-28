@@ -5,6 +5,7 @@ import Image from "next/image";
 import localFont from "next/font/local";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
 import {
   ROBOWARS_FRAME_HEIGHT,
   ROBOWARS_FRAME_WIDTH,
@@ -12,6 +13,8 @@ import {
   TV_ART_STYLE,
 } from "../wheels/robowarsHandoff";
 import "./robowars.css";
+
+gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 // Figma: "Calm Serif" — used for the main serif headline
 const calmSerif = localFont({
@@ -79,11 +82,12 @@ function Art({
   );
 }
 
-function DesktopFrame({ className, scale = "desktop" }) {
+function DesktopFrame({ className, scale = "desktop", containerRef }) {
   const isTablet = scale === "tablet";
 
   return (
     <div
+      ref={containerRef}
       className={`absolute left-1/2 top-1/2 aspect-[1413/697] -translate-x-1/2 -translate-y-1/2 [container-type:size] ${className}`}
     >
       <Image
@@ -133,7 +137,7 @@ function DesktopFrame({ className, scale = "desktop" }) {
 
       <div
         className="pointer-events-none absolute grid grid-cols-[auto_auto] grid-rows-[auto_auto] items-start justify-center gap-x-[1.9cqw] text-white uppercase"
-        style={frameStyle({ x: 387, y: 217, width: 602, height: 174 })}
+        style={frameStyle({ x: 405, y: 217, width: 602, height: 174 })}
       >
         <div className="robowars-motion robowars-title-left font-bowlby-one-sc text-right text-[5.71cqw] leading-[0.95] will-change-transform">
           ROBO
@@ -193,9 +197,12 @@ function DesktopFrame({ className, scale = "desktop" }) {
   );
 }
 
-function MobileFrame() {
+function MobileFrame({ containerRef }) {
   return (
-    <div className="absolute left-1/2 top-1/2 aspect-[412/594] w-screen -translate-x-1/2 -translate-y-1/2 [container-type:size] md:hidden">
+    <div
+      ref={containerRef}
+      className="absolute left-1/2 top-1/2 aspect-[412/594] w-screen -translate-x-1/2 -translate-y-1/2 [container-type:size] md:hidden"
+    >
       <Image
         src={`${ASSET_ROOT}/mobile-background.png`}
         alt=""
@@ -317,6 +324,9 @@ function MobileFrame() {
 export default function RobowarsHero({ leadInVh = 0 }) {
   const sectionRef = useRef(null);
   const timelineRef = useRef(null);
+  const desktopXlRef = useRef(null);
+  const desktopTabletRef = useRef(null);
+  const mobileRef = useRef(null);
 
   useGSAP(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -331,42 +341,81 @@ export default function RobowarsHero({ leadInVh = 0 }) {
         return;
       }
 
-      const setInitialMotion = ({ robotDistance, titleDistance, detailDistance, badgeDistance }) => {
-        gsap.set(".robowars-left-robot", {
+      // root scopes every selector to the one currently-visible frame variant
+      // (desktop-xl / tablet / mobile all share class names and sit in the DOM
+      // at once, only one shown via CSS at a time) — without this, every scrub
+      // tween below was driving 3x the elements it needed to, tripling the
+      // per-frame style work for two copies nobody can see.
+      const setInitialMotion = (root, { robotDistance, titleDistance, detailDistance, badgeDistance }) => {
+        gsap.set(root.querySelectorAll(".robowars-left-robot"), {
           opacity: 0.3,
           transform: `translate3d(-${robotDistance}%, 0, 0) scale(0.96)`,
         });
-        gsap.set(".robowars-right-robot", {
+        gsap.set(root.querySelectorAll(".robowars-right-robot"), {
           opacity: 0.3,
           transform: `translate3d(${robotDistance}%, 0, 0) scale(0.96)`,
         });
-        gsap.set(".robowars-title-left", {
+        gsap.set(root.querySelectorAll(".robowars-title-left"), {
           opacity: 0,
           transform: `translate3d(-${titleDistance}%, 0, 0) scale(0.97)`,
         });
-        gsap.set(".robowars-title-right", {
+        gsap.set(root.querySelectorAll(".robowars-title-right"), {
           opacity: 0,
           transform: `translate3d(${titleDistance}%, 0, 0) scale(0.97)`,
         });
-        gsap.set(".robowars-date", {
+        gsap.set(root.querySelectorAll(".robowars-date"), {
           opacity: 0,
           transform: `translate3d(0, ${detailDistance}%, 0) scale(0.98)`,
         });
-        gsap.set(".robowars-prizes", {
+        gsap.set(root.querySelectorAll(".robowars-prizes"), {
           opacity: 0,
           transform: `translate3d(-${detailDistance}%, 14%, 0) scale(0.98)`,
         });
-        gsap.set(".robowars-arena", {
+        gsap.set(root.querySelectorAll(".robowars-arena"), {
           opacity: 0,
           transform: `translate3d(${detailDistance}%, 14%, 0) scale(0.98)`,
         });
-        gsap.set(".robowars-badge", {
+        gsap.set(root.querySelectorAll(".robowars-badge"), {
           opacity: 0,
           transform: `translate3d(0, -${badgeDistance}%, 0) scale(0.97)`,
         });
       };
 
-      const buildTimeline = () => {
+      // Quick camera-shake on the whole section, played once each time the
+      // scrub crosses the point where the two robots meet at center.
+      const triggerCollisionShake = () => {
+        const target = sectionRef.current;
+        if (!target) return;
+        gsap
+          .timeline()
+          .to(target, { x: 14, y: -8, duration: 0.05, ease: "power1.out" })
+          .to(target, { x: -12, y: 8, duration: 0.06 })
+          .to(target, { x: 9, y: -6, duration: 0.06 })
+          .to(target, { x: -6, y: 4, duration: 0.07 })
+          .to(target, { x: 3, y: -2, duration: 0.07 })
+          .to(target, { x: 0, y: 0, duration: 0.09, ease: "power2.out" });
+      };
+
+      // A `.call()` inside a scrubbed timeline only fires if the scrub's own
+      // catch-up tween happens to render through that exact position, which
+      // it can skip during fast or uneven scrolling — that's why the shake
+      // was intermittent. Watching this trigger's own onUpdate and firing on
+      // a progress-0.5 crossing instead reads the *raw* scroll-driven
+      // progress directly (not the smoothed scrub tween), so it can't be
+      // skipped, and it's exactly aligned with the robots' own tween (which
+      // starts at timeline position 0 and finishes at 0.5, its default
+      // duration) since it's the same self.progress the timeline itself
+      // uses — unlike a separate "50% top" trigger, whose position string
+      // ignores viewport height and lands half a screen off from where the
+      // scrub's progress actually reaches 0.5.
+      let lastProgress = 0;
+      const checkCollisionCrossing = (self) => {
+        const progress = self.progress;
+        if ((lastProgress < 0.5) !== (progress < 0.5)) triggerCollisionShake();
+        lastProgress = progress;
+      };
+
+      const buildTimeline = (root) => {
         const timeline = gsap.timeline({
           defaults: { ease: "none" },
           scrollTrigger: {
@@ -374,14 +423,20 @@ export default function RobowarsHero({ leadInVh = 0 }) {
             trigger: timelineRef.current,
             start: "top top",
             end: "bottom bottom",
-            scrub: 1,
+            // Lenis already smooths the scroll position itself (momentum,
+            // inertia), so a numeric scrub here would add a *second*,
+            // independent second of catch-up lag on top of that — the
+            // animation visibly chasing an already-smoothed value. `true`
+            // ties it directly to Lenis's output with no extra delay.
+            scrub: true,
             invalidateOnRefresh: true,
+            onUpdate: checkCollisionCrossing,
           },
         });
 
         timeline
           .to(
-            ".robowars-left-robot, .robowars-right-robot",
+            root.querySelectorAll(".robowars-left-robot, .robowars-right-robot"),
             {
               opacity: 1,
               transform: "translate3d(0, 0, 0) scale(1)",
@@ -389,7 +444,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
             0
           )
           .to(
-            ".robowars-title-left, .robowars-title-right",
+            root.querySelectorAll(".robowars-title-left, .robowars-title-right"),
             {
               opacity: 1,
               transform: "translate3d(0, 0, 0) scale(1)",
@@ -397,7 +452,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
             0.14
           )
           .to(
-            ".robowars-date",
+            root.querySelectorAll(".robowars-date"),
             {
               opacity: 1,
               transform: "translate3d(0, 0, 0) scale(1)",
@@ -405,7 +460,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
             0.3
           )
           .to(
-            ".robowars-prizes, .robowars-arena",
+            root.querySelectorAll(".robowars-prizes, .robowars-arena"),
             {
               opacity: 1,
               transform: "translate3d(0, 0, 0) scale(1)",
@@ -413,7 +468,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
             0.42
           )
           .to(
-            ".robowars-badge",
+            root.querySelectorAll(".robowars-badge"),
             {
               opacity: 1,
               transform: "translate3d(0, 0, 0) scale(1)",
@@ -424,31 +479,37 @@ export default function RobowarsHero({ leadInVh = 0 }) {
 
       media = gsap.matchMedia();
       media.add("(max-width: 767px)", () => {
-        setInitialMotion({
+        const root = mobileRef.current;
+        if (!root) return;
+        setInitialMotion(root, {
           robotDistance: 42,
           titleDistance: 14,
           detailDistance: 16,
           badgeDistance: 48,
         });
-        buildTimeline();
+        buildTimeline(root);
       });
       media.add("(min-width: 768px) and (max-width: 1279px)", () => {
-        setInitialMotion({
+        const root = desktopTabletRef.current;
+        if (!root) return;
+        setInitialMotion(root, {
           robotDistance: 54,
           titleDistance: 20,
           detailDistance: 22,
           badgeDistance: 64,
         });
-        buildTimeline();
+        buildTimeline(root);
       });
       media.add("(min-width: 1280px)", () => {
-        setInitialMotion({
+        const root = desktopXlRef.current;
+        if (!root) return;
+        setInitialMotion(root, {
           robotDistance: 70,
           titleDistance: 28,
           detailDistance: 34,
           badgeDistance: 90,
         });
-        buildTimeline();
+        buildTimeline(root);
       });
     }, sectionRef);
 
@@ -489,12 +550,21 @@ export default function RobowarsHero({ leadInVh = 0 }) {
         Robo Wars Enter Arena
       </h1>
 
-        <div className="sticky top-0 h-[100dvh] min-h-[560px] w-full overflow-hidden">
-          <DesktopFrame className="hidden w-screen xl:block" />
-          <DesktopFrame className="hidden w-[112vw] md:block xl:hidden" scale="tablet" />
-          <MobileFrame />
-        </div>
-      </section>
-    </div>
+      <div
+        data-robowars-stage
+        className="sticky top-0 h-[100dvh] min-h-[560px] w-full overflow-hidden will-change-transform"
+      >
+        {/* Zoomed in by default; WheelsExperience scales this back down to 1
+            as the docking TV's backdrop fades, so the arena zooms out in sync
+            with the TV shrinking instead of popping in at full size early. */}
+        <DesktopFrame className="hidden w-screen xl:block" containerRef={desktopXlRef} />
+        <DesktopFrame
+          className="hidden w-[112vw] md:block xl:hidden"
+          scale="tablet"
+          containerRef={desktopTabletRef}
+        />
+        <MobileFrame containerRef={mobileRef} />
+      </div>
+    </section>
   );
 }

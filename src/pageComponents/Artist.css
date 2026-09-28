@@ -1,27 +1,29 @@
 @font-face {
-  font-family: "Bebas Neue:Regular";
-  src: url("https://static.figma.com/font/BebasNeue-Regular_1") format("woff2");
+  font-family: 'Bebas Neue:Regular';
+  src: url('https://static.figma.com/font/BebasNeue-Regular_1') format('woff2');
   font-style: normal;
   font-weight: 400;
 }
 
 @font-face {
-  font-family: "Hammersmith One:Regular";
-  src: url("https://static.figma.com/font/HammersmithOne-Regular_2") format("woff2");
+  font-family: 'Hammersmith One:Regular';
+  src: url('https://static.figma.com/font/HammersmithOne-Regular_2')
+    format('woff2');
   font-style: normal;
   font-weight: 400;
 }
 
 @font-face {
-  font-family: "La Belle Aurore:Regular";
-  src: url("https://static.figma.com/font/LaBelleAurore_1") format("woff2");
+  font-family: 'La Belle Aurore:Regular';
+  src: url('https://static.figma.com/font/LaBelleAurore_1') format('woff2');
   font-style: normal;
   font-weight: 400;
 }
 
 @font-face {
-  font-family: "Mona Sans:Regular";
-  src: url("https://static.figma.com/font/MonaSans_wdth_wght__1") format("woff2");
+  font-family: 'Mona Sans:Regular';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1')
+    format('woff2');
   font-style: normal;
   font-weight: 400;
 }
@@ -152,7 +154,7 @@
   display: flex;
   align-items: center;
   gap: clamp(9px, 1.2vw, 18px);
-  font-family: "Hammersmith One:Regular", sans-serif;
+  font-family: 'Hammersmith One:Regular', sans-serif;
   font-size: clamp(7px, 0.73vw, 12px);
   white-space: nowrap;
 }
@@ -178,7 +180,7 @@
   height: 34px;
   background: #464646;
   clip-path: polygon(12% 0, 88% 0, 100% 50%, 88% 100%, 12% 100%, 0 50%);
-  font-family: "Bebas Neue:Regular", sans-serif;
+  font-family: 'Bebas Neue:Regular', sans-serif;
   line-height: 0.8;
   text-align: center;
   flex-direction: column;
@@ -230,7 +232,7 @@
   height: 36px;
   padding: 5px 13px;
   border-bottom: 1px solid #d63d5e;
-  font-family: "Arial Black", sans-serif;
+  font-family: 'Arial Black', sans-serif;
 }
 
 .schedule-days button {
@@ -253,7 +255,7 @@
   padding: 7px 21px 18px;
   font-size: 11px;
   line-height: 1.18;
-  font-variation-settings: "wdth" 100;
+  font-variation-settings: 'wdth' 100;
 }
 
 .artist-list {
@@ -304,7 +306,12 @@
   display: flex;
   width: max-content;
   height: 100%;
-  animation: board-scroll 20s linear infinite;
+  animation: board-scroll 8s linear infinite;
+  animation-play-state: paused;
+}
+
+.board-marquee-track.is-playing {
+  animation-play-state: running;
 }
 
 @keyframes board-scroll {
@@ -365,7 +372,7 @@
   left: 65%;
   margin: 0;
   color: white;
-  font-family: "La Belle Aurore:Regular", cursive;
+  font-family: 'La Belle Aurore:Regular', cursive;
   font-size: clamp(28px, 3.2vw, 52px);
   transform: rotate(-10deg);
 }
@@ -496,7 +503,7 @@
     border: 1px solid #323231;
     border-radius: 7px;
     background: #202020;
-    font-family: "Hammersmith One:Regular", sans-serif;
+    font-family: 'Hammersmith One:Regular', sans-serif;
     font-size: 11px;
   }
 
@@ -540,7 +547,7 @@
     border-radius: 7px;
     background: transparent;
     color: #fff;
-    font-family: "Bebas Neue", "Bebas Neue:Regular", sans-serif;
+    font-family: 'Bebas Neue', 'Bebas Neue:Regular', sans-serif;
     font-size: 19px;
     letter-spacing: 0.04em;
     writing-mode: vertical-rl;
@@ -580,7 +587,7 @@
     z-index: 1;
     margin: 18px 0 0;
     color: #fff;
-    font-family: "Bebas Neue", "Bebas Neue:Regular", sans-serif;
+    font-family: 'Bebas Neue', 'Bebas Neue:Regular', sans-serif;
     font-size: 72px;
     line-height: 0.95;
   }

@@ -168,11 +168,11 @@ const defaultLeads = [
  */
 export default function Lead({ leads = defaultLeads }) {
   return (
-    <div className="relative h-screen h-[100dvh] w-full bg-[#010208] overflow-x-hidden overflow-y-auto overscroll-contain flex flex-col font-sans select-none [-webkit-overflow-scrolling:touch]">
+    <div className="relative min-h-screen min-h-[100dvh] w-full bg-[#010208] overflow-x-hidden flex flex-col font-sans select-none">
       {/* =====================================================
           SPACE BACKGROUND: very dark sky, stars, shooting star, subtle blue clouds
       ===================================================== */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         {/* Base: near-black gradient */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#010308] via-[#020610] to-[#051230]" />
 

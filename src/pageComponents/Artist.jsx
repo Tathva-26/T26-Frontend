@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
+import "./Artist.css"
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -97,7 +98,18 @@ function useScrubCrossfade(ref, bgSel, portraitSel) {
       gsap.set(backgrounds.slice(1), { autoAlpha: 0 })
       gsap.set(portraits.slice(1), { yPercent: 100, autoAlpha: 0 })
       const timeline = gsap.timeline({
-        scrollTrigger: { trigger: section, start: "top top", end: "bottom bottom", scrub: 1.2, invalidateOnRefresh: true },
+        scrollTrigger: {
+          scroller: document.querySelector(".main-scroll") || window,
+          trigger: section,
+          start: "top top",
+          end: "bottom bottom",
+          // Lenis (added globally) already smooths the scroll position
+          // itself, so a numeric scrub here compounds a second, separate
+          // second-plus of catch-up lag on top of that — `true` tracks the
+          // already-smoothed position directly instead of double-lagging.
+          scrub: true,
+          invalidateOnRefresh: true,
+        },
       })
       portraits.slice(1).forEach((incoming, index) => {
         timeline
@@ -159,10 +171,11 @@ function ConnectorArrow({ getFrom, getTo, slideRef, bend = 1 }) {
   useLayoutEffect(() => {
     const measure = () => {
       const slide = slideRef.current
-      const fromEl = getFrom()
-      const toEl = getTo()
+      const fromEl = getFrom?.()
+      const toEl = getTo?.()
       if (!slide || !fromEl || !toEl) return setSegment(null)
       const slideBox = slide.getBoundingClientRect()
+      if (slideBox.width === 0 || slideBox.height === 0) return setSegment(null)
       const rectOf = (el) => {
         const b = el.getBoundingClientRect()
         return { left: b.left - slideBox.left, top: b.top - slideBox.top, width: b.width, height: b.height }
@@ -186,20 +199,128 @@ function ConnectorArrow({ getFrom, getTo, slideRef, bend = 1 }) {
   return (
     <>
       <path d={d} className="connector-line" />
-      <path
-        className="connector-arrowhead"
-        d="M0,0 L-9,-4.5 L-9,4.5 Z"
+      <g
+        className="connector-arrowhead-group"
         transform={`translate(${segment.end.x} ${segment.end.y}) rotate(${angle})`}
-      />
+      >
+        <path
+          className="connector-arrowhead"
+          d="M0,0 L-9,-4.5 L-9,4.5 Z"
+        />
+      </g>
     </>
   )
 }
 
-function ArtistContent({ artist }) {
+// Draws the three connector arrows in on scroll-into-view, one after another;
+// only once the last arrowhead lands does `onArrowsComplete` fire, so the
+// caller can hold the image marquee still until the arrows are done (melius.com-style reveal).
+function ArtistContent({ artist, isIntro = false, onArrowsComplete }) {
   const slideRef = useRef(null)
   const avatarRef = useRef(null)
   const secondaryRef = useRef(null)
   const primaryRef = useRef(null)
+
+  useLayoutEffect(() => {
+    if (!isIntro) return
+    const slide = slideRef.current
+    if (!slide) return
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      onArrowsComplete?.()
+      return
+    }
+
+    let raf = 0
+    let cancelled = false
+    let hiddenApplied = false
+    let hasPlayed = false
+    let intersecting = false
+    let ctx = null
+
+    const initHidden = () => {
+      const lines = slide.querySelectorAll(".connector-line")
+      const heads = slide.querySelectorAll(".connector-arrowhead")
+      if (lines.length < 3 || heads.length < 3) return false
+      if (!hiddenApplied) {
+        lines.forEach((line) => {
+          const len = Math.ceil(line.getTotalLength()) + 5
+          gsap.set(line, { strokeDasharray: len, strokeDashoffset: len })
+        })
+        gsap.set(heads, { autoAlpha: 0, scale: 0, transformOrigin: "0px 0px" })
+        hiddenApplied = true
+      }
+      return true
+    }
+
+    const tryPlay = () => {
+      if (cancelled || hasPlayed) return
+      if (!initHidden()) {
+        raf = requestAnimationFrame(tryPlay)
+        return
+      }
+      if (!intersecting) return
+      hasPlayed = true
+
+      ctx = gsap.context(() => {
+        const lines = slide.querySelectorAll(".connector-line")
+        const heads = slide.querySelectorAll(".connector-arrowhead")
+
+        const tl = gsap.timeline({
+          delay: 0.25,
+          onComplete: () => {
+            gsap.set(lines, { clearProps: "strokeDasharray,strokeDashoffset" })
+            gsap.set(heads, { clearProps: "transform,opacity,visibility" })
+            onArrowsComplete?.()
+          },
+        })
+
+        lines.forEach((line, i) => {
+          tl.to(line, {
+            strokeDashoffset: 0,
+            duration: 0.65,
+            ease: "power2.inOut",
+          }).to(
+            heads[i],
+            {
+              autoAlpha: 1,
+              scale: 1,
+              duration: 0.25,
+              ease: "back.out(2)",
+            },
+            "-=0.12"
+          )
+        })
+      }, slide)
+    }
+
+    raf = requestAnimationFrame(tryPlay)
+
+    const scroller = document.querySelector(".main-scroll") || null
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            intersecting = true
+            tryPlay()
+            observer.disconnect()
+          }
+        })
+      },
+      {
+        root: scroller,
+        threshold: 0.2,
+      }
+    )
+    observer.observe(slide)
+
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(raf)
+      observer.disconnect()
+      ctx?.revert()
+    }
+  }, [isIntro])
 
   return (
     <div className="artist-content-slide" ref={slideRef}>
@@ -222,7 +343,30 @@ function ArtistContent({ artist }) {
           slideRef={slideRef}
           bend={1}
           getFrom={() => primaryRef.current}
-          getTo={() => slideRef.current?.nextElementSibling?.querySelector(".slide__avatar")}
+          getTo={() => {
+            const next = slideRef.current?.nextElementSibling
+            if (next) {
+              const avatar = next.querySelector(".slide__avatar")
+              if (avatar) return avatar
+            }
+            // For the last slide in the track, wrap around to the next loop iteration:
+            // The next avatar is positioned at (avatar.left + slide.offsetWidth)
+            const avatar = avatarRef.current
+            const slide = slideRef.current
+            if (!avatar || !slide) return null
+            const b = avatar.getBoundingClientRect()
+            const s = slide.getBoundingClientRect()
+            return {
+              getBoundingClientRect: () => ({
+                left: b.left + s.width,
+                top: b.top,
+                right: b.right + s.width,
+                bottom: b.bottom,
+                width: b.width,
+                height: b.height,
+              }),
+            }
+          }}
         />
       </svg>
 
@@ -247,6 +391,9 @@ function ArtistContent({ artist }) {
 function ArtistBoard({ artist }) {
   // ponytail: 2 copies is the minimum seamless -50% marquee loop; add more only if a gap shows on ultrawide
   const dupes = [artist, artist]
+  // Marquee starts paused (see .board-marquee-track in Artist.css) and only
+  // unpauses once the first slide's arrows finish drawing in.
+  const [marqueeActive, setMarqueeActive] = useState(false)
   return (
     <div className="artist-page snap-start snap-always">
       <div className="artist-board">
@@ -258,9 +405,14 @@ function ArtistBoard({ artist }) {
         />
         {/* Marquee of artist content scrolling inside the board */}
         <div className="board-marquee">
-          <div className="board-marquee-track">
+          <div className={`board-marquee-track${marqueeActive ? " is-playing" : ""}`}>
             {dupes.map((a, i) => (
-              <ArtistContent artist={a} key={`${a.name}-${i}`} />
+              <ArtistContent
+                artist={a}
+                key={`${a.name}-${i}`}
+                isIntro={i === 0}
+                onArrowsComplete={i === 0 ? () => setMarqueeActive(true) : undefined}
+              />
             ))}
           </div>
         </div>
@@ -378,15 +530,12 @@ function ArtistMobile() {
 export default function App() {
   const sectionRef = useRef(null)
 
-  // Document-level vertical snap: <html> is the scroll container, so
-  // snap-type lives here (scoped to this page, removed on unmount).
-  // Desktop .artist-page and mobile .mobile-page are the snap-start points.
-  // Nested scroller avoided on purpose — it would detach GSAP ScrollTrigger.
-  useLayoutEffect(() => {
-    const root = document.documentElement
-    root.classList.add("snap-y", "snap-mandatory", "scroll-smooth", "motion-reduce:snap-none")
-    return () => root.classList.remove("snap-y", "snap-mandatory", "scroll-smooth", "motion-reduce:snap-none")
-  }, [])
+  // This section is composed onto the home page's shared `.main-scroll`
+  // container alongside other scroll-scrubbed sections (Wheels, Robowars),
+  // so it can't claim document-level scroll-snap for itself the way it could
+  // as a standalone route — snapping `.main-scroll` would fight those
+  // sections' own scrub animations. Scoped snapping within a shared scroller
+  // would need its own opt-in redesign, so it's left off here for now.
 
   useScrubCrossfade(sectionRef, ".featured-bg-layer", ".featured-portrait-layer")
 
