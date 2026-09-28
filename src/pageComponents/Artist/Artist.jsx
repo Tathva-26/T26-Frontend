@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import {
   useLayoutEffect,
@@ -7,82 +7,47 @@ import {
   forwardRef,
   useImperativeHandle,
   memo,
-} from "react"
-import gsap from "gsap"
-import { ScrollTrigger } from "gsap/ScrollTrigger"
-import { EasePack } from "gsap/EasePack"
-
+} from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { EasePack } from 'gsap/EasePack'
 
 gsap.registerPlugin(ScrollTrigger, EasePack)
 
-const assetPathPrefix = "/images/artist"
-
-const NAV_LINKS = ["PROSHOW", "WORKSHOPS", "CAMPUS AMBASADOR", "GALLERY"]
+const assetPathPrefix = '/images/artist'
 
 const artists = [
   {
-    name: "Arijit Singh",
+    name: 'Arijit Singh',
     background: `${assetPathPrefix}/21bbf.png`,
     portrait: `${assetPathPrefix}/arijit.png`,
-    portraitClassName: "artist-portrait artist-portrait--arijit",
+    portraitClassName: 'artist-portrait artist-portrait--arijit',
     cardPortrait: `${assetPathPrefix}/50195.png`,
     cardSecondary: `${assetPathPrefix}/8577e.png`,
     avatar: `${assetPathPrefix}/475ef.png`,
   },
   {
-    name: "Shreya ghoshal",
+    name: 'Shreya ghoshal',
     background: `${assetPathPrefix}/bef85.png`,
     portrait: `${assetPathPrefix}/shreya.png`,
-    portraitClassName: "artist-portrait artist-portrait--shreya",
+    portraitClassName: 'artist-portrait artist-portrait--shreya',
     cardPortrait: `${assetPathPrefix}/1fbda.png`,
     cardSecondary: `${assetPathPrefix}/3a288.png`,
     avatar: `${assetPathPrefix}/09bd3.png`,
   },
 ]
 
-function FestivalMark() {
-  return (
-    <div className="festival-mark" aria-label="Tathva 2026">
-      <span>TATHVA 2026</span>
-      <small>NIT CALICUT</small>
-    </div>
-  )
-}
-
-function Header() {
-  return (
-    <header className="site-header">
-      <img
-        className="site-logo"
-        src={`${assetPathPrefix}/32c3b.png`}
-        alt="Tathva"
-      />
-      <button className="menu-button" type="button" aria-label="Open menu">
-        <img src={`${assetPathPrefix}/4e2c4.svg`} alt="" />
-      </button>
-      <nav aria-label="Main navigation">
-        {NAV_LINKS.map((label, i) => (
-          <span key={label}>
-            {i > 0 && <i>/</i>}
-            <a href={`#${label.toLowerCase().split(" ")[0]}`}>{label}</a>
-          </span>
-        ))}
-      </nav>
-    </header>
-  )
-}
-
 function ScheduleCard({ artist, activeIndex = 0, onSelectDay }) {
-  const days = ["DAY 1", "DAY 2", "DAY 3"]
+  const days = ['DAY 1', 'DAY 2', 'DAY 3']
 
   return (
-    <div className="schedule-card">
-      <div className="schedule-days">
+    <div className='schedule-card'>
+      <div className='schedule-days'>
         {days.map((day, idx) => (
           <button
             key={day}
-            type="button"
-            className={idx === activeIndex ? "is-active" : ""}
+            type='button'
+            className={idx === activeIndex ? 'is-active' : ''}
             onClick={() => onSelectDay && onSelectDay(idx)}
           >
             {day}
@@ -90,7 +55,7 @@ function ScheduleCard({ artist, activeIndex = 0, onSelectDay }) {
         ))}
       </div>
       <p>
-        Brace yourselves for a magical night as the legendary {artist.name}{" "}
+        Brace yourselves for a magical night as the legendary {artist.name}{' '}
         takes the stage. Get ready to sing, sway, and make memories!
       </p>
     </div>
@@ -98,15 +63,22 @@ function ScheduleCard({ artist, activeIndex = 0, onSelectDay }) {
 }
 
 // --- Easing ---------------------------------------------------------------
-const PORTRAIT_EASE = "sine.inOut"
+const PORTRAIT_EASE = 'sine.inOut'
 const PORTRAIT_EXIT = -60
 
-function useScrubCrossfade(ref, { bgRefs, portraitRefs, boardRefs, onIndexChange, snap = false }) {
+function useScrubCrossfade(
+  ref,
+  { bgRefs, portraitRefs, boardRefs, onIndexChange, snap = false },
+) {
   useLayoutEffect(() => {
     const section = ref.current
     if (!section) return
-    if (typeof window !== "undefined" && window.getComputedStyle(section).display === "none") return
-    const scroller = section.closest(".main-scroll")
+    if (
+      typeof window !== 'undefined' &&
+      window.getComputedStyle(section).display === 'none'
+    )
+      return
+    const scroller = section.closest('.main-scroll')
 
     const context = gsap.context(() => {
       const bgs = (bgRefs?.current || []).filter(Boolean)
@@ -116,23 +88,25 @@ function useScrubCrossfade(ref, { bgRefs, portraitRefs, boardRefs, onIndexChange
       if (count < 2) return
 
       gsap.set(bgs.slice(1), { autoAlpha: 0 })
-      if (ports.length > 1) gsap.set(ports.slice(1), { yPercent: 100, autoAlpha: 0 })
-      if (boards.length > 1) gsap.set(boards.slice(1), { yPercent: 100, autoAlpha: 0 })
+      if (ports.length > 1)
+        gsap.set(ports.slice(1), { yPercent: 100, autoAlpha: 0 })
+      if (boards.length > 1)
+        gsap.set(boards.slice(1), { yPercent: 100, autoAlpha: 0 })
 
       const tl = gsap.timeline({
         defaults: { duration: 1 },
         scrollTrigger: {
           trigger: section,
           ...(scroller ? { scroller } : {}),
-          start: "top top",
-          end: "bottom bottom",
+          start: 'top top',
+          end: 'bottom bottom',
           scrub: 1.5,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             if (onIndexChange) {
               const idx = Math.min(
                 Math.round(self.progress * (count - 1)),
-                count - 1
+                count - 1,
               )
               onIndexChange(idx)
             }
@@ -143,18 +117,35 @@ function useScrubCrossfade(ref, { bgRefs, portraitRefs, boardRefs, onIndexChange
       for (let i = 0; i < count - 1; i++) {
         const t = i
 
-        tl.to(bgs[i], { autoAlpha: 0, ease: "none" }, t)
-          .to(bgs[i + 1], { autoAlpha: 1, ease: "none" }, t)
+        tl.to(bgs[i], { autoAlpha: 0, ease: 'none' }, t).to(
+          bgs[i + 1],
+          { autoAlpha: 1, ease: 'none' },
+          t,
+        )
 
         if (ports[i] && ports[i + 1]) {
-          tl.to(ports[i], { yPercent: PORTRAIT_EXIT, autoAlpha: 0, ease: PORTRAIT_EASE }, t)
-            .to(ports[i + 1], { yPercent: 0, autoAlpha: 1, ease: PORTRAIT_EASE }, t)
+          tl.to(
+            ports[i],
+            { yPercent: PORTRAIT_EXIT, autoAlpha: 0, ease: PORTRAIT_EASE },
+            t,
+          ).to(
+            ports[i + 1],
+            { yPercent: 0, autoAlpha: 1, ease: PORTRAIT_EASE },
+            t,
+          )
         }
 
         // Moves the artist board synchronized at the identical scroll rate and curve as the portraits
         if (boards[i] && boards[i + 1]) {
-          tl.to(boards[i], { yPercent: PORTRAIT_EXIT, autoAlpha: 0, ease: PORTRAIT_EASE }, t)
-            .to(boards[i + 1], { yPercent: 0, autoAlpha: 1, ease: PORTRAIT_EASE }, t)
+          tl.to(
+            boards[i],
+            { yPercent: PORTRAIT_EXIT, autoAlpha: 0, ease: PORTRAIT_EASE },
+            t,
+          ).to(
+            boards[i + 1],
+            { yPercent: 0, autoAlpha: 1, ease: PORTRAIT_EASE },
+            t,
+          )
         }
       }
     }, section)
@@ -167,13 +158,22 @@ function edgePoint(rect, dx, dy) {
   const cx = rect.left + rect.width / 2
   const cy = rect.top + rect.height / 2
   if (dx === 0 && dy === 0) return { x: cx, y: cy }
-  const scale = Math.min(rect.width / 2 / Math.abs(dx || Infinity), rect.height / 2 / Math.abs(dy || Infinity))
+  const scale = Math.min(
+    rect.width / 2 / Math.abs(dx || Infinity),
+    rect.height / 2 / Math.abs(dy || Infinity),
+  )
   return { x: cx + dx * scale, y: cy + dy * scale }
 }
 
 function segmentBetween(rectA, rectB) {
-  const centerA = { x: rectA.left + rectA.width / 2, y: rectA.top + rectA.height / 2 }
-  const centerB = { x: rectB.left + rectB.width / 2, y: rectB.top + rectB.height / 2 }
+  const centerA = {
+    x: rectA.left + rectA.width / 2,
+    y: rectA.top + rectA.height / 2,
+  }
+  const centerB = {
+    x: rectB.left + rectB.width / 2,
+    y: rectB.top + rectB.height / 2,
+  }
   const dx = centerB.x - centerA.x
   const dy = centerB.y - centerA.y
   return { start: edgePoint(rectA, dx, dy), end: edgePoint(rectB, -dx, -dy) }
@@ -186,8 +186,14 @@ function buildCurve(start, end, bend = 1) {
   const perpX = (-dy / distance) * bend
   const perpY = (dx / distance) * bend
   const curvature = distance * 0.18
-  const c1 = { x: start.x + dx / 3 + perpX * curvature, y: start.y + dy / 3 + perpY * curvature }
-  const c2 = { x: start.x + (dx * 2) / 3 + perpX * curvature, y: start.y + (dy * 2) / 3 + perpY * curvature }
+  const c1 = {
+    x: start.x + dx / 3 + perpX * curvature,
+    y: start.y + dy / 3 + perpY * curvature,
+  }
+  const c2 = {
+    x: start.x + (dx * 2) / 3 + perpX * curvature,
+    y: start.y + (dy * 2) / 3 + perpY * curvature,
+  }
   return {
     d: `M${start.x},${start.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${end.x},${end.y}`,
     angle: Math.atan2(end.y - c2.y, end.x - c2.x) * (180 / Math.PI),
@@ -203,7 +209,10 @@ function placeArrowheadAt(path, arrowhead, length, distance) {
   const a = path.getPointAtLength(Math.max(0, distance - eps))
   const b = path.getPointAtLength(Math.min(length, distance + eps))
   const angle = Math.atan2(b.y - a.y, b.x - a.x) * (180 / Math.PI)
-  arrowhead.setAttribute("transform", `translate(${point.x} ${point.y}) rotate(${angle})`)
+  arrowhead.setAttribute(
+    'transform',
+    `translate(${point.x} ${point.y}) rotate(${angle})`,
+  )
 }
 
 /**
@@ -213,13 +222,13 @@ function placeArrowheadAt(path, arrowhead, length, distance) {
  */
 const ConnectorArrow = forwardRef(function ConnectorArrow(
   { getFrom, getTo, slideRef, bend = 1 },
-  ref
+  ref,
 ) {
   const [segment, setSegment] = useState(null)
   const pathRef = useRef(null)
   const arrowheadRef = useRef(null)
   const progressRef = useRef(0)
-  const segmentKeyRef = useRef("")
+  const segmentKeyRef = useRef('')
 
   // Keep latest getters in refs so the measuring effect doesn't re-run
   // (and re-render) every time the parent re-renders.
@@ -234,16 +243,23 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
       const fromEl = getFromRef.current()
       const toEl = getToRef.current()
       if (!slide || !fromEl || !toEl) {
-        segmentKeyRef.current = ""
+        segmentKeyRef.current = ''
         return setSegment(null)
       }
       const slideBox = slide.getBoundingClientRect()
       const rectOf = (el) => {
         const b = el.getBoundingClientRect()
-        return { left: b.left - slideBox.left, top: b.top - slideBox.top, width: b.width, height: b.height }
+        return {
+          left: b.left - slideBox.left,
+          top: b.top - slideBox.top,
+          width: b.width,
+          height: b.height,
+        }
       }
       const seg = segmentBetween(rectOf(fromEl), rectOf(toEl))
-      const key = [seg.start.x, seg.start.y, seg.end.x, seg.end.y].map((n) => n.toFixed(1)).join(",")
+      const key = [seg.start.x, seg.start.y, seg.end.x, seg.end.y]
+        .map((n) => n.toFixed(1))
+        .join(',')
       if (key === segmentKeyRef.current) return // nothing changed, don't reset anything
       segmentKeyRef.current = key
       setSegment(seg)
@@ -252,11 +268,11 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
     const raf = requestAnimationFrame(measure)
     const ro = new ResizeObserver(measure)
     if (slideRef.current) ro.observe(slideRef.current)
-    window.addEventListener("resize", measure)
+    window.addEventListener('resize', measure)
     return () => {
       cancelAnimationFrame(raf)
       ro.disconnect()
-      window.removeEventListener("resize", measure)
+      window.removeEventListener('resize', measure)
     }
   }, [slideRef, bend])
 
@@ -269,9 +285,9 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
     path.style.strokeDasharray = `${length} ${length}`
     path.style.strokeDashoffset = `${length * (1 - p)}`
     if (p <= 0) {
-      head.style.opacity = "0"
+      head.style.opacity = '0'
     } else {
-      head.style.opacity = "1"
+      head.style.opacity = '1'
       placeArrowheadAt(path, head, length, length * p)
     }
   }
@@ -289,25 +305,25 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
       // True once the target image has entered the visible board.
       canStart() {
         const to = getToRef.current()
-        const board = slideRef.current?.closest(".artist-board")
+        const board = slideRef.current?.closest('.artist-board')
         if (!board || !to || !pathRef.current) return false
         const b = board.getBoundingClientRect()
         if (b.width === 0) return false
         return to.getBoundingClientRect().left < b.right - 4
       },
     }),
-    []
+    [],
   )
 
   if (!segment) return null
   const { d } = buildCurve(segment.start, segment.end, bend)
   return (
     <>
-      <path ref={pathRef} d={d} className="connector-line" />
+      <path ref={pathRef} d={d} className='connector-line' />
       <path
         ref={arrowheadRef}
-        className="connector-arrowhead"
-        d="M0,0 L-9,-4.5 L-9,4.5 Z"
+        className='connector-arrowhead'
+        d='M0,0 L-9,-4.5 L-9,4.5 Z'
       />
     </>
   )
@@ -323,7 +339,8 @@ function ArtistContent({ artist, connectorRefs, connectorBaseIndex = 0 }) {
   // next sibling, so use a virtual rect one slide-width to the right; that
   // is exactly where the next (looped) slide's avatar will arrive.
   const getNextAvatar = () => {
-    const next = slideRef.current?.nextElementSibling?.querySelector(".slide__avatar")
+    const next =
+      slideRef.current?.nextElementSibling?.querySelector('.slide__avatar')
     if (next) return next
     const avatar = avatarRef.current
     const slide = slideRef.current
@@ -338,26 +355,40 @@ function ArtistContent({ artist, connectorRefs, connectorBaseIndex = 0 }) {
   }
 
   return (
-    <div className="artist-content-slide" ref={slideRef}>
-      <img ref={avatarRef} className="slide__avatar" src={artist.avatar} alt="" />
+    <div className='artist-content-slide' ref={slideRef}>
+      <img
+        ref={avatarRef}
+        className='slide__avatar'
+        src={artist.avatar}
+        alt=''
+      />
 
-      <svg className="connector-overlay" aria-hidden="true">
+      <svg className='connector-overlay' aria-hidden='true'>
         <ConnectorArrow
-          ref={(el) => { if (connectorRefs) connectorRefs.current[connectorBaseIndex + 0] = el }}
+          ref={(el) => {
+            if (connectorRefs)
+              connectorRefs.current[connectorBaseIndex + 0] = el
+          }}
           slideRef={slideRef}
           bend={1}
           getFrom={() => avatarRef.current}
           getTo={() => secondaryRef.current}
         />
         <ConnectorArrow
-          ref={(el) => { if (connectorRefs) connectorRefs.current[connectorBaseIndex + 1] = el }}
+          ref={(el) => {
+            if (connectorRefs)
+              connectorRefs.current[connectorBaseIndex + 1] = el
+          }}
           slideRef={slideRef}
           bend={-1}
           getFrom={() => secondaryRef.current}
           getTo={() => primaryRef.current}
         />
         <ConnectorArrow
-          ref={(el) => { if (connectorRefs) connectorRefs.current[connectorBaseIndex + 2] = el }}
+          ref={(el) => {
+            if (connectorRefs)
+              connectorRefs.current[connectorBaseIndex + 2] = el
+          }}
           slideRef={slideRef}
           bend={1}
           getFrom={() => primaryRef.current}
@@ -367,18 +398,18 @@ function ArtistContent({ artist, connectorRefs, connectorBaseIndex = 0 }) {
 
       <img
         ref={secondaryRef}
-        className="slide__secondary"
+        className='slide__secondary'
         src={artist.cardSecondary}
         alt={`${artist.name} on stage`}
       />
       <img
         ref={primaryRef}
-        className="slide__primary"
+        className='slide__primary'
         src={artist.cardPortrait}
         alt={`${artist.name} performing`}
       />
 
-      <h2 className="slide__name">{artist.name}</h2>
+      <h2 className='slide__name'>{artist.name}</h2>
     </div>
   )
 }
@@ -402,15 +433,16 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
       const to = arrows[i]
       if (from && to) {
         to.setProgress(from.getProgress())
-        from.setProgress(0)
+        // Let the marquee finish its loop reset before recycling the outgoing arrow.
+        requestAnimationFrame(() => from.setProgress(0))
       }
     }
   }
 
   useLayoutEffect(() => {
     if (
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
       // No motion: show every arrow fully drawn.
       connectorRefs.current.forEach((a) => a?.setProgress(1))
@@ -446,9 +478,11 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
       tween = gsap.to(prog, {
         v: 1,
         duration: CONNECTOR_DURATION,
-        ease: "power1.inOut",
+        ease: 'power1.inOut',
         onUpdate: () => {
-          connectorRefs.current[current - 3 * loopsRef.current]?.setProgress(prog.v)
+          connectorRefs.current[current - 3 * loopsRef.current]?.setProgress(
+            prog.v,
+          )
         },
         onComplete: () => {
           connectorRefs.current[current - 3 * loopsRef.current]?.setProgress(1)
@@ -468,14 +502,17 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
   }, [])
 
   return (
-    <div className="artist-board">
+    <div className='artist-board'>
       <img
-        className="artist-board__texture"
+        className='artist-board__texture'
         src={`${assetPathPrefix}/88fac.png`}
-        alt=""
+        alt=''
       />
-      <div className="board-marquee">
-        <div className="board-marquee-track" onAnimationIteration={handleIteration}>
+      <div className='board-marquee'>
+        <div
+          className='board-marquee-track'
+          onAnimationIteration={handleIteration}
+        >
           {dupes.map((a, i) => (
             <ArtistContent
               artist={a}
@@ -491,14 +528,17 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
 })
 
 function ArtistMobile() {
-  const days = ["DAY 1", "DAY 2", "DAY 3"]
+  const days = ['DAY 1', 'DAY 2', 'DAY 3']
   const sectionRef = useRef(null)
   const pageRefs = useRef([])
   const mobileBgRefs = useRef([])
   const [activeDay, setActiveDay] = useState(0)
-  const [menuOpen, setMenuOpen] = useState(false)
 
-  useScrubCrossfade(sectionRef, { bgRefs: mobileBgRefs, portraitRefs: null, boardRefs: null })
+  useScrubCrossfade(sectionRef, {
+    bgRefs: mobileBgRefs,
+    portraitRefs: null,
+    boardRefs: null,
+  })
 
   useLayoutEffect(() => {
     const pages = pageRefs.current.filter(Boolean)
@@ -506,10 +546,11 @@ function ArtistMobile() {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) setActiveDay(Number(entry.target.dataset.index))
+          if (entry.isIntersecting)
+            setActiveDay(Number(entry.target.dataset.index))
         })
       },
-      { threshold: 0.5 }
+      { threshold: 0.5 },
     )
     pages.forEach((page) => observer.observe(page))
     return () => observer.disconnect()
@@ -518,50 +559,33 @@ function ArtistMobile() {
   const goToDay = (index) => {
     setActiveDay(index)
     const targetIdx = index % artists.length
-    pageRefs.current[targetIdx]?.scrollIntoView({ behavior: "smooth", block: "start" })
+    pageRefs.current[targetIdx]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
   }
 
   return (
-    <section ref={sectionRef} className="proshow-mobile" aria-label="Proshow artists mobile">
-      <div className="mobile-sticky" aria-hidden="true">
+    <section
+      ref={sectionRef}
+      className='proshow-mobile'
+      aria-label='Proshow artists mobile'
+    >
+      <div className='mobile-sticky' aria-hidden='true'>
         {artists.map((artist, index) => (
           <div
-            className="mobile-bg-layer"
+            className='mobile-bg-layer'
             key={`m-bg-${artist.name}`}
             ref={(el) => {
               mobileBgRefs.current[index] = el
             }}
           >
-            <img src={artist.background} alt="" />
+            <img src={artist.background} alt='' />
           </div>
         ))}
       </div>
 
-      <div className="mobile-pages">
-        <header className="mobile-header">
-          <img className="site-logo" src={`${assetPathPrefix}/32c3b.png`} alt="Tathva" />
-          <FestivalMark />
-          <button
-            className="menu-button"
-            type="button"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            <img src={`${assetPathPrefix}/4e2c4.svg`} alt="" />
-          </button>
-          {menuOpen && (
-            <nav className="mobile-menu" aria-label="Main navigation">
-              {NAV_LINKS.map((label, i) => (
-                <span key={label}>
-                  {i > 0 && <i>/</i>}
-                  <a href={`#${label.toLowerCase().split(" ")[0]}`}>{label}</a>
-                </span>
-              ))}
-            </nav>
-          )}
-        </header>
-
+      <div className='mobile-pages'>
         {artists.map((artist, index) => (
           <div
             key={artist.name}
@@ -569,30 +593,31 @@ function ArtistMobile() {
             ref={(el) => {
               pageRefs.current[index] = el
             }}
-            className="mobile-page"
+            className='mobile-page'
           >
-            <div className="mobile-body">
-              <nav className="mobile-days" aria-label="Performance days">
+            <div className='mobile-body'>
+              <nav className='mobile-days' aria-label='Performance days'>
                 {days.map((label, i) => (
                   <button
                     key={label}
-                    type="button"
+                    type='button'
                     aria-selected={activeDay === i}
-                    className={activeDay === i ? "is-active" : ""}
+                    className={activeDay === i ? 'is-active' : ''}
                     onClick={() => goToDay(i)}
                   >
                     {label}
                   </button>
                 ))}
               </nav>
-              <div className="mobile-stage">
+              <div className='mobile-stage'>
                 <ArtistBoard artist={artist} />
               </div>
             </div>
-            <h2 className="mobile-name">{artist.name}</h2>
-            <p className="mobile-desc">
-              Brace yourselves for a magical night as the legendary {artist.name}{" "}
-              takes the stage. Get ready to sing, sway, and make memories!
+            <h2 className='mobile-name'>{artist.name}</h2>
+            <p className='mobile-desc'>
+              Brace yourselves for a magical night as the legendary{' '}
+              {artist.name} takes the stage. Get ready to sing, sway, and make
+              memories!
             </p>
           </div>
         ))}
@@ -620,22 +645,23 @@ export default function App() {
     if (!section) return
     const targetIdx = dayIndex % artists.length
     const rect = section.getBoundingClientRect()
-    const scroller = section.closest(".main-scroll") || window
-    
+    const scroller = section.closest('.main-scroll') || window
+
     // Calculates position based on GSAP scroll progress formula
-    const scrollStart = (scroller === window ? window.scrollY : scroller.scrollTop) + rect.top
+    const scrollStart =
+      (scroller === window ? window.scrollY : scroller.scrollTop) + rect.top
     const totalScroll = rect.height - window.innerHeight
     const targetProgress = targetIdx / (artists.length - 1)
     const targetScroll = scrollStart + totalScroll * targetProgress
 
     scroller.scrollTo({
       top: targetScroll,
-      behavior: "smooth",
+      behavior: 'smooth',
     })
   }
 
   return (
-    <div className="artist-root">
+    <div className='artist-root'>
       <style jsx global>{`
         @font-face {
           font-family: 'VCR OSD Mono';
@@ -694,29 +720,33 @@ export default function App() {
         }
 
         @font-face {
-          font-family: "Bebas Neue:Regular";
-          src: url("https://static.figma.com/font/BebasNeue-Regular_1") format("woff2");
+          font-family: 'Bebas Neue:Regular';
+          src: url('https://static.figma.com/font/BebasNeue-Regular_1')
+            format('woff2');
           font-style: normal;
           font-weight: 400;
         }
 
         @font-face {
-          font-family: "Hammersmith One:Regular";
-          src: url("https://static.figma.com/font/HammersmithOne-Regular_2") format("woff2");
+          font-family: 'Hammersmith One:Regular';
+          src: url('https://static.figma.com/font/HammersmithOne-Regular_2')
+            format('woff2');
           font-style: normal;
           font-weight: 400;
         }
 
         @font-face {
-          font-family: "La Belle Aurore:Regular";
-          src: url("https://static.figma.com/font/LaBelleAurore_1") format("woff2");
+          font-family: 'La Belle Aurore:Regular';
+          src: url('https://static.figma.com/font/LaBelleAurore_1')
+            format('woff2');
           font-style: normal;
           font-weight: 400;
         }
 
         @font-face {
-          font-family: "Mona Sans:Regular";
-          src: url("https://static.figma.com/font/MonaSans_wdth_wght__1") format("woff2");
+          font-family: 'Mona Sans:Regular';
+          src: url('https://static.figma.com/font/MonaSans_wdth_wght__1')
+            format('woff2');
           font-style: normal;
           font-weight: 400;
         }
@@ -823,96 +853,6 @@ export default function App() {
           height: 76%;
         }
 
-        .site-header {
-          position: absolute;
-          z-index: 4;
-          top: 0;
-          left: 0;
-          display: flex;
-          align-items: center;
-          width: 100%;
-          height: 94px;
-          padding: 0 clamp(18px, 3.1vw, 48px);
-          gap: clamp(18px, 2.4vw, 36px);
-        }
-
-        .site-logo {
-          width: 55px;
-          height: 46px;
-          object-fit: contain;
-        }
-
-        .menu-button {
-          display: grid;
-          width: 28px;
-          height: 28px;
-          padding: 0;
-          place-items: center;
-          border: 0;
-          background: transparent;
-          cursor: pointer;
-        }
-
-        .menu-button img {
-          width: 27px;
-          height: 18px;
-        }
-
-        .site-header nav {
-          display: flex;
-          align-items: center;
-          gap: clamp(9px, 1.2vw, 18px);
-          font-family: "Hammersmith One:Regular", sans-serif;
-          font-size: clamp(7px, 0.73vw, 12px);
-          white-space: nowrap;
-        }
-
-        .site-header nav a {
-          text-decoration: none;
-        }
-
-        .site-header nav i {
-          font-style: normal;
-          opacity: 0.85;
-        }
-
-        .festival-mark {
-          position: absolute;
-          top: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 100px;
-          height: 34px;
-          background: #464646;
-          clip-path: polygon(12% 0, 88% 0, 100% 50%, 88% 100%, 12% 100%, 0 50%);
-          font-family: "Bebas Neue:Regular", sans-serif;
-          line-height: 0.8;
-          text-align: center;
-          flex-direction: column;
-        }
-
-        .festival-mark span {
-          font-size: 12px;
-        }
-
-        .festival-mark small {
-          font-size: 5px;
-          letter-spacing: 0.22em;
-        }
-
-        @media (min-width: 769px) {
-          .proshow-section > .festival-mark {
-            position: sticky;
-            z-index: 2;
-            grid-column: 1 / 2;
-            grid-row: 1 / -1;
-            justify-self: end;
-            align-self: start;
-            transform: translateX(50%);
-          }
-        }
-
         .schedule-card {
           position: absolute;
           z-index: 3;
@@ -934,7 +874,7 @@ export default function App() {
           height: 44px;
           padding: 6px 16px;
           border-bottom: 1px solid #d63d5e;
-          font-family: "Arial Black", sans-serif;
+          font-family: 'Arial Black', sans-serif;
         }
 
         .schedule-days button {
@@ -946,7 +886,9 @@ export default function App() {
           font-size: 13px;
           font-weight: 900;
           text-transform: uppercase;
-          transition: background-color 0.3s ease, color 0.3s ease;
+          transition:
+            background-color 0.3s ease,
+            color 0.3s ease;
           color: #fff;
           cursor: pointer;
         }
@@ -961,7 +903,7 @@ export default function App() {
           padding: 12px 24px 22px;
           font-size: 13px;
           line-height: 1.28;
-          font-variation-settings: "wdth" 100;
+          font-variation-settings: 'wdth' 100;
           transition: opacity 0.25s ease;
         }
 
@@ -1089,7 +1031,7 @@ export default function App() {
           left: 65%;
           margin: 0;
           color: white;
-          font-family: "La Belle Aurore:Regular", cursive;
+          font-family: 'La Belle Aurore:Regular', cursive;
           font-size: clamp(28px, 3.2vw, 52px);
           transform: rotate(-10deg);
         }
@@ -1138,8 +1080,7 @@ export default function App() {
 
           .global-bg-container,
           .featured-column,
-          .artist-list,
-          .proshow-section > .festival-mark {
+          .artist-list {
             display: none;
           }
 
@@ -1175,47 +1116,6 @@ export default function App() {
             margin-top: -100dvh;
           }
 
-          .mobile-header {
-            position: sticky;
-            top: 0;
-            z-index: 2;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 70px;
-            padding: 0 12px;
-          }
-
-          .mobile-header .festival-mark {
-            right: 50%;
-            transform: translateX(50%);
-          }
-
-          .mobile-menu {
-            position: absolute;
-            top: 70px;
-            left: 12px;
-            right: 12px;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            padding: 10px;
-            border: 1px solid #323231;
-            border-radius: 7px;
-            background: #202020;
-            font-family: "Hammersmith One:Regular", sans-serif;
-            font-size: 11px;
-          }
-
-          .mobile-menu a {
-            text-decoration: none;
-          }
-
-          .mobile-menu i {
-            font-style: normal;
-            opacity: 0.85;
-          }
-
           .mobile-page {
             min-height: 100dvh;
             display: flex;
@@ -1247,7 +1147,7 @@ export default function App() {
             border-radius: 7px;
             background: transparent;
             color: #fff;
-            font-family: "Bebas Neue", "Bebas Neue:Regular", sans-serif;
+            font-family: 'Bebas Neue', 'Bebas Neue:Regular', sans-serif;
             font-size: 19px;
             letter-spacing: 0.04em;
             writing-mode: vertical-rl;
@@ -1293,7 +1193,7 @@ export default function App() {
             z-index: 1;
             margin: 18px 0 0;
             color: #fff;
-            font-family: "Bebas Neue", "Bebas Neue:Regular", sans-serif;
+            font-family: 'Bebas Neue', 'Bebas Neue:Regular', sans-serif;
             font-size: 72px;
             line-height: 0.95;
           }
@@ -1311,35 +1211,35 @@ export default function App() {
       `}</style>
       <main
         ref={sectionRef}
-        className="proshow-section"
-        id="proshow"
+        className='proshow-section'
+        id='proshow'
         style={{ minHeight: `${artists.length * 300}dvh` }}
       >
         {/* Global Backgrounds - Spans entire width, sticky */}
-        <div className="global-bg-container">
+        <div className='global-bg-container'>
           {artists.map((artist, index) => (
             <div
-              className="featured-bg-layer"
+              className='featured-bg-layer'
               key={`bg-${artist.name}`}
               ref={(el) => {
                 bgRefs.current[index] = el
               }}
             >
               <img
-                className="featured-background"
+                className='featured-background'
                 src={artist.background}
-                alt=""
+                alt=''
               />
             </div>
           ))}
         </div>
 
-        <section className="featured-column" aria-label="Featured artist">
-          <div className="featured-viewport">
+        <section className='featured-column' aria-label='Featured artist'>
+          <div className='featured-viewport'>
             {/* Portraits - separate layer, these slide */}
             {artists.map((artist, index) => (
               <div
-                className="featured-portrait-layer"
+                className='featured-portrait-layer'
                 key={`portrait-${artist.name}`}
                 ref={(el) => {
                   portraitRefs.current[index] = el
@@ -1352,10 +1252,8 @@ export default function App() {
                 />
               </div>
             ))}
-            <Header />
-
             {/* Static Schedule Card positioned at the top; active tab switches with scroll */}
-            <div className="schedule-layer">
+            <div className='schedule-layer'>
               <ScheduleCard
                 artist={artists[activeArtistIndex]}
                 activeIndex={activeArtistIndex}
@@ -1365,14 +1263,11 @@ export default function App() {
           </div>
         </section>
 
-        {/* Desktop badge */}
-        <FestivalMark />
-
-        <section className="artist-list" aria-label="Proshow artists">
-          <div className="artist-list-viewport">
+        <section className='artist-list' aria-label='Proshow artists'>
+          <div className='artist-list-viewport'>
             {artists.map((artist, index) => (
               <div
-                className="artist-board-layer"
+                className='artist-board-layer'
                 key={`board-layer-${artist.name}`}
                 ref={(el) => {
                   boardRefs.current[index] = el

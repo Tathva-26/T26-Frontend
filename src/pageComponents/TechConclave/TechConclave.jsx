@@ -1,12 +1,15 @@
 "use client";
 import React from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const background = "/images/techconclave/background.png";
 const person1 = "/images/techconclave/person2.png";
 const person2 = "/images/techconclave/person1.png";
 const robot = "/images/techconclave/robot.png";
 const logo = "/images/techconclave/logo.png";
-const smallStar = "/images/techconclave/smallstar.png";
 const bigStar = "/images/techconclave/bigstar.png";
 
 /*
@@ -146,6 +149,60 @@ raf = requestAnimationFrame(loop);
   return ref;
 }
 
+function useIntroAnimation(ref) {
+  React.useLayoutEffect(() => {
+    const root = ref.current;
+    if (!root || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const scroller = root.closest(".main-scroll");
+
+    const context = gsap.context(() => {
+      const title = root.querySelectorAll(".tc-animate-title");
+      const cards = root.querySelectorAll(".tc-animate-card");
+      const meta = root.querySelectorAll(".tc-animate-meta");
+      const robot = root.querySelector(".tc-animate-robot");
+      const logo = root.querySelector(".tc-animate-logo");
+
+      gsap.set([...title, ...cards, ...meta, logo].filter(Boolean), { autoAlpha: 0 });
+      gsap.set(title, { x: -32 });
+      gsap.set(cards, { y: 18 });
+      gsap.set(meta, { y: 12 });
+      if (logo) gsap.set(logo, { scale: 0.86, transformOrigin: "center" });
+
+      const reveal = gsap.timeline({
+        defaults: { ease: "power2.out" },
+        scrollTrigger: {
+          trigger: root,
+          scroller,
+          start: "top 78%",
+          once: true,
+        },
+      });
+
+      reveal
+        .to(title, { autoAlpha: 1, x: 0, duration: 0.65, stagger: 0.08 })
+        .to(cards, { autoAlpha: 1, y: 0, duration: 0.45, stagger: 0.06 }, "-=0.25")
+        .to(meta, { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.08 }, "-=0.2")
+        .to(logo, { autoAlpha: 1, scale: 1, duration: 0.55 }, "-=0.3");
+
+      if (robot) {
+        gsap.to(robot, {
+          yPercent: -2.5,
+          ease: "none",
+          scrollTrigger: {
+            trigger: root,
+            scroller,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1.2,
+          },
+        });
+      }
+    }, root);
+
+    return () => context.revert();
+  }, [ref]);
+}
+
 /* ───────────────────────── SPEAKER CARD HELPERS ───────────────────────── */
 
 /* Writes the pointer position into CSS vars so the spotlight follows the
@@ -177,7 +234,7 @@ function DeskTile({ tile, src, alt, col }) {
 
   return (
     <div
-      className={`tc-card tc-card--desk ${col}`}
+      className={`tc-card tc-card--desk tc-animate-card ${col}`}
       style={box(...tile.img)}
       tabIndex={0}
       onPointerMove={trackLight}
@@ -196,6 +253,7 @@ function DeskTile({ tile, src, alt, col }) {
 
 function DesktopPoster() {
   const driftRef = useScrollDrift();
+  useIntroAnimation(driftRef);
 
   return (
     <main
@@ -251,20 +309,19 @@ function DesktopPoster() {
         </svg>
 
         {/* robot */}
-        <img className="tc-abs-robot robot-img tc-deco" style={box(-270, -70, 970, 950)} src={robot} alt="Waving robot" />
+          <img className="tc-abs-robot robot-img tc-deco tc-animate-robot" style={box(-270, -70, 970, 950)} src={robot} alt="Waving robot" />
 
         {/* stars */}
         <img className="tc-abs tc-deco" style={box(-180, -30, 200, 210)} src={bigStar} alt="" />
-        <img className="tc-abs tc-deco" style={box(-140, 130, 115, 130)} src={smallStar} alt="" />
         {/* right column */}
         <div className="tc-abs tc-hero-heading" style={box(1080, 230, 510, 450)} aria-label="Tech Conclave title">
-          <span className="tc-hero-word">
+          <span className="tc-hero-word tc-animate-title">
             <span className="tc-hero-tech">TECH</span>
             <span className="tc-hero-conclave">CONCLAVE</span>
           </span>
         </div>
-        <img className="tc-abs logo-img tc-deco" style={box(970, 510, 220, 220)} src={logo} alt="Tech Conclave" />
-        <p className="tc-abs tc-tagline" style={box(1112, 328, 420, 170)}>
+        <img className="tc-abs logo-img tc-deco tc-animate-logo" style={box(970, 510, 220, 220)} src={logo} alt="Tech Conclave" />
+        <p className="tc-abs tc-tagline tc-animate-meta" style={box(1112, 328, 420, 170)}>
           A space for inspiring
           <br />
           personalities engaging
@@ -318,6 +375,7 @@ const mbox = (x, y, w, h) => ({
 
 function MobilePoster() {
   const driftRef = useScrollDrift();
+  useIntroAnimation(driftRef);
 
   // interleaved so flex-wrap lands them green/pink, yellow/red, blue/purple
   const people = womanTiles.flatMap((w, i) => [
@@ -331,7 +389,7 @@ function MobilePoster() {
         {/* ── visual group: title + illustration + eyebrow ── */}
         <div className="tc-m-panel tc-m-panel--visual">
           <div className="tc-m-titlewrap">
-            <h1 className="tc-m-title">
+            <h1 className="tc-m-title tc-animate-title">
               <span className="tc-m-tech">TECH</span>
               <span className="tc-m-conclave">CONCLAVE</span>
             </h1>
@@ -344,7 +402,7 @@ function MobilePoster() {
             <div className="tc-abs tc-m-people" style={mbox(215, -9, 174, 231)} role="list" aria-label="Speakers">
   {people.map((t, i) => (
     <div
-      className={`tc-m-tile tc-card ${i % 2 === 0 ? "tc-col-left" : "tc-col-right"}`}
+      className={`tc-m-tile tc-card tc-animate-card ${i % 2 === 0 ? "tc-col-left" : "tc-col-right"}`}
       style={{ "--tile-color": t.color }}
       key={i}
       role="listitem"
@@ -358,22 +416,21 @@ function MobilePoster() {
   ))}
 </div>
 
-            <img className="tc-abs tc-m-robot tc-deco" style={mbox(-75, 35, 350, 350)} src={robot} alt="Waving robot" />
+            <img className="tc-abs tc-m-robot tc-deco tc-animate-robot" style={mbox(-75, 35, 350, 350)} src={robot} alt="Waving robot" />
             <img className="tc-abs tc-deco" style={mbox(-37, -15, 80, 80)} src={bigStar} alt="" />
-            <img className="tc-abs tc-deco" style={mbox(-21, 50, 50, 50)} src={smallStar} alt="" />
           </div>
 
-          <p className="tc-m-eyebrow">TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.</p>
+          <p className="tc-m-eyebrow tc-animate-meta">TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.</p>
         </div>
 
         {/* ── info group: date + logo lockup + tagline ── */}
         <div className="tc-m-panel tc-m-panel--info">
-          <div className="tc-m-date">
+          <div className="tc-m-date tc-animate-meta">
             <span className="tc-m-oct">OCT</span>
             <span className="tc-m-days">10-11</span>
           </div>
 
-          <div className="tc-m-footer">
+          <div className="tc-m-footer tc-animate-meta">
             <h2 className="tc-m-subheading">
               <span className="tc-m-subheading-tech">tech</span>
               <span className="tc-m-subheading-conclave">conclave</span>
@@ -406,6 +463,7 @@ function TabletPlus({ style, rotate = 0 }) {
 
 function TabletPoster() {
   const driftRef = useScrollDrift();
+  useIntroAnimation(driftRef);
 
   const speakers = womanTiles.flatMap((woman, index) => [
     { ...woman, img: person1 },
@@ -416,7 +474,7 @@ function TabletPoster() {
     <main ref={driftRef} className="tc-t-page" style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})` }}>
       <section className="tc-t-stage" aria-label="Tech Conclave, October 10-11">
         <div className="tc-t-visual">
-          <h1 className="tc-t-title">
+          <h1 className="tc-t-title tc-animate-title">
             <span className="tc-t-tech">TECH</span>
             <span className="tc-t-conclave">CONCLAVE</span>
           </h1>
@@ -427,7 +485,7 @@ function TabletPoster() {
             <div className="tc-t-abs tc-t-speakers" style={mbox(215, -9, 174, 231)} role="list" aria-label="Speakers">
   {speakers.map((speaker, index) => (
     <div
-      className={`tc-t-speaker tc-card ${index % 2 === 0 ? "tc-col-left" : "tc-col-right"}`}
+      className={`tc-t-speaker tc-card tc-animate-card ${index % 2 === 0 ? "tc-col-left" : "tc-col-right"}`}
       style={{ "--tile-color": speaker.color }}
       key={index}
       role="listitem"
@@ -440,28 +498,27 @@ function TabletPoster() {
     </div>
   ))}
 </div>
-            <img className="tc-t-abs tc-t-robot tc-deco" style={mbox(-100, 5, 400, 400)} src={robot} alt="Waving robot" />
+            <img className="tc-t-abs tc-t-robot tc-deco tc-animate-robot" style={mbox(-100, 5, 400, 400)} src={robot} alt="Waving robot" />
             <img className="tc-t-abs tc-t-star tc-deco" style={mbox(-55, -20, 110, 110)} src={bigStar} alt="" />
-            <img className="tc-t-abs tc-t-star tc-deco" style={mbox(-34, 50, 70, 70)} src={smallStar} alt="" />
           </div>
 
 
-<p className="tc-t-eyebrow">
+<p className="tc-t-eyebrow tc-animate-meta">
   TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.
 </p>
         </div>
 
         <div className="tc-t-info">
           <div className="tc-t-lockup">
-            <h2 className="tc-t-name">
+            <h2 className="tc-t-name tc-animate-meta">
               <span className="tc-t-name-tech">TECH</span>{" "}
               <span className="tc-t-name-conclave">CONCLAVE</span>
             </h2>
-            <p className="tc-t-description">
+            <p className="tc-t-description tc-animate-meta">
               A space for inspiring personalities, engaging conversations, and unforgettable experiences.
             </p>
           </div>
-          <div className="tc-t-date" aria-label="October 10-11">
+          <div className="tc-t-date tc-animate-meta" aria-label="October 10-11">
             <span className="tc-t-oct">OCT</span>
             <span className="tc-t-days">10-11</span>
           </div>
@@ -499,7 +556,7 @@ html, body { margin: 0; padding: 0; }
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  overflow-x: hidden; /* Prevents horizontal wiggle without locking vertical scroll */
+  overflow-x: clip; /* Clips horizontal artwork without creating a nested y scroller */
 }
 
 /* toggle desktop vs mobile layout — no JS, no hydration flicker */
@@ -812,7 +869,7 @@ text-align: center;
 .tc-t-page {
   min-height: 100vh;
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   background-color: #101014;
   background-size: cover;
   background-position: center;
