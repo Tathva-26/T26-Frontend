@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import ProfilePage from '@/pageComponents/ProfilePage/ProfilePage'
 import HorizontalGallery from '@/pageComponents/HorizontalGallery/HorizontalGallery'
 import ProshowCarousel from '@/pageComponents/ProshowCarousel/ProshowCarousel'
