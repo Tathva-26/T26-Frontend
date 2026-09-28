@@ -1,5 +1,5 @@
 "use client";
-
+import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -168,11 +168,13 @@ export const Hero = ({ onEnter }) => {
     const designScaleRef = useRef(1);
 
     const handleEnter = () => {
-        if (hasEntered) return;
+        if (redirectedRef.current) return;
+        redirectedRef.current = true;
         setHasEntered(true);
         if (typeof onEnter === "function") {
             onEnter();
         }
+        router.push("/page2");
     };
 
     // Route through a ref so the scroll trigger always calls the latest
@@ -181,7 +183,12 @@ export const Hero = ({ onEnter }) => {
     useEffect(() => {
         handleEnterRef.current = handleEnter;
     });
+    const router = useRouter();
+    const redirectedRef = useRef(false);
 
+    useEffect(() => {
+        router.prefetch("/page2");
+    }, [router]);
     // Enter click: ripple at the click point, then animate scrollTop to
     // the bottom of the runway so the cinematic plays. The scroll
     // watcher fires handleEnter at progress > 0.985; onComplete
@@ -466,11 +473,25 @@ export const Hero = ({ onEnter }) => {
         createParallaxLayer(girlRef, L.girl, MOTION.girl);
 
         if (portalRef.current) {
+            const portalCoversViewport = () => {
+                const p = portalRef.current?.getBoundingClientRect();
+                const v = viewportRef.current?.getBoundingClientRect();
+                if (!p || !v) return false;
+                return (
+                    p.left <= v.left + 1 &&
+                    p.right >= v.right - 1 &&
+                    p.top <= v.top + 1 &&
+                    p.bottom >= v.bottom - 1
+                );
+            };
             gsap.timeline({
                 scrollTrigger: {
                     ...scrollTriggerBase,
                     scrub: MOTION.portal.scrub,
                     invalidateOnRefresh: true,
+                },
+                onUpdate: () => {
+                    if (portalCoversViewport()) handleEnterRef.current?.();
                 },
             }).fromTo(
                 portalRef.current,
