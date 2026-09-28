@@ -2,7 +2,7 @@ import './globals.css'
 
 export const metadata = {
   title: "Tech Conclave - Tathva '26",
-  description: "Tech Conclave - Talks, Shows, Conversations, Experiences",
+  description: 'Tech Conclave - Talks, Shows, Conversations, Experiences',
 }
 
 export default function RootLayout({ children }) {

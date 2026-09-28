@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { gsap } from 'gsap'
 import { Jockey_One } from 'next/font/google'
@@ -232,7 +232,7 @@ function PortalText({ text }) {
   )
 }
 
-const allMenuItems = [...leftMenu, ...rightMenu];
+const allMenuItems = [...leftMenu, ...rightMenu]
 
 export default function TathvaMenu() {
   const [isOpen, setIsOpen] = useState(false)
@@ -250,17 +250,17 @@ export default function TathvaMenu() {
   // Close menus on Escape key
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        if (isMobileOpen) setIsMobileOpen(false);
+      if (e.key === 'Escape') {
+        if (isMobileOpen) setIsMobileOpen(false)
         if (isOpen && timelineRef.current) {
-          timelineRef.current.reverse();
-          setIsOpen(false);
+          timelineRef.current.reverse()
+          setIsOpen(false)
         }
       }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isMobileOpen, isOpen]);
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isMobileOpen, isOpen])
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
@@ -410,7 +410,7 @@ export default function TathvaMenu() {
           MOBILE NAVIGATION HEADER & HAMBURGER (Mobile only)
       ================================================= */}
       <header
-        className="
+        className='
           pointer-events-auto
           fixed
           top-0
@@ -426,15 +426,15 @@ export default function TathvaMenu() {
           border-b
           border-white/10
           md:hidden
-        "
+        '
       >
         {/* Left: Hamburger Button */}
         <button
-          type="button"
+          type='button'
           onClick={() => setIsMobileOpen((prev) => !prev)}
-          aria-label={isMobileOpen ? "Close menu" : "Open menu"}
+          aria-label={isMobileOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={isMobileOpen}
-          className="
+          className='
             flex
             h-10
             w-10
@@ -446,10 +446,10 @@ export default function TathvaMenu() {
             hover:bg-white/10
             focus:outline-none
             transition-colors
-          "
+          '
         >
-          <span className="sr-only">Toggle navigation menu</span>
-          <div className="relative flex h-4 w-5 flex-col justify-between">
+          <span className='sr-only'>Toggle navigation menu</span>
+          <div className='relative flex h-4 w-5 flex-col justify-between'>
             <span
               className={`
                 h-0.5
@@ -459,7 +459,7 @@ export default function TathvaMenu() {
                 transition-all
                 duration-300
                 ease-in-out
-                ${isMobileOpen ? "translate-y-[7px] rotate-45" : ""}
+                ${isMobileOpen ? 'translate-y-[7px] rotate-45' : ''}
               `}
             />
             <span
@@ -471,7 +471,7 @@ export default function TathvaMenu() {
                 transition-all
                 duration-200
                 ease-in-out
-                ${isMobileOpen ? "opacity-0 scale-x-0" : "opacity-100"}
+                ${isMobileOpen ? 'opacity-0 scale-x-0' : 'opacity-100'}
               `}
             />
             <span
@@ -483,7 +483,7 @@ export default function TathvaMenu() {
                 transition-all
                 duration-300
                 ease-in-out
-                ${isMobileOpen ? "-translate-y-[7px] -rotate-45" : ""}
+                ${isMobileOpen ? '-translate-y-[7px] -rotate-45' : ''}
               `}
             />
           </div>
@@ -496,9 +496,9 @@ export default function TathvaMenu() {
       <div
         onClick={() => setIsMobileOpen(false)}
         style={{
-          backgroundColor: "rgba(0, 0, 0, 0.35)",
-          backdropFilter: "blur(3px)",
-          WebkitBackdropFilter: "blur(3px)",
+          backgroundColor: 'rgba(0, 0, 0, 0.35)',
+          backdropFilter: 'blur(3px)',
+          WebkitBackdropFilter: 'blur(3px)',
         }}
         className={`
           pointer-events-auto
@@ -510,9 +510,9 @@ export default function TathvaMenu() {
           duration-[250ms]
           ease
           md:hidden
-          ${isMobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
+          ${isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
         `}
-        aria-hidden="true"
+        aria-hidden='true'
       />
 
       {/* =================================================
@@ -538,11 +538,11 @@ export default function TathvaMenu() {
           duration-300
           ease-in-out
           md:hidden
-          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
         <nav
-          className="
+          className='
             flex-1
             overflow-y-auto
             px-4
@@ -552,7 +552,7 @@ export default function TathvaMenu() {
             flex-col
             items-start
             gap-[14px]
-          "
+          '
         >
           {allMenuItems.map((item, idx) => (
             <Link
@@ -562,7 +562,7 @@ export default function TathvaMenu() {
               style={{
                 transitionDelay: isMobileOpen
                   ? `${(0.05 + idx * 0.06).toFixed(2)}s`
-                  : "0s",
+                  : '0s',
               }}
               className={`
                 group
@@ -590,16 +590,16 @@ export default function TathvaMenu() {
                 font-jockey
                 ${
                   isMobileOpen
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-[10px]"
+                    ? 'opacity-100 translate-y-0'
+                    : 'opacity-0 translate-y-[10px]'
                 }
               `}
             >
               <img
-                src="/images/menu/leftwave.png"
-                alt=""
+                src='/images/menu/leftwave.png'
+                alt=''
                 draggable={false}
-                className="
+                className='
                   pointer-events-none
                   h-[12px]
                   w-auto
@@ -610,16 +610,16 @@ export default function TathvaMenu() {
                   group-hover:opacity-100
                   group-hover:translate-x-0
                   -translate-x-1
-                "
+                '
               />
 
               <span>{item.label}</span>
 
               <img
-                src="/images/menu/rightwave.png"
-                alt=""
+                src='/images/menu/rightwave.png'
+                alt=''
                 draggable={false}
-                className="
+                className='
                   pointer-events-none
                   h-[12px]
                   w-auto
@@ -630,7 +630,7 @@ export default function TathvaMenu() {
                   group-hover:opacity-100
                   group-hover:translate-x-0
                   translate-x-1
-                "
+                '
               />
             </Link>
           ))}
@@ -684,7 +684,7 @@ export default function TathvaMenu() {
               onClick={() => {
                 if (isOpen) toggleMenu()
               }}
-              className="
+              className='
                 group
                 relative
                 flex
@@ -703,7 +703,7 @@ export default function TathvaMenu() {
                 duration-200
                 hover:text-white
                 font-jockey
-              "
+              '
             >
               <img
                 src='/images/menu/leftwave.png'
@@ -788,7 +788,7 @@ export default function TathvaMenu() {
               onClick={() => {
                 if (isOpen) toggleMenu()
               }}
-              className="
+              className='
                 group
                 relative
                 flex
@@ -807,7 +807,7 @@ export default function TathvaMenu() {
                 duration-200
                 hover:text-white
                 font-jockey
-              "
+              '
             >
               <img
                 src='/images/menu/leftwave.png'
