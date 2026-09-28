@@ -5,204 +5,78 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import styles from "./Hero.module.css";
-// import AtmosphericMist from "@/components/AtmosphericMist";
+
+// Register once at module level so ScrollTrigger.refresh() is safe to
+// call from any effect, regardless of effect order.
+gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 const assetBase = "/images/Hero/";
 
 // ---------------------------------------------------------------------
-// SCENE LAYOUT — every position, size and parallax number lives here.
-// Tweak a value and both the element's placement and its scroll motion
-// update together; nothing else in the file needs to change.
-//
-// Position/size are in the .scene design-space (rem). .scene is a
-// fixed 88.3125 × 49.0625rem canvas, uniformly scaled to cover the
-// real viewport (see the layout effect below) — so a fixed number here
-// renders proportionally consistent across every screen size, the same
-// way the original Figma-exported UI (Enter button, etc.) already
-// works.
-//
-// Parallax numbers feed the scroll tween further down and are
-// depth-ordered per the parallax notes: driftY/scaleTo should get
-// smaller the farther a layer reads from the camera, and larger the
-// closer it reads to the camera — NOT based on how visually important
-// the element is. Roughly, from nearest camera to farthest:
-//   girl (foreground, in front of the portal)
-//   ground (the portal's own depth — it's standing on it)
-//   bgrocks (a farther ridge, just above the near ground)
-//   t1 / a2 / t3 / h4 / a5 (the five title glyphs, far behind the portal)
-//   island (background — "really far away")
-//   background (the environment plate itself — farthest of all)
-//
-// driftX: sideways drift over the scroll (px). 0 = no horizontal
-//   movement. Use this for a "camera passes beside it" effect — the
-//   girl uses it to slide off to one side rather than just scaling in
-//   place, so it reads as the camera moving past her.
-// z / zLift: z-index at rest, and how much to add to it by the end of
-//   the scroll. As layers scale up they can start overlapping other
-//   layers in new ways that weren't true at rest — zLift lets a layer
-//   climb (or a future layer sink, with a negative value) through the
-//   stack over the course of the scroll instead of being stuck at one
-//   fixed paint order the whole time.
-//
-// How these numbers get animated (the time-lag/easing "feel" applied
-// on top of them) is a separate concern — see MOTION below.
+// SCENE LAYOUT (desktop) — positions/sizes in .scene design-space rem
+// (88.3125 x 49.0625rem canvas, cover-scaled to the viewport).
+// driftX/driftY (px) and scaleTo drive the scroll parallax. Depth order,
+// nearest to farthest: girl, ground/portal, bgrocks, t1, island,
+// background. z / zLift = z-index at rest / added by end of scroll.
 // ---------------------------------------------------------------------
 const LAYOUT = {
     background: {
-        // The environment plate (background.png) — farther than the
-        // island, so it should move even less. Just enough drift to
-        // read as physically distant rather than glued to the viewport.
         driftY: -1, scaleTo: 1.02,
         z: 0, zLift: 0,
     },
     island: {
-        // Distant, upper-right of center — barely moves at all.
-        top: 4.2, left: 42.8, width: 32, height: 37,
+        top: 4.2, left: 38.8, width: 32, height: 37,
         driftX: 100, driftY: -100, scaleTo: 1.04,
         z: 1, zLift: 0,
     },
     ground: {
-        // The portal's own depth. Sized to run off the bottom of the
-        // canvas (height reaches well past the 49.0625rem canvas
-        // height) so its own image edge is never visible on screen —
-        // it just reads as ground continuing out of frame.
         top: 45, left: 5, width: 88.3125, height: 26,
         driftX: 0, driftY: -4, scaleTo: 1.02,
         z: 2, zLift: 0,
     },
-    // clean up hanin
     bgrocks: {
-        // A farther rock/ground layer that only pokes up above the
-        // near ground's top edge (23rem vs. ground's 29rem) — reads as
-        // a distant ridge rather than another copy of the same rocks.
-        // Behind both the ground and the portal (see the CSS).
-        top:42, left: 0, width: 88.3125, height: 14,
+        top: 42, left: 0, width: 88.3125, height: 14,
         driftX: 0, driftY: -2, scaleTo: 1.25,
         z: 1, zLift: 0,
     },
-    // The old single "Tathva" <h1> is now five separate glyphs
-    // (T1/A2/T3/H4/A5 — drop them in public/images/Hero/) so each
-    // letter can be positioned, sized and timed on its own instead of
-    // moving as one rigid text block. Same depth as the old title (far
-    // behind the portal, in front of the island): z stays 3, and
-    // driftY/scaleTo stay close to what the old title used (driftY:
-    // -70, scaleTo: ~1.95). driftX increases left-to-right so the row
-    // fans out a little as it scales, rather than sliding as one flat
-    // block. top/left/width/height lay the five letters out in a row
-    // roughly where the old centered title sat — purely a first guess,
-    // same as every number below. Tune freely.
-    //
-    // Only T1 is actually shown (it renders the full "TATHVA" wordmark
-    // on its own); a2/t3/h4/v5/a5 are kept for reference but are not
-    // required to be visible or individually responsive.
+    // T1 renders the full "TATHVA" wordmark on its own.
     t1: {
         top: 18.5, left: 1, width: 77, height: 20.6,
         driftX: 0, driftY: -1065, scaleTo: 5.85,
         z: 3, zLift: 0,
     },
-    //clean up rabee
-    // a2: {
-    //     top: 100.5, left: 22, width: 10, height: 14.6,
-    //     driftX: 160, driftY: -65, scaleTo: 1.85,
-    //     z: 3, zLift: 0,
-    // },
-    // t3: {
-    //     top: 100.5, left: 30, width: 10, height: 14.6,
-    //     driftX: 160, driftY: -65, scaleTo: 1.85,
-    //     z: 3, zLift: 0,
-    // },
-    // h4: {
-    //     top: 100.5, left: 42, width: 9, height: 13.6,
-    //     driftX: 160, driftY: -65, scaleTo: 1.85,
-    //     z: 3, zLift: 0,
-    // },
-    // v5: {
-    //     top: 100.5, left: 51, width: 11, height: 14.6,
-    //     driftX: 160, driftY: -65, scaleTo: 1.85,
-    //     z: 3, zLift: 0,
-    // },
-    // a5: {
-    //     top: 100.5, left: 60, width: 10, height: 14.6,
-    //     driftX: 160, driftY: -65, scaleTo: 1.85,
-    //     z: 3, zLift: 0,
-    // },
     portal: {
         top: 31.5, left: 36.25, width: 9.125, height: 20.1875,
-        zoomMultiplier: 1.04, // slight overshoot so it fully covers the viewport at scroll end
+        zoomMultiplier: 1.04, // slight overshoot so it fully covers the viewport
         z: 4, zLift: 0,
     },
     girl: {
-        // Foreground, standing to one side, watching the portal rather
-        // than blocking it. Closest layer to the camera, so the
-        // strongest parallax in the scene. driftX carries her sideways
-        // as the camera zooms in level with her and then passes —
-        // flip the sign to send her the other way.
-        top: 36, left: 18.5, width: 54, height:15,
+        top: 36, left: 18.5, width: 54, height: 15,
         driftX: 1100, driftY: 1500, scaleTo: 15.55,
         z: 5, zLift: 10,
     },
 };
 
 // ---------------------------------------------------------------------
-// MOTION RESPONSE — turns the flat LAYOUT numbers above into physical,
-// depth-aware motion instead of one linear scroll-progress ↦ value
-// mapping. Two independent knobs per layer, both driven straight by
-// GSAP/ScrollTrigger — no separate smoothing library, no virtual
-// scroll, no fighting CSS transitions:
-//
-//   scrub — how many seconds a layer takes to "catch up" to the real
-//           scroll position. This is GSAP's own scrub smoothing, just
-//           given a different value per layer instead of one blanket
-//           number for the whole scene. Low = tightly locked to the
-//           scrollbar, almost no perceived mass. High = something
-//           heavier that keeps drifting for a moment after the
-//           scrolling itself has settled. This is what gives each
-//           layer its own sense of inertia, per the parallax depth
-//           notes on LAYOUT: girl (nearest, heaviest momentum) >
-//           background/island (far, slow to react) > the title glyphs
-//           (moderate, deliberate) > ground/bgrocks/portal (closest to
-//           the "camera rig" itself, so kept tight/stable — the ground
-//           the user is standing on, and the destination they're
-//           scrolling toward, should never feel like they're wobbling
-//           independently of the scroll).
-//
-//   ease —  the *shape* of a layer's response across the scroll
-//           distance (not across time — that's scrub's job). Kept to
-//           gentle, monotonic sine/power eases so nothing overshoots,
-//           bounces, or reads as a decorative animation preset — the
-//           physical feeling should come from scrub's time-lag, this
-//           just avoids everything moving in a perfectly mechanical
-//           straight line.
-//
-// Both are independent of driftX/driftY/scaleTo/etc., so LAYOUT above
-// stays exactly as tunable as before: LAYOUT decides where something
-// goes, MOTION decides how it feels getting there.
+// MOTION RESPONSE — per-layer scrub (seconds of lag behind the real
+// scroll position = inertia) and ease (shape across scroll distance).
 // ---------------------------------------------------------------------
 const MOTION = {
-    background: { scrub: 1.1, ease: "sine.inOut" }, // farthest — extremely subtle, slow to react
-    island: { scrub: 0.85, ease: "sine.out" }, // distant — soft settle
-    ground: { scrub: 0.4, ease: "power1.out" }, // near the camera rig — restrained, kept tight
-    bgrocks: { scrub: 0.45, ease: "power1.inOut" }, // same idea, a touch softer than ground
-    glyph: { scrub: 0.6, ease: "power2.out" }, // T1/A2/T3/H4/V5/A5 — smooth, deliberate
-    portal: { scrub: 0.18, ease: "none" }, // the destination — extremely stable, precise
-    girl: { scrub: 1.3, ease: "power1.inOut" }, // nearest — strongest sense of inertia/momentum
-    chrome: { scrub: 0.0001, ease: "power1.out" }, // static UI fade — snappy, barely any smoothing
-    whiteout: { scrub: 0.2, ease: "power1.in" }, // tied closely to the portal's own timing
+    background: { scrub: 1.1, ease: "sine.inOut" },
+    island: { scrub: 0.85, ease: "sine.out" },
+    ground: { scrub: 0.4, ease: "power1.out" },
+    bgrocks: { scrub: 0.45, ease: "power1.inOut" },
+    glyph: { scrub: 0.6, ease: "power2.out" },
+    portal: { scrub: 0.18, ease: "none" },
+    girl: { scrub: 1.3, ease: "power1.inOut" },
+    chrome: { scrub: 0.0001, ease: "power1.out" },
+    whiteout: { scrub: 0.2, ease: "power1.in" },
 };
 
 // ---------------------------------------------------------------------
-// FIXED HERO CHROME — static UI overlaid on the scene (identity mark,
-// coordinates, theme copy, experience list, Enter control).
-//
-// These numbers are now used only as the *source reference* for the
-// viewport-anchored CSS in Hero.module.css (.theme/.identity/.coords/
-// .exhibits/.enterButton) — see the comment block above those rules
-// for how each rem value below was converted into a vw/vh-based
-// anchor. They are no longer applied directly as inline top/left,
-// because that's exactly what let these elements drift with the
-// .scene box's internal crop on aspect ratios other than the
-// reference. CHROME.enter.width/height are still applied directly
-// (size doesn't have the same crop problem left/top position did).
+// FIXED HERO CHROME (desktop) — reference points in .scene design-space
+// rem. The layout effect converts each one to an exact on-screen pixel
+// position and writes it to CSS variables (--theme-left etc.).
 // ---------------------------------------------------------------------
 const CHROME = {
     identity: { top: 17, left: 80.125 },
@@ -212,96 +86,106 @@ const CHROME = {
     enter: { top: 39.625, left: 6.8125, width: 11.0625, height: 3.0625 },
 };
 
-// const navigationItems = [
-//     {
-//         label: "PROSHOW",
-//         href: "#proshow",
-//         arrow: "line-58-1.svg",
-//         textClass: "w-[62px]",
-//     },
-//     {
-//         label: "WORKSHOPS",
-//         href: "#workshops",
-//         arrow: "line-58-1.svg",
-//         textClass: "w-[72px]",
-//     },
-//     {
-//         label: "CAMPUS AMBASADOR",
-//         href: "#campus-ambasador",
-//         arrow: "line-59.svg",
-//         textClass: "w-[118px]",
-//     },
-//     { label: "GALLERY", href: "#gallery", textClass: "w-[51px]" },
-// ];
+// ---------------------------------------------------------------------
+// MOBILE LAYOUT — portrait canvas 24.375 x 49.0625 rem (~390 x 785 px).
+// ---------------------------------------------------------------------
+const LAYOUT_MOBILE = {
+    background: {
+        driftY: -1, scaleTo: 1.02,
+        z: 0, zLift: 0,
+    },
+    island: {
+        top: 13, left: -0.5, width: 23, height: 17,
+        driftX: 0, driftY: -60, scaleTo: 1.04,
+        z: 1, zLift: 0,
+    },
+    ground: {
+        top: 38, left: -1, width: 26.375, height: 16,
+        driftX: 0, driftY: 30, scaleTo: 1.02,
+        z: 2, zLift: 0,
+    },
+    bgrocks: {
+        top: 41, left: 0, width: 24.375, height: 10,
+        driftX: 0, driftY: -2, scaleTo: 1.15,
+        z: 1, zLift: 0,
+    },
+    t1: {
+        top: 27.5, left: 1.3, width: 21.375, height: 7.2,
+        driftX: 0, driftY: -420, scaleTo: 3.2,
+        z: 3, zLift: 0,
+    },
+    portal: {
+        top: 36, left: 8.5, width: 7.375, height: 16.5,
+        zoomMultiplier: 3.04,
+        z: 4, zLift: 0,
+    },
+    girl: {
+        top: 30, left: 0.9, width: 30.5, height: 20,
+        driftX: 2090, driftY: -1550, scaleTo: 60,
+        z: 5, zLift: 10,
+    },
+};
+
+// Mobile chrome — same (top, left) reference-point model as desktop, so
+// the same pixel-anchoring code positions it. Coords is hidden in CSS.
+const CHROME_MOBILE = {
+    identity: { top: 6.5, left: 18 },
+    coords: { top: 25.3125, left: 0 },
+    theme: { top: 6, left: 1 },
+    exhibits: { top: 35.5, left: 16.9 },
+    enter: { top: 46.2, left: 1.25, width: 7.5, height: 2.6 },
+};
 
 export const Hero = ({ onEnter }) => {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [hasEntered, setHasEntered] = useState(false);
     const [ripples, setRipples] = useState([]);
-//     const mistBackRef = useRef(null);
-// const mistFrontRef = useRef(null);
+    // Must start as false so the first client render matches the server
+    // HTML (no hydration mismatch). The layout effect below flips it
+    // before first paint on mobile.
+    const [isMobile, setIsMobile] = useState(false);
+
     const scrollerRef = useRef(null);
     const runwayRef = useRef(null);
     const viewportRef = useRef(null);
     const sceneRef = useRef(null);
 
-    // The flat 2D scene pieces — ground silhouette, the five title
-    // glyphs behind the portal, the portal itself, and the whiteout
-    // overlay that covers everything once the portal fills the screen.
     const backgroundRef = useRef(null);
     const groundRef = useRef(null);
     const bgrocksRef = useRef(null);
     const t1Ref = useRef(null);
-    // const a2Ref = useRef(null);
-    // const t3Ref = useRef(null);
-    // const h4Ref = useRef(null);
-    // const a5Ref = useRef(null);
-    // const v5Ref = useRef(null);
     const portalRef = useRef(null);
     const islandRef = useRef(null);
     const girlRef = useRef(null);
     const whiteoutRef = useRef(null);
 
-    // Fixed HERO CHROME refs — these elements now live outside .scene
-    // (see the render below) as their own position:fixed elements, so
-    // they can be anchored straight to the viewport instead of
-    // drifting with .scene's internal crop. Refs are needed so the
-    // scroll timeline below can fade them out together.
     const identityRef = useRef(null);
     const coordsRef = useRef(null);
     const themeRef = useRef(null);
     const exhibitsRef = useRef(null);
     const enterRef = useRef(null);
 
-    // Current "cover" scale applied to the fixed-size (353.25 × 196.25)
-    // design canvas so it always fills the viewport (see the layout
-    // effect below + .scene in Hero.module.css). Every absolutely
-    // positioned piece above lives inside that canvas, so this is the
-    // one thing the portal's scroll tween has to correct for (see the
-    // scale computation below).
+    // Cover scale applied to the fixed-size design canvas.
     const designScaleRef = useRef(1);
 
     const handleEnter = () => {
         if (hasEntered) return;
         setHasEntered(true);
-
         if (typeof onEnter === "function") {
             onEnter();
         }
     };
 
-    // Enter button click: drop a ripple at the click point (it reads
-    // off the button's own currentColor, so it's white-on-black or
-    // black-on-white automatically depending on hover state), then play
-    // the same portal-zoom runway the user would see scrolling there
-    // themselves — the button is a shortcut past the scrolling, not past
-    // the cinematic, so it animates scrollTop to the bottom of the runway
-    // rather than jumping straight to the "entered" state. The existing
-    // scroll-progress watcher (progress > 0.985, see the enter-detection
-    // ScrollTrigger below) fires handleEnter naturally once that lands;
-    // onComplete below just guarantees it even if the tween's own last
-    // frame doesn't quite clear that threshold. handleEnter is guarded by
-    // hasEntered, so the two never double-fire.
+    // Route through a ref so the scroll trigger always calls the latest
+    // handleEnter without re-creating the timeline.
+    const handleEnterRef = useRef(handleEnter);
+    useEffect(() => {
+        handleEnterRef.current = handleEnter;
+    });
+
+    // Enter click: ripple at the click point, then animate scrollTop to
+    // the bottom of the runway so the cinematic plays. The scroll
+    // watcher fires handleEnter at progress > 0.985; onComplete
+    // guarantees it. handleEnter is guarded by hasEntered.
     const handleEnterClick = (event) => {
         if (hasEntered) return;
 
@@ -331,61 +215,42 @@ export const Hero = ({ onEnter }) => {
         });
     };
 
-    // The scroll tween below checks progress against a threshold to
-    // auto-trigger entry once the portal has swallowed the viewport.
-    // Route it through a ref so it always calls the latest handleEnter
-    // (current onEnter/hasEntered) without re-creating the timeline.
-    const handleEnterRef = useRef(handleEnter);
+    // Physical Enter key -> same cinematic zoom as button click.
     useEffect(() => {
-        handleEnterRef.current = handleEnter;
-    });
+        const onKeyDown = (e) => {
+            if (e.key !== "Enter" || e.repeat || hasEntered) return;
+            const btn = enterRef.current;
+            if (!btn) return;
+            const rect = btn.getBoundingClientRect();
+            handleEnterClick({
+                currentTarget: btn,
+                clientX: rect.left + rect.width / 2,
+                clientY: rect.top + rect.height / 2,
+            });
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hasEntered]);
 
     // ---------------------------------------------------------------------
-    // SMOOTH (INERTIAL) SCROLLING — wheel/trackpad input is intercepted and
-    // turned into a target scroll position; the container's *actual*
-    // scrollTop eases toward that target every frame instead of jumping
-    // straight to it on each wheel tick, so scrolling carries a touch of
-    // momentum instead of feeling like discrete steps. This only touches
-    // wheel input:
-    //   - touch scrolling is left to the OS, which already has its own,
-    //     better-tuned momentum physics per device — hijacking it tends to
-    //     fight the platform rather than improve it;
-    //   - keyboard scrolling (arrow keys / Page Down / Space — the
-    //     scroller is focusable via tabIndex) and scrollbar dragging are
-    //     likewise left native, both for accessibility and because they
-    //     already feel direct/instant, which is the correct feel for them.
-    // Every frame first checks whether something else (keyboard, drag,
-    // touch, a resize) moved scrollTop since our own last write; if so, the
-    // target resyncs to that new position instead of fighting it or
-    // snapping back to a stale target. ScrollTrigger keeps reading
-    // .scrollTop exactly as before, so every per-layer scrub/ease in
-    // MOTION above still applies on top of this — this only smooths the
-    // *input*, not the per-layer motion response.
+    // SMOOTH (INERTIAL) WHEEL SCROLLING — wheel input sets a target; the
+    // real scrollTop eases toward it every frame. Touch, keyboard and
+    // scrollbar dragging stay native. Skipped for reduced-motion.
     // ---------------------------------------------------------------------
     useEffect(() => {
         const scrollerEl = scrollerRef.current;
         if (!scrollerEl) return undefined;
 
-        // Respect the OS-level reduced-motion preference: skip the added
-        // momentum entirely and leave scrolling native/instant.
         if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
             return undefined;
         }
 
-        // Portion of the remaining distance-to-target closed per 60fps
-        // frame. Higher = snappier/less momentum, lower = heavier/more
-        // lag. Kept modest so scrolling still feels directly controlled —
-        // this is meant to round off the "steppiness" of raw wheel deltas,
-        // not to add a long, floaty coast.
         const SMOOTHING = 0.16;
-        const LINE_HEIGHT = 16; // approx. px per "line" unit some browsers report
+        const LINE_HEIGHT = 16;
 
         const getMaxScroll = () => scrollerEl.scrollHeight - scrollerEl.clientHeight;
         const normalizeDeltaY = (event) => {
-            // Most browsers report deltaMode 0 (pixels); a few report 1
-            // (lines) or 2 (pages) for certain devices — normalize those
-            // to roughly the same feel instead of a barely-there or
-            // wildly-oversized step.
             if (event.deltaMode === 1) return event.deltaY * LINE_HEIGHT;
             if (event.deltaMode === 2) return event.deltaY * scrollerEl.clientHeight;
             return event.deltaY;
@@ -401,8 +266,6 @@ export const Hero = ({ onEnter }) => {
         };
 
         const handleWheel = (event) => {
-            // Let ctrl+wheel (trackpad pinch-to-zoom on most browsers)
-            // through untouched rather than hijacking it as a scroll.
             if (event.ctrlKey) return;
             event.preventDefault();
             resyncIfMovedExternally();
@@ -421,9 +284,6 @@ export const Hero = ({ onEnter }) => {
                 lastWritten = current;
                 return;
             }
-            // Frame-rate independent exponential ease toward the target —
-            // no overshoot, reads as momentum settling rather than a
-            // spring or a hard stop.
             const next = current + delta * Math.min(1, SMOOTHING * gsap.ticker.deltaRatio());
             scrollerEl.scrollTop = next;
             lastWritten = next;
@@ -438,120 +298,77 @@ export const Hero = ({ onEnter }) => {
         };
     }, []);
 
-    // Keep the fixed-size (353.25 × 196.25) design canvas covering the
-    // full viewport at every aspect ratio, like background-size: cover —
-    // scaling the whole composition as one rigid unit so every
-    // absolutely-positioned asset inside it keeps its original relative
-    // layout. Runs as a layout effect (not useEffect) so the correct
-    // scale is applied before first paint, avoiding a flash of
-    // unscaled/cropped content.
+    // Breakpoint detection. Runs before first paint, so on mobile there
+    // is no visible flash of the desktop layout.
+    useLayoutEffect(() => {
+        const mq = window.matchMedia("(max-width: 768px)");
+        const update = () => setIsMobile(mq.matches);
+        update();
+        mq.addEventListener("change", update);
+        return () => mq.removeEventListener("change", update);
+    }, []);
+
+    // Cover-scale the design canvas to the viewport and anchor the fixed
+    // chrome to exact screen pixels. Re-runs on breakpoint change.
     useLayoutEffect(() => {
         const scene = sceneRef.current;
         const viewport = viewportRef.current;
         if (!scene || !viewport) return undefined;
-const updateDesignScale = () => {
-    const designWidth = scene.offsetWidth;
-    const designHeight = scene.offsetHeight;
-    const viewportWidth = viewport.clientWidth;
-    const viewportHeight = viewport.clientHeight;
-    if (!designWidth || !designHeight || !viewportWidth || !viewportHeight) {
-        return;
-    }
 
-    // Cover scale: guarantees the canvas fully fills the viewport in
-    // both dimensions (never leaves a gap) — kept as Math.max()
-    // deliberately, not swapped to Math.min(). Which axis "wins"
-    // depends on aspect ratio; the resulting overflow is cropped from
-    // the top only, via the bottom-anchored transform-origin + flex
-    // alignment in Hero.module.css, not by changing this formula.
-    const scale = Math.max(
-        viewportWidth / designWidth,
-        viewportHeight / designHeight,
-    );
-    designScaleRef.current = scale;
-    scene.style.setProperty("--design-scale", scale);
-    // The fixed HERO CHROME now lives outside .scene (as siblings of
-    // it, see the render below) so it can be position: fixed to the
-    // real viewport instead of scaling/cropping with the canvas. It
-    // still needs the same scale factor to keep its current size
-    // though, so mirror the variable onto the shared ancestor
-    // (.scroller) that both .scene and the chrome elements inherit
-    // from.
-    scrollerRef.current?.style.setProperty("--design-scale", scale);
+        const updateDesignScale = () => {
+            const designWidth = scene.offsetWidth;
+            const designHeight = scene.offsetHeight;
+            const viewportWidth = viewport.clientWidth;
+            const viewportHeight = viewport.clientHeight;
+            if (!designWidth || !designHeight || !viewportWidth || !viewportHeight) {
+                return;
+            }
 
-    // -----------------------------------------------------------------
-    // FIXED HERO CHROME — exact pixel anchoring.
-    //
-    // .scene's own transform always centers it horizontally around the
-    // viewport's horizontal center (transform-origin's x is "center",
-    // and .viewport's flex centering already centers the un-transformed
-    // box, so scaling from that same center never moves it) and always
-    // keeps its bottom edge flush with the viewport's bottom edge
-    // (transform-origin's y is "bottom" + .viewport's flex
-    // align-items: flex-end). That holds no matter which way the
-    // aspect ratio forces .scene to be cropped: wider-than-~1.8:1
-    // screens crop it vertically from the top (the common case — most
-    // real browser viewports), narrower ones crop it horizontally from
-    // both sides evenly instead.
-    //
-    // Every chrome element below is really just "a point at a given
-    // (top, left) in that same local coordinate space" (see CHROME up
-    // top) that needs to land in that exact spot on the composition
-    // regardless of aspect ratio — exactly like island/portal/title/etc
-    // already do, as real children of .scene. So instead of a
-    // hand-derived vw/vh formula (only ever valid in whichever single
-    // crop branch it happened to be derived against), compute the
-    // exact screen position directly from the real scale/measurements
-    // above. This is correct in both branches automatically, with
-    // nothing to manually recompute per device or aspect ratio.
-    const remToPx = designWidth / 88.3125;
-    const toScreenX = (localRem) => (
-        viewportWidth / 2 + (localRem * remToPx - designWidth / 2) * scale
-    );
-    const toScreenTop = (localRem) => (
-        viewportHeight - (designHeight - localRem * remToPx) * scale
-    );
-    const toScreenBottom = (localRem) => (
-        // Distance from .scene's own (always viewport-flush) bottom
-        // edge up to this local point, scaled — no separate
-        // viewportHeight term needed, since that flush bottom edge is
-        // the zero point either way.
-        (49.0625 - localRem) * remToPx * scale
-    );
+            // Cover scale (Math.max on purpose). Overflow is cropped from
+            // the top only, via the bottom-anchored origin in the CSS.
+            const scale = Math.max(
+                viewportWidth / designWidth,
+                viewportHeight / designHeight,
+            );
 
-    const chromeHost = scrollerRef.current;
-    if (chromeHost) {
-        chromeHost.style.setProperty("--theme-left", `${toScreenX(CHROME.theme.left)}px`);
-        chromeHost.style.setProperty("--theme-top", `${toScreenTop(CHROME.theme.top)}px`);
-        chromeHost.style.setProperty("--identity-left", `${toScreenX(CHROME.identity.left)}px`);
-        chromeHost.style.setProperty("--identity-top", `${toScreenTop(CHROME.identity.top)}px`);
-        chromeHost.style.setProperty("--coords-left", `${toScreenX(CHROME.coords.left)}px`);
-        chromeHost.style.setProperty("--coords-top", `${toScreenTop(CHROME.coords.top)}px`);
-        chromeHost.style.setProperty("--exhibits-left", `${toScreenX(CHROME.exhibits.left)}px`);
-        chromeHost.style.setProperty("--exhibits-top", `${toScreenTop(CHROME.exhibits.top)}px`);
-        chromeHost.style.setProperty("--enter-left", `${toScreenX(CHROME.enter.left)}px`);
-        chromeHost.style.setProperty(
-            "--enter-bottom",
-            `${toScreenBottom(CHROME.enter.top + CHROME.enter.height)}px`,
-        );
-    }
+            designScaleRef.current = scale;
+            scene.style.setProperty("--design-scale", scale);
+            scrollerRef.current?.style.setProperty("--design-scale", scale);
 
-    // T1 (the "TATHVA" wordmark) used to get its own extra horizontal
-    // "safety shift" here to stop it clipping on narrower-than-
-    // reference aspect ratios. That shift only ever applied to T1, not
-    // to island/portal/girl/etc — so on any screen where it actually
-    // kicked in, T1 physically moved relative to every other layer in
-    // the scene while they stayed put, breaking the composition (the
-    // island drifting away from the "V" it's meant to sit above, on
-    // narrower laptop screens in particular). T1 is left to
-    // crop/scale/center in lockstep with the rest of .scene now, same
-    // as every other layer — the small chance of the leading "T"
-    // clipping slightly on an unusually narrow window is a much
-    // smaller issue than the whole composition disagreeing with
-    // itself.
+            // Chrome anchoring — maps a local point in .scene's design
+            // space to its exact screen position at the current scale.
+            const mobileMode = window.matchMedia("(max-width: 768px)").matches;
+            const canvasW = mobileMode ? 24.375 : 88.3125;
+            const chrome = mobileMode ? CHROME_MOBILE : CHROME;
+            const remToPx = designWidth / canvasW;
 
-    ScrollTrigger.refresh();
-};
+            const toScreenX = (localRem) => (
+                viewportWidth / 2 + (localRem * remToPx - designWidth / 2) * scale
+            );
+            const toScreenTop = (localRem) => (
+                viewportHeight - (designHeight - localRem * remToPx) * scale
+            );
+            const toScreenBottom = (localRem) => (
+                (49.0625 - localRem) * remToPx * scale
+            );
+
+            const host = scrollerRef.current;
+            if (host) {
+                const set = (name, px) => host.style.setProperty(name, `${px}px`);
+                set("--theme-left", toScreenX(chrome.theme.left));
+                set("--theme-top", toScreenTop(chrome.theme.top));
+                set("--identity-left", toScreenX(chrome.identity.left));
+                set("--identity-top", toScreenTop(chrome.identity.top));
+                set("--coords-left", toScreenX(chrome.coords.left));
+                set("--coords-top", toScreenTop(chrome.coords.top));
+                set("--exhibits-left", toScreenX(chrome.exhibits.left));
+                set("--exhibits-top", toScreenTop(chrome.exhibits.top));
+                set("--enter-left", toScreenX(chrome.enter.left));
+                set("--enter-bottom", toScreenBottom(chrome.enter.top + chrome.enter.height));
+            }
+
+            ScrollTrigger.refresh();
+        };
 
         updateDesignScale();
 
@@ -559,29 +376,13 @@ const updateDesignScale = () => {
         resizeObserver.observe(viewport);
 
         return () => resizeObserver.disconnect();
-    }, []);
+    }, [isMobile]);
 
-    // Drive the whole scene off scroll progress: the portal grows to
-    // fill/exceed the viewport (same box-zoom math this file used
-    // before the Three.js world existed — scale by however much bigger
-    // the viewport is than the portal, corrected for the .scene
-    // cover-scale it's nested inside, then translate to the scene's
-    // center, which flexbox guarantees is also the viewport's center);
-    // the title drifts and fades a little slower, reading as farther
-    // away; the ground barely moves at all; and the whole thing fades
-    // to white right at the end.
-    //
-    // Rather than one shared timeline scrubbed by a single ScrollTrigger
-    // (which maps scroll progress to every layer identically), each
-    // layer below gets its OWN ScrollTrigger, sharing the same
-    // trigger/start/end (the full runway) but with its own scrub time
-    // and ease from MOTION above. self.progress on any of these is
-    // always the raw, un-smoothed scroll position — scrub only smooths
-    // the *animation* it drives — so per-layer scrub can differ freely
-    // without the layers ever disagreeing about where the user actually
-    // is in the scroll.
+    // Scroll-driven scene. Every layer gets its own ScrollTrigger sharing
+    // the same runway but with its own scrub/ease from MOTION. Rebuilt
+    // whenever the breakpoint changes so it uses the right layout.
     useGSAP(() => {
-        gsap.registerPlugin(ScrollTrigger);
+        const L = isMobile ? LAYOUT_MOBILE : LAYOUT;
 
         const scrollTriggerBase = {
             scroller: scrollerRef.current,
@@ -590,11 +391,7 @@ const updateDesignScale = () => {
             end: "bottom bottom",
         };
 
-        // Auto-enter once the user has effectively reached the bottom of
-        // the runway. Kept on its own plain ScrollTrigger (no animation
-        // attached, so no scrub/lag applies) instead of piggy-backing on
-        // any one layer's tween, so "has the user scrolled far enough"
-        // never gets delayed by that layer's own inertia.
+        // Auto-enter near the bottom of the runway (no scrub lag).
         ScrollTrigger.create({
             ...scrollTriggerBase,
             onUpdate: (self) => {
@@ -602,61 +399,32 @@ const updateDesignScale = () => {
             },
         });
 
-        // CHROME fade — its own short-leash timeline so the static UI
-        // fades out responsively rather than inheriting any scene
-        // layer's heavier inertia. duration here is a *fraction of the
-        // whole runway's scroll distance*, not seconds — 0.04 means the
-        // fade is fully finished after just 4% of the runway has been
-        // scrolled, so it clears out almost as soon as scrolling starts
-        // rather than lingering through a big chunk of it.
-// CHROME fade — disappear almost immediately once scrolling begins.
-const chromeTargets = [
-    themeRef.current,
-    identityRef.current,
-    coordsRef.current,
-    exhibitsRef.current,
-    enterRef.current,
-].filter(Boolean);
+        // Chrome fade: gone within the first 10% of the runway.
+        const chromeTargets = [
+            themeRef.current,
+            identityRef.current,
+            coordsRef.current,
+            exhibitsRef.current,
+            enterRef.current,
+        ].filter(Boolean);
 
-if (chromeTargets.length) {
-    ScrollTrigger.create({
-        ...scrollTriggerBase,
-        scrub: true,
-        invalidateOnRefresh: true,
-
-        onUpdate: (self) => {
-            // Fade completely within the first 1% of the runway.
-            const fadeProgress = gsap.utils.clamp(
-                0,
-                1,
-                self.progress / 0.10
-            );
-
-            const opacity = 1 - fadeProgress;
-
-            gsap.set(chromeTargets, {
-                opacity,
+        if (chromeTargets.length) {
+            ScrollTrigger.create({
+                ...scrollTriggerBase,
+                scrub: true,
+                invalidateOnRefresh: true,
+                onUpdate: (self) => {
+                    const fadeProgress = gsap.utils.clamp(0, 1, self.progress / 0.10);
+                    gsap.set(chromeTargets, { opacity: 1 - fadeProgress });
+                },
             });
-        },
-    });
-}
+        }
 
-        // Reads driftX/driftY/scaleTo/opacityTo/zLift straight off a
-        // LAYOUT entry, exactly as before — a parallax layer is still
-        // fully defined by its numbers alone, add a field and it
-        // animates, leave it out (or at 0) and it's skipped. The only
-        // change is *how* it's driven: its own ScrollTrigger + the
-        // scrub/ease pair from MOTION, instead of a shared linear
-        // scrub — this is what lets depth read as a different feel of
-        // motion, not just a different distance.
         const createParallaxLayer = (ref, config, motion, fadeAt) => {
             if (!ref.current) return;
             const fromVars = { scale: 1, x: 0, y: 0 };
             const toVars = { duration: 1, ease: motion.ease };
             if (config.xPercent !== undefined) {
-                // Constant for the full tween — this is what keeps the
-                // element self-centered throughout, now that GSAP owns
-                // its transform instead of a CSS class.
                 fromVars.xPercent = config.xPercent;
                 toVars.xPercent = config.xPercent;
             }
@@ -678,13 +446,8 @@ if (chromeTargets.length) {
             });
             layerTl.fromTo(ref.current, fromVars, toVars, 0);
 
-            // Title-letter opacity gets its own tween, starting partway
-            // through the scroll instead of fading across the whole
-            // range — this way the glyph is still fully visible while
-            // its own drift/scale carries it across the island, and
-            // only dissolves after. Placed on this same per-layer
-            // timeline so the fade shares that glyph's own scrub feel
-            // rather than snapping to a different one.
+            // Title opacity fades partway through the scroll, on the same
+            // per-layer timeline so it shares that layer's scrub feel.
             if (fadeAt !== undefined) {
                 layerTl.fromTo(
                     ref.current,
@@ -695,27 +458,12 @@ if (chromeTargets.length) {
             }
         };
 
-        // Girl's zLift would fight the mist's own static zIndex prop, so
-        // only take the motion values, not the whole LAYOUT.girl config.
-        // const mistFrontMotion = {
-        //     driftX: LAYOUT.girl.driftX,
-        //     driftY: LAYOUT.girl.driftY,
-        //     scaleTo: LAYOUT.girl.scaleTo,
-        // };
-
-        createParallaxLayer(backgroundRef, LAYOUT.background, MOTION.background);
-        createParallaxLayer(islandRef, LAYOUT.island, MOTION.island);
-        createParallaxLayer(groundRef, LAYOUT.ground, MOTION.ground);
-        createParallaxLayer(bgrocksRef, LAYOUT.bgrocks, MOTION.bgrocks);
-        createParallaxLayer(t1Ref, LAYOUT.t1, MOTION.glyph, 0.5);
-        // createParallaxLayer(a2Ref, LAYOUT.a2, MOTION.glyph, 0.5);
-        // createParallaxLayer(t3Ref, LAYOUT.t3, MOTION.glyph, 0.5);
-        // createParallaxLayer(h4Ref, LAYOUT.h4, MOTION.glyph, 0.5);
-        // createParallaxLayer(a5Ref, LAYOUT.a5, MOTION.glyph, 0.5);
-        // createParallaxLayer(v5Ref, LAYOUT.v5, MOTION.glyph, 0.5);
-        createParallaxLayer(girlRef, LAYOUT.girl, MOTION.girl);
-        // simpleParallax(mistBackRef, LAYOUT.bgrocks);   // zooms exactly like the rock bg
-        // simpleParallax(mistFrontRef, mistFrontMotion); // zooms exactly like the girl
+        createParallaxLayer(backgroundRef, L.background, MOTION.background);
+        createParallaxLayer(islandRef, L.island, MOTION.island);
+        createParallaxLayer(groundRef, L.ground, MOTION.ground);
+        createParallaxLayer(bgrocksRef, L.bgrocks, MOTION.bgrocks);
+        createParallaxLayer(t1Ref, L.t1, MOTION.glyph, 0.5);
+        createParallaxLayer(girlRef, L.girl, MOTION.girl);
 
         if (portalRef.current) {
             gsap.timeline({
@@ -732,26 +480,21 @@ if (chromeTargets.length) {
                         Math.max(
                             viewportRef.current.clientWidth / portalRef.current.offsetWidth,
                             viewportRef.current.clientHeight / portalRef.current.offsetHeight,
-                        ) * LAYOUT.portal.zoomMultiplier
+                        ) * L.portal.zoomMultiplier
                     ) / (designScaleRef.current || 1),
                     x: () => (
                         sceneRef.current.offsetWidth / 2
                         - (portalRef.current.offsetLeft + portalRef.current.offsetWidth / 2)
                     ),
-                    // Was `offsetHeight / 2 - portalCenterY`, which targets the
-                    // scene's own center — correct only when the scene is
-                    // center-anchored. Now that .scene is bottom-anchored, its
-                    // local "center" no longer maps to the viewport's vertical
-                    // center, so the target has to be solved for directly:
-                    // it's the local-space point that, after the scene's own
-                    // bottom-anchored transform, lands at viewportHeight / 2.
+                    // .scene is bottom-anchored, so solve for the local point
+                    // that lands at viewportHeight / 2 after its transform.
                     y: () => (
                         sceneRef.current.offsetHeight
                         - (portalRef.current.offsetTop + portalRef.current.offsetHeight / 2)
                         - (viewportRef.current.clientHeight / 2) / (designScaleRef.current || 1)
                     ),
-                    ...(LAYOUT.portal.zLift ? {
-                        zIndex: LAYOUT.portal.z + LAYOUT.portal.zLift,
+                    ...(L.portal.zLift ? {
+                        zIndex: L.portal.z + L.portal.zLift,
                         snap: { zIndex: 1 },
                     } : null),
                     duration: 1,
@@ -775,7 +518,10 @@ if (chromeTargets.length) {
                 0.8,
             );
         }
-    }, { scope: scrollerRef });
+    }, { scope: scrollerRef, dependencies: [isMobile], revertOnUpdate: true });
+
+    const activeLayout = isMobile ? LAYOUT_MOBILE : LAYOUT;
+    const activeChrome = isMobile ? CHROME_MOBILE : CHROME;
 
     return (
         <main
@@ -784,33 +530,19 @@ if (chromeTargets.length) {
             tabIndex={0}
             aria-label="Scroll to move toward the black box"
         >
-        {/* Fixed viewport UI */}
-    <a
-        href="#home"
-        className={styles.fixedLogo}
-        style={{
-            backgroundImage: `url(${assetBase}tathvawhitelogo-1.svg)`,
-        }}
-        aria-label="Tathva home"
-    />
+            <a
+                href="#home"
+                className={styles.fixedLogo}
+                style={{
+                    backgroundImage: `url(${assetBase}tathvawhitelogo-1.svg)`,
+                }}
+                aria-label="Tathva home"
+            />
 
-            {/* ===============================================================
-                FIXED HERO CHROME (see CHROME above for the reference
-                positions these are derived from) — the identity mark +
-                coordinates on the right, the theme copy on the left, the
-                experience list bottom-right, and the Enter control.
-                Rendered here, as siblings of .runway/.scene rather than
-                children of .scene, so they're position: fixed straight to
-                the real viewport (same trick as .fixedLogo above) instead
-                of living inside the scaled/cropped design canvas. See the
-                .theme/.identity/.coords/.exhibits/.enterButton rules in
-                Hero.module.css for how each one is anchored. None of these
-                are wired into the scroll tween's *motion*, so they stay put
-                on screen while the scene behind them zooms — only their
-                opacity is tied to the same timeline (see "CHROME fade"
-                above), so they fade away as the scroll begins.
-               =============================================================== */}
-
+            {/* FIXED HERO CHROME — siblings of .runway/.scene so they are
+                position: fixed to the real viewport. Their top/left come
+                from CSS variables set in the layout effect above. Only
+                opacity is tied to scroll (chrome fade). */}
             <section
                 ref={themeRef}
                 className={styles.theme}
@@ -903,14 +635,22 @@ if (chromeTargets.length) {
                 onClick={handleEnterClick}
                 className={styles.enterButton}
                 style={{
-                    width: `${CHROME.enter.width}rem`,
-                    height: `${CHROME.enter.height}rem`,
+                    width: `${activeChrome.enter.width}rem`,
+                    height: `${activeChrome.enter.height}rem`,
                 }}
                 aria-label="Enter Tathva 26"
             >
-                <span className={styles.enterLabel}>Enter</span>
-                <span className={styles.enterArrow} aria-hidden="true">→</span>
-                {/* <span className={styles.enterBracket} aria-hidden="true">]</span> */}
+                <span className={styles.keycapBracketL} aria-hidden="true">[</span>
+                <span className={styles.keycapBracketR} aria-hidden="true">]</span>
+                <span className={styles.keycapFace}>
+                    <span className={styles.enterLabel}>Enter</span>
+                    <svg className={styles.enterArrow} viewBox="0 0 28 12" fill="none"
+                        stroke="currentColor" strokeWidth="1" strokeLinecap="round"
+                        strokeLinejoin="round" aria-hidden="true">
+                        <path d="M1 6 H26" />
+                        <polyline points="21 1.5 26 6 21 10.5" />
+                    </svg>
+                </span>
                 {ripples.map((ripple) => (
                     <span
                         key={ripple.id}
@@ -929,209 +669,143 @@ if (chromeTargets.length) {
                         data-model-id="10:78"
                         aria-label="Tathva 26 Asteria"
                     >
-            {/* Hidden SVG filter behind the portal's edge — a touch of
-                procedural noise displaces the rim so it reads as an
-                unstable boundary of light rather than a drawn CSS
-                border. Zero-size definition only; doesn't render or
-                affect layout by itself. */}
-            <svg aria-hidden="true" focusable="false" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
-                <filter id="portalEdgeNoise" x="-40%" y="-40%" width="180%" height="180%">
-                    <feTurbulence type="fractalNoise" baseFrequency="0.015 0.05" numOctaves="2" seed="7" result="noise" />
-                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="7" xChannelSelector="R" yChannelSelector="G" />
-                </filter>
-            </svg>
+                        {/* Zero-size SVG filter definition for the portal rim. */}
+                        <svg aria-hidden="true" focusable="false" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
+                            <filter id="portalEdgeNoise" x="-40%" y="-40%" width="180%" height="180%">
+                                <feTurbulence type="fractalNoise" baseFrequency="0.015 0.05" numOctaves="2" seed="7" result="noise" />
+                                <feDisplacementMap in="SourceGraphic" in2="noise" scale="7" xChannelSelector="R" yChannelSelector="G" />
+                            </filter>
+                        </svg>
 
-            {/* Every element below is positioned/sized straight from
-                LAYOUT (see top of file) and rendered back-to-front by
-                depth: background (farthest) → island → ground → the
-                five title glyphs → portal → girl (nearest the camera).
-                background.png is now the actual environment;
-                .scroller's dark color only shows through before it
-                loads. */}
-            <div
-                ref={backgroundRef}
-                className={styles.background}
-                style={{ backgroundImage: `url(${assetBase}background1.png)` }}
-                aria-hidden="true"
-            />
+                        <div
+                            ref={backgroundRef}
+                            className={styles.background}
+                            style={{ backgroundImage: `url(${assetBase}background1.png)` }}
+                            aria-hidden="true"
+                        />
 
-            {/* Ambient light-streak backdrop. Has to live inside .scene,
-            //     layered right above .background: .scene is its own
-            //     stacking context (position: relative + z-index: 2) with
-            //     an opaque full-bleed .background image, so anything
-            //     placed outside .scene — behind it or not — is fully
-            //     hidden by that image regardless of z-index. Sitting here
-            //     (z-index 0, right after .background in the DOM) puts it
-            //     above the flat sky plate but below every other layer
-            //     (island/ground/bgrocks/title/portal/girl, all z-index
-            //     1+), reading as a distant field of drifting light. */}
-            {/* // <AmbientStars position="absolute" /> */}
+                        <div
+                            ref={islandRef}
+                            className={styles.islandWrap}
+                            style={{
+                                top: `${activeLayout.island.top}rem`,
+                                left: `${activeLayout.island.left}rem`,
+                                width: `${activeLayout.island.width}rem`,
+                                height: `${activeLayout.island.height}rem`,
+                            }}
+                            aria-hidden="true"
+                        >
+                            <div className={styles.islandGlow} />
+                            <img
+                                className={styles.island}
+                                alt=""
+                                aria-hidden="true"
+                                src={`${assetBase}floatingisland.png`}
+                            />
+                        </div>
 
-            <div
-                ref={islandRef}
-                className={styles.islandWrap}
-                style={{
-                    top: `${LAYOUT.island.top}rem`,
-                    left: `${LAYOUT.island.left}rem`,
-                    width: `${LAYOUT.island.width}rem`,
-                    height: `${LAYOUT.island.height}rem`,
-                }}
-                aria-hidden="true"
-            >
-                {/* Independent, near-imperceptible float lives on the
-                    inner img (a plain CSS animation) so it never fights
-                    the GSAP scroll transform applied to this wrapper. */}
-                <div className={styles.islandGlow} />
-                <img
-                    className={styles.island}
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}floatingisland.png`}
-                />
-            </div>
+                        <div
+                            ref={groundRef}
+                            className={styles.groundWrap}
+                            style={{
+                                top: `${activeLayout.ground.top}rem`,
+                                left: `${activeLayout.ground.left}rem`,
+                                width: `${activeLayout.ground.width}rem`,
+                                height: `${activeLayout.ground.height}rem`,
+                            }}
+                            aria-hidden="true"
+                        >
+                            <img
+                                className={styles.ground}
+                                alt=""
+                                aria-hidden="true"
+                                src={`${assetBase}rockyground.png`}
+                            />
+                        </div>
 
-            <div
-                ref={groundRef}
-                className={styles.groundWrap}
-                style={{
-                    top: `${LAYOUT.ground.top}rem`,
-                    left: `${LAYOUT.ground.left}rem`,
-                    width: `${LAYOUT.ground.width}rem`,
-                    height: `${LAYOUT.ground.height}rem`,
-                }}
-                aria-hidden="true"
-            >
-                <img
-                    className={styles.ground}
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}rockyground.png`}
-                />
-                {/* <div className={styles.groundLight} /> */}
-            </div>
+                        <img
+                            ref={bgrocksRef}
+                            className={styles.bgrocks}
+                            style={{
+                                top: `${activeLayout.bgrocks.top}rem`,
+                                left: `${activeLayout.bgrocks.left}rem`,
+                                width: `${activeLayout.bgrocks.width}rem`,
+                                height: `${activeLayout.bgrocks.height}rem`,
+                            }}
+                            alt=""
+                            aria-hidden="true"
+                            src={`${assetBase}bgrocks.png`}
+                        />
 
-            <img
-                ref={bgrocksRef}
-                className={styles.bgrocks}
-                style={{
-                    top: `${LAYOUT.bgrocks.top}rem`,
-                    left: `${LAYOUT.bgrocks.left}rem`,
-                    width: `${LAYOUT.bgrocks.width}rem`,
-                    height: `${LAYOUT.bgrocks.height}rem`,
-                }}
-                alt=""
-                aria-hidden="true"
-                src={`${assetBase}bgrocks.png`}
-            />
-{/* <AtmosphericMist
-    ref={mistBackRef}
-    position="absolute"
-    zIndex={15}
-    groundStart={0}
-    groundEnd={0.28}   // was 0.32 — a bit taller
-    density={0.75}     // was implicit 0.5 — thicker
-/>
+                        <div
+                            className={styles.t1SafeWrapper}
+                            style={{
+                                top: `${activeLayout.t1.top}rem`,
+                                left: `${activeLayout.t1.left}rem`,
+                                width: `${activeLayout.t1.width}rem`,
+                                height: `${activeLayout.t1.height}rem`,
+                            }}
+                        >
+                            <img
+                                ref={t1Ref}
+                                className={styles.titleLetter}
+                                alt=""
+                                aria-hidden="true"
+                                src={isMobile
+                                    ? `${assetBase}tathva_mobile.svg`
+                                    : `${assetBase}tathva_text1.png`}
+                            />
+                        </div>
 
-<AtmosphericMist
-    ref={mistFrontRef}
-    position="absolute"
-    zIndex={3}
-    groundStart={0}
-    groundEnd={0.28}   // was 0.42 — a bit taller
-    density={0.7}
-    intensity={0.55}
-    lightY={0.24}
-    driftSpeed={1.3}
-    octaves={2}
-    resolutionScale={0.4}
-/> */}
-{/* Five separate glyphs replacing the old "Tathva" <h1> — each one is
-    its own parallax layer (see LAYOUT.t1..LAYOUT.a5 above), so they
-    can be repositioned/re-timed independently instead of moving as a
-    single block of text. Swap the src filenames below if the final
-    assets end up named differently. */}
-{/* T1 used to sit in a wrapper that nudged it independently of the
-    rest of the scene to avoid clipping on narrow aspect ratios — that
-    broke its alignment with island/portal/etc (see the layout effect
-    in Hero.jsx), so it's been removed; the wrapper is kept purely as a
-    structural/positioning container, with no extra transform of its
-    own. GSAP's scroll parallax still targets the img (t1Ref) directly
-    — same driftX/driftY/scaleTo as before. */}
-<div
-    className={styles.t1SafeWrapper}
-    style={{
-        top: `${LAYOUT.t1.top}rem`,
-        left: `${LAYOUT.t1.left}rem`,
-        width: `${LAYOUT.t1.width}rem`,
-        height: `${LAYOUT.t1.height}rem`,
-    }}
->
-    <img
-        ref={t1Ref}
-        className={styles.titleLetter}
-        alt=""
-        aria-hidden="true"
-        src={`${assetBase}tathva_text.png`}
-    />
-</div>
+                        <div
+                            ref={portalRef}
+                            className={styles.portal}
+                            style={{
+                                top: `${activeLayout.portal.top}rem`,
+                                left: `${activeLayout.portal.left}rem`,
+                                width: `${activeLayout.portal.width}rem`,
+                                height: `${activeLayout.portal.height}rem`,
+                            }}
+                            aria-hidden="true"
+                        >
+                            <div className={styles.portalGlow} />
+                            <div className={styles.portalHaze} />
+                            <div className={styles.portalGroundGlow} />
+                            <div className={styles.portalRim} />
+                        </div>
 
+                        <div
+                            ref={girlRef}
+                            className={styles.girlWrap}
+                            style={{
+                                top: `${activeLayout.girl.top}rem`,
+                                left: `${activeLayout.girl.left}rem`,
+                                width: `${activeLayout.girl.width}rem`,
+                                height: `${activeLayout.girl.height}rem`,
+                            }}
+                            aria-hidden="true"
+                        >
+                            <img
+                                className={styles.girl}
+                                alt=""
+                                aria-hidden="true"
+                                src={`${assetBase}girl4.png`}
+                            />
+                            <div
+                                className={styles.girlRim}
+                                style={{
+                                    WebkitMaskImage: `url(${assetBase}girl.png)`,
+                                    maskImage: `url(${assetBase}girl.png)`,
+                                }}
+                            />
+                            <div className={styles.girlContact} />
+                        </div>
 
-            <div
-                ref={portalRef}
-                className={styles.portal}
-                style={{
-                    top: `${LAYOUT.portal.top}rem`,
-                    left: `${LAYOUT.portal.left}rem`,
-                    width: `${LAYOUT.portal.width}rem`,
-                    height: `${LAYOUT.portal.height}rem`,
-                }}
-                aria-hidden="true"
-            >
-                {/* Painted in this order so the rim ends up crisp on
-                    top: wide haze, then the ground-facing pool, then
-                    the noise-displaced edge. */}
-                <div className={styles.portalHaze} />
-                <div className={styles.portalGroundGlow} />
-                <div className={styles.portalRim} />
-            </div>
+                        <div ref={whiteoutRef} className={styles.whiteout} aria-hidden="true" />
 
-            <div
-                ref={girlRef}
-                className={styles.girlWrap}
-                style={{
-                    top: `${LAYOUT.girl.top}rem`,
-                    left: `${LAYOUT.girl.left}rem`,
-                    width: `${LAYOUT.girl.width}rem`,
-                    height: `${LAYOUT.girl.height}rem`,
-                }}
-                aria-hidden="true"
-            >
-                <img
-                    className={styles.girl}
-                    alt=""
-                    aria-hidden="true"
-                    src={`${assetBase}girl4.png`}
-                />
-                {/* Rim light masked to her own alpha shape (same PNG),
-                    so it catches her silhouette's edge instead of
-                    sitting over her like a rectangle. */}
-                <div
-                    className={styles.girlRim}
-                    style={{
-                        WebkitMaskImage: `url(${assetBase}girl.png)`,
-                        maskImage: `url(${assetBase}girl.png)`,
-                    }}
-                />
-                <div className={styles.girlContact} />
-            </div>
-
-
-
-            <div ref={whiteoutRef} className={styles.whiteout} aria-hidden="true" />
-
-            <span className="sr-only" role="status" aria-live="polite">
-                {hasEntered ? "Entering Tathva 26" : ""}
-            </span>
+                        <span className="sr-only" role="status" aria-live="polite">
+                            {hasEntered ? "Entering Tathva 26" : ""}
+                        </span>
                     </div>
                 </div>
             </section>
