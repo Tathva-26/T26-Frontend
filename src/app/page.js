@@ -12,7 +12,26 @@ import Expo from '@/pageComponents/Expo/Expo'
 import Footer from '@/pageComponents/Footer/Footer'
 import RobowarsPage from './robowars/page'
 import SmoothScroll from '@/components/SmoothScroll'
+import TathvaPasses from '@/pageComponents/TathvaPasses/TathvaPasses'
 
 export default function Home() {
-  return <> </>
+  return (
+    <div className='main-scroll relative h-dvh w-full overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-black'>
+      <SmoothScroll />
+      <ProfilePage />
+      <HorizontalGallery />
+      <ProshowCarousel />
+      <ArtistShowcase />
+      <WheelsExperience revealUnderlay />
+      <RobowarsPage />
+      <TathvaPasses />
+      <Lead />
+      <Frontend />
+      <Backend />
+      <Uiux />
+      <Accommodation />
+      <Expo />
+      <Footer />
+    </div>
+  )
 }
