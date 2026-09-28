@@ -1,16 +1,16 @@
-"use client";
-import React from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+'use client'
+import React from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger)
 
-const background = "/images/techconclave/background.png";
-const person1 = "/images/techconclave/person2.png";
-const person2 = "/images/techconclave/person1.png";
-const robot = "/images/techconclave/robot.png";
-const logo = "/images/techconclave/logo.png";
-const bigStar = "/images/techconclave/bigstar.png";
+const background = '/images/techconclave/background.png'
+const person1 = '/images/techconclave/person2.png'
+const person2 = '/images/techconclave/person1.png'
+const robot = '/images/techconclave/robot.png'
+const logo = '/images/techconclave/logo.png'
+const bigStar = '/images/techconclave/bigstar.png'
 
 /*
   ── HOW THIS FILE IS ORGANISED ───────────────────────────────────────────
@@ -39,47 +39,47 @@ const bigStar = "/images/techconclave/bigstar.png";
   original positions.
   ──────────────────────────────────────────────────────────────────────── */
 
-const FW = 1413;
-const FH = 753;
-const W = 1550;
-const H = Math.round(W * (FH / FW));
+const FW = 1413
+const FH = 753
+const W = 1550
+const H = Math.round(W * (FH / FW))
 
 const fbox = (x, y, w, h) => ({
   left: `${(x / FW) * 100}%`,
   top: `${(y / FH) * 100}%`,
   width: `${(w / FW) * 100}%`,
   height: `${(h / FH) * 100}%`,
-});
+})
 const box = (x, y, w, h) => ({
   left: `${(x / FW) * 100}%`,
   top: `${(y / FH) * 100}%`,
   width: `${(w / FW) * 100}%`,
   height: `${(h / FH) * 100}%`,
-});
+})
 
 /* badge text is placeholder metadata — swap in real session names / roles */
 const womanTiles = [
-  { color: "#000000", shape: [668, 25, 158, 163], img: [668, 18, 158, 170]},
-  { color: "#000000", shape: [668, 243, 158, 163], img: [668, 236, 158, 170]},
-  { color: "#000000", shape: [668, 461, 158, 163], img: [668, 454, 158, 170] },
-];
+  { color: '#000000', shape: [668, 25, 158, 163], img: [668, 18, 158, 170] },
+  { color: '#000000', shape: [668, 243, 158, 163], img: [668, 236, 158, 170] },
+  { color: '#000000', shape: [668, 461, 158, 163], img: [668, 454, 158, 170] },
+]
 
 const manTiles = [
-  { color: "#000000", shape: [870, 40, 158, 160], img: [870, 8, 158, 194] },
-  { color: "#000000", shape: [870, 257, 158, 161], img: [870, 225, 158, 195]},
-  { color: "#000000", shape: [870, 475, 158, 161], img: [870, 443, 158, 195] },
-];
+  { color: '#000000', shape: [870, 40, 158, 160], img: [870, 8, 158, 194] },
+  { color: '#000000', shape: [870, 257, 158, 161], img: [870, 225, 158, 195] },
+  { color: '#000000', shape: [870, 475, 158, 161], img: [870, 443, 158, 195] },
+]
 
 const Plus = ({ style, rotate = 0 }) => (
   <svg
-    className="tc-abs tc-deco"
+    className='tc-abs tc-deco'
     style={{ ...style, transform: `rotate(${rotate}deg)` }}
-    viewBox="0 0 10 10"
-    aria-hidden="true"
+    viewBox='0 0 10 10'
+    aria-hidden='true'
   >
-    <path d="M3.5 0h3v3.5H10v3H6.5V10h-3V6.5H0v-3h3.5z" fill="#7c3aed" />
+    <path d='M3.5 0h3v3.5H10v3H6.5V10h-3V6.5H0v-3h3.5z' fill='#7c3aed' />
   </svg>
-);
+)
 
 /* ───────────────────────── SCROLL DRIFT HOOK ─────────────────────────
    Writes --tc-p (-1 → 0 → 1) on the poster's <main>:
@@ -90,31 +90,32 @@ const Plus = ({ style, rotate = 0 }) => (
    while the poster is on screen; hidden layouts (display:none) never
    intersect, so they cost nothing. */
 function useScrollDrift() {
-  const ref = React.useRef(null);
+  const ref = React.useRef(null)
 
   React.useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof window === "undefined") return undefined;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const el = ref.current
+    if (!el || typeof window === 'undefined') return undefined
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+      return undefined
 
-    let visible = false;
-    let raf = 0;
-    let current = 0;
-    let target = 0;
-    let primed = false;
+    let visible = false
+    let raf = 0
+    let current = 0
+    let target = 0
+    let primed = false
 
     const measure = () => {
-      const r = el.getBoundingClientRect();
-      const vh = window.innerHeight || 1;
-      const range = (vh + r.height) / 2 || 1;
-      const p = (vh / 2 - (r.top + r.height / 2)) / range;
-      target = Math.max(-1, Math.min(1, p));
+      const r = el.getBoundingClientRect()
+      const vh = window.innerHeight || 1
+      const range = (vh + r.height) / 2 || 1
+      const p = (vh / 2 - (r.top + r.height / 2)) / range
+      target = Math.max(-1, Math.min(1, p))
       if (!primed) {
-        current = target; // no jump on first paint
-        primed = true;
-        el.style.setProperty("--tc-p", current.toFixed(4));
+        current = target // no jump on first paint
+        primed = true
+        el.style.setProperty('--tc-p', current.toFixed(4))
       }
-    };
+    }
 
     // Runs every animation frame while the poster is on screen, instead of
     // waiting for scroll/resize events. Scroll-event dispatch is where
@@ -123,84 +124,94 @@ function useScrollDrift() {
     // always firing a clean resize, etc.) — polling position every frame
     // sidesteps all of that, it just can't miss an update.
     const loop = () => {
-      if (!visible) { raf = 0; return; }
-      measure();
-      current += (target - current) * 0.12;
-      if (Math.abs(target - current) < 0.0005) current = target;
-      el.style.setProperty("--tc-p", current.toFixed(4));
-      raf = requestAnimationFrame(loop);
-    };
+      if (!visible) {
+        raf = 0
+        return
+      }
+      measure()
+      current += (target - current) * 0.12
+      if (Math.abs(target - current) < 0.0005) current = target
+      el.style.setProperty('--tc-p', current.toFixed(4))
+      raf = requestAnimationFrame(loop)
+    }
 
-   const io = new IntersectionObserver(([entry]) => {
-  visible = entry.isIntersecting;
-  if (visible && !raf) raf = requestAnimationFrame(loop);
-});
+    const io = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting
+      if (visible && !raf) raf = requestAnimationFrame(loop)
+    })
 
-io.observe(el);
-measure();
-raf = requestAnimationFrame(loop);
+    io.observe(el)
+    measure()
+    raf = requestAnimationFrame(loop)
 
     return () => {
-      io.disconnect();
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
+      io.disconnect()
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [])
 
-  return ref;
+  return ref
 }
 
 function useIntroAnimation(ref) {
   React.useLayoutEffect(() => {
-    const root = ref.current;
-    if (!root || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
-    const scroller = root.closest(".main-scroll");
+    const root = ref.current
+    if (!root || window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+      return undefined
+    const scroller = root.closest('.main-scroll')
 
     const context = gsap.context(() => {
-      const title = root.querySelectorAll(".tc-animate-title");
-      const cards = root.querySelectorAll(".tc-animate-card");
-      const meta = root.querySelectorAll(".tc-animate-meta");
-      const robot = root.querySelector(".tc-animate-robot");
-      const logo = root.querySelector(".tc-animate-logo");
+      const title = root.querySelectorAll('.tc-animate-title')
+      const cards = root.querySelectorAll('.tc-animate-card')
+      const meta = root.querySelectorAll('.tc-animate-meta')
+      const robot = root.querySelector('.tc-animate-robot')
+      const logo = root.querySelector('.tc-animate-logo')
 
-      gsap.set([...title, ...cards, ...meta, logo].filter(Boolean), { autoAlpha: 0 });
-      gsap.set(title, { x: -32 });
-      gsap.set(cards, { y: 18 });
-      gsap.set(meta, { y: 12 });
-      if (logo) gsap.set(logo, { scale: 0.86, transformOrigin: "center" });
+      gsap.set([...title, ...cards, ...meta, logo].filter(Boolean), {
+        autoAlpha: 0,
+      })
+      gsap.set(title, { x: -32 })
+      gsap.set(cards, { y: 18 })
+      gsap.set(meta, { y: 12 })
+      if (logo) gsap.set(logo, { scale: 0.86, transformOrigin: 'center' })
 
       const reveal = gsap.timeline({
-        defaults: { ease: "power2.out" },
+        defaults: { ease: 'power2.out' },
         scrollTrigger: {
           trigger: root,
           scroller,
-          start: "top 78%",
+          start: 'top 78%',
           once: true,
         },
-      });
+      })
 
       reveal
         .to(title, { autoAlpha: 1, x: 0, duration: 0.65, stagger: 0.08 })
-        .to(cards, { autoAlpha: 1, y: 0, duration: 0.45, stagger: 0.06 }, "-=0.25")
-        .to(meta, { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.08 }, "-=0.2")
-        .to(logo, { autoAlpha: 1, scale: 1, duration: 0.55 }, "-=0.3");
+        .to(
+          cards,
+          { autoAlpha: 1, y: 0, duration: 0.45, stagger: 0.06 },
+          '-=0.25',
+        )
+        .to(meta, { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.08 }, '-=0.2')
+        .to(logo, { autoAlpha: 1, scale: 1, duration: 0.55 }, '-=0.3')
 
       if (robot) {
         gsap.to(robot, {
           yPercent: -2.5,
-          ease: "none",
+          ease: 'none',
           scrollTrigger: {
             trigger: root,
             scroller,
-            start: "top bottom",
-            end: "bottom top",
+            start: 'top bottom',
+            end: 'bottom top',
             scrub: 1.2,
           },
-        });
+        })
       }
-    }, root);
+    }, root)
 
-    return () => context.revert();
-  }, [ref]);
+    return () => context.revert()
+  }, [ref])
 }
 
 /* ───────────────────────── SPEAKER CARD HELPERS ───────────────────────── */
@@ -209,28 +220,27 @@ function useIntroAnimation(ref) {
    cursor. Touches the DOM directly — no React state, no re-renders. */
 const trackLight = (e) => {
   // Only execute for mouse/pointer devices, skip touch/mobile interactions
-  if (e.pointerType === 'touch') return;
+  if (e.pointerType === 'touch') return
 
-  const rect = e.currentTarget.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  e.currentTarget.style.setProperty('--light-x', `${x}px`);
-  e.currentTarget.style.setProperty('--light-y', `${y}px`);
-};
-
+  const rect = e.currentTarget.getBoundingClientRect()
+  const x = e.clientX - rect.left
+  const y = e.clientY - rect.top
+  e.currentTarget.style.setProperty('--light-x', `${x}px`)
+  e.currentTarget.style.setProperty('--light-y', `${y}px`)
+}
 
 /* Desktop tile: the photo is taller than its black shape so the head pops
    out above it. The card box = photo box; shape / light / ring are placed
    inside it at the shape's exact original position. */
 function DeskTile({ tile, src, alt, col }) {
-  const [ix, iy, iw, ih] = tile.img;
-  const [sx, sy, sw, sh] = tile.shape;
+  const [ix, iy, iw, ih] = tile.img
+  const [sx, sy, sw, sh] = tile.shape
   const inner = {
     left: `${((sx - ix) / iw) * 100}%`,
     top: `${((sy - iy) / ih) * 100}%`,
     width: `${(sw / iw) * 100}%`,
     height: `${(sh / ih) * 100}%`,
-  };
+  }
 
   return (
     <div
@@ -239,89 +249,155 @@ function DeskTile({ tile, src, alt, col }) {
       tabIndex={0}
       onPointerMove={trackLight}
     >
-      <div className="tc-card-shape tc-shape" style={{ ...inner, background: tile.color }} />
-      <div className="tc-card-clip">
-        <img className="tc-person tc-card-img" src={src} alt={alt} />
+      <div
+        className='tc-card-shape tc-shape'
+        style={{ ...inner, background: tile.color }}
+      />
+      <div className='tc-card-clip'>
+        <img className='tc-person tc-card-img' src={src} alt={alt} />
       </div>
-      <span className="tc-card-light" style={inner} />
-      <span className="tc-card-ring" style={inner} />
+      <span className='tc-card-light' style={inner} />
+      <span className='tc-card-ring' style={inner} />
     </div>
-  );
+  )
 }
 
 /* ───────────────────────── DESKTOP (unchanged) ───────────────────────── */
 
 function DesktopPoster() {
-  const driftRef = useScrollDrift();
-  useIntroAnimation(driftRef);
+  const driftRef = useScrollDrift()
+  useIntroAnimation(driftRef)
 
   return (
     <main
       ref={driftRef}
-      className="tc-page tc-desktop-only"
-      style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})` }}
+      className='tc-page tc-desktop-only'
+      style={{
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})`,
+      }}
     >
-      <section className="tc-stage" aria-label="Tech Conclave, October 10-11">
+      <section className='tc-stage' aria-label='Tech Conclave, October 10-11'>
         {/* colour blocks behind the robot */}
-        <div className="tc-abs tc-deco" style={{ ...box(10, 38, 290, 550), background: "#8A38F5C2" }} />
-        <div className="tc-abs tc-deco" style={{ ...box(20, 588, 600, 170), background: "#9C03A0BA" }} />
+        <div
+          className='tc-abs tc-deco'
+          style={{ ...box(10, 38, 290, 550), background: '#8A38F5C2' }}
+        />
+        <div
+          className='tc-abs tc-deco'
+          style={{ ...box(20, 588, 600, 170), background: '#9C03A0BA' }}
+        />
 
         {/* decorations */}
         <Plus style={box(1128, 42, 92, 92)} rotate={20} />
-        <p className="tc-eyebrow tc-abs" style={box(40, 770, 600, 40)}>
-  TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.
-</p>
+        <p className='tc-eyebrow tc-abs' style={box(40, 770, 600, 40)}>
+          TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.
+        </p>
 
         {/* people grid — interactive speaker cards */}
         {womanTiles.map((t, i) => (
-          <DeskTile key={`w${i}`} tile={t} src={person1} alt={i === 0 ? "Speaker" : ""} col="tc-col-left" />
+          <DeskTile
+            key={`w${i}`}
+            tile={t}
+            src={person1}
+            alt={i === 0 ? 'Speaker' : ''}
+            col='tc-col-left'
+          />
         ))}
         {manTiles.map((t, i) => (
-          <DeskTile key={`m${i}`} tile={t} src={person2} alt={i === 0 ? "Speaker" : ""} col="tc-col-right" />
+          <DeskTile
+            key={`m${i}`}
+            tile={t}
+            src={person2}
+            alt={i === 0 ? 'Speaker' : ''}
+            col='tc-col-right'
+          />
         ))}
 
         {/* stretched display type */}
         <svg
-          className="tc-abs tc-type"
-          style={{ inset: 0, width: "100%", height: "100%" }}
+          className='tc-abs tc-type'
+          style={{ inset: 0, width: '100%', height: '100%' }}
           viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio="none"
-          aria-hidden="true"
+          preserveAspectRatio='none'
+          aria-hidden='true'
         >
-          <text x="335" y="140" fontSize="135" fill="#ffffff" textLength="235" lengthAdjust="spacingAndGlyphs">
+          <text
+            x='335'
+            y='140'
+            fontSize='135'
+            fill='#ffffff'
+            textLength='235'
+            lengthAdjust='spacingAndGlyphs'
+          >
             TECH
           </text>
           <text
-            transform="translate(550, 635) rotate(-90)"
-            fontSize="270"
-            fill="#6d7fff"
-            textLength="485"
-            lengthAdjust="spacingAndGlyphs"
+            transform='translate(550, 635) rotate(-90)'
+            fontSize='270'
+            fill='#6d7fff'
+            textLength='485'
+            lengthAdjust='spacingAndGlyphs'
           >
             CONCLAVE
           </text>
-          <text x="1170" y="820" fontSize="180" fill="#6d7fff" textLength="200" lengthAdjust="spacingAndGlyphs">
+          <text
+            x='1170'
+            y='820'
+            fontSize='180'
+            fill='#6d7fff'
+            textLength='200'
+            lengthAdjust='spacingAndGlyphs'
+          >
             OCT
           </text>
-          <text x="1400" y="800" fontSize="90" fill="#6d7fff" textLength="150" lengthAdjust="spacingAndGlyphs">
+          <text
+            x='1400'
+            y='800'
+            fontSize='90'
+            fill='#6d7fff'
+            textLength='150'
+            lengthAdjust='spacingAndGlyphs'
+          >
             10-11
           </text>
         </svg>
 
         {/* robot */}
-          <img className="tc-abs-robot robot-img tc-deco tc-animate-robot" style={box(-270, -70, 970, 950)} src={robot} alt="Waving robot" />
+        <img
+          className='tc-abs-robot robot-img tc-deco tc-animate-robot'
+          style={box(-270, -70, 970, 950)}
+          src={robot}
+          alt='Waving robot'
+        />
 
         {/* stars */}
-        <img className="tc-abs tc-deco" style={box(-180, -30, 200, 210)} src={bigStar} alt="" />
+        <img
+          className='tc-abs tc-deco'
+          style={box(-180, -30, 200, 210)}
+          src={bigStar}
+          alt=''
+        />
         {/* right column */}
-        <div className="tc-abs tc-hero-heading" style={box(1080, 230, 510, 450)} aria-label="Tech Conclave title">
-          <span className="tc-hero-word tc-animate-title">
-            <span className="tc-hero-tech">TECH</span>
-            <span className="tc-hero-conclave">CONCLAVE</span>
+        <div
+          className='tc-abs tc-hero-heading'
+          style={box(1080, 230, 510, 450)}
+          aria-label='Tech Conclave title'
+        >
+          <span className='tc-hero-word tc-animate-title'>
+            <span className='tc-hero-tech'>TECH</span>
+            <span className='tc-hero-conclave'>CONCLAVE</span>
           </span>
         </div>
-        <img className="tc-abs logo-img tc-deco tc-animate-logo" style={box(970, 510, 220, 220)} src={logo} alt="Tech Conclave" />
-        <p className="tc-abs tc-tagline tc-animate-meta" style={box(1112, 328, 420, 170)}>
+        <img
+          className='tc-abs logo-img tc-deco tc-animate-logo'
+          style={box(970, 510, 220, 220)}
+          src={logo}
+          alt='Tech Conclave'
+        />
+        <p
+          className='tc-abs tc-tagline tc-animate-meta'
+          style={box(1112, 328, 420, 170)}
+        >
           A space for inspiring
           <br />
           personalities engaging
@@ -332,7 +408,7 @@ function DesktopPoster() {
         </p>
       </section>
     </main>
-  );
+  )
 }
 
 /* ─────────────────────── MOBILE / TABLET (new) ────────────────────────
@@ -364,78 +440,111 @@ function DesktopPoster() {
    asset if you have one.
 ------------------------------------------------------------------------ */
 
-const MW = 424;
-const MH = 335;
+const MW = 424
+const MH = 335
 const mbox = (x, y, w, h) => ({
   left: `${(x / MW) * 100}%`,
   top: `${(y / MH) * 100}%`,
   width: `${(w / MW) * 100}%`,
   height: `${(h / MH) * 100}%`,
-});
+})
 
 function MobilePoster() {
-  const driftRef = useScrollDrift();
-  useIntroAnimation(driftRef);
+  const driftRef = useScrollDrift()
+  useIntroAnimation(driftRef)
 
   // interleaved so flex-wrap lands them green/pink, yellow/red, blue/purple
   const people = womanTiles.flatMap((w, i) => [
     { ...w, img: person1 },
     { ...manTiles[i], img: person2 },
-  ]);
+  ])
 
   return (
-    <main ref={driftRef} className="tc-page tc-mobile-only" style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})` }}>
-      <section className="tc-m-stage" aria-label="Tech Conclave, October 10-11">
+    <main
+      ref={driftRef}
+      className='tc-page tc-mobile-only'
+      style={{
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})`,
+      }}
+    >
+      <section className='tc-m-stage' aria-label='Tech Conclave, October 10-11'>
         {/* ── visual group: title + illustration + eyebrow ── */}
-        <div className="tc-m-panel tc-m-panel--visual">
-          <div className="tc-m-titlewrap">
-            <h1 className="tc-m-title tc-animate-title">
-              <span className="tc-m-tech">TECH</span>
-              <span className="tc-m-conclave">CONCLAVE</span>
+        <div className='tc-m-panel tc-m-panel--visual'>
+          <div className='tc-m-titlewrap'>
+            <h1 className='tc-m-title tc-animate-title'>
+              <span className='tc-m-tech'>TECH</span>
+              <span className='tc-m-conclave'>CONCLAVE</span>
             </h1>
           </div>
 
-          <div className="tc-m-hero">
-            <div className="tc-abs tc-deco" style={{ ...mbox(30, -7, 130, 280), background: "#8A38F5C2" }} />
-            <div className="tc-abs tc-deco" style={{ ...mbox(30, 270, 280, 70), background: "#9C03A0BA" }} />
+          <div className='tc-m-hero'>
+            <div
+              className='tc-abs tc-deco'
+              style={{ ...mbox(30, -7, 130, 280), background: '#8A38F5C2' }}
+            />
+            <div
+              className='tc-abs tc-deco'
+              style={{ ...mbox(30, 270, 280, 70), background: '#9C03A0BA' }}
+            />
 
-            <div className="tc-abs tc-m-people" style={mbox(215, -9, 174, 231)} role="list" aria-label="Speakers">
-  {people.map((t, i) => (
-    <div
-      className={`tc-m-tile tc-card tc-animate-card ${i % 2 === 0 ? "tc-col-left" : "tc-col-right"}`}
-      style={{ "--tile-color": t.color }}
-      key={i}
-      role="listitem"
-      tabIndex={0}
-      onPointerMove={trackLight}
-    >
-      <img className="tc-m-tile-img tc-card-img" src={t.img} alt="" />
-      <span className="tc-card-light" />
-      <span className="tc-card-ring" />
-    </div>
-  ))}
-</div>
+            <div
+              className='tc-abs tc-m-people'
+              style={mbox(215, -9, 174, 231)}
+              role='list'
+              aria-label='Speakers'
+            >
+              {people.map((t, i) => (
+                <div
+                  className={`tc-m-tile tc-card tc-animate-card ${i % 2 === 0 ? 'tc-col-left' : 'tc-col-right'}`}
+                  style={{ '--tile-color': t.color }}
+                  key={i}
+                  role='listitem'
+                  tabIndex={0}
+                  onPointerMove={trackLight}
+                >
+                  <img
+                    className='tc-m-tile-img tc-card-img'
+                    src={t.img}
+                    alt=''
+                  />
+                  <span className='tc-card-light' />
+                  <span className='tc-card-ring' />
+                </div>
+              ))}
+            </div>
 
-            <img className="tc-abs tc-m-robot tc-deco tc-animate-robot" style={mbox(-75, 35, 350, 350)} src={robot} alt="Waving robot" />
-            <img className="tc-abs tc-deco" style={mbox(-37, -15, 80, 80)} src={bigStar} alt="" />
+            <img
+              className='tc-abs tc-m-robot tc-deco tc-animate-robot'
+              style={mbox(-75, 35, 350, 350)}
+              src={robot}
+              alt='Waving robot'
+            />
+            <img
+              className='tc-abs tc-deco'
+              style={mbox(-37, -15, 80, 80)}
+              src={bigStar}
+              alt=''
+            />
           </div>
 
-          <p className="tc-m-eyebrow tc-animate-meta">TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.</p>
+          <p className='tc-m-eyebrow tc-animate-meta'>
+            TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.
+          </p>
         </div>
 
         {/* ── info group: date + logo lockup + tagline ── */}
-        <div className="tc-m-panel tc-m-panel--info">
-          <div className="tc-m-date tc-animate-meta">
-            <span className="tc-m-oct">OCT</span>
-            <span className="tc-m-days">10-11</span>
+        <div className='tc-m-panel tc-m-panel--info'>
+          <div className='tc-m-date tc-animate-meta'>
+            <span className='tc-m-oct'>OCT</span>
+            <span className='tc-m-days'>10-11</span>
           </div>
 
-          <div className="tc-m-footer tc-animate-meta">
-            <h2 className="tc-m-subheading">
-              <span className="tc-m-subheading-tech">tech</span>
-              <span className="tc-m-subheading-conclave">conclave</span>
+          <div className='tc-m-footer tc-animate-meta'>
+            <h2 className='tc-m-subheading'>
+              <span className='tc-m-subheading-tech'>tech</span>
+              <span className='tc-m-subheading-conclave'>conclave</span>
             </h2>
-            <p className="tc-m-tagline">
+            <p className='tc-m-tagline'>
               <span>A space for inspiring</span>
               <span>personalities engaging</span>
               <span>conversations and</span>
@@ -445,87 +554,118 @@ function MobilePoster() {
         </div>
       </section>
     </main>
-  );
+  )
 }
 /*------------------------------TABLET------------------------------------------------*/
 function TabletPlus({ style, rotate = 0 }) {
   return (
     <svg
-      className="tc-t-abs tc-t-plus tc-deco"
+      className='tc-t-abs tc-t-plus tc-deco'
       style={{ ...style, transform: `rotate(${rotate}deg)` }}
-      viewBox="0 0 10 10"
-      aria-hidden="true"
+      viewBox='0 0 10 10'
+      aria-hidden='true'
     >
-      <path d="M3.5 0h3v3.5H10v3H6.5V10h-3V6.5H0v-3h3.5z" fill="#7c3aed" />
+      <path d='M3.5 0h3v3.5H10v3H6.5V10h-3V6.5H0v-3h3.5z' fill='#7c3aed' />
     </svg>
-  );
+  )
 }
 
 function TabletPoster() {
-  const driftRef = useScrollDrift();
-  useIntroAnimation(driftRef);
+  const driftRef = useScrollDrift()
+  useIntroAnimation(driftRef)
 
   const speakers = womanTiles.flatMap((woman, index) => [
     { ...woman, img: person1 },
     { ...manTiles[index], img: person2 },
-  ]);
+  ])
 
   return (
-    <main ref={driftRef} className="tc-t-page" style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})` }}>
-      <section className="tc-t-stage" aria-label="Tech Conclave, October 10-11">
-        <div className="tc-t-visual">
-          <h1 className="tc-t-title tc-animate-title">
-            <span className="tc-t-tech">TECH</span>
-            <span className="tc-t-conclave">CONCLAVE</span>
+    <main
+      ref={driftRef}
+      className='tc-t-page'
+      style={{
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})`,
+      }}
+    >
+      <section className='tc-t-stage' aria-label='Tech Conclave, October 10-11'>
+        <div className='tc-t-visual'>
+          <h1 className='tc-t-title tc-animate-title'>
+            <span className='tc-t-tech'>TECH</span>
+            <span className='tc-t-conclave'>CONCLAVE</span>
           </h1>
 
-          <div className="tc-t-art">
-            <div className="tc-t-abs tc-t-block tc-deco" style={{ ...mbox(30, -7, 130, 280), background: "#8A38F5C2" }} />
-            <div className="tc-t-abs tc-t-pink-block tc-deco" style={{ ...mbox(30, 270, 280, 70), background: "#9C03A0BA" }} />
-            <div className="tc-t-abs tc-t-speakers" style={mbox(215, -9, 174, 231)} role="list" aria-label="Speakers">
-  {speakers.map((speaker, index) => (
-    <div
-      className={`tc-t-speaker tc-card tc-animate-card ${index % 2 === 0 ? "tc-col-left" : "tc-col-right"}`}
-      style={{ "--tile-color": speaker.color }}
-      key={index}
-      role="listitem"
-      tabIndex={0}
-      onPointerMove={trackLight}
-    >
-      <img className="tc-t-speaker-img tc-card-img" src={speaker.img} alt="" />
-      <span className="tc-card-light" />
-      <span className="tc-card-ring" />
-    </div>
-  ))}
-</div>
-            <img className="tc-t-abs tc-t-robot tc-deco tc-animate-robot" style={mbox(-100, 5, 400, 400)} src={robot} alt="Waving robot" />
-            <img className="tc-t-abs tc-t-star tc-deco" style={mbox(-55, -20, 110, 110)} src={bigStar} alt="" />
+          <div className='tc-t-art'>
+            <div
+              className='tc-t-abs tc-t-block tc-deco'
+              style={{ ...mbox(30, -7, 130, 280), background: '#8A38F5C2' }}
+            />
+            <div
+              className='tc-t-abs tc-t-pink-block tc-deco'
+              style={{ ...mbox(30, 270, 280, 70), background: '#9C03A0BA' }}
+            />
+            <div
+              className='tc-t-abs tc-t-speakers'
+              style={mbox(215, -9, 174, 231)}
+              role='list'
+              aria-label='Speakers'
+            >
+              {speakers.map((speaker, index) => (
+                <div
+                  className={`tc-t-speaker tc-card tc-animate-card ${index % 2 === 0 ? 'tc-col-left' : 'tc-col-right'}`}
+                  style={{ '--tile-color': speaker.color }}
+                  key={index}
+                  role='listitem'
+                  tabIndex={0}
+                  onPointerMove={trackLight}
+                >
+                  <img
+                    className='tc-t-speaker-img tc-card-img'
+                    src={speaker.img}
+                    alt=''
+                  />
+                  <span className='tc-card-light' />
+                  <span className='tc-card-ring' />
+                </div>
+              ))}
+            </div>
+            <img
+              className='tc-t-abs tc-t-robot tc-deco tc-animate-robot'
+              style={mbox(-100, 5, 400, 400)}
+              src={robot}
+              alt='Waving robot'
+            />
+            <img
+              className='tc-t-abs tc-t-star tc-deco'
+              style={mbox(-55, -20, 110, 110)}
+              src={bigStar}
+              alt=''
+            />
           </div>
 
-
-<p className="tc-t-eyebrow tc-animate-meta">
-  TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.
-</p>
+          <p className='tc-t-eyebrow tc-animate-meta'>
+            TALKS . SHOWS . CONVERSATIONS . EXPERIENCES.
+          </p>
         </div>
 
-        <div className="tc-t-info">
-          <div className="tc-t-lockup">
-            <h2 className="tc-t-name tc-animate-meta">
-              <span className="tc-t-name-tech">TECH</span>{" "}
-              <span className="tc-t-name-conclave">CONCLAVE</span>
+        <div className='tc-t-info'>
+          <div className='tc-t-lockup'>
+            <h2 className='tc-t-name tc-animate-meta'>
+              <span className='tc-t-name-tech'>TECH</span>{' '}
+              <span className='tc-t-name-conclave'>CONCLAVE</span>
             </h2>
-            <p className="tc-t-description tc-animate-meta">
-              A space for inspiring personalities, engaging conversations, and unforgettable experiences.
+            <p className='tc-t-description tc-animate-meta'>
+              A space for inspiring personalities, engaging conversations, and
+              unforgettable experiences.
             </p>
           </div>
-          <div className="tc-t-date tc-animate-meta" aria-label="October 10-11">
-            <span className="tc-t-oct">OCT</span>
-            <span className="tc-t-days">10-11</span>
+          <div className='tc-t-date tc-animate-meta' aria-label='October 10-11'>
+            <span className='tc-t-oct'>OCT</span>
+            <span className='tc-t-days'>10-11</span>
           </div>
         </div>
       </section>
     </main>
-  );
+  )
 }
 
 export default function TechConclave() {
@@ -536,7 +676,7 @@ export default function TechConclave() {
       <MobilePoster />
       <TabletPoster />
     </>
-  );
+  )
 }
 
 const css = `
@@ -609,7 +749,7 @@ html, body { margin: 0; padding: 0; }
 // .logo-img { transform: scale(1.65) translate(-1%, -3%); transform-origin: right center; z-index: 4; }
 .tc-abs-robot { position: absolute; display: block; }
 .tc-abs { position: absolute; display: block; object-fit: contain; }
-.tc-shape { 
+.tc-shape {
   border-top-right-radius: 15%;
   border-top-left-radius: 15%;
   border-bottom-right-radius: 15%;
@@ -659,9 +799,9 @@ html, body { margin: 0; padding: 0; }
    enough — that's the actual "tablet" reflow, done with flex-wrap alone */
 .tc-m-panel { display: flex; flex-direction: column; gap: 16px; }
 
-.tc-m-panel--visual { 
-  flex: 3 1 380px; 
-  min-width: 300px; 
+.tc-m-panel--visual {
+  flex: 3 1 380px;
+  min-width: 300px;
   display: flex;
   flex-direction: column;
   align-items: center; /* Center children horizontally */
@@ -669,13 +809,13 @@ html, body { margin: 0; padding: 0; }
 }
 .tc-m-panel--info { flex: 1 1 240px; min-width: 220px; }
 
-.tc-m-titlewrap { 
-  position: relative; 
+.tc-m-titlewrap {
+  position: relative;
   width: 100%;
   display: flex;
   justify-content: center; /* Horizontally center title block */
   text-align: center;
-  
+
 }
 
 .tc-m-title {
@@ -688,14 +828,14 @@ html, body { margin: 0; padding: 0; }
   width: 100%;
   text-align: center;
 }
-.tc-m-tech { 
-  color: #ffffff; 
-  font-size: clamp(2rem, 8vw, 2.6rem); 
-  font-family: "Bebas Neue", "Oswald", Impact, sans-serif;  
+.tc-m-tech {
+  color: #ffffff;
+  font-size: clamp(2rem, 8vw, 2.6rem);
+  font-family: "Bebas Neue", "Oswald", Impact, sans-serif;
   text-align: left;
   width: 100%;
 }
-.tc-m-conclave { 
+.tc-m-conclave {
  color: #7787ff; /* Matching purple/indigo accent */
   font-family: "Syne", "Druk Wide Bold", "Monument Extended", sans-serif;
   font-weight: 800;
@@ -1114,7 +1254,7 @@ text-align: center;
   position: relative;
   z-index: 10; /* Set higher than other card layers (like background shapes or overlays) */
 }
-  
+
 .tc-card-ring {
   position: absolute;
   inset: 0;
@@ -1229,4 +1369,4 @@ text-align: center;
   }
 }
 
-`;
+`
