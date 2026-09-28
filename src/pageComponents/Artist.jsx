@@ -9,8 +9,6 @@ gsap.registerPlugin(ScrollTrigger)
 
 const assetPathPrefix = "/images/artist"
 
-const NAV_LINKS = ["PROSHOW", "WORKSHOPS", "CAMPUS AMBASADOR", "GALLERY"]
-
 const artists = [
   {
     name: "Arijit Singh",
@@ -38,29 +36,6 @@ function FestivalMark() {
       <span>TATHVA 2026</span>
       <small>NIT CALICUT</small>
     </div>
-  )
-}
-
-function Header() {
-  return (
-    <header className="site-header">
-      <img
-        className="site-logo"
-        src={`${assetPathPrefix}/32c3b.png`}
-        alt="Tathva"
-      />
-      <button className="menu-button" type="button" aria-label="Open menu">
-        <img src={`${assetPathPrefix}/4e2c4.svg`} alt="" />
-      </button>
-      <nav aria-label="Main navigation">
-        {NAV_LINKS.map((label, i) => (
-          <span key={label}>
-            {i > 0 && <i>/</i>}
-            <a href={`#${label.toLowerCase().split(" ")[0]}`}>{label}</a>
-          </span>
-        ))}
-      </nav>
-    </header>
   )
 }
 
@@ -426,7 +401,6 @@ function ArtistMobile() {
   const sectionRef = useRef(null)
   const pageRefs = useRef([])
   const [activeDay, setActiveDay] = useState(0)
-  const [menuOpen, setMenuOpen] = useState(false)
 
   // ponytail: mobile portrait layers are display:none in CSS, so only backgrounds crossfade here
   useScrubCrossfade(sectionRef, ".mobile-bg-layer", null)
@@ -464,30 +438,6 @@ function ArtistMobile() {
       </div>
 
       <div className="mobile-pages">
-        <header className="mobile-header">
-          <img className="site-logo" src={`${assetPathPrefix}/32c3b.png`} alt="Tathva" />
-          <FestivalMark />
-          <button
-            className="menu-button"
-            type="button"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            <img src={`${assetPathPrefix}/4e2c4.svg`} alt="" />
-          </button>
-          {menuOpen && (
-            <nav className="mobile-menu" aria-label="Main navigation">
-              {NAV_LINKS.map((label, i) => (
-                <span key={label}>
-                  {i > 0 && <i>/</i>}
-                  <a href={`#${label.toLowerCase().split(" ")[0]}`}>{label}</a>
-                </span>
-              ))}
-            </nav>
-          )}
-        </header>
-
         {artists.map((artist, index) => (
           <div
             key={artist.name}
@@ -566,7 +516,6 @@ export default function App() {
               />
             </div>
           ))}
-          <Header />
           <ScheduleCard />
         </div>
       </section>

@@ -262,7 +262,6 @@ export default function Accommodation() {
   return (
     <main className="accommodation-page">
       <style>{accommodationStyles}</style>
-      {/* Navbar slot: render <Navbar /> here (absolutely positioned) when it is ready */}
       <h1 className="heading">ACCOMMODATION</h1>
       <section className="cards">
         {HOSTELS.map((h) => (

@@ -1,4 +1,5 @@
 import './globals.css'
+import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 
 export const metadata = {
   title: "Tech Conclave - Tathva '26",
@@ -8,7 +9,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang='en' className='h-full antialiased'>
-      <body className='min-h-full flex flex-col'>{children}</body>
+      <body className='min-h-full flex flex-col'>
+        <TathvaMenu />
+        {children}
+      </body>
     </html>
   )
 }

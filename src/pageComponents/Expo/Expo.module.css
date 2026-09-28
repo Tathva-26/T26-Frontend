@@ -50,14 +50,9 @@
   z-index: 4;
 }
 
-.header {
-  position: absolute;
-  inset: 0 0 auto;
-  height: 100px;
-  z-index: 5;
-}
 .brand {
   position: absolute;
+  z-index: 5;
   top: 30px;
   left: 4%;
   width: 44px;
@@ -65,64 +60,6 @@
 .brand img {
   width: 100%;
   height: auto;
-}
-.badge {
-  position: absolute;
-  top: 0;
-  left: 53.5%;
-  transform: translateX(-50%);
-  width: 100px;
-  height: auto;
-}
-.menuButton {
-  position: absolute;
-  top: 37px;
-  left: 10%;
-  width: 28px;
-  height: 26px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  background: none;
-  border: 0;
-  cursor: pointer;
-}
-.menuButton span {
-  width: 22px;
-  height: 2px;
-  border-radius: 2px;
-  background: #fafaff;
-}
-.menuButton span:nth-child(2) {
-  width: 16px;
-}
-.menuButton span:nth-child(3) {
-  display: none;
-}
-.navigation {
-  position: absolute;
-  top: 43px;
-  left: 14.5%;
-  display: flex;
-  align-items: center;
-  gap: 17px;
-  font:
-    600 clamp(9px, 0.73vw, 12px)/1 var(--font-space),
-    sans-serif;
-  text-transform: uppercase;
-}
-.navigation a {
-  color: inherit;
-  text-decoration: none;
-}
-.navigation i {
-  font-style: normal;
-  opacity: 0.6;
-}
-.navigation a:hover {
-  color: #a8b7ff;
 }
 .title {
   position: absolute;
@@ -213,9 +150,7 @@
   background: #8ed2e452;
 }
 .explore:focus-visible,
-.menuButton:focus-visible,
-.brand:focus-visible,
-.navigation a:focus-visible {
+.brand:focus-visible {
   outline: 2px solid #a6e9ff;
   outline-offset: 6px;
 }
@@ -312,11 +247,6 @@
   .stage {
     min-height: 740px;
   }
-  .navigation {
-    gap: 11px;
-    top: 45px;
-    left: 16%;
-  }
   .intro {
     left: 22%;
     top: 23%;
@@ -355,54 +285,10 @@
     background-position: center;
     opacity: 0.75;
   }
-  .header {
-    height: 80px;
-  }
   .brand {
     left: 6.5%;
-    top: 25px;
+    top: 70px;
     width: 40px;
-  }
-  .badge {
-    left: 52.5%;
-    width: 95px;
-  }
-  .menuButton {
-    left: auto;
-    right: 9%;
-    top: 36px;
-    width: 30px;
-    height: 28px;
-  }
-  .menuButton span {
-    width: 24px;
-    height: 2.5px;
-  }
-  .menuButton span:nth-child(2) {
-    width: 15px;
-  }
-  .menuButton span:nth-child(3) {
-    display: block;
-    width: 20px;
-  }
-  .navigation {
-    display: none;
-  }
-  .navigationOpen {
-    display: flex;
-    top: 78px;
-    right: 7%;
-    left: auto;
-    padding: 23px;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 23px;
-    font-size: 12px;
-    background: #233149f5;
-    border: 1px solid #7481a0;
-  }
-  .navigation i {
-    display: none;
   }
   .title {
     left: 7%;

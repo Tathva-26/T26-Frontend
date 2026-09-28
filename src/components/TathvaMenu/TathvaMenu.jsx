@@ -236,6 +236,7 @@ const allMenuItems = [...leftMenu, ...rightMenu];
 
 export default function TathvaMenu() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   const rootRef = useRef(null)
   const panelRef = useRef(null)
@@ -867,7 +868,7 @@ export default function TathvaMenu() {
           left-1/2
           top-0
           z-20
-          flex
+          hidden
           h-auto
           w-[130px]
           aspect-[100/28]
@@ -879,6 +880,7 @@ export default function TathvaMenu() {
           bg-transparent
           p-0
           outline-none
+          md:flex
         '
       >
         <img

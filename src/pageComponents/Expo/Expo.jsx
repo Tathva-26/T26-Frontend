@@ -2,29 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import Crystal3D from "./Crystal3D";
 import styles from "./Expo.module.css";
 
 export default function Expo() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const details = useRef(null);
 
   return (
     <main className={styles.page}>
       <section className={styles.stage} aria-labelledby="expo-title">
-        <header className={styles.header}>
-          <Link href="/" className={styles.brand} aria-label="Tathva home">
-            <Image src="/images/expo/tathva-mark.svg" width={55} height={46} alt="" unoptimized />
-          </Link>
-          <Image className={styles.badge} src="/images/menu/tathva.png" width={100} height={28} alt="Tathva 2026" />
-          <button className={styles.menuButton} aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-expanded={menuOpen} aria-controls="expo-navigation" onClick={() => setMenuOpen(!menuOpen)}>
-            <span /><span /><span />
-          </button>
-          <nav id="expo-navigation" className={`${styles.navigation} ${menuOpen ? styles.navigationOpen : ""}`} aria-label="Tathva navigation">
-            <a href="/proshow">Proshow</a><i>/</i><a href="/workshops">Workshops</a><i>/</i><a href="/campus-ambassador">Campus ambassador</a><i>/</i><a href="/gallery">Gallery</a>
-          </nav>
-        </header>
+        <Link href="/" className={styles.brand} aria-label="Tathva home">
+          <Image src="/images/expo/tathva-mark.svg" width={55} height={46} alt="" unoptimized />
+        </Link>
 
         <h1 id="expo-title" className={styles.title}>
           <span className={styles.desktopTitle}>EXPO</span>
