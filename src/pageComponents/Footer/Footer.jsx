@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -21,8 +21,6 @@ const varela = Varela({
   variable: '--font-varela',
 })
 
-const EVENT_DATE = new Date('2026-10-09T00:00:00')
-
 const linkColumns = [
   {
     heading: 'EXPLORE',
@@ -38,54 +36,7 @@ const linkColumns = [
   },
 ]
 
-function useCountdown(target) {
-  const [timeLeft, setTimeLeft] = useState({
-    d: '00',
-    h: '00',
-    m: '00',
-  })
-
-  useEffect(() => {
-    const tick = () => {
-      const diff = Math.max(0, target.getTime() - Date.now())
-      const totalSeconds = Math.floor(diff / 1000)
-
-      const d = Math.floor(totalSeconds / 86400)
-      const h = Math.floor((totalSeconds % 86400) / 3600)
-      const m = Math.floor((totalSeconds % 3600) / 60)
-
-      const pad = (n) => n.toString().padStart(2, '0')
-      setTimeLeft({ d: pad(d), h: pad(h), m: pad(m) })
-    }
-
-    tick()
-    const interval = setInterval(tick, 1000)
-    return () => clearInterval(interval)
-  }, [target])
-
-  return timeLeft
-}
-
-function CountdownUnit({ value }) {
-  const ref = useRef(null)
-  const previous = useRef(value)
-
-  useGSAP(() => {
-    if (previous.current !== value) {
-      gsap.fromTo(
-        ref.current,
-        { y: -6, opacity: 0.5, scale: 0.95 },
-        { y: 0, opacity: 1, scale: 1, duration: 0.3, ease: 'power2.out' },
-      )
-      previous.current = value
-    }
-  }, [value])
-
-  return <span ref={ref}>{value}</span>
-}
-
 export default function Footer() {
-  const timeLeft = useCountdown(EVENT_DATE)
   const rootRef = useRef(null)
   const panelRef = useRef(null)
   const headlineRef = useRef(null)
@@ -122,11 +73,6 @@ export default function Footer() {
             ease: 'power2.out',
           },
           '-=0.4',
-        )
-        .from(
-          '.footer-countdown',
-          { scale: 0.9, opacity: 0, duration: 0.5, ease: 'power2.out' },
-          '-=0.3',
         )
     },
     { scope: rootRef },
@@ -271,7 +217,7 @@ export default function Footer() {
             />
           </svg>
 
-          <div className='footer-panel-content relative z-10 w-full flex flex-col md:grid md:grid-cols-[1fr_auto] lg:grid-cols-[380px_1fr] xl:grid-cols-[360px_1fr_300px] 2xl:grid-cols-[400px_1fr_340px] items-center gap-6 md:gap-4 lg:gap-6 xl:gap-8 px-6 py-5 sm:px-8 lg:px-[48px] xl:px-[60px] md:my-auto md:py-6 lg:py-8'>
+          <div className='footer-panel-content relative z-10 w-full flex flex-col md:grid md:grid-cols-[auto_1fr] md:justify-between items-center gap-6 md:gap-8 lg:gap-12 xl:gap-16 px-6 py-5 sm:px-8 lg:px-[54px] xl:px-[68px] md:my-auto md:py-6 lg:py-8'>
             {/* NEWSLETTER SECTION */}
             <div className='footer-newsletter w-full self-center'>
               <p className='font-bebas text-[20px] sm:text-[23px] lg:text-[25px] leading-[26px] sm:leading-[28px] tracking-[0.02em] text-white font-normal lg:whitespace-nowrap'>
@@ -329,11 +275,11 @@ export default function Footer() {
             </div>
 
             {/* NAVIGATION COLUMNS */}
-            <div className='footer-navigation mt-7 w-full grid grid-cols-3 gap-2 md:mt-0 md:flex md:h-auto md:flex-row md:items-start md:justify-center md:gap-4 lg:gap-6 xl:gap-8 md:translate-y-2 lg:translate-y-3'>
+            <div className='footer-navigation mt-7 w-full grid grid-cols-3 gap-2 md:mt-0 md:flex md:h-auto md:flex-row md:items-start md:justify-end md:gap-5 lg:gap-8 xl:gap-10 md:translate-y-2 lg:translate-y-3'>
               {linkColumns.map((column) => (
                 <div
                   key={column.heading}
-                  className='footer-col flex flex-col items-start w-full md:w-[110px] lg:w-[130px] xl:w-[140px]'
+                  className='footer-col flex flex-col items-start w-full md:w-[115px] lg:w-[135px] xl:w-[150px]'
                 >
                   {/* Header with extending divider line on desktop */}
                   <div className='flex w-full items-center gap-2 mb-2 md:mb-3'>
@@ -376,16 +322,6 @@ export default function Footer() {
                   </ul>
                 </div>
               ))}
-            </div>
-
-            {/* COUNTDOWN TIMER (Hidden on smaller desktop / tablet devices, visible on >= xl) */}
-            <div className='footer-countdown hidden xl:flex flex-col items-center justify-center self-center text-center pl-4'>
-              <p className='font-bebas text-[20px] xl:text-[23px] leading-tight tracking-[0.05em] text-white'>
-                DAYS TO GO
-              </p>
-              <div className='mt-2.5 flex items-center justify-center font-akira text-[38px] xl:text-[44px] 2xl:text-[48px] font-extrabold leading-none tracking-[0.06em] text-white'>
-                <CountdownUnit value={timeLeft.d} />:<CountdownUnit value={timeLeft.h} />:<CountdownUnit value={timeLeft.m} />
-              </div>
             </div>
           </div>
         </div>
