@@ -6,34 +6,38 @@ import { Hero } from "@/pageComponents/Hero";
 import { Frame } from "@/pageComponents/W1/Frame";
 import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
 import Navbar from "@/pageComponents/Navbar/Navbar";
-
 // Whiteout colour — pure white for a clean flash
 const WHITEOUT_COLOR = "#ffffff";
 
 // Scroll distance (in pixels) across which the whiteout fades between 100% white and page
 const FADE_DISTANCE = 350;
 
-// Coming back from Frame, Hero is held behind solid white for this long while it re-paints.
-const RETURN_HOLD_MS = 500;
-// ...and is only jumped to its "end of runway" state after it has painted once at scale 1.
-const HERO_END_DELAY_MS = 180;
+// Hero progress at which the screen counts as fully white -> Frame takes over AUTOMATICALLY.
+// (Just under 1.0 so a smoothed wheel scroll that stops a few px short still triggers it.)
+const AUTO_ENTER_PROGRESS = 0.995;
 
+// Coming back from Frame: Hero repaints at scale 1 behind solid white, is then jumped to
+// HERO_RETURN_PROGRESS (the point where its white overlay is already 0, so there is no dead
+// all-white stretch to scroll through), and the white fades out by itself.
+const HERO_RETURN_PROGRESS = 0.85;
+const HERO_END_DELAY_MS = 180; // settle Hero at HERO_RETURN_PROGRESS after this
+const RETURN_HOLD_MS = 320;    // start fading the white out after this
+const RETURN_FADE_MS = 600;    // duration of that fade
 /**
- * Jump Hero's scroller to the start or end of its runway INSTANTLY, including the scrubbed
+ * Jump Hero's scroller to a point on its runway (0..1) INSTANTLY, including the scrubbed
  * (smoothed) tweens, so nothing is left animating in the background.
  *
  * Why: while Frame is showing, Hero is hidden. When it becomes visible again the browser rebuilds
  * its GPU layers at whatever scale they currently have. If Hero was left at the END of its runway
  * (girl 15x, portal ~10x) it rebuilds every layer at that extreme zoom and then downscales those
  * huge textures for the whole scroll back = heavy lag. Parking Hero at the START while hidden makes
- * it rebuild at scale 1 (same as the first visit), and we jump to the end only afterwards, behind
- * the white overlay.
+ * it rebuild at scale 1 (same as the first visit), and we jump to HERO_RETURN_PROGRESS only
+ * afterwards, behind the white overlay.
  */
-function settleHero(where) {
+function settleHero(fraction) {
   const scroller = document.getElementById("hero-scroller");
   if (!scroller) return;
-  scroller.scrollTop =
-    where === "end" ? scroller.scrollHeight - scroller.clientHeight : 0;
+  scroller.scrollTop = (scroller.scrollHeight - scroller.clientHeight) * fraction;
   ScrollTrigger.update();
   ScrollTrigger.getAll().forEach((st) => {
     if (st.scroller !== scroller) return;
@@ -66,7 +70,8 @@ export default function Page() {
     sectionRef.current = section;
     if (section !== "frame") return undefined;
     // Frame is showing (Hero hidden / behind white): reset Hero to its cheap start state.
-    const id = window.setTimeout(() => settleHero("start"), 250);
+    // Frame is showing (Hero hidden / behind white): reset Hero to its cheap start state.
+    const id = window.setTimeout(() => settleHero(0), 250);
     return () => window.clearTimeout(id);
   }, [section]);
 
@@ -90,24 +95,80 @@ export default function Page() {
   }, []);
 
   /** Frame -> Hero. Screen is 100% white; Hero repaints at scale 1, then jumps to the end state. */
+  /** Frame -> Hero. Screen is 100% white; Hero repaints at scale 1, then lands at
+   *  HERO_RETURN_PROGRESS and the white fades out by itself. */
   const returnToHero = useCallback(() => {
     setWhiteoutOpacity(1);
-    holdWhiteUntil.current = performance.now() + RETURN_HOLD_MS;
+
+    // keep Hero progress from touching the whiteout until our own fade has finished
+    holdWhiteUntil.current = performance.now() + RETURN_HOLD_MS + RETURN_FADE_MS;
     setSection("hero");
     sectionRef.current = "hero";
     transitionScrollRef.current = 0;
     reverseScrollRef.current = 0;
-    window.setTimeout(() => settleHero("end"), HERO_END_DELAY_MS);
+
+    // 1) after Hero has painted once at scale 1 (behind white), jump to where its white is 0
+    window.setTimeout(() => {
+      if (sectionRef.current === "hero") settleHero(HERO_RETURN_PROGRESS);
+    }, HERO_END_DELAY_MS);
+
+    // 2) then fade the white out on its own — no scrolling needed to get out of the white
+    window.setTimeout(() => {
+      const el = whiteoutRef.current;
+      if (!el || sectionRef.current !== "hero") return;
+      whiteoutTarget.current = 0;
+      gsap.to(el, {
+        opacity: 0,
+        duration: RETURN_FADE_MS / 1000,
+        ease: "power2.out",
+        overwrite: true,
+      });
+    }, RETURN_HOLD_MS);
   }, [setWhiteoutOpacity]);
 
   /**
    * Hero scroll progress (0.0 to 1.0) reported by Hero's ScrollTrigger.
    * Last 15% of the runway (0.85 -> 1.00) fades white in from 0.0 to 1.0.
    */
+  const handleAutoEnter = useCallback(() => {
+    // Already on Frame (e.g. the progress trigger fired first, then the Enter tween finished).
+    if (sectionRef.current === "frame") return;
+    isAutoTransitioning.current = true;
+    setWhiteoutOpacity(1);
+    setSection("frame");
+    sectionRef.current = "frame";
+    transitionScrollRef.current = FADE_DISTANCE;
+    reverseScrollRef.current = 0;
+
+    const el = whiteoutRef.current;
+    if (el) {
+      whiteoutTarget.current = 0; // this tween ends at 0
+      gsap.fromTo(
+        el,
+        { opacity: 1 },
+        {
+          opacity: 0,
+          duration: 0.75,
+          ease: "power2.out",
+          onComplete: () => {
+            isAutoTransitioning.current = false;
+          },
+        }
+      );
+    } else {
+      isAutoTransitioning.current = false;
+    }
+  }, [setWhiteoutOpacity]);
   const handleHeroProgress = useCallback(
     (progress) => {
       if (sectionRef.current !== "hero" || isAutoTransitioning.current) return;
       if (performance.now() < holdWhiteUntil.current) return;
+
+      // Fully white: don't wait for more scrolling, reveal Frame on its own.
+      if (progress >= AUTO_ENTER_PROGRESS) {
+        handleAutoEnter();
+        return;
+      }
 
       if (progress >= 0.85) {
         const opacity = (progress - 0.85) / 0.15;
@@ -116,7 +177,7 @@ export default function Page() {
         setWhiteoutOpacity(0);
       }
     },
-    [setWhiteoutOpacity]
+    [setWhiteoutOpacity, handleAutoEnter]
   );
 
   /**
@@ -208,33 +269,10 @@ export default function Page() {
    * Button click / Enter key cinematic entry.
    * Automatically sweeps from 100% white to Frame without manual scrolling.
    */
-  const handleAutoEnter = useCallback(() => {
-    isAutoTransitioning.current = true;
-    setWhiteoutOpacity(1);
-    setSection("frame");
-    sectionRef.current = "frame";
-    transitionScrollRef.current = FADE_DISTANCE;
-    reverseScrollRef.current = 0;
-
-    const el = whiteoutRef.current;
-    if (el) {
-      whiteoutTarget.current = 0; // this tween ends at 0
-      gsap.fromTo(
-        el,
-        { opacity: 1 },
-        {
-          opacity: 0,
-          duration: 0.75,
-          ease: "power2.out",
-          onComplete: () => {
-            isAutoTransitioning.current = false;
-          },
-        }
-      );
-    } else {
-      isAutoTransitioning.current = false;
-    }
-  }, [setWhiteoutOpacity]);
+  /**
+   * Hero -> Frame. Runs automatically the moment Hero's screen is fully white (scroll to the
+   * end, or Enter key / button): sweeps from 100% white to Frame with NO extra scrolling.
+   */
 
   return (
     <div
