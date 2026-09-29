@@ -14,10 +14,12 @@ import SmoothScroll from '@/components/SmoothScroll'
 import TathvaPasses from '@/pageComponents/TathvaPasses/TathvaPasses'
 import ArtistPage from './artist/page'
 import TechConclave from '@/pageComponents/TechConclave/TechConclave'
+import Hero from '@/pageComponents/Hero'
 
 export default function Home() {
   return (
     <div className='main-scroll relative h-dvh w-full overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-black'>
+      {/* <Hero /> */}
       <SmoothScroll />
       {/* <ProfilePage /> */}
       {/* <ProshowCarousel /> */}
