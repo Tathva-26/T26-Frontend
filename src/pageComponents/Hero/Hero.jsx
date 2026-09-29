@@ -137,7 +137,7 @@ const CHROME_MOBILE = {
     enter: { top: 46.2, left: 1.25, width: 7.5, height: 2.6 },
 };
 
-export const Hero = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter }) => {
+export const Hero = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter, isActive = true }) => {
     const [hasEntered, setHasEntered] = useState(false);
     const [ripples, setRipples] = useState([]);
     // Must start as false so the first client render matches the server
@@ -187,6 +187,17 @@ export const Hero = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter }) =>
             videoRef.current.play().catch(() => { });
         }
     }, []);
+
+    // Hero stays mounted (hidden) while Frame is showing. Stop the title video decoding and freeze
+    // the CSS animations (bird flap etc.) until Hero is the active panel again.
+    useEffect(() => {
+        const video = videoRef.current;
+        if (video) {
+            if (isActive) video.play().catch(() => { });
+            else video.pause();
+        }
+        scrollerRef.current?.toggleAttribute("data-paused", !isActive);
+    }, [isActive]);
 
     // Enter click: ripple at the click point, then animate the hero
     // scroll runway to its end (portal zoom), then let the page scroll
@@ -1001,7 +1012,7 @@ export const Hero = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter }) =>
                             }}
                             alt=""
                             aria-hidden="true"
-                            src={`${assetBase}bgrocks.webp`}
+                            src={`${assetBase}bgrocks.png`}
                         />
 
                         <div
@@ -1086,7 +1097,7 @@ export const Hero = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter }) =>
                                 className={styles.girl}
                                 alt=""
                                 aria-hidden="true"
-                                src={`${assetBase}girl4.webp`}
+                                src={`${assetBase}girl4.png`}
                             />
                             <div className={styles.girlContact} />
                         </div>

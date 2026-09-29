@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState, useCallback, useEffect } from "react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Hero } from "@/pageComponents/Hero";
 import { Frame } from "@/pageComponents/W1/Frame";
 import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
@@ -12,6 +13,36 @@ const WHITEOUT_COLOR = "#ffffff";
 // Scroll distance (in pixels) across which the whiteout fades between 100% white and page
 const FADE_DISTANCE = 350;
 
+// Coming back from Frame, Hero is held behind solid white for this long while it re-paints.
+const RETURN_HOLD_MS = 500;
+// ...and is only jumped to its "end of runway" state after it has painted once at scale 1.
+const HERO_END_DELAY_MS = 180;
+
+/**
+ * Jump Hero's scroller to the start or end of its runway INSTANTLY, including the scrubbed
+ * (smoothed) tweens, so nothing is left animating in the background.
+ *
+ * Why: while Frame is showing, Hero is hidden. When it becomes visible again the browser rebuilds
+ * its GPU layers at whatever scale they currently have. If Hero was left at the END of its runway
+ * (girl 15x, portal ~10x) it rebuilds every layer at that extreme zoom and then downscales those
+ * huge textures for the whole scroll back = heavy lag. Parking Hero at the START while hidden makes
+ * it rebuild at scale 1 (same as the first visit), and we jump to the end only afterwards, behind
+ * the white overlay.
+ */
+function settleHero(where) {
+  const scroller = document.getElementById("hero-scroller");
+  if (!scroller) return;
+  scroller.scrollTop =
+    where === "end" ? scroller.scrollHeight - scroller.clientHeight : 0;
+  ScrollTrigger.update();
+  ScrollTrigger.getAll().forEach((st) => {
+    if (st.scroller !== scroller) return;
+    const scrubTween = st.getTween?.();
+    if (scrubTween) scrubTween.progress(1);
+    else if (st.animation) st.animation.progress(st.progress);
+  });
+}
+
 export default function Page() {
   // Which full-screen panel is active
   const [section, setSection] = useState("hero"); // "hero" | "frame"
@@ -19,6 +50,10 @@ export default function Page() {
 
   const whiteoutRef = useRef(null);
   const isAutoTransitioning = useRef(false);
+  // last opacity we asked the whiteout to tween to (skip identical requests)
+  const whiteoutTarget = useRef(0);
+  // while now < this, Hero scroll progress is not allowed to change the whiteout
+  const holdWhiteUntil = useRef(0);
 
   // Scroll accumulators for the bidirectional transitions
   // transitionScrollRef: tracks forward fadeout into Frame (0 = 100% white, FADE_DISTANCE = 0% white / fully revealed Frame)
@@ -29,6 +64,10 @@ export default function Page() {
   // Keep sectionRef in sync with state
   useEffect(() => {
     sectionRef.current = section;
+    if (section !== "frame") return undefined;
+    // Frame is showing (Hero hidden / behind white): reset Hero to its cheap start state.
+    const id = window.setTimeout(() => settleHero("start"), 250);
+    return () => window.clearTimeout(id);
   }, [section]);
 
   /**
@@ -39,6 +78,9 @@ export default function Page() {
     const el = whiteoutRef.current;
     if (!el) return;
     const clamped = Math.min(1, Math.max(0, target));
+    // Hero progress reports every scroll frame; don't create a new tween for an unchanged value.
+    if (clamped === whiteoutTarget.current) return;
+    whiteoutTarget.current = clamped;
     gsap.to(el, {
       opacity: clamped,
       duration: 0.12,
@@ -47,6 +89,17 @@ export default function Page() {
     });
   }, []);
 
+  /** Frame -> Hero. Screen is 100% white; Hero repaints at scale 1, then jumps to the end state. */
+  const returnToHero = useCallback(() => {
+    setWhiteoutOpacity(1);
+    holdWhiteUntil.current = performance.now() + RETURN_HOLD_MS;
+    setSection("hero");
+    sectionRef.current = "hero";
+    transitionScrollRef.current = 0;
+    reverseScrollRef.current = 0;
+    window.setTimeout(() => settleHero("end"), HERO_END_DELAY_MS);
+  }, [setWhiteoutOpacity]);
+
   /**
    * Hero scroll progress (0.0 to 1.0) reported by Hero's ScrollTrigger.
    * Last 15% of the runway (0.85 -> 1.00) fades white in from 0.0 to 1.0.
@@ -54,6 +107,7 @@ export default function Page() {
   const handleHeroProgress = useCallback(
     (progress) => {
       if (sectionRef.current !== "hero" || isAutoTransitioning.current) return;
+      if (performance.now() < holdWhiteUntil.current) return;
 
       if (progress >= 0.85) {
         const opacity = (progress - 0.85) / 0.15;
@@ -90,10 +144,7 @@ export default function Page() {
 
         // If user scrolled back up past the start of the fadeout
         if (transitionScrollRef.current <= 0) {
-          transitionScrollRef.current = 0;
-          setWhiteoutOpacity(1);
-          setSection("hero");
-          sectionRef.current = "hero";
+          returnToHero();
           return;
         }
 
@@ -102,7 +153,7 @@ export default function Page() {
         setWhiteoutOpacity(1 - progress);
       }
     },
-    [setWhiteoutOpacity]
+    [setWhiteoutOpacity, returnToHero]
   );
 
   /**
@@ -121,15 +172,7 @@ export default function Page() {
         );
 
         if (transitionScrollRef.current <= 0) {
-          transitionScrollRef.current = 0;
-          setWhiteoutOpacity(1);
-          setSection("hero");
-          sectionRef.current = "hero";
-          const heroScroller = document.getElementById("hero-scroller");
-          if (heroScroller) {
-            heroScroller.scrollTop =
-              heroScroller.scrollHeight - heroScroller.clientHeight;
-          }
+          returnToHero();
           return;
         }
 
@@ -143,17 +186,8 @@ export default function Page() {
         reverseScrollRef.current += Math.abs(deltaY);
 
         if (reverseScrollRef.current >= FADE_DISTANCE) {
-          // Reached 100% white: swap back to Hero at bottom
-          setWhiteoutOpacity(1);
-          setSection("hero");
-          sectionRef.current = "hero";
-          reverseScrollRef.current = 0;
-          transitionScrollRef.current = 0;
-          const heroScroller = document.getElementById("hero-scroller");
-          if (heroScroller) {
-            heroScroller.scrollTop =
-              heroScroller.scrollHeight - heroScroller.clientHeight;
-          }
+          // Reached 100% white: swap back to Hero (at its end state, set up safely)
+          returnToHero();
           return;
         }
 
@@ -167,7 +201,7 @@ export default function Page() {
         setWhiteoutOpacity(progress);
       }
     },
-    [setWhiteoutOpacity]
+    [setWhiteoutOpacity, returnToHero]
   );
 
   /**
@@ -184,6 +218,7 @@ export default function Page() {
 
     const el = whiteoutRef.current;
     if (el) {
+      whiteoutTarget.current = 0; // this tween ends at 0
       gsap.fromTo(
         el,
         { opacity: 1 },
@@ -225,6 +260,7 @@ export default function Page() {
           onProgress={handleHeroProgress}
           onScrollBeyondEnd={handleHeroScrollBeyondEnd}
           onAutoEnter={handleAutoEnter}
+          isActive={section === "hero"}
         />
       </div>
 
