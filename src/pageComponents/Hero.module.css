@@ -212,11 +212,13 @@
   }
 }
 
-/* Trail sits directly over the island (same box, matching aspect). Bird
-   sits on the trail's top end (~90% x, 0% y of the trail box). */
+/* Trail sits directly over the island (same box, matching aspect) and
+   always stays in front of it. The bird flies in its own sibling layer
+   with identical geometry so MotionPath aligns to the same coordinates —
+   only the bird layer dips behind the island mid-flight. */
 .trailWrap {
   position: absolute;
-  left: 13%;
+  left: 10%;
   top: -2%;
   width: 75%;
   height: 90%;
@@ -229,6 +231,20 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  overflow: visible;
+}
+
+/* Bird flight layer — same box as .trailWrap so the MotionPath alignment
+   matches the trail exactly. Starts above the island (z 2), drops to
+   z 0 (behind the island image) mid-flight via GSAP. */
+.birdLayer {
+  position: absolute;
+  left: 13%;
+  top: -2%;
+  width: 75%;
+  height: 90%;
+  pointer-events: none;
+  z-index: 2;
   overflow: visible;
 }
 
@@ -260,10 +276,12 @@
 }
 
 @keyframes birdFlap {
+
   0%,
   100% {
     transform: scaleY(1) translateY(0);
   }
+
   50% {
     transform: scaleY(0.82) translateY(-4%);
   }

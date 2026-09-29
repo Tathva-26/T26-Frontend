@@ -157,7 +157,7 @@ export const Hero = ({ onEnter }) => {
     const portalRef = useRef(null);
     const islandRef = useRef(null);
     const trailPathRef = useRef(null);
-    const trailWrapRef = useRef(null);
+    const birdLayerRef = useRef(null);
     const birdRef = useRef(null);
     const birdFlipperRef = useRef(null);
     const girlRef = useRef(null);
@@ -585,7 +585,7 @@ export const Hero = ({ onEnter }) => {
         //  • After the first trail segment (~7s), drops behind the island
         //  • Continues through bridge, second segment, and extension
         //  • Stops ~2-3s after the visible trail ends
-        if (birdRef.current && birdFlipperRef.current && trailPathRef.current && trailWrapRef.current) {
+        if (birdRef.current && birdFlipperRef.current && trailPathRef.current && birdLayerRef.current) {
             const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
             const flightDuration = 11;
             const baseMotionPath = {
@@ -621,11 +621,12 @@ export const Hero = ({ onEnter }) => {
                     { scaleX: 1, duration: 2.0, ease: "sine.inOut" },
                     4.5,
                 );
-                // 4. After the first trail segment, send bird behind the island (~7s)
+                // 4. After the first trail segment, send only the bird layer
+                // behind the island (~6s) — the trail stays in front.
                 flight.set(
-                    trailWrapRef.current,
+                    birdLayerRef.current,
                     { zIndex: 0 },
-                    7.0,
+                    6.0,
                 );
             } else {
                 // Static pose: park the bird at the end facing right, behind island.
@@ -636,7 +637,7 @@ export const Hero = ({ onEnter }) => {
                     scaleX: 1,
                     transformOrigin: "50% 50%",
                 });
-                gsap.set(trailWrapRef.current, { zIndex: 0 });
+                gsap.set(birdLayerRef.current, { zIndex: 0 });
             }
         }
     }, { scope: scrollerRef, dependencies: [isMobile], revertOnUpdate: true });
@@ -824,7 +825,7 @@ export const Hero = ({ onEnter }) => {
                                 aria-hidden="true"
                                 src={`${assetBase}floatingisland.png`}
                             />
-                            <div ref={trailWrapRef} className={styles.trailWrap}>
+                            <div className={styles.trailWrap}>
                                 <svg
                                     className={styles.trailSvg}
                                     viewBox="0 0 562 363"
@@ -855,6 +856,8 @@ export const Hero = ({ onEnter }) => {
                                         fill="none"
                                     />
                                 </svg>
+                            </div>
+                            <div ref={birdLayerRef} className={styles.birdLayer}>
                                 <div ref={birdRef} className={styles.bird}>
                                     <div ref={birdFlipperRef} className={styles.birdFlipper}>
                                         <img
