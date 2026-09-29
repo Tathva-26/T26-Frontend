@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -21,10 +21,12 @@ const varela = Varela({
   variable: '--font-varela',
 })
 
+const EVENT_DATE = new Date('2026-10-09T00:00:00')
+
 const linkColumns = [
   {
     heading: 'EXPLORE',
-    links: ['ANNOUNCEMENTS', 'TEAMS', 'MAP', 'CONTACTS'],
+    links: ['ANOUNCEMENTS', 'TEAMS', 'MAP', 'CONTACTS'],
   },
   {
     heading: 'ABOUT',
@@ -32,11 +34,58 @@ const linkColumns = [
   },
   {
     heading: 'MORE',
-    links: ['GALLERY', 'FAQ', 'SPONSERS'],
+    links: ['GALLERY', 'FAQ', 'CARRERS', 'SPONSORS'],
   },
 ]
 
+function useCountdown(target) {
+  const [timeLeft, setTimeLeft] = useState({
+    d: '00',
+    h: '00',
+    m: '00',
+  })
+
+  useEffect(() => {
+    const tick = () => {
+      const diff = Math.max(0, target.getTime() - Date.now())
+      const totalSeconds = Math.floor(diff / 1000)
+
+      const d = Math.floor(totalSeconds / 86400)
+      const h = Math.floor((totalSeconds % 86400) / 3600)
+      const m = Math.floor((totalSeconds % 3600) / 60)
+
+      const pad = (n) => n.toString().padStart(2, '0')
+      setTimeLeft({ d: pad(d), h: pad(h), m: pad(m) })
+    }
+
+    tick()
+    const interval = setInterval(tick, 1000)
+    return () => clearInterval(interval)
+  }, [target])
+
+  return timeLeft
+}
+
+function CountdownUnit({ value }) {
+  const ref = useRef(null)
+  const previous = useRef(value)
+
+  useGSAP(() => {
+    if (previous.current !== value) {
+      gsap.fromTo(
+        ref.current,
+        { y: -6, opacity: 0.5, scale: 0.95 },
+        { y: 0, opacity: 1, scale: 1, duration: 0.3, ease: 'power2.out' },
+      )
+      previous.current = value
+    }
+  }, [value])
+
+  return <span ref={ref}>{value}</span>
+}
+
 export default function Footer() {
+  const timeLeft = useCountdown(EVENT_DATE)
   const rootRef = useRef(null)
   const panelRef = useRef(null)
   const headlineRef = useRef(null)
@@ -73,6 +122,11 @@ export default function Footer() {
             ease: 'power2.out',
           },
           '-=0.4',
+        )
+        .from(
+          '.footer-countdown',
+          { scale: 0.9, opacity: 0, duration: 0.5, ease: 'power2.out' },
+          '-=0.3',
         )
     },
     { scope: rootRef },
@@ -183,7 +237,7 @@ export default function Footer() {
         {/* MAIN CHAMFERED PANEL FRAME */}
         <div
           ref={panelRef}
-          className='footer-panel relative z-10 min-h-[250px] w-full lg:min-h-[270px]'
+          className='footer-panel relative z-10 min-h-[250px] w-full lg:min-h-[280px]'
         >
           {/* Vector 3.svg — desktop panel (1331x295) */}
           <svg
@@ -211,10 +265,10 @@ export default function Footer() {
             />
           </svg>
 
-          <div className='footer-panel-content relative z-10 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-[480px_1fr_240px] min-h-full items-center md:gap-6 lg:gap-0 px-6 py-5 sm:px-8 lg:px-[64px] lg:py-6'>
+          <div className='footer-panel-content relative z-10 flex flex-col md:grid md:grid-cols-[1fr_auto] lg:grid-cols-[380px_1fr] xl:grid-cols-[360px_1fr_300px] 2xl:grid-cols-[400px_1fr_340px] min-h-full items-center gap-6 md:gap-4 lg:gap-6 xl:gap-8 px-6 py-5 sm:px-8 lg:px-[48px] xl:px-[60px] lg:py-6'>
             {/* NEWSLETTER SECTION */}
-            <div className='footer-newsletter w-full self-center md:col-span-2 lg:col-span-1'>
-              <p className='font-bebas text-[20px] sm:text-[24px] lg:text-[26px] leading-[26px] sm:leading-[28px] tracking-[0.02em] text-white font-normal lg:whitespace-nowrap'>
+            <div className='footer-newsletter w-full self-center'>
+              <p className='font-bebas text-[20px] sm:text-[23px] lg:text-[25px] leading-[26px] sm:leading-[28px] tracking-[0.02em] text-white font-normal lg:whitespace-nowrap'>
                 GET THE LATESTUPDATES &amp; SIGNALS
               </p>
               <p className='mt-2.5 w-full font-bebas text-[14px] leading-[18px] text-[#A0A0A0] sm:w-[250px] sm:text-[15px] lg:w-auto lg:text-[16px]'>
@@ -269,29 +323,63 @@ export default function Footer() {
             </div>
 
             {/* NAVIGATION COLUMNS */}
-            <div className='footer-navigation mt-7 w-full grid grid-cols-3 gap-2 md:mt-0 md:flex md:h-auto md:flex-row md:items-start md:justify-start md:gap-0 md:pt-1 lg:col-span-1 lg:h-full'>
+            <div className='footer-navigation mt-7 w-full grid grid-cols-3 gap-2 md:mt-0 md:flex md:h-auto md:flex-row md:items-start md:justify-center md:gap-4 lg:gap-6 xl:gap-8 md:pt-4 lg:pt-6'>
               {linkColumns.map((column) => (
                 <div
                   key={column.heading}
-                  className='footer-col flex flex-col items-start md:w-[150px] md:shrink-0 md:px-4'
+                  className='footer-col flex flex-col items-start w-full md:w-[110px] lg:w-[130px] xl:w-[140px]'
                 >
-                  <h3 className='font-bebas text-[15px] leading-none tracking-[0.08em] text-white md:text-[20px] mb-2 md:mb-2.5'>
-                    {column.heading}
-                  </h3>
+                  {/* Header with extending divider line on desktop */}
+                  <div className='flex w-full items-center gap-2 mb-2 md:mb-3'>
+                    <h3 className='font-bebas text-[15px] md:text-[17px] xl:text-[18px] leading-none tracking-[0.08em] text-white whitespace-nowrap'>
+                      {column.heading}
+                    </h3>
+                    <div className='hidden md:block h-[1px] flex-1 bg-[#444444]' />
+                  </div>
+
                   <ul className='space-y-1.5 md:space-y-1 w-full'>
                     {column.links.map((link) => (
                       <li key={link}>
                         <a
                           href='#'
-                          className='font-bebas text-[12px] sm:text-[13px] tracking-[0.08em] text-[#B0B0B0] hover:text-white transition-colors block leading-tight md:font-varela md:text-[12px] md:tracking-[0.14em] md:text-white'
+                          className='group flex items-center justify-between gap-1.5 font-bebas text-[12px] sm:text-[13px] tracking-[0.08em] text-[#B0B0B0] hover:text-white transition-colors block leading-tight'
                         >
-                          {link}
+                          <span className='transition-transform duration-200 group-hover:translate-x-0.5'>
+                            {link}
+                          </span>
+                          {/* Pink arrow for desktop view */}
+                          <svg
+                            width='13'
+                            height='13'
+                            viewBox='0 0 20 20'
+                            fill='none'
+                            className='hidden md:block shrink-0 transition-transform duration-200 group-hover:translate-x-1'
+                            xmlns='http://www.w3.org/2000/svg'
+                          >
+                            <path
+                              d='M4 10H16M10 4L16 10L10 16'
+                              stroke='#F19EDC'
+                              strokeWidth='2'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                            />
+                          </svg>
                         </a>
                       </li>
                     ))}
                   </ul>
                 </div>
               ))}
+            </div>
+
+            {/* COUNTDOWN TIMER (Hidden on smaller desktop / tablet devices, visible on >= xl) */}
+            <div className='footer-countdown hidden xl:flex flex-col items-center justify-center self-center text-center pl-4'>
+              <p className='font-bebas text-[20px] xl:text-[23px] leading-tight tracking-[0.05em] text-white'>
+                DAYS TO GO
+              </p>
+              <div className='mt-2.5 flex items-center justify-center font-akira text-[38px] xl:text-[44px] 2xl:text-[48px] font-extrabold leading-none tracking-[0.06em] text-white'>
+                <CountdownUnit value={timeLeft.d} />:<CountdownUnit value={timeLeft.h} />:<CountdownUnit value={timeLeft.m} />
+              </div>
             </div>
           </div>
         </div>
@@ -326,11 +414,11 @@ export default function Footer() {
 
           {/* Desktop Labels Layout */}
           <div className='footer-bottom-labels-desktop absolute inset-0 hidden md:flex flex-wrap items-end justify-between px-6 pb-1 font-varela text-[9px] uppercase tracking-[0.20em] text-[#C0C0C0] sm:flex-nowrap sm:px-12 sm:pb-1.5 sm:text-[10px] sm:tracking-[0.28em] lg:px-[105px] lg:pb-2 lg:text-[11px]'>
-            <span className='translate-y-[2px]'>NIT CALICUT</span>
-            <span className='static sm:absolute sm:left-1/2 sm:-translate-x-1/2 translate-y-[0px] sm:translate-y-[-8px] lg:translate-y-[-10px]'>
+            <span className='translate-y-[-2px]'>NIT CALICUT</span>
+            <span className='static sm:absolute sm:left-1/2 sm:-translate-x-1/2 translate-y-[-10px] lg:translate-y-[-12px]'>
               TATHVA&apos; 26
             </span>
-            <span className='translate-y-[2px]'>ALL RIGHTS RESERVED.</span>
+            <span className='translate-y-[-2px]'>ALL RIGHTS RESERVED.</span>
           </div>
         </div>
       </div>
