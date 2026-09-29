@@ -388,18 +388,6 @@ export default function Navbar() {
             <img src="/images/hero/tathvalogo.png" alt="Tathva" />
           </a>
 
-          <button
-            ref={menuButtonRef}
-            type="button"
-            className="nb__menu"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={menuOpen}
-            aria-controls="nb-mobile-menu"
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            <MenuIcon />
-          </button>
-
           <ul className="nb__links">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
@@ -423,6 +411,18 @@ export default function Navbar() {
               className="nb__cta-arrow"
             />
           </a>
+
+          <button
+            ref={menuButtonRef}
+            type="button"
+            className="nb__menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="nb-mobile-menu"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <MenuIcon />
+          </button>
         </div>
       </nav>
 
@@ -517,7 +517,7 @@ padding-inline: calc(24px - var(--scroll-progress, 0) * 8px);
         }
 
         .nb__menu {
-          display: flex;
+          display: none;
           align-items: center;
           justify-content: center;
           padding: 0;
@@ -745,18 +745,14 @@ padding-inline: calc(24px - var(--scroll-progress, 0) * 8px);
           outline-offset: 4px;
         }
 
-        @media (max-width: 720px) {
-          .nb {
-            padding-inline: 20px;
-          }
-          .nb__links,
-          .nb__right {
-            display: none;
-          }
-          .nb-mobile {
-            display: flex;
-          }
-        }
+@media (max-width: 720px) {
+  .nb { padding-inline: 20px; }
+  .nb__links,
+  .nb__cta { display: none; }
+  .nb__right { display: flex; gap: 0; }
+  .nb__menu { display: flex; }
+  .nb-mobile { display: flex; }
+}
 
         @media (prefers-reduced-motion: reduce) {
           .nb__glow {
