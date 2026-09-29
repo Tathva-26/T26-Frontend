@@ -185,6 +185,7 @@
   z-index: 2;
   pointer-events: none;
   will-change: transform;
+  overflow: visible;
 }
 
 .island {
@@ -196,6 +197,7 @@
   pointer-events: none;
   animation: islandFloat 20s ease-in-out infinite;
   will-change: transform;
+  z-index: 1;
 }
 
 @keyframes islandFloat {
@@ -207,6 +209,69 @@
 
   50% {
     transform: translate(0.2rem, -0.2rem) rotate(0.1deg);
+  }
+}
+
+/* Trail sits directly over the island (same box, matching aspect). Bird
+   sits on the trail's top end (~90% x, 0% y of the trail box). */
+.trailWrap {
+  position: absolute;
+  left: 13%;
+  top: -2%;
+  width: 75%;
+  height: 90%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.trailSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.bird {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 25%;
+  aspect-ratio: 186 / 124;
+  pointer-events: none;
+  will-change: transform;
+  overflow: visible;
+}
+
+.birdFlipper {
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.birdImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  animation: birdFlap 0.9s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes birdFlap {
+  0%,
+  100% {
+    transform: scaleY(1) translateY(0);
+  }
+  50% {
+    transform: scaleY(0.82) translateY(-4%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .birdImg {
+    animation: none;
   }
 }
 

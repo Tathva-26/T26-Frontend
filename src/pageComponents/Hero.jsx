@@ -4,11 +4,14 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+// MotionPathPlugin ships inside the installed `gsap` package (all
+// GSAP plugins are free since 3.13), so no new dependency is needed.
+import { MotionPathPlugin } from "gsap/MotionPathPlugin";
 import styles from "./Hero.module.css";
 
 // Register once at module level so ScrollTrigger.refresh() is safe to
 // call from any effect, regardless of effect order.
-gsap.registerPlugin(ScrollTrigger, useGSAP);
+gsap.registerPlugin(ScrollTrigger, useGSAP, MotionPathPlugin);
 
 const assetBase = "/images/Hero/";
 
@@ -155,6 +158,10 @@ export const Hero = ({ onEnter }) => {
     const t1Ref = useRef(null);
     const portalRef = useRef(null);
     const islandRef = useRef(null);
+    const trailPathRef = useRef(null);
+    const trailWrapRef = useRef(null);
+    const birdRef = useRef(null);
+    const birdFlipperRef = useRef(null);
     const girlRef = useRef(null);
     const whiteoutRef = useRef(null);
 
@@ -539,6 +546,72 @@ export const Hero = ({ onEnter }) => {
                 0.8,
             );
         }
+
+        // Bird flight — flies along the combined trail (both segments merged
+        // with bridge + extension beyond the trail end). The outer .bird div
+        // is positioned by MotionPath; the inner birdFlipper handles the
+        // mirror flip; the innermost img does the wing-flap via CSS.
+        //
+        // Behaviour:
+        //  • Starts facing left (scaleX -1)
+        //  • Gradually flips to right around the curve turnaround (~5s)
+        //  • After the first trail segment (~7s), drops behind the island
+        //  • Continues through bridge, second segment, and extension
+        //  • Stops ~2-3s after the visible trail ends
+        if (birdRef.current && birdFlipperRef.current && trailPathRef.current && trailWrapRef.current) {
+            const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+            const flightDuration = 11;
+            const baseMotionPath = {
+                path: trailPathRef.current,
+                align: trailPathRef.current,
+                alignOrigin: [0.5, 0.5],
+            };
+            if (!reduceMotion) {
+                const flight = gsap.timeline();
+                // 1. Motion path along the combined curve (outer container only)
+                flight.fromTo(
+                    birdRef.current,
+                    {
+                        motionPath: { ...baseMotionPath, start: 0, end: 0 },
+                    },
+                    {
+                        motionPath: { ...baseMotionPath, start: 0, end: 1 },
+                        duration: flightDuration,
+                        ease: "sine.inOut",
+                    },
+                    0,
+                );
+                // 2. Initial orientation: facing left (scaleX: -1)
+                flight.set(
+                    birdFlipperRef.current,
+                    { scaleX: -1, transformOrigin: "50% 50%" },
+                    0,
+                );
+                // 3. Gradual flip to facing right around the turnaround (~5.0s to ~6.6s)
+                flight.fromTo(
+                    birdFlipperRef.current,
+                    { scaleX: -1, transformOrigin: "50% 50%" },
+                    { scaleX: 1, duration: 2.0, ease: "sine.inOut" },
+                    4.5,
+                );
+                // 4. After the first trail segment, send bird behind the island (~7s)
+                flight.set(
+                    trailWrapRef.current,
+                    { zIndex: 0 },
+                    7.0,
+                );
+            } else {
+                // Static pose: park the bird at the end facing right, behind island.
+                gsap.set(birdRef.current, {
+                    motionPath: { ...baseMotionPath, start: 1, end: 1 },
+                });
+                gsap.set(birdFlipperRef.current, {
+                    scaleX: 1,
+                    transformOrigin: "50% 50%",
+                });
+                gsap.set(trailWrapRef.current, { zIndex: 0 });
+            }
+        }
     }, { scope: scrollerRef, dependencies: [isMobile], revertOnUpdate: true });
 
     const activeLayout = isMobile ? LAYOUT_MOBILE : LAYOUT;
@@ -723,6 +796,48 @@ export const Hero = ({ onEnter }) => {
                                 aria-hidden="true"
                                 src={`${assetBase}floatingisland.png`}
                             />
+                            <div ref={trailWrapRef} className={styles.trailWrap}>
+                                <svg
+                                    className={styles.trailSvg}
+                                    viewBox="0 0 562 363"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    preserveAspectRatio="xMidYMid meet"
+                                    aria-hidden="true"
+                                >
+                                    {/* Visible trail strokes (two segments with gap) */}
+                                    <path
+                                        d="M560.523 361.761C293.335 280.614 -343.389 227.67 237.506 62.9024"
+                                        stroke="#7787FF"
+                                        strokeWidth="1.11538"
+                                        strokeLinecap="round"
+                                    />
+                                    <path
+                                        d="M379.513 43.6052C484.905 18.8653 490.756 16.8861 507.085 0.557739"
+                                        stroke="#7787FF"
+                                        strokeWidth="1.11538"
+                                        strokeLinecap="round"
+                                    />
+                                    {/* Hidden combined path for bird motion:
+                                        segment 1 → smooth bridge → segment 2 → extension */}
+                                    <path
+                                        ref={trailPathRef}
+                                        d="M560.523 361.761C293.335 280.614 -343.389 227.67 237.506 62.9024C290 54 340 47 379.513 43.6052C484.905 18.8653 490.756 16.8861 507.085 0.557739C518 -8 530 -18 545 -30"
+                                        stroke="none"
+                                        fill="none"
+                                    />
+                                </svg>
+                                <div ref={birdRef} className={styles.bird}>
+                                    <div ref={birdFlipperRef} className={styles.birdFlipper}>
+                                        <img
+                                            className={styles.birdImg}
+                                            alt=""
+                                            aria-hidden="true"
+                                            src={`${assetBase}bird.svg`}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div
