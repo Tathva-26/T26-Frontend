@@ -181,7 +181,12 @@ export default function Footer() {
         @media (max-width: 767px) {
           .footer-typography h2 {
             font-size: clamp(48px, 16vw, 96px);
-            -webkit-text-stroke-width: 1px;
+            color: #FFFFFF !important;
+            -webkit-text-stroke: 0 !important;
+          }
+
+          .footer-typography h2 canvas {
+            display: none !important;
           }
 
           .footer-typography .footer-panel {
@@ -189,6 +194,7 @@ export default function Footer() {
             max-width: 370px;
             margin-left: auto;
             margin-right: auto;
+            display: block;
           }
 
           .footer-panel-shape-desktop {
@@ -237,7 +243,7 @@ export default function Footer() {
         {/* MAIN CHAMFERED PANEL FRAME */}
         <div
           ref={panelRef}
-          className='footer-panel relative z-10 min-h-[250px] w-full lg:min-h-[280px]'
+          className='footer-panel relative z-10 w-full flex flex-col justify-center min-h-[250px] md:min-h-[285px] lg:min-h-[310px]'
         >
           {/* Vector 3.svg — desktop panel (1331x295) */}
           <svg
@@ -265,7 +271,7 @@ export default function Footer() {
             />
           </svg>
 
-          <div className='footer-panel-content relative z-10 flex flex-col md:grid md:grid-cols-[1fr_auto] lg:grid-cols-[380px_1fr] xl:grid-cols-[360px_1fr_300px] 2xl:grid-cols-[400px_1fr_340px] min-h-full items-center gap-6 md:gap-4 lg:gap-6 xl:gap-8 px-6 py-5 sm:px-8 lg:px-[48px] xl:px-[60px] lg:py-6'>
+          <div className='footer-panel-content relative z-10 w-full flex flex-col md:grid md:grid-cols-[1fr_auto] lg:grid-cols-[380px_1fr] xl:grid-cols-[360px_1fr_300px] 2xl:grid-cols-[400px_1fr_340px] items-center gap-6 md:gap-4 lg:gap-6 xl:gap-8 px-6 py-5 sm:px-8 lg:px-[48px] xl:px-[60px] md:my-auto md:py-6 lg:py-8'>
             {/* NEWSLETTER SECTION */}
             <div className='footer-newsletter w-full self-center'>
               <p className='font-bebas text-[20px] sm:text-[23px] lg:text-[25px] leading-[26px] sm:leading-[28px] tracking-[0.02em] text-white font-normal lg:whitespace-nowrap'>
@@ -323,7 +329,7 @@ export default function Footer() {
             </div>
 
             {/* NAVIGATION COLUMNS */}
-            <div className='footer-navigation mt-7 w-full grid grid-cols-3 gap-2 md:mt-0 md:flex md:h-auto md:flex-row md:items-start md:justify-center md:gap-4 lg:gap-6 xl:gap-8 md:pt-4 lg:pt-6'>
+            <div className='footer-navigation mt-7 w-full grid grid-cols-3 gap-2 md:mt-0 md:flex md:h-auto md:flex-row md:items-start md:justify-center md:gap-4 lg:gap-6 xl:gap-8 md:translate-y-2 lg:translate-y-3'>
               {linkColumns.map((column) => (
                 <div
                   key={column.heading}
