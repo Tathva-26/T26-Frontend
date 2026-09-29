@@ -40,10 +40,9 @@
   height: var(--scene-height);
   overflow: hidden;
   display: flex;
-  /* Bottom-anchor: any extra cover-scaled height crops off the top
-     (sky) only, never the ground/portal/girl. */
+  /* Bottom-anchor: flush with bottom edge */
   align-items: flex-end;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 /* ===============================
@@ -53,16 +52,15 @@
 .scene {
   position: relative;
   z-index: 2;
-  width: 88.3125rem;
+  width: max(88.3125rem, calc(100vw / var(--design-scale, 1)));
   height: 49.0625rem;
   min-width: 88.3125rem;
   min-height: 49.0625rem;
   flex-shrink: 0;
   background: transparent;
   transform: scale(var(--design-scale, 1));
-  /* Scale from bottom-center so the bottom edge stays flush with the
-     viewport at every aspect ratio. */
-  transform-origin: center bottom;
+  /* Left-bottom anchor so the title, island and scene stay in screen jutting out from left */
+  transform-origin: left bottom;
   will-change: transform;
 }
 
@@ -145,6 +143,7 @@
   z-index: 2;
   pointer-events: none;
   will-change: transform;
+  width: max(88.3125rem, calc(100vw / var(--design-scale, 1))) !important;
 }
 
 .ground {
@@ -175,6 +174,7 @@
   pointer-events: none;
   will-change: transform;
   filter: brightness(0.55);
+  width: max(88.3125rem, calc(100vw / var(--design-scale, 1))) !important;
 }
 
 /* Distant floating island. The wrapper carries the GSAP scroll
@@ -529,11 +529,52 @@
   pointer-events: none;
 }
 
+.t1Inner {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transform-origin: center center;
+}
+
+.titleVideoWrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-mask-image: var(--title-mask);
+  mask-image: var(--title-mask);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.titleVideo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
 .t1SafeWrapper .titleLetter {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 2;
+  mix-blend-mode: screen;
+  opacity: 0.55;
 }
 
 .titleGlow {
@@ -640,8 +681,8 @@
 .theme {
   position: fixed;
   z-index: 20;
-  top: max(var(--theme-top, 14.125rem), 1rem);
-  left: max(var(--theme-left, 3.6804vw), 0.75rem);
+  top: max(var(--theme-top, 10.125rem), 1rem);
+  left: var(--theme-left, 2.875rem);
   transform: scale(max(var(--design-scale, 1), 0.72));
   transform-origin: top left;
   max-width: 10rem;
@@ -688,7 +729,7 @@
   position: fixed;
   z-index: 20;
   top: max(var(--identity-top, 17rem), 1rem);
-  left: min(var(--identity-left, 90.7223vw), calc(100vw - 3.5rem));
+  left: var(--identity-left);
   transform: scale(max(var(--design-scale, 1), 0.72));
   transform-origin: top left;
   display: flex;
@@ -732,7 +773,7 @@
   position: fixed;
   z-index: 20;
   top: max(var(--coords-top, 25.3125rem), 1rem);
-  left: min(var(--coords-left, 93.2662vw), calc(100vw - 4rem));
+  left: var(--coords-left);
   transform: scale(max(var(--design-scale, 1), 0.72));
   transform-origin: top left;
   text-align: center;
@@ -761,8 +802,8 @@
 .exhibits {
   position: fixed;
   z-index: 20;
-  top: max(var(--exhibits-top, 37.8125rem), 1rem);
-  left: min(var(--exhibits-left, 86.8264vw), calc(100vw - 5.5rem));
+  top: max(var(--exhibits-top, 36.8125rem), 1rem);
+  left: var(--exhibits-left);
   transform: scale(max(var(--design-scale, 1), 0.72));
   transform-origin: top left;
   max-width: 9rem;
@@ -952,6 +993,10 @@
 
 @media (max-width: 768px) {
 
+  .viewport {
+    justify-content: center;
+  }
+
   .scene {
     --mobile-canvas-w: 24.375rem;
     --mobile-canvas-h: 49.0625rem;
@@ -960,6 +1005,15 @@
     height: var(--mobile-canvas-h);
     min-width: var(--mobile-canvas-w);
     min-height: var(--mobile-canvas-h);
+    transform-origin: center bottom;
+  }
+
+  .groundWrap {
+    width: auto !important;
+  }
+
+  .bgrocks {
+    width: auto !important;
   }
 
   .theme {
@@ -982,6 +1036,7 @@
   }
 
   .identity {
+    left: var(--identity-left);
     gap: 1rem;
     transform: none;
   }
@@ -1000,6 +1055,7 @@
   }
 
   .exhibits {
+    left: var(--exhibits-left);
     max-width: 6.5rem;
     padding-left: 0.75rem;
     transform: none;

@@ -318,33 +318,50 @@ function DesktopView() {
   );
 }
 
-export const Frame = ({ onScrollUp, isActive }) => {
-  // Only intercept upward scroll when this panel is the active one
+export const Frame = ({ onScrollUp, onScroll, isActive }) => {
+  // Only intercept scroll/wheel when this panel is active
   useEffect(() => {
-    if (!onScrollUp || !isActive) return;
+    if (!isActive) return;
     const handleWheel = (e) => {
-      if (e.deltaY < 0) {
+      if (typeof onScroll === "function") {
+        e.preventDefault();
+        onScroll(e.deltaY);
+      } else if (e.deltaY < 0 && typeof onScrollUp === "function") {
         e.preventDefault();
         onScrollUp();
       }
     };
-    // Touch swipe down (= scrolling up in content)
+
     let touchStartY = 0;
-    const handleTouchStart = (e) => { touchStartY = e.touches[0].clientY; };
+    const handleTouchStart = (e) => {
+      touchStartY = e.touches[0].clientY;
+    };
+    const handleTouchMove = (e) => {
+      const currentY = e.touches[0].clientY;
+      const delta = touchStartY - currentY;
+      touchStartY = currentY;
+      if (typeof onScroll === "function") {
+        onScroll(delta * 1.5);
+      }
+    };
     const handleTouchEnd = (e) => {
-      const delta = touchStartY - e.changedTouches[0].clientY;
-      if (delta < -40) onScrollUp();
+      if (typeof onScroll !== "function" && typeof onScrollUp === "function") {
+        const delta = touchStartY - (e.changedTouches?.[0]?.clientY || touchStartY);
+        if (delta < -40) onScrollUp();
+      }
     };
 
     window.addEventListener("wheel", handleWheel, { passive: false });
     window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
     window.addEventListener("touchend", handleTouchEnd, { passive: true });
     return () => {
       window.removeEventListener("wheel", handleWheel);
       window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [onScrollUp, isActive]);
+  }, [onScrollUp, onScroll, isActive]);
 
   return (
     <>

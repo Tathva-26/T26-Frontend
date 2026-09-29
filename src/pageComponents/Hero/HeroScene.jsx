@@ -27,8 +27,8 @@ const LAYOUT = {
         z: 0, zLift: 0,
     },
     island: {
-        top: 1, left: 37.8, width: 40, height: 37,
-        driftX: 100, driftY: -100, scaleTo: 1.04,
+        top: 0.1, left: 41.8, width: 40, height: 37,
+        driftX: 0, driftY: -50, scaleTo: 1.04,
         z: 1, zLift: 0,
     },
     ground: {
@@ -43,8 +43,8 @@ const LAYOUT = {
     },
     // T1 renders the full "TATHVA" wordmark on its own.
     t1: {
-        top: 14.5, left: -1, width: 80, height: 30.6,
-        driftX: 0, driftY: -1065, scaleTo: 5.85,
+        top: 14.5, left: 7, width: 75, height: 30.6,
+        driftX: 0, driftY: -25, scaleTo: 1,
         z: 3, zLift: 0,
     },
     portal: {
@@ -80,10 +80,10 @@ const MOTION = {
 // position and writes it to CSS variables (--theme-left etc.).
 // ---------------------------------------------------------------------
 const CHROME = {
-    identity: { top: 17, left: 80.125 },
-    coords: { top: 25.3125, left: 82.375 },
-    exhibits: { top: 37.8125, left: 76.6875 },
-    theme: { top: 14.125, left: 3.25 },
+    identity: { top: 10, left: 80.125 },
+    coords: { top: 17.3125, left: 82.175 },
+    exhibits: { top: 30.8125, left: 78.6875 },
+    theme: { top: 10.125, left: 3.25 },
     enter: { top: 39.625, left: 6.8125, width: 11.0625, height: 3.0625 },
 };
 
@@ -137,7 +137,7 @@ const CHROME_MOBILE = {
     enter: { top: 46.2, left: 1.25, width: 7.5, height: 2.6 },
 };
 
-export const Hero = ({ onEnter }) => {
+export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter }) => {
     const [hasEntered, setHasEntered] = useState(false);
     const [ripples, setRipples] = useState([]);
     // Must start as false so the first client render matches the server
@@ -166,23 +166,25 @@ export const Hero = ({ onEnter }) => {
     const themeRef = useRef(null);
     const exhibitsRef = useRef(null);
     const enterRef = useRef(null);
+    const videoRef = useRef(null);
 
     // Cover scale applied to the fixed-size design canvas.
     const designScaleRef = useRef(1);
 
-    const handleEnter = () => {
-        setHasEntered(true);
-        if (typeof onEnter === "function") {
-            onEnter();
-        }
-    };
-
-    // Route through a ref so the scroll trigger always calls the latest
-    // handleEnter without re-creating the timeline.
-    const handleEnterRef = useRef(handleEnter);
+    const onProgressRef = useRef(onProgress);
+    const onScrollBeyondEndRef = useRef(onScrollBeyondEnd);
+    const onAutoEnterRef = useRef(onAutoEnter || onEnter);
     useEffect(() => {
-        handleEnterRef.current = handleEnter;
+        onProgressRef.current = onProgress;
+        onScrollBeyondEndRef.current = onScrollBeyondEnd;
+        onAutoEnterRef.current = onAutoEnter || onEnter;
     });
+
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.play().catch(() => { });
+        }
+    }, []);
 
     // Enter click: ripple at the click point, then animate the hero
     // scroll runway to its end (portal zoom), then let the page scroll
@@ -201,7 +203,8 @@ export const Hero = ({ onEnter }) => {
 
         const scrollerEl = scrollerRef.current;
         if (!scrollerEl) {
-            handleEnterRef.current?.();
+            setHasEntered(true);
+            onAutoEnterRef.current?.();
             return;
         }
 
@@ -210,7 +213,10 @@ export const Hero = ({ onEnter }) => {
             duration: 1.6,
             ease: "power1.inOut",
             overwrite: true,
-            onComplete: () => handleEnterRef.current?.(),
+            onComplete: () => {
+                setHasEntered(true);
+                onAutoEnterRef.current?.();
+            },
         });
     };
 
@@ -286,10 +292,25 @@ export const Hero = ({ onEnter }) => {
             if (event.ctrlKey) return;
             event.preventDefault();
             resyncIfMovedExternally();
+            const maxScroll = getMaxScroll();
+            const delta = normalizeDeltaY(event);
+            if (delta > 0 && scrollerEl.scrollTop >= maxScroll - 2) {
+                onScrollBeyondEndRef.current?.(delta);
+                return;
+            }
+            if (delta > 0 && targetScroll + delta > maxScroll) {
+                const overflow = (targetScroll + delta) - maxScroll;
+                targetScroll = maxScroll;
+                startTicking();
+                if (scrollerEl.scrollTop >= maxScroll - 5) {
+                    onScrollBeyondEndRef.current?.(overflow);
+                }
+                return;
+            }
             targetScroll = gsap.utils.clamp(
                 0,
-                getMaxScroll(),
-                targetScroll + normalizeDeltaY(event),
+                maxScroll,
+                targetScroll + delta,
             );
             startTicking();
         };
@@ -312,10 +333,28 @@ export const Hero = ({ onEnter }) => {
             if (scrollerEl.scrollTop === current) stopTicking();
         };
 
+        let touchStartY = 0;
+        const handleTouchStart = (e) => {
+            touchStartY = e.touches[0].clientY;
+        };
+        const handleTouchMove = (e) => {
+            const maxScroll = getMaxScroll();
+            const currentY = e.touches[0].clientY;
+            const delta = touchStartY - currentY;
+            touchStartY = currentY;
+            if (delta > 0 && scrollerEl.scrollTop >= maxScroll - 2) {
+                onScrollBeyondEndRef.current?.(delta * 1.5);
+            }
+        };
+
         scrollerEl.addEventListener("wheel", handleWheel, { passive: false });
+        scrollerEl.addEventListener("touchstart", handleTouchStart, { passive: true });
+        scrollerEl.addEventListener("touchmove", handleTouchMove, { passive: true });
 
         return () => {
             scrollerEl.removeEventListener("wheel", handleWheel);
+            scrollerEl.removeEventListener("touchstart", handleTouchStart);
+            scrollerEl.removeEventListener("touchmove", handleTouchMove);
             stopTicking();
         };
     }, []);
@@ -362,26 +401,30 @@ export const Hero = ({ onEnter }) => {
             if (key === lastKey) return;
             lastKey = key;
 
-            // Cover scale (Math.max on purpose). Overflow is cropped from
-            // the top only, via the bottom-anchored origin in the CSS.
-            const scale = Math.max(
-                viewportWidth / designWidth,
-                viewportHeight / designHeight,
-            );
+            // On desktop, scale to fit the viewport height so the top of the scene
+            // (including the bird flight, island, and sky) is never cropped off on wider screens.
+            // On mobile, use cover scale so the portrait canvas fills the screen.
+            const scale = mobileMode
+                ? Math.max(viewportWidth / designWidth, viewportHeight / designHeight)
+                : (viewportHeight / designHeight);
 
             designScaleRef.current = scale;
             scene.style.setProperty("--design-scale", scale);
             scrollerRef.current?.style.setProperty("--design-scale", scale);
 
             // Chrome anchoring — maps a local point in .scene's design
-            // space to its exact screen position at the current scale.
+            // space to its exact screen position.
             const canvasW = mobileMode ? 24.375 : 88.3125;
             const chrome = mobileMode ? CHROME_MOBILE : CHROME;
             const remToPx = designWidth / canvasW;
 
-            const toScreenX = (localRem) => (
-                viewportWidth / 2 + (localRem * remToPx - designWidth / 2) * scale
-            );
+            // In all landscape orientations, maintain the exact distance from the sides
+            // based on the reference desktop scale (695 / 785 ≈ 0.88535).
+            const REF_SCALE = 695 / 785;
+
+            const toScreenLeft = (localRem) => localRem * remToPx * REF_SCALE;
+            const toScreenRight = (localRem) => (canvasW - localRem) * remToPx * REF_SCALE;
+
             const toScreenTop = (localRem) => (
                 viewportHeight - (designHeight - localRem * remToPx) * scale
             );
@@ -392,15 +435,26 @@ export const Hero = ({ onEnter }) => {
             const host = scrollerRef.current;
             if (host) {
                 const set = (name, px) => host.style.setProperty(name, `${px}px`);
-                set("--theme-left", toScreenX(chrome.theme.left));
+                if (mobileMode) {
+                    const toMobileX = (localRem) => (
+                        viewportWidth / 2 + (localRem * remToPx - designWidth / 2) * scale
+                    );
+                    set("--theme-left", toMobileX(chrome.theme.left));
+                    set("--identity-left", toMobileX(chrome.identity.left));
+                    set("--coords-left", toMobileX(chrome.coords.left));
+                    set("--exhibits-left", toMobileX(chrome.exhibits.left));
+                    set("--enter-left", toMobileX(chrome.enter.left));
+                } else {
+                    set("--theme-left", toScreenLeft(chrome.theme.left));
+                    set("--enter-left", toScreenLeft(chrome.enter.left));
+                    set("--identity-left", viewportWidth - toScreenRight(chrome.identity.left));
+                    set("--coords-left", viewportWidth - toScreenRight(chrome.coords.left));
+                    set("--exhibits-left", viewportWidth - toScreenRight(chrome.exhibits.left));
+                }
                 set("--theme-top", toScreenTop(chrome.theme.top));
-                set("--identity-left", toScreenX(chrome.identity.left));
                 set("--identity-top", toScreenTop(chrome.identity.top));
-                set("--coords-left", toScreenX(chrome.coords.left));
                 set("--coords-top", toScreenTop(chrome.coords.top));
-                set("--exhibits-left", toScreenX(chrome.exhibits.left));
                 set("--exhibits-top", toScreenTop(chrome.exhibits.top));
-                set("--enter-left", toScreenX(chrome.enter.left));
                 set("--enter-bottom", toScreenBottom(chrome.enter.top + chrome.enter.height));
             }
 
@@ -432,11 +486,11 @@ export const Hero = ({ onEnter }) => {
             end: "bottom bottom",
         };
 
-        // Auto-enter near the bottom of the runway (no scrub lag).
+        // Report scroll progress for scroll-driven whiteout transition.
         ScrollTrigger.create({
             ...scrollTriggerBase,
             onUpdate: (self) => {
-                if (self.progress > 0.985) handleEnterRef.current?.();
+                onProgressRef.current?.(self.progress);
             },
         });
 
@@ -543,19 +597,13 @@ export const Hero = ({ onEnter }) => {
                     scrub: MOTION.portal.scrub,
                     invalidateOnRefresh: true,
                 },
-                onUpdate: () => {
-                    const portalEl = portalRef.current;
-                    if (!portalEl) return;
-                    if (gsap.getProperty(portalEl, "scaleX") < coverScaleFloor) return;
-                    if (portalCoversViewport()) handleEnterRef.current?.();
-                },
             }).fromTo(
                 portalRef.current,
                 { scale: 1, x: 0, y: 0 },
                 {
                     scale: portalTargetScale,
                     x: () => (
-                        sceneRef.current.offsetWidth / 2
+                        (viewportRef.current.clientWidth / 2) / (designScaleRef.current || 1)
                         - (portalRef.current.offsetLeft + portalRef.current.offsetWidth / 2)
                     ),
                     y: () => (
@@ -913,15 +961,35 @@ export const Hero = ({ onEnter }) => {
                                 height: `${activeLayout.t1.height}rem`,
                             }}
                         >
-                            <img
+                            <div
                                 ref={t1Ref}
-                                className={styles.titleLetter}
-                                alt=""
-                                aria-hidden="true"
-                                src={isMobile
-                                    ? `${assetBase}tathva_mobile.svg`
-                                    : `${assetBase}tathva_text1.png`}
-                            />
+                                className={styles.t1Inner}
+                                style={{
+                                    "--title-mask": `url(${isMobile ? `${assetBase}tathva_mobile.svg` : `${assetBase}tathva_text.png`})`,
+                                }}
+                            >
+                                <div className={styles.titleVideoWrap}>
+                                    <video
+                                        ref={videoRef}
+                                        className={styles.titleVideo}
+                                        src={`${assetBase}auraviolet.mp4`}
+                                        autoPlay
+                                        loop
+                                        muted
+                                        playsInline
+                                        preload="auto"
+                                        aria-hidden="true"
+                                    />
+                                </div>
+                                <img
+                                    className={styles.titleLetter}
+                                    alt=""
+                                    aria-hidden="true"
+                                    src={isMobile
+                                        ? `${assetBase}tathva_mobile.svg`
+                                        : `${assetBase}tathva_text.png`}
+                                />
+                            </div>
                         </div>
 
                         <div
@@ -971,3 +1039,4 @@ export const Hero = ({ onEnter }) => {
         </main>
     );
 };
+export default HeroScene;
