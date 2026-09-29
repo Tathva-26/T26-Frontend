@@ -71,7 +71,7 @@ const MOTION = {
     glyph: { scrub: 0.6, ease: "power2.out" },
     portal: { scrub: 0.18, ease: "none" },
     girl: { scrub: 1.3, ease: "power1.inOut" },
-    chrome: { scrub: 0.0001, ease: "power1.out" },
+    // chrome: { scrub: 0.0001, ease: "power1.out" }, // UNUSED: chrome fade uses quickSetter, not MOTION
 };
 
 // ---------------------------------------------------------------------
@@ -137,7 +137,7 @@ const CHROME_MOBILE = {
     enter: { top: 46.2, left: 1.25, width: 7.5, height: 2.6 },
 };
 
-export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter }) => {
+export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter, isActive = true }) => {
     const [hasEntered, setHasEntered] = useState(false);
     const [ripples, setRipples] = useState([]);
     // Must start as false so the first client render matches the server
@@ -180,11 +180,24 @@ export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter 
         onAutoEnterRef.current = onAutoEnter || onEnter;
     });
 
+    // KEEP: React sets `muted` as a property, not an attribute, so autoPlay can be blocked after
+    // hydration; this explicit play() is the standard workaround.
     useEffect(() => {
         if (videoRef.current) {
             videoRef.current.play().catch(() => { });
         }
     }, []);
+
+    // Hero stays mounted (hidden) while Frame is showing. Stop the title video decoding and freeze
+    // the CSS animations (bird flap etc.) until Hero is the active panel again.
+    useEffect(() => {
+        const video = videoRef.current;
+        if (video) {
+            if (isActive) video.play().catch(() => { });
+            else video.pause();
+        }
+        scrollerRef.current?.toggleAttribute("data-paused", !isActive);
+    }, [isActive]);
 
     // Enter click: ripple at the click point, then animate the hero
     // scroll runway to its end (portal zoom), then let the page scroll
@@ -436,26 +449,45 @@ export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter 
             if (host) {
                 const set = (name, px) => host.style.setProperty(name, `${px}px`);
                 if (mobileMode) {
-                    const toMobileX = (localRem) => (
-                        viewportWidth / 2 + (localRem * remToPx - designWidth / 2) * scale
-                    );
-                    set("--theme-left", toMobileX(chrome.theme.left));
-                    set("--identity-left", toMobileX(chrome.identity.left));
-                    set("--coords-left", toMobileX(chrome.coords.left));
-                    set("--exhibits-left", toMobileX(chrome.exhibits.left));
-                    set("--enter-left", toMobileX(chrome.enter.left));
+                    // On mobile, use viewport-relative positions so chrome is always
+                    // visible regardless of orientation (landscape/portrait).
+                    // Measure the actual navbar height; fall back to 68px.
+                    const navEl = document.querySelector(".nb");
+                    const navH = navEl ? navEl.getBoundingClientRect().bottom : 68;
+
+                    const PAD = 20;
+
+                    // Theme — top-left, flush below navbar
+                    set("--theme-left", PAD);
+                    set("--theme-top", navH + 16);
+
+                    // Identity — top-right, cleanly below navbar lines
+                    host.style.setProperty("--identity-left", `${viewportWidth - PAD}px`);
+                    set("--identity-top", navH + 16);
+
+                    // Coords — right-anchored below identity
+                    set("--coords-left", viewportWidth - PAD);
+                    set("--coords-top", navH + 165);
+
+                    // Exhibits — bottom-right, comfortably above enter button
+                    host.style.setProperty("--exhibits-left", `${viewportWidth - PAD}px`);
+                    set("--exhibits-top", viewportHeight - 190);
+
+                    // Enter button — bottom-left
+                    set("--enter-left", PAD);
+                    set("--enter-bottom", 36);
                 } else {
                     set("--theme-left", toScreenLeft(chrome.theme.left));
                     set("--enter-left", toScreenLeft(chrome.enter.left));
                     set("--identity-left", viewportWidth - toScreenRight(chrome.identity.left));
                     set("--coords-left", viewportWidth - toScreenRight(chrome.coords.left));
                     set("--exhibits-left", viewportWidth - toScreenRight(chrome.exhibits.left));
+                    set("--theme-top", toScreenTop(chrome.theme.top));
+                    set("--identity-top", toScreenTop(chrome.identity.top));
+                    set("--coords-top", toScreenTop(chrome.coords.top));
+                    set("--exhibits-top", toScreenTop(chrome.exhibits.top));
+                    set("--enter-bottom", toScreenBottom(chrome.enter.top + chrome.enter.height));
                 }
-                set("--theme-top", toScreenTop(chrome.theme.top));
-                set("--identity-top", toScreenTop(chrome.identity.top));
-                set("--coords-top", toScreenTop(chrome.coords.top));
-                set("--exhibits-top", toScreenTop(chrome.exhibits.top));
-                set("--enter-bottom", toScreenBottom(chrome.enter.top + chrome.enter.height));
             }
 
             window.clearTimeout(refreshTimer);
@@ -521,7 +553,10 @@ export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter 
             });
         }
 
-        const createParallaxLayer = (ref, config, motion, fadeAt) => {
+        // counterRef (optional): an element INSIDE `ref` that is counter-scaled so it stays the same
+        // on-screen size while `ref` zooms. Used to keep the title video static while the text-shaped
+        // mask (the "clip") grows around it. Both are transform-only, so it stays on the compositor.
+        const createParallaxLayer = (ref, config, motion, fadeAt, counterRef) => {
             if (!ref.current) return;
             const fromVars = { scale: 1, x: 0, y: 0 };
             const toVars = { duration: 1, ease: motion.ease };
@@ -536,6 +571,19 @@ export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter 
             if (config.zLift) {
                 toVars.zIndex = config.z + config.zLift;
                 toVars.snap = { zIndex: 1 };
+            }
+
+            if (counterRef?.current) {
+                gsap.set(counterRef.current, { clearProps: "transform" });
+                if (config.scaleTo && config.scaleTo !== 1) {
+                    // exact inverse of the parent's CURRENT scale on every frame (not a second tween,
+                    // which would only match at the endpoints)
+                    toVars.onUpdate = () => {
+                        gsap.set(counterRef.current, {
+                            scale: 1 / gsap.getProperty(ref.current, "scaleX"),
+                        });
+                    };
+                }
             }
 
             const layerTl = gsap.timeline({
@@ -563,10 +611,11 @@ export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter 
         createParallaxLayer(islandRef, L.island, MOTION.island);
         createParallaxLayer(groundRef, L.ground, MOTION.ground);
         createParallaxLayer(bgrocksRef, L.bgrocks, MOTION.bgrocks);
-        createParallaxLayer(t1Ref, L.t1, MOTION.glyph, 0.5);
+        createParallaxLayer(t1Ref, L.t1, MOTION.glyph, 0.5, videoRef);
         createParallaxLayer(girlRef, L.girl, MOTION.girl);
 
         if (portalRef.current) {
+            /* UNUSED (never called) - commented out:
             const portalCoversViewport = () => {
                 const p = portalRef.current?.getBoundingClientRect();
                 const v = viewportRef.current?.getBoundingClientRect();
@@ -578,8 +627,9 @@ export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter 
                     p.bottom >= v.bottom - 1
                 );
             };
+            */
 
-            let coverScaleFloor = 0;
+            // let coverScaleFloor = 0; // UNUSED
             const portalTargetScale = () => {
                 const target = (
                     Math.max(
@@ -587,7 +637,7 @@ export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter 
                         viewportRef.current.clientHeight / portalRef.current.offsetHeight,
                     ) * L.portal.zoomMultiplier
                 ) / (designScaleRef.current || 1);
-                coverScaleFloor = (target / L.portal.zoomMultiplier) * 0.9;
+                // coverScaleFloor = (target / L.portal.zoomMultiplier) * 0.9; // UNUSED
                 return target;
             };
 
@@ -692,6 +742,15 @@ export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter 
 
     const activeLayout = isMobile ? LAYOUT_MOBILE : LAYOUT;
     const activeChrome = isMobile ? CHROME_MOBILE : CHROME;
+    // If the title layer zooms (scaleTo > 1) the video is sized zoom-times larger, centred, and
+    // counter-scaled by GSAP, so the video itself never appears to zoom. scaleTo === 1 -> no change.
+    const titleZoom = activeLayout.t1.scaleTo || 1;
+    const titleVideoStyle = titleZoom > 1 ? {
+        width: `${titleZoom * 100}%`,
+        height: `${titleZoom * 100}%`,
+        left: `${-(titleZoom - 1) * 50}%`,
+        top: `${-(titleZoom - 1) * 50}%`,
+    } : undefined;
 
     return (
         <main
@@ -743,9 +802,11 @@ export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter 
                 aria-label="Tathva 26, Asteria"
             >
                 <div className={styles.identityLabel}>
-                    <span>TATHVA 26</span>
-                    <span className={styles.identityDivider} aria-hidden="true" />
-                    <span>ASTERIA</span>
+                    <div className={styles.identityLabelInner}>
+                        <span>TATHVA 26</span>
+                        <span className={styles.identityDivider} aria-hidden="true" />
+                        <span>ASTERIA</span>
+                    </div>
                 </div>
                 <img
                     className={styles.identityMark}
@@ -840,13 +901,16 @@ export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter 
                         data-model-id="10:78"
                         aria-label="Tathva 26 Asteria"
                     >
-                        {/* Zero-size SVG filter definition for the portal rim. */}
+                        {/* UNUSED (no CSS references #portalEdgeNoise) - commented out.
+                            feTurbulence + feDisplacementMap is expensive; do not wire it back in.
+                        
                         <svg aria-hidden="true" focusable="false" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
                             <filter id="portalEdgeNoise" x="-40%" y="-40%" width="180%" height="180%">
                                 <feTurbulence type="fractalNoise" baseFrequency="0.015 0.05" numOctaves="2" seed="7" result="noise" />
                                 <feDisplacementMap in="SourceGraphic" in2="noise" scale="7" xChannelSelector="R" yChannelSelector="G" />
                             </filter>
                         </svg>
+                        */}
 
                         <div
                             ref={backgroundRef}
@@ -866,7 +930,7 @@ export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter 
                             }}
                             aria-hidden="true"
                         >
-                            <div className={styles.islandGlow} />
+                            {/* <div className={styles.islandGlow} /> UNUSED: no CSS rule, renders an empty div */}
                             <img
                                 className={styles.island}
                                 alt=""
@@ -972,6 +1036,7 @@ export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter 
                                     <video
                                         ref={videoRef}
                                         className={styles.titleVideo}
+                                        style={titleVideoStyle}
                                         src={`${assetBase}auraviolet.mp4`}
                                         autoPlay
                                         loop
@@ -1003,10 +1068,19 @@ export const HeroScene = ({ onEnter, onProgress, onScrollBeyondEnd, onAutoEnter 
                             }}
                             aria-hidden="true"
                         >
+                            {/* One pre-baked halo (bake_portal_glow.py) replaces the old
+                                box-shadow stack + 4 mix-blend-mode glow layers. It sits
+                                inside .portal, so it zooms with the portal for free. */}
+                            <div
+                                className={styles.portalHalo}
+                                style={{ backgroundImage: `url(${assetBase}portal-glow.png)` }}
+                            />
+                            {/* REMOVED (baked into portal-glow.png):
                             <div className={styles.portalGlow} />
                             <div className={styles.portalHaze} />
                             <div className={styles.portalGroundGlow} />
                             <div className={styles.portalRim} />
+                            */}
                         </div>
 
                         <div
