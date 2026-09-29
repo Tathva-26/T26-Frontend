@@ -61,7 +61,7 @@
   transform: scale(var(--design-scale, 1));
   /* Left-bottom anchor so the title, island and scene stay in screen jutting out from left */
   transform-origin: left bottom;
-  will-change: transform;
+  /* will-change: transform;  UNNECESSARY: the scale is static, this only forced an extra huge layer */
 }
 
 /* ===============================
@@ -155,6 +155,7 @@
   pointer-events: none;
 }
 
+/* UNUSED (no element uses it):
 .groundLight {
   position: absolute;
   inset: 0;
@@ -164,6 +165,7 @@
   mix-blend-mode: screen;
   pointer-events: none;
 }
+*/
 
 /* Farther ground layer — a distant ridge behind .groundWrap and .portal. */
 .bgrocks {
@@ -173,7 +175,6 @@
   object-position: bottom;
   pointer-events: none;
   will-change: transform;
-  filter: brightness(0.55);
   width: max(88.3125rem, calc(100vw / var(--design-scale, 1))) !important;
 }
 
@@ -195,11 +196,12 @@
   height: 100%;
   object-fit: contain;
   pointer-events: none;
-  animation: islandFloat 20s ease-in-out infinite;
-  will-change: transform;
+  /* animation: islandFloat 20s ease-in-out infinite;  UNNECESSARY: ~3px / 0.1deg, invisible, keeps compositor busy */
+  /* will-change: transform;  only needed for the animation above */
   z-index: 1;
 }
 
+/* UNUSED after removing the animation:
 @keyframes islandFloat {
 
   0%,
@@ -211,6 +213,7 @@
     transform: translate(0.2rem, -0.2rem) rotate(0.1deg);
   }
 }
+*/
 
 /* Trail sits directly over the island (same box, matching aspect) and
    always stays in front of it. The bird flies in its own sibling layer
@@ -312,6 +315,7 @@
 }
 
 /* Rim light masked to her own PNG alpha. */
+/* UNUSED (no element uses it):
 .girlRim {
   position: absolute;
   inset: 0;
@@ -328,6 +332,7 @@
   opacity: 0.85;
   pointer-events: none;
 }
+*/
 
 .girlContact {
   position: absolute;
@@ -336,7 +341,7 @@
   bottom: -4%;
   height: 16%;
   background: radial-gradient(closest-side, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0) 75%);
-  filter: blur(2px);
+  /* filter: blur(2px);  UNNECESSARY: invisible on a radial gradient, costs a render surface */
   pointer-events: none;
 }
 
@@ -345,13 +350,12 @@
    =============================== */
 
 .portal {
-  /* PORTAL GLOW INTENSITY: 0 none, 1 balanced, 1.5 strong, 2 overdriven */
-  --glow: 0.5;
   position: absolute;
   z-index: 4;
   overflow: visible;
   border-radius: 3px;
 
+  /* the bright core only; all glow lives in the single baked .portalHalo image */
   background: radial-gradient(115% 130% at 46% 40%,
       #ffffff 0%,
       #f5f8ff 45%,
@@ -359,11 +363,29 @@
       #b8d2ff 90%,
       #9dc2ff 100%);
 
-  animation: portalFlicker 6.5s ease-in-out infinite;
+  /* animation: portalFlicker 6.5s ease-in-out infinite;  UNNECESSARY: 4% opacity wobble, invisible */
   will-change: transform;
   transform-origin: center center;
 }
 
+/* One pre-baked PNG (bake_portal_glow.py) = core-edge glow + haze + ground light pool.
+   Sized as a % of the portal box so it zooms with the portal. Margin = 360px design space:
+   left/right 360/146 = 246.58%, top/bottom 360/323 = 111.46%.  No box-shadow, no blend modes. */
+.portalHalo {
+  position: absolute;
+  left: -246.58%;
+  top: -111.46%;
+  width: 593.15%;
+  height: 322.91%;
+  z-index: -1;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  pointer-events: none;
+  /* tune brightness here without re-baking (1 = as baked) */
+  opacity: 1;
+}
+
+/* ---- REMOVED: replaced by .portalHalo ----------------------------------------------------
 .portalGlow {
   position: absolute;
   inset: 0;
@@ -491,6 +513,7 @@
     opacity: 0.96;
   }
 }
+*/
 
 /* ===============================
    TITLE (TATHVA wordmark)
@@ -501,12 +524,13 @@
   z-index: 3;
   pointer-events: none;
   user-select: none;
-  will-change: transform, opacity;
+  /* will-change: transform, opacity;  UNNECESSARY: GSAP animates .t1Inner, never this element */
   transform-origin: center center;
 
   object-fit: contain;
 }
 
+/* UNUSED keyframes:
 @keyframes titleFlicker {
 
   0%,
@@ -520,6 +544,7 @@
       drop-shadow(0 0 8px rgba(225, 235, 255, 0.7)) drop-shadow(0 0 24px rgba(190, 210, 255, 0.5)) drop-shadow(0 0 55px rgba(150, 185, 255, 0.32));
   }
 }
+*/
 
 /* Structural container carrying T1's base position; crops/scales in
    lockstep with the rest of .scene. GSAP animates the img inside. */
@@ -577,6 +602,7 @@
   opacity: 0.55;
 }
 
+/* UNUSED (no element uses it):
 .titleGlow {
   position: absolute;
   inset: -20% -8%;
@@ -592,7 +618,9 @@
   mix-blend-mode: screen;
   animation: titlePulse 5.5s ease-in-out infinite;
 }
+*/
 
+/* UNUSED (no element uses it):
 .titleParticles::after {
   content: "";
   position: absolute;
@@ -603,7 +631,9 @@
   transform: translateY(8%) scale(1.12);
   animation: titleDust 13s ease-in-out infinite reverse;
 }
+*/
 
+/* UNUSED keyframes:
 @keyframes titleDust {
 
   0%,
@@ -625,7 +655,9 @@
     opacity: 0.9;
   }
 }
+*/
 
+/* UNUSED keyframes:
 @keyframes titlePulse {
 
   0%,
@@ -637,6 +669,7 @@
     opacity: 1;
   }
 }
+*/
 
 /* Container for W1 / Frame revealed through the portal transition */
 .conclaveLayer {
@@ -735,11 +768,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.25rem;
   pointer-events: none;
 }
 
 .identityLabel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 7.5rem;
+  flex-shrink: 0;
+}
+
+.identityLabelInner {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -747,7 +790,7 @@
   white-space: nowrap;
 }
 
-.identityLabel span {
+.identityLabelInner span {
   color: #fff;
   font-family: 'Hammersmith One', Helvetica, sans-serif;
   font-size: 11.631px;
@@ -763,8 +806,7 @@
 }
 
 .identityMark {
-  padding-top: 2rem;
-  width: 3rem;
+  width: 2.75rem;
   height: auto;
   object-fit: contain;
 }
@@ -1036,29 +1078,45 @@
   }
 
   .identity {
+    /* left is set to viewport right edge — shift element leftward via translate */
     left: var(--identity-left);
-    gap: 1rem;
-    transform: none;
+    transform: translateX(-100%);
+    transform-origin: top right;
+    gap: 0.85rem;
   }
 
-  .identityLabel span {
+  .identityLabel {
+    width: 1.25rem;
+    height: 6.25rem;
+  }
+
+  .identityLabelInner span {
     font-size: 10px;
   }
 
   .identityMark {
-    width: 2.25rem;
-    padding-top: 1.25rem;
+    width: 2rem;
+    padding-top: 0;
   }
 
   .coords {
-    display: none;
+    /* Show coords on mobile, right-anchored below identity */
+    left: var(--coords-left);
+    transform: translateX(-100%);
+    transform-origin: top right;
   }
 
   .exhibits {
+    /* right-anchored — border moves to right side */
     left: var(--exhibits-left);
+    transform: translateX(-100%);
+    transform-origin: top right;
     max-width: 6.5rem;
-    padding-left: 0.75rem;
-    transform: none;
+    padding-left: 0;
+    padding-right: 0.75rem;
+    border-left: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.35);
+    text-align: right;
   }
 
   .exhibitsList {
