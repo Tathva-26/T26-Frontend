@@ -1,6 +1,8 @@
 .frame {
   position: relative;
   width: 100%;
+  max-width: calc(100vh * (1413 / 753));
+  max-height: 100%;
   aspect-ratio: 1413 / 753;
   container-type: inline-size;
   background: #0e0f0f;
