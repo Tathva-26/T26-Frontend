@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -24,7 +24,7 @@ const varela = Varela({
 const linkColumns = [
   {
     heading: 'EXPLORE',
-    links: ['ANOUNCEMENTS', 'TEAMS', 'MAP', 'CONTACTS'],
+    links: ['ANNOUNCEMENTS', 'TEAMS', 'MAP', 'CONTACTS'],
   },
   {
     heading: 'ABOUT',
@@ -32,119 +32,9 @@ const linkColumns = [
   },
   {
     heading: 'MORE',
-    links: ['GALLERY', 'FAQ', 'CARRERS', 'SPONSORS'],
+    links: ['GALLERY', 'FAQ', 'SPONSERS'],
   },
 ]
-
-function FooterLink({ label }) {
-  const arrowRef = useRef(null)
-  const textRef = useRef(null)
-  const { contextSafe } = useGSAP()
-
-  const onEnter = contextSafe((e) => {
-    // Touch browsers fire synthetic pointerenter/mouseenter on tap with no
-    // matching leave until the next tap elsewhere, which left the hover
-    // state visually "stuck" on mobile — only real mice trigger it.
-    if (e.pointerType && e.pointerType !== 'mouse') return
-    gsap.to(textRef.current, {
-      x: 3,
-      color: '#F19EDC',
-      duration: 0.25,
-      ease: 'power2.out',
-    })
-    gsap.to(arrowRef.current, {
-      x: 7,
-      scale: 1.08,
-      duration: 0.3,
-      ease: 'power2.out',
-    })
-  })
-
-  const onLeave = contextSafe((e) => {
-    if (e.pointerType && e.pointerType !== 'mouse') return
-    gsap.to(textRef.current, {
-      x: 0,
-      color: '#FFFFFF',
-      duration: 0.25,
-      ease: 'power2.out',
-    })
-    gsap.to(arrowRef.current, {
-      x: 0,
-      scale: 1,
-      duration: 0.3,
-      ease: 'power2.out',
-    })
-  })
-
-  return (
-    <a
-      href='#'
-      onPointerEnter={onEnter}
-      onPointerLeave={onLeave}
-      className='relative flex min-h-[38px] w-full items-center justify-between gap-4 rounded px-1 py-1 font-varela text-[12px] tracking-[0.14em] text-white transition-colors active:bg-white/5 sm:min-h-[20px]'
-    >
-      <span ref={textRef}>{label}</span>
-      <span
-        ref={arrowRef}
-        className='absolute right-[-4px] top-1/2 inline-flex h-4 w-4 -translate-y-1/2 items-center justify-center'
-      >
-        <svg
-          width='16'
-          height='16'
-          viewBox='0 0 20 20'
-          fill='none'
-          xmlns='http://www.w3.org/2000/svg'
-        >
-          <path
-            d='M4 10H16M10 4L16 10L10 16'
-            stroke='#F19EDC'
-            strokeWidth='2'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-          />
-        </svg>
-      </span>
-    </a>
-  )
-}
-
-function MobileNavAccordion({ column, index }) {
-  const [isOpen, setIsOpen] = useState(true)
-
-  return (
-    <div
-      className={`footer-col w-full sm:translate-y-5 sm:w-[150px] sm:px-4 ${index !== 0 ? 'sm:border-l sm:border-[#383838]' : ''}`}
-    >
-      {/* Mobile Toggleable Header / Desktop Static Header */}
-      <button
-        type='button'
-        onClick={() => setIsOpen((prev) => !prev)}
-        className='mb-1 flex min-h-[24px] w-full items-center justify-between sm:pointer-events-none sm:mb-2.5 sm:cursor-default sm:min-h-[24px]'
-      >
-        <div className='flex w-full items-center gap-2.5'>
-          <h3 className='min-w-0 font-bebas text-[22px] sm:text-[20px] leading-none tracking-[0.08em] text-white'>
-            {column.heading}
-          </h3>
-          <div className='h-[1px] flex-1 bg-[#444444]' />
-        </div>
-        <span className='sm:hidden text-[#F19EDC] text-lg font-bold pl-2'>
-          {isOpen ? '−' : '+'}
-        </span>
-      </button>
-
-      {/* Accordion Links Wrapper */}
-      <ul
-        className={`${isOpen ? 'block' : 'hidden'} space-y-0.5 pb-2 sm:block sm:pb-0`}
-      >
-        {column.links.map((link) => (
-          <li key={link}>
-            <FooterLink label={link} />
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
 
 export default function Footer() {
   const rootRef = useRef(null)
@@ -189,10 +79,10 @@ export default function Footer() {
   )
 
   return (
-<footer
-        ref={rootRef}
-        className={`${bebasNeue.variable} ${varela.variable} footer-typography relative mt-auto w-full bg-transparent pb-4 pt-4 text-white lg:pb-5 lg:pt-6`}
-      >
+    <footer
+      ref={rootRef}
+      className={`${bebasNeue.variable} ${varela.variable} footer-typography relative mt-auto w-full bg-transparent pb-4 pt-4 text-white lg:pb-5 lg:pt-6`}
+    >
       <DotsBackground />
       <style>{`
         @font-face {
@@ -206,7 +96,7 @@ export default function Footer() {
         .font-akira { font-family: 'Akira Expanded', 'Anton', sans-serif; }
         .font-bebas { font-family: var(--font-bebas), sans-serif; }
         .font-varela { font-family: var(--font-varela), sans-serif; }
-        .footer-typography, .footer-typography * {
+        .footer-typography {
           font-family: var(--font-bebas), sans-serif;
           font-weight: 400;
           font-style: normal;
@@ -214,11 +104,17 @@ export default function Footer() {
           line-height: 100%;
           letter-spacing: 0.1em;
         }
+        :where(.footer-typography *) {
+          font-family: inherit;
+          font-weight: 400;
+          font-style: normal;
+          line-height: 100%;
+          letter-spacing: 0.1em;
+        }
         .footer-typography h2 {
           font-family: 'Akira Expanded', 'Anton', sans-serif;
           font-weight: 800;
           font-style: normal;
-          font-size: 194.32px;
           line-height: 100%;
           letter-spacing: 0;
           color: transparent;
@@ -228,9 +124,17 @@ export default function Footer() {
           display: none;
         }
 
-        @media (max-width: 1023px) {
+        @media (max-width: 767px) {
+          .footer-typography h2 {
+            font-size: clamp(48px, 16vw, 96px);
+            -webkit-text-stroke-width: 1px;
+          }
+
           .footer-typography .footer-panel {
             min-height: 0;
+            max-width: 370px;
+            margin-left: auto;
+            margin-right: auto;
           }
 
           .footer-panel-shape-desktop {
@@ -243,75 +147,7 @@ export default function Footer() {
 
           .footer-typography .footer-panel-content {
             min-height: 0;
-          }
-
-          .footer-typography .footer-newsletter,
-          .footer-typography .footer-navigation {
-            min-width: 0;
-            width: 100%;
-          }
-        }
-
-        @media (max-width: 639px) {
-          .footer-typography h2 {
-            font-size: clamp(48px, 16vw, 96px);
-            -webkit-text-stroke-width: 1px;
-          }
-
-          .footer-typography .footer-panel-content {
-            gap: 1rem;
-            padding: 1.25rem 1.25rem 1.5rem;
-          }
-
-          .footer-typography .footer-newsletter > p:first-child {
-            font-size: clamp(18px, 5.8vw, 24px);
-            line-height: 1.1;
-          }
-
-          .footer-typography .footer-newsletter > p:nth-child(2) {
-            max-width: 26rem;
-            font-size: 13px;
-            line-height: 1.3;
-          }
-
-          .footer-typography .footer-newsletter form {
-            max-width: none;
-            width: 100%;
-          }
-
-          .footer-typography .footer-navigation {
-            gap: 0.25rem;
-          }
-
-          .footer-typography .footer-bottom-labels {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-            align-items: end;
-            gap: 0.35rem;
-            padding-left: 1.25rem;
-            padding-right: 1.25rem;
-            font-size: 8px;
-            letter-spacing: 0.05em;
-          }
-
-          .footer-typography .footer-bottom-labels span {
-            max-width: none;
-            min-width: 0;
-            white-space: nowrap;
-            font-size: 8px;
-            line-height: 1.2;
-          }
-
-          .footer-typography .footer-bottom-labels span:first-child {
-            text-align: left;
-          }
-
-          .footer-typography .footer-bottom-labels span:nth-child(2) {
-            text-align: center;
-          }
-
-          .footer-typography .footer-bottom-labels span:last-child {
-            text-align: right;
+            padding: 1.75rem 1.4rem 2rem 1.4rem;
           }
         }
 
@@ -324,15 +160,12 @@ export default function Footer() {
 
       <div className='relative mx-auto w-full max-w-[1380px] px-4 sm:px-6 lg:px-12'>
         {/* ASTERIA BACKGROUND TEXT */}
-        <div className='relative z-10 -translate-y-1 -mb-[20px] sm:-mb-[32px] lg:-mb-[45px]'>
+        <div className='relative z-10 -translate-y-1 -mb-[18px] sm:-mb-[32px] lg:-mb-[45px]'>
           <h2
             ref={headlineRef}
             className='relative z-20 w-full max-w-full text-center font-akira text-[15vw] font-extrabold uppercase leading-[100%] tracking-[0%] sm:text-[14vw] lg:text-[150px] xl:text-[180px]'
           >
             ASTERIA
-            {/* Canvas sits inside the heading so its box is the heading's box:
-                the glow is measured and drawn against the real text geometry,
-                and it inherits the entrance transform instead of lagging it. */}
             <GlowLetters
               text='ASTERIA'
               textColor='transparent'
@@ -352,6 +185,7 @@ export default function Footer() {
           ref={panelRef}
           className='footer-panel relative z-10 min-h-[250px] w-full lg:min-h-[270px]'
         >
+          {/* Vector 3.svg — desktop panel (1331x295) */}
           <svg
             className='footer-panel-shape-desktop pointer-events-none absolute inset-0 h-full w-full drop-shadow-xl'
             viewBox='0 0 1331 295'
@@ -359,36 +193,39 @@ export default function Footer() {
             xmlns='http://www.w3.org/2000/svg'
           >
             <path
-              d='M0 43.3222 L34.5879 0 H215.213 H226.044 H446.498 L482.483 43.3222 H824.169 L865.395 0 H1293.73 L1330.06 43.3222 V245.958 L1293.73 294.521 H48.9121 L0 255.042 Z'
-              fill='#222222'
+              d='M0 255.042V43.3222L34.5879 0H215.213H226.044H446.498L482.483 43.3222H824.169L865.395 0H1293.73L1330.06 43.3222V245.958L1293.73 294.521H48.9121L0 255.042Z'
+              fill='#2A2A2A'
             />
           </svg>
 
+          {/* Vector 29.svg — mobile panel (370x319) */}
           <svg
             className='footer-panel-shape-mobile pointer-events-none absolute inset-0 h-full w-full drop-shadow-xl'
-            viewBox='0 0 1331 295'
+            viewBox='0 0 370 319'
             preserveAspectRatio='none'
             xmlns='http://www.w3.org/2000/svg'
           >
             <path
-              d='M0 28 L22 0 H1309 L1331 28 V267 L1309 295 H22 L0 267 Z'
-              fill='#222222'
+              d='M0.245361 78.5901V13.2432L27.1142 0.242188H341.794L369.147 13.1291V78.8182L358.496 84.1783V258.665L369.389 263.683V297.668L342.52 310.213L253.441 310.555L236.013 318.31H123.212L105.542 310.441H26.8721L0.971545 298.01L0.245361 263.797L11.6222 258.893V84.1783L0.245361 78.5901Z'
+              fill='#2A2A2A'
             />
           </svg>
 
-          <div className='footer-panel-content relative z-10 grid min-h-full grid-cols-1 items-center gap-6 px-6 py-5 sm:px-8 lg:grid-cols-[280px_1fr_240px] lg:gap-0 lg:px-[64px] lg:py-6'>
+          <div className='footer-panel-content relative z-10 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-[480px_1fr_240px] min-h-full items-center md:gap-6 lg:gap-0 px-6 py-5 sm:px-8 lg:px-[64px] lg:py-6'>
             {/* NEWSLETTER SECTION */}
-            <div className='footer-newsletter self-center'>
-              <p className='font-bebas text-[22px] sm:text-[24px] lg:text-[26px] leading-[28px] tracking-[0.02em] text-white font-normal'>
-                GET THE LATEST UPDATES &amp; SIGNALS
+            <div className='footer-newsletter w-full self-center md:col-span-2 lg:col-span-1'>
+              <p className='font-bebas text-[20px] sm:text-[24px] lg:text-[26px] leading-[26px] sm:leading-[28px] tracking-[0.02em] text-white font-normal lg:whitespace-nowrap'>
+                GET THE LATESTUPDATES &amp; SIGNALS
               </p>
-              <p className='mt-2 w-full sm:w-[250px] font-bebas text-[14px] sm:text-[15px] lg:text-[16px] leading-[19px] text-[#A0A0A0]'>
-                BE THE FIRST TO KNOW ABOUT EVENTS, WORKSHOPS, PASSES AND MORE
+              <p className='mt-2.5 w-full font-bebas text-[14px] leading-[18px] text-[#A0A0A0] sm:w-[250px] sm:text-[15px] lg:w-auto lg:text-[16px]'>
+                BE THE FIRST TO KNOW ABOUT EVENTS,
+                <br />
+                WORKSHOPS,PASSES AND MORE
               </p>
 
               <form
                 onSubmit={(e) => e.preventDefault()}
-                className='relative mt-4 h-[42px] w-full max-w-[300px] sm:mt-5 sm:w-[270px]'
+                className='relative mt-4 h-[42px] w-full max-w-[435px] sm:mt-5'
               >
                 <svg
                   viewBox='0 0 297 44'
@@ -398,10 +235,10 @@ export default function Footer() {
                 >
                   <path
                     d='M0.838867 34.6907 V11.7501 L8.39247 0.839355 H286.197 L295.709 8.95248 V34.6907 L286.197 43.0836 H243.393 H10.9103 L0.838867 34.6907 Z'
-                    stroke='#FFFFFF'
-                    strokeWidth='1.5'
+                    stroke='#80858C'
+                    strokeWidth='1.2'
                     strokeLinecap='round'
-                    fill='none'
+                    fill='#222222'
                   />
                   <path
                     d='M255.982 25.7383 L243.113 40.0063 H283.399 L292.911 31.6134 V11.1907 L284.798 4.7561 H256.262 L255.982 25.7383 Z'
@@ -420,50 +257,75 @@ export default function Footer() {
                   type='email'
                   required
                   placeholder='Enter Your Email'
-                  className='absolute inset-0 w-full bg-transparent pl-[20px] sm:pl-[26px] pr-[55px] font-varela text-[13.47px]
-                             font-normal leading-none tracking-[0.28em] text-white outline-none placeholder:text-[#A0A0A0]'
+                  className='absolute inset-0 w-full bg-transparent pl-4 pr-[50px] text-center md:text-left md:pl-[20px] md:pr-[55px] font-varela text-[12px] sm:text-[13px] font-normal leading-none tracking-[0.22em] text-white outline-none placeholder:text-[#9A9A9A]'
                 />
 
                 <button
                   type='submit'
                   aria-label='Subscribe'
-                  className='absolute right-0 top-0 h-full w-[54px] sm:w-[48px]'
+                  className='absolute right-0 top-0 h-full w-[48px] sm:w-[48px] lg:w-[73px] cursor-pointer'
                 />
               </form>
             </div>
 
             {/* NAVIGATION COLUMNS */}
-            <div className='footer-navigation flex h-auto flex-col items-start justify-center gap-1 sm:flex-row sm:gap-0 sm:pt-1 lg:h-full'>
-              {linkColumns.map((column, index) => (
-                <MobileNavAccordion
+            <div className='footer-navigation mt-7 w-full grid grid-cols-3 gap-2 md:mt-0 md:flex md:h-auto md:flex-row md:items-start md:justify-start md:gap-0 md:pt-1 lg:col-span-1 lg:h-full'>
+              {linkColumns.map((column) => (
+                <div
                   key={column.heading}
-                  column={column}
-                  index={index}
-                />
+                  className='footer-col flex flex-col items-start md:w-[150px] md:shrink-0 md:px-4'
+                >
+                  <h3 className='font-bebas text-[15px] leading-none tracking-[0.08em] text-white md:text-[20px] mb-2 md:mb-2.5'>
+                    {column.heading}
+                  </h3>
+                  <ul className='space-y-1.5 md:space-y-1 w-full'>
+                    {column.links.map((link) => (
+                      <li key={link}>
+                        <a
+                          href='#'
+                          className='font-bebas text-[12px] sm:text-[13px] tracking-[0.08em] text-[#B0B0B0] hover:text-white transition-colors block leading-tight md:font-varela md:text-[12px] md:tracking-[0.14em] md:text-white'
+                        >
+                          {link}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
             </div>
-
           </div>
         </div>
 
         {/* BOTTOM FRAME & COPYRIGHT OVERLAY */}
-        <div className='relative z-20 -mt-[14px] w-full lg:-mt-[18px]'>
+        <div className='relative z-20 -mt-[10px] sm:-mt-[14px] w-full max-w-[370px] md:max-w-none mx-auto lg:-mt-[18px]'>
           <svg
             viewBox='0 0 1339 76'
             fill='none'
             preserveAspectRatio='none'
-            className='h-[48px] w-full lg:h-[58px]'
+            className='h-[34px] sm:h-[48px] w-full lg:h-[58px]'
             xmlns='http://www.w3.org/2000/svg'
           >
             <path
               d='M1.04785 9.08366V40.8765L44.7194 74.7657H498.904L536.636 54.8514H830.458L860.853 74.7657L1301.41 71.9707L1337.05 30.3954V1.0481'
               stroke='#fffdfe'
-              strokeWidth='2'
+              strokeWidth='1.8'
               strokeLinecap='round'
             />
           </svg>
 
-          <div className='footer-bottom-labels absolute inset-0 flex flex-wrap items-end justify-between px-6 pb-1 font-varela text-[9px] uppercase tracking-[0.20em] text-[#C0C0C0] sm:flex-nowrap sm:px-12 sm:pb-1.5 sm:text-[10px] sm:tracking-[0.28em] lg:px-[105px] lg:pb-2 lg:text-[11px]'>
+          {/* Mobile Labels Layout */}
+          <div className='footer-bottom-labels-mobile flex flex-col items-center pt-2.5 pb-2 md:hidden'>
+            <span className='font-varela text-[12.5px] tracking-[0.25em] text-[#E0E0E0] uppercase'>
+              TATHVA&apos; 26
+            </span>
+            <div className='w-full flex items-center justify-between px-3 pt-3 font-varela text-[7.5px] tracking-[0.2em] text-[#909090] uppercase'>
+              <span>NIT CALICUT</span>
+              <span>ALL RIGHTS RESERVED.</span>
+            </div>
+          </div>
+
+          {/* Desktop Labels Layout */}
+          <div className='footer-bottom-labels-desktop absolute inset-0 hidden md:flex flex-wrap items-end justify-between px-6 pb-1 font-varela text-[9px] uppercase tracking-[0.20em] text-[#C0C0C0] sm:flex-nowrap sm:px-12 sm:pb-1.5 sm:text-[10px] sm:tracking-[0.28em] lg:px-[105px] lg:pb-2 lg:text-[11px]'>
             <span className='translate-y-[2px]'>NIT CALICUT</span>
             <span className='static sm:absolute sm:left-1/2 sm:-translate-x-1/2 translate-y-[0px] sm:translate-y-[-8px] lg:translate-y-[-10px]'>
               TATHVA&apos; 26
