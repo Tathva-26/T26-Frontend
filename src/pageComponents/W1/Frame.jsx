@@ -367,28 +367,72 @@ export const Frame = ({ onScrollUp, onScroll, isActive }) => {
     <>
       <style>{`
         @keyframes float {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(-12px); }
+          0% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-12px) rotate(0.8deg); }
+          100% { transform: translateY(0px) rotate(-0.8deg); }
+        }
+        @keyframes pulse-glow {
+          0% { opacity: 0.6; transform: scale(1); }
+          100% { opacity: 1; transform: scale(1.15); }
         }
         .animate-float {
-          animation: float 2s ease-in-out infinite alternate;
+          animation: float 4s ease-in-out infinite;
+        }
+        .events-container::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at center, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 100%);
+          pointer-events: none;
+          z-index: 5;
         }
         .events-container:has(.event-card:hover) .event-card:not(:hover) {
-          opacity: 0.7;
-          filter: grayscale(20%) blur(1px);
+          opacity: 0.35;
+          filter: grayscale(70%) blur(4px) brightness(0.6);
+          transform: scale(0.96) translateY(10px);
         }
         .events-container:has(.event-card:hover) .page-overlay {
-          opacity: 1;
+          opacity: 0.75;
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
         }
         .event-card {
-          transition: opacity 0.5s ease, filter 0.5s ease;
+          transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
           z-index: 20;
         }
         .event-card-inner {
-          transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+          position: relative;
+        }
+        .event-card-inner::after {
+          content: '';
+          position: absolute;
+          inset: -30px;
+          border-radius: 20px;
+          opacity: 0;
+          transition: opacity 0.6s ease;
+          pointer-events: none;
+          z-index: -1;
+          filter: blur(25px);
         }
         .event-card:hover .event-card-inner {
-          transform: scale(1.08);
+          transform: scale(1.12) translateY(-15px);
+          filter: drop-shadow(0 20px 30px rgba(0,0,0,0.5));
+        }
+        .event-card:hover .event-card-inner::after {
+          animation: pulse-glow 2s infinite alternate ease-in-out;
+        }
+        #workshops:hover .event-card-inner::after {
+          background: radial-gradient(circle at center, rgba(255, 90, 90, 0.5) 0%, transparent 60%);
+        }
+        #competitions:hover .event-card-inner::after {
+          background: radial-gradient(circle at center, rgba(90, 200, 255, 0.5) 0%, transparent 60%);
+        }
+        #lectures:hover .event-card-inner::after {
+          background: radial-gradient(circle at center, rgba(100, 255, 120, 0.5) 0%, transparent 60%);
+        }
+        #hackathons:hover .event-card-inner::after {
+          background: radial-gradient(circle at center, rgba(255, 200, 80, 0.5) 0%, transparent 60%);
         }
       `}</style>
       <DesktopView />
