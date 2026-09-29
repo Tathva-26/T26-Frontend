@@ -5,7 +5,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Hero } from "@/pageComponents/Hero";
 import { Frame } from "@/pageComponents/W1/Frame";
 import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
-import Navbar from "@/pageComponents/Navbar/Navbar";
 
 // Whiteout colour — pure white for a clean flash
 const WHITEOUT_COLOR = "#ffffff";
@@ -49,10 +48,21 @@ function settleHero(fraction) {
   });
 }
 
-export default function HeroFrameController() {
+export default function HeroFrameController({ children }) {
   // Which full-screen panel is active
   const [section, setSection] = useState("hero"); // "hero" | "frame"
   const sectionRef = useRef("hero");
+
+  // Once Frame is fully settled and the user keeps scrolling down, we stop intercepting
+  // the wheel and hand off to normal page scroll so `children` (the rest of the site)
+  // becomes reachable. Scrolling back up to the very top re-locks into the pinned Hero/Frame
+  // experience.
+  const [unlocked, setUnlocked] = useState(false);
+  // `children` (ArtistPage, GPC, WheelsExperience, ...) are heavy — GSAP timelines, image
+  // sequences, video — so they only mount once the user has actually unlocked past Frame,
+  // instead of all at once on first paint (which was the main source of lag). Once true this
+  // stays true, so re-locking back into Frame/Hero doesn't tear them down again.
+  const [hasReachedContent, setHasReachedContent] = useState(false);
 
   const whiteoutRef = useRef(null);
   const isAutoTransitioning = useRef(false);
@@ -236,28 +246,60 @@ export default function HeroFrameController() {
         reverseScrollRef.current = Math.max(0, reverseScrollRef.current - deltaY);
         const progress = reverseScrollRef.current / FADE_DISTANCE;
         setWhiteoutOpacity(progress);
+      } else if (deltaY > 0) {
+        // Frame is fully settled and there's nothing left to reverse: hand off to the
+        // normal page scroll for everything below (ArtistPage, GPC, ...), mounting it
+        // for the first time if this is the first time we've gotten here.
+        setUnlocked(true);
+        setHasReachedContent(true);
       }
     },
     [setWhiteoutOpacity, returnToHero]
   );
+
+  // Lenis (see SmoothScroll) only recomputes its scroll limit when `.main-scroll`'s own box
+  // size changes; toggling this wrapper's clipped height doesn't do that, so it never notices
+  // the newly revealed (or re-hidden) content unless told to explicitly. ScrollTrigger.refresh()
+  // similarly needs a nudge once `children` have actually mounted and measured themselves.
+  useEffect(() => {
+    window.__lenis?.resize();
+    if (hasReachedContent) ScrollTrigger.refresh();
+  }, [unlocked, hasReachedContent]);
+
+  // Re-lock into the pinned experience once the user scrolls back up to the very top of
+  // the page while unlocked, so continuing to scroll up reverses back into Frame/Hero.
+  useEffect(() => {
+    if (!unlocked) return undefined;
+    const mainScroll = document.querySelector(".main-scroll");
+    if (!mainScroll) return undefined;
+
+    const handleWheel = (e) => {
+      if (e.deltaY >= 0 || mainScroll.scrollTop > 0) return;
+      e.preventDefault();
+      setUnlocked(false);
+    };
+
+    mainScroll.addEventListener("wheel", handleWheel, { passive: false });
+    return () => mainScroll.removeEventListener("wheel", handleWheel);
+  }, [unlocked]);
 
   return (
     <div
       style={{
         position: "relative",
         width: "100%",
-        height: "100svh",
-        overflow: "hidden",
+        // Locked: clipped to one screen so nothing below is reachable by real scroll yet.
+        // Unlocked: content defines the height and normal page scroll takes over.
+        height: unlocked ? "auto" : "100svh",
+        overflow: unlocked ? "visible" : "hidden",
       }}
     >
-      <Navbar />
-
       {/* ── Hero panel ── */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          visibility: section === "hero" ? "visible" : "hidden",
+          visibility: section === "hero" && !unlocked ? "visible" : "hidden",
           zIndex: section === "hero" ? 2 : 1,
         }}
       >
@@ -265,20 +307,20 @@ export default function HeroFrameController() {
           onProgress={handleHeroProgress}
           onScrollBeyondEnd={handleHeroScrollBeyondEnd}
           onAutoEnter={handleAutoEnter}
-          isActive={section === "hero"}
+          isActive={section === "hero" && !unlocked}
         />
       </div>
 
       {/* ── Frame panel ── */}
       <div
         style={{
-          position: "absolute",
-          inset: 0,
+          position: unlocked ? "relative" : "absolute",
+          inset: unlocked ? undefined : 0,
           visibility: section === "frame" ? "visible" : "hidden",
-          zIndex: section === "frame" ? 2 : 1,
+          zIndex: unlocked ? undefined : section === "frame" ? 2 : 1,
         }}
       >
-        <Frame onScroll={handleFrameScroll} isActive={section === "frame"} />
+        <Frame onScroll={handleFrameScroll} isActive={section === "frame" && !unlocked} />
       </div>
 
       {/* ── Global whiteout overlay ── */}
@@ -296,6 +338,8 @@ export default function HeroFrameController() {
       />
 
       <TathvaMenu />
+
+      {hasReachedContent && children}
     </div>
   );
 }

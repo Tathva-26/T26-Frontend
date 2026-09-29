@@ -14,24 +14,33 @@ const layer = (name) => `[data-layer="${name}"]`;
  */
 export function useHeroTimeline(rootRef) {
   useEffect(() => {
-    // globals.css sets html/body to a fixed height and overflow: hidden
-    // site-wide (left untouched - see README's Feature Integration
-    // section). ScrollTrigger's pin needs the page to actually scroll, and
-    // scrollbarGutter: "stable" prevents the scrollbar appearing/
-    // disappearing (e.g. from GameOverlay's scroll lock) from shifting
-    // layout width. All overridden here only while this component is
-    // mounted, restored on cleanup.
-    const previousHtmlHeight = document.documentElement.style.height;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    const previousHtmlScrollbarGutter = document.documentElement.style.scrollbarGutter;
-    const previousBodyHeight = document.body.style.height;
-    const previousBodyOverflow = document.body.style.overflow;
+    // Standalone `/gpc` route: there's no `.main-scroll` ancestor, so this page relies on
+    // the document itself scrolling. globals.css sets html/body to a fixed height and
+    // overflow: hidden site-wide (left untouched - see README's Feature Integration
+    // section) for pages that scroll inside `.main-scroll` instead, so that lock is
+    // relaxed here only while this hero is mounted, and only when there's no `.main-scroll`
+    // to scroll instead. scrollbarGutter: "stable" prevents the scrollbar appearing/
+    // disappearing (e.g. from GameOverlay's scroll lock) from shifting layout width.
+    // When embedded inside `.main-scroll` (the merged single-page site), that div already
+    // owns scrolling and must stay untouched — the ScrollTrigger below targets it directly.
+    const mainScroll = document.querySelector(".main-scroll");
+    const scroller = mainScroll || window;
 
-    document.documentElement.style.height = "auto";
-    document.documentElement.style.overflow = "auto";
-    document.documentElement.style.scrollbarGutter = "stable";
-    document.body.style.height = "auto";
-    document.body.style.overflow = "auto";
+    let previousHtmlHeight, previousHtmlOverflow, previousHtmlScrollbarGutter;
+    let previousBodyHeight, previousBodyOverflow;
+    if (!mainScroll) {
+      previousHtmlHeight = document.documentElement.style.height;
+      previousHtmlOverflow = document.documentElement.style.overflow;
+      previousHtmlScrollbarGutter = document.documentElement.style.scrollbarGutter;
+      previousBodyHeight = document.body.style.height;
+      previousBodyOverflow = document.body.style.overflow;
+
+      document.documentElement.style.height = "auto";
+      document.documentElement.style.overflow = "auto";
+      document.documentElement.style.scrollbarGutter = "stable";
+      document.body.style.height = "auto";
+      document.body.style.overflow = "auto";
+    }
 
     const mm = gsap.matchMedia();
 
@@ -45,6 +54,7 @@ export function useHeroTimeline(rootRef) {
           defaults: { ease: "none" },
           scrollTrigger: {
             trigger: rootRef.current,
+            scroller,
             start: "top top",
             end: HERO_SCROLL.end,
             scrub: HERO_SCROLL.scrub,
@@ -86,11 +96,13 @@ export function useHeroTimeline(rootRef) {
 
     return () => {
       mm.revert();
-      document.documentElement.style.height = previousHtmlHeight;
-      document.documentElement.style.overflow = previousHtmlOverflow;
-      document.documentElement.style.scrollbarGutter = previousHtmlScrollbarGutter;
-      document.body.style.height = previousBodyHeight;
-      document.body.style.overflow = previousBodyOverflow;
+      if (!mainScroll) {
+        document.documentElement.style.height = previousHtmlHeight;
+        document.documentElement.style.overflow = previousHtmlOverflow;
+        document.documentElement.style.scrollbarGutter = previousHtmlScrollbarGutter;
+        document.body.style.height = previousBodyHeight;
+        document.body.style.overflow = previousBodyOverflow;
+      }
     };
   }, [rootRef]);
 }

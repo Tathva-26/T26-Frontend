@@ -19,6 +19,11 @@ export default function SmoothScroll() {
     if (!wrapper) return;
 
     const lenis = new Lenis({ wrapper, content: wrapper });
+    // Exposed so components that toggle a clipped section's height (e.g. the Hero/Frame
+    // pinned experience unlocking into normal scroll) can force Lenis to recompute its
+    // cached scroll limit — its own ResizeObserver only fires on `wrapper`'s own box size,
+    // which doesn't change when an inner child's clipped height does.
+    window.__lenis = lenis;
 
     lenis.on("scroll", ScrollTrigger.update);
 
@@ -31,6 +36,7 @@ export default function SmoothScroll() {
     return () => {
       gsap.ticker.remove(onTick);
       lenis.destroy();
+      if (window.__lenis === lenis) window.__lenis = null;
     };
   }, []);
 
