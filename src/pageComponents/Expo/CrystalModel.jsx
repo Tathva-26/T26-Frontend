@@ -107,10 +107,7 @@ function createEnergy() {
 
 export default function CrystalModel({ target, onReady }) {
   const group = useRef()
-  const shell = useRef()
-  const insert = useRef()
   const started = useRef(false)
-  const elapsed = useRef(0)
   const gl = useThree((state) => state.gl)
   const robotSource = useLoader(TextureLoader, '/images/expo/robot-head.svg')
   const source = useLoader(geometryLoader, '/images/expo/crystal/shell.drc')
@@ -156,28 +153,9 @@ export default function CrystalModel({ target, onReady }) {
   )
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05)
-    elapsed.current += dt
-    const time = elapsed.current
     const body = group.current
-    body.position.x = MathUtils.damp(body.position.x, target.current.x, 4.3, dt)
-    body.position.y = MathUtils.damp(body.position.y, target.current.y, 4.3, dt)
-    body.rotation.x = MathUtils.damp(
-      body.rotation.x,
-      target.current.tiltX,
-      4.1,
-      dt,
-    )
-    body.rotation.y = MathUtils.damp(
-      body.rotation.y,
-      target.current.tiltY,
-      4.1,
-      dt,
-    )
-    shell.current.position.y = Math.sin(time * 1.05) * 0.045
-    // Continuous, bounded idle rotation keeps the robot facing the visitor.
-    shell.current.rotation.y = -0.12 + Math.sin(time * 0.16) * 0.17
-    shell.current.rotation.z = -0.085 + Math.sin(time * 0.38) * 0.022
-    insert.current.position.y = shell.current.position.y
+    body.rotation.x = MathUtils.damp(body.rotation.x, target.current.tiltX, 4.1, dt)
+    body.rotation.y = MathUtils.damp(body.rotation.y, target.current.tiltY, 4.1, dt)
   })
 
   const firstFrame = () => {
@@ -189,7 +167,7 @@ export default function CrystalModel({ target, onReady }) {
 
   return (
     <group ref={group}>
-      <group ref={shell}>
+      <group>
         <mesh
           geometry={geometry}
           scale={[0.96, 0.97, 0.48]}
@@ -225,8 +203,7 @@ export default function CrystalModel({ target, onReady }) {
             onBeforeCompile={prepareGlass}
           />
         </mesh>
-        {/* Undo only the shell's fixed resting orientation, preserving the front
-            artwork while inheriting its idle rotation and the parent's tilt. */}
+        {/* Preserve the artwork's fixed alignment with the shell geometry. */}
         <group rotation={[0, 0.12, 0.085, 'ZYX']}>
           <mesh position={[0, 0.15, 0.65]} scale={[2, 2.3, 1]}>
             <planeGeometry />
@@ -248,17 +225,17 @@ export default function CrystalModel({ target, onReady }) {
             />
           </mesh>
         </group>
-      </group>
-      <group ref={insert}>
-        <lineSegments geometry={veins}>
-          <lineBasicMaterial
-            vertexColors
-            transparent
-            opacity={0.24}
-            blending={AdditiveBlending}
-            depthWrite={false}
-          />
-        </lineSegments>
+        <group>
+          <lineSegments geometry={veins}>
+            <lineBasicMaterial
+              vertexColors
+              transparent
+              opacity={0.24}
+              blending={AdditiveBlending}
+              depthWrite={false}
+            />
+          </lineSegments>
+        </group>
       </group>
     </group>
   )

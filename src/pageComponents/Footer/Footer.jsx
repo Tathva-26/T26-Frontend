@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { memo, useMemo, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -36,7 +36,7 @@ const linkColumns = [
   },
 ]
 
-function FooterLink({ label }) {
+const FooterLink = memo(function FooterLink({ label }) {
   const arrowRef = useRef(null)
   const textRef = useRef(null)
   const { contextSafe } = useGSAP()
@@ -46,6 +46,8 @@ function FooterLink({ label }) {
     // matching leave until the next tap elsewhere, which left the hover
     // state visually "stuck" on mobile — only real mice trigger it.
     if (e.pointerType && e.pointerType !== 'mouse') return
+    if (textRef.current) textRef.current.style.willChange = 'transform, color'
+    if (arrowRef.current) arrowRef.current.style.willChange = 'transform'
     gsap.to(textRef.current, {
       x: 3,
       color: '#F19EDC',
@@ -73,6 +75,10 @@ function FooterLink({ label }) {
       scale: 1,
       duration: 0.3,
       ease: 'power2.out',
+      onComplete: () => {
+        if (textRef.current) textRef.current.style.willChange = 'auto'
+        if (arrowRef.current) arrowRef.current.style.willChange = 'auto'
+      },
     })
   })
 
@@ -106,10 +112,18 @@ function FooterLink({ label }) {
       </span>
     </a>
   )
-}
+})
 
 function MobileNavAccordion({ column, index }) {
   const [isOpen, setIsOpen] = useState(true)
+  const links = useMemo(
+    () => column.links.map((link) => (
+      <li key={link}>
+        <FooterLink label={link} />
+      </li>
+    )),
+    [column.links],
+  )
 
   return (
     <div
@@ -136,11 +150,7 @@ function MobileNavAccordion({ column, index }) {
       <ul
         className={`${isOpen ? 'block' : 'hidden'} space-y-0.5 pb-2 sm:block sm:pb-0`}
       >
-        {column.links.map((link) => (
-          <li key={link}>
-            <FooterLink label={link} />
-          </li>
-        ))}
+        {links}
       </ul>
     </div>
   )
