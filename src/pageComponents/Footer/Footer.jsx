@@ -189,10 +189,10 @@ export default function Footer() {
   )
 
   return (
-    <footer
-      ref={rootRef}
-      className={`${bebasNeue.variable} ${varela.variable} footer-typography relative mt-auto w-full overflow-hidden bg-transparent pb-4 pt-4 text-white lg:pb-5 lg:pt-6`}
-    >
+<footer
+        ref={rootRef}
+        className={`${bebasNeue.variable} ${varela.variable} footer-typography relative mt-auto w-full bg-transparent pb-4 pt-4 text-white lg:pb-5 lg:pt-6`}
+      >
       <DotsBackground />
       <style>{`
         @font-face {
@@ -254,7 +254,7 @@ export default function Footer() {
 
         @media (max-width: 639px) {
           .footer-typography h2 {
-            font-size: clamp(58px, 19vw, 110px);
+            font-size: clamp(48px, 16vw, 96px);
             -webkit-text-stroke-width: 1px;
           }
 
@@ -327,22 +327,24 @@ export default function Footer() {
         <div className='relative z-10 -translate-y-1 -mb-[20px] sm:-mb-[32px] lg:-mb-[45px]'>
           <h2
             ref={headlineRef}
-            className='relative z-20 text-center font-akira text-[15vw] font-extrabold uppercase leading-[100%] tracking-[0%] sm:text-[14vw] lg:text-[150px] xl:text-[180px]'
+            className='relative z-20 w-full max-w-full text-center font-akira text-[15vw] font-extrabold uppercase leading-[100%] tracking-[0%] sm:text-[14vw] lg:text-[150px] xl:text-[180px]'
           >
             ASTERIA
+            {/* Canvas sits inside the heading so its box is the heading's box:
+                the glow is measured and drawn against the real text geometry,
+                and it inherits the entrance transform instead of lagging it. */}
+            <GlowLetters
+              text='ASTERIA'
+              textColor='transparent'
+              textFit={0.905}
+              textY={0.5}
+              fontFamily="'Akira Expanded', 'Anton', sans-serif"
+              fontWeight={800}
+              measureRef={headlineRef}
+              radius={120}
+              zIndex={-1}
+            />
           </h2>
-          <GlowLetters
-            text='ASTERIA'
-            textColor='transparent'
-            textFit={0.905}
-            textY={0.5}
-            fontFamily="'Akira Expanded', 'Anton', sans-serif"
-            fontWeight={800}
-            measureRef={headlineRef}
-            baseFontSize={194.32}
-            textYOffset={-3}
-            radius={120}
-          />
         </div>
 
         {/* MAIN CHAMFERED PANEL FRAME */}

@@ -35,6 +35,24 @@ function rampColor(ramp, t) {
 const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
 const WINDOW = 0.55;
 
+// Range over the letters themselves. Uses a text-node walk so element children
+// (the glow canvas lives inside the measured heading) are never included, and
+// skips the whitespace-only nodes JSX leaves between elements.
+function textRangeOf(el) {
+  if (!el) return null;
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let node = walker.nextNode();
+  while (node) {
+    if (node.data.trim()) {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return range;
+    }
+    node = walker.nextNode();
+  }
+  return null;
+}
+
 export function DotsBackground({ dotSpacing = 32, dotBaseRadius = 1.25, lightRadius = 160 }) {
   const canvasRef = useRef(null);
 
@@ -168,6 +186,7 @@ export function GlowLetters({
   follow = 0.85,
   growSpeed = 0.22,    // Snappy expansion on first contact
   shrinkSpeed = 0.16,  // Smooth contraction to a point on leave
+  zIndex = 1,          // negative drops the glow behind its measured text
 }) {
   const canvasRef = useRef(null);
 
@@ -273,39 +292,76 @@ export function GlowLetters({
         }
         textCtx.drawImage(img, (w - dw) / 2, h * textY - dh / 2, dw, dh);
       } else {
-        let fontPx;
-        if (measureRef && measureRef.current) {
-          // Mirror the actual rendered text size (its CSS may shrink responsively)
-          // so the glow always matches what's visible, at every breakpoint.
-          fontPx = parseFloat(window.getComputedStyle(measureRef.current).fontSize) || fontSize;
+        const el = measureRef && measureRef.current;
+        let fontPx = 0;
+        let centerX = w / 2;
+        let baselineY = h * textY;
+
+        if (el) {
+          // Read the geometry back off the rendered heading instead of
+          // re-deriving it from the font API: the CSS font size, the real
+          // advance width and the true baseline all change with the
+          // breakpoint, and a canvas font alone is a poor stand-in for them,
+          // which left the glow sitting beside the letters rather than on them.
+          const cs = getComputedStyle(el);
+          fontPx = parseFloat(cs.fontSize) || 0;
+
+          const elRect = el.getBoundingClientRect();
+          const range = textRangeOf(el);
+          const box = range ? range.getBoundingClientRect() : null;
+
+          if (fontPx) {
+            textCtx.font = `${fontWeight} ${fontPx}px ${fontFamily}`;
+            // Absorb any width disagreement between the rendered text and the
+            // canvas measurement (a fallback font resolving before the webfont
+            // loads, letter-spacing, hinting) so both agree on the same width.
+            const domWidth = box ? box.width : 0;
+            const canvasWidth = textCtx.measureText(text).width;
+            if (domWidth > 0 && canvasWidth > 0) {
+              const ratio = domWidth / canvasWidth;
+              if (ratio > 0.5 && ratio < 2) {
+                fontPx *= ratio;
+                textCtx.font = `${fontWeight} ${fontPx}px ${fontFamily}`;
+              }
+            }
+          }
+
+          // Reproduce the CSS line box to find where the heading's baseline
+          // actually sits, instead of centring on the ink (which floats above
+          // the baseline by the full ascent).
+          const probe = textCtx.measureText("Hxg");
+          const ascent = probe.fontBoundingBoxAscent || fontPx * 0.8;
+          const descent = probe.fontBoundingBoxDescent || fontPx * 0.2;
+          const lineHeight = parseFloat(cs.lineHeight);
+          const usedLine = Number.isFinite(lineHeight) ? lineHeight : ascent + descent;
+          const baselineFromTop = (usedLine - (ascent + descent)) / 2 + ascent;
+          baselineY = baselineFromTop + (r.top - elRect.top);
+
+          if (box) {
+            centerX = (box.left + box.right) / 2 - r.left;
+          }
         }
+
         if (!fontPx) {
           const probe = 120;
           textCtx.font = `${fontWeight} ${probe}px ${fontFamily}`;
           const mw = textCtx.measureText(text).width || 1;
           fontPx = fontSize ?? Math.min((w * textFit * probe) / mw, h * 0.85);
+          // Scale the tuned pixel offset with the font size so it stays
+          // proportionally correct at every breakpoint instead of only at
+          // the size it was tuned against.
+          const offset = baseFontSize ? textYOffset * (fontPx / baseFontSize) : textYOffset;
+          const metrics = textCtx.measureText(text);
+          const ascent = metrics.actualBoundingBoxAscent || fontPx * 0.72;
+          const descent = metrics.actualBoundingBoxDescent || 0;
+          baselineY = h * textY + offset + (ascent - descent) / 2;
         }
-        // Scale the tuned pixel offset with the font size so it stays
-        // proportionally correct at every breakpoint instead of only at
-        // the size it was tuned against.
-        const offset = baseFontSize ? textYOffset * (fontPx / baseFontSize) : textYOffset;
 
         textCtx.font = `${fontWeight} ${fontPx}px ${fontFamily}`;
         textCtx.textAlign = "center";
         textCtx.fillStyle = "#ffffff";
-
-        // "middle" baseline centers on the font's ascent/descent metrics,
-        // which include whitespace above/below the glyphs themselves and
-        // can sit noticeably lower than the visible (stroked) DOM text,
-        // clipping the glow off the top of the letters. Measure the real
-        // ink extents instead and center THAT on the target row.
         textCtx.textBaseline = "alphabetic";
-        const targetY = h * textY + offset;
-        const metrics = textCtx.measureText(text);
-        const ascent = metrics.actualBoundingBoxAscent || fontPx * 0.72;
-        const descent = metrics.actualBoundingBoxDescent || 0;
-        const baselineY = targetY + (ascent - descent) / 2;
-        textCtx.fillText(text, w / 2, baselineY);
+        textCtx.fillText(text, centerX, baselineY);
       }
 
       // Pre-sample letter pixel locations for lightning-fast coverage checking
@@ -600,7 +656,7 @@ export function GlowLetters({
         width: "100%",
         height: "100%",
         pointerEvents: "none",
-        zIndex: 1,
+        zIndex,
       }}
     />
   );
