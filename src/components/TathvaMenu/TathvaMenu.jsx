@@ -1,6 +1,6 @@
 'use client'
 
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { gsap } from 'gsap'
 import { Jockey_One } from 'next/font/google'
@@ -236,6 +236,7 @@ const allMenuItems = [...leftMenu, ...rightMenu]
 
 export default function TathvaMenu() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   const rootRef = useRef(null)
   const panelRef = useRef(null)
@@ -588,10 +589,9 @@ export default function TathvaMenu() {
                 hover:bg-white/5
                 active:text-[#00E564]
                 font-jockey
-                ${
-                  isMobileOpen
-                    ? 'opacity-100 translate-y-0'
-                    : 'opacity-0 translate-y-[10px]'
+                ${isMobileOpen
+                  ? 'opacity-100 translate-y-0'
+                  : 'opacity-0 translate-y-[10px]'
                 }
               `}
             >
