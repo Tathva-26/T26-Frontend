@@ -1,32 +1,26 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Stage from "@/pageComponents/GPC/Stage";
 import GameOverlay from "@/pageComponents/GPC/game/GameOverlay";
 import HeroLayers from "./HeroLayers";
 import HeroLayersMobile from "./mobile/HeroLayersMobile";
 import { useFitScale } from "@/hooks/useFitScale";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { usePageScrollUnlock } from "@/hooks/usePageScrollUnlock";
-import { useHeroTimeline } from "@/pageComponents/GPC/hooks/useHeroTimeline";
 import { STAGE } from "@/pageComponents/GPC/gpcConfig";
 import { orbitron, hammersmithOne, pressStart2P } from "@/pageComponents/GPC/gpcFonts";
 import "@/pageComponents/GPC/gpc.css";
 
+/**
+ * One screen, no scrolling. html/body are overflow:hidden in globals.css and
+ * we leave that alone, so no scroll-unlock or scroll timeline is needed.
+ */
 export default function GpcHero() {
-  const rootRef = useRef(null);
   const consoleRef = useRef(null);
   const [gameOpen, setGameOpen] = useState(false);
 
-  const killActiveScrollTriggers = useCallback(() => {
-    ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-  }, []);
-
-  usePageScrollUnlock();
-  const isMobile = useIsMobile({ onBeforeChange: killActiveScrollTriggers });
+  const isMobile = useIsMobile();
   const scale = useFitScale(STAGE);
-  useHeroTimeline(rootRef, { enabled: isMobile === false });
 
   const openGame = useCallback(() => setGameOpen(true), []);
   const closeGame = useCallback(() => setGameOpen(false), []);
@@ -46,8 +40,7 @@ export default function GpcHero() {
 
   return (
     <section
-      ref={rootRef}
-      className={`relative flex h-screen w-full items-center justify-center overflow-hidden bg-[#101010] ${fontVars}`}
+      className={`relative flex h-dvh w-full items-center justify-center overflow-hidden bg-[#101010] ${fontVars}`}
     >
       <Stage {...STAGE} scale={scale}>
         <HeroLayers consoleRef={consoleRef} onPlay={openGame} />

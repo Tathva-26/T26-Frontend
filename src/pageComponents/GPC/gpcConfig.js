@@ -44,3 +44,11 @@ export const CONSOLE_BUTTON = { left: 47.5, top: 82.6, size: 5 };
 // CLICK_TO_PLAY: vertical position (top, % of console height) and font size
 // (px, in the Stage's design-unit space) for the "[CLICK TO PLAY]" label.
 export const CLICK_TO_PLAY = { top: 25, fontSize: 10 };
+
+// Dragon animation: list every frame here, in order. One entry = static image.
+// e.g. ["/images/GPC/hero/dragon/1.png", "/images/GPC/hero/dragon/2.png", ...]
+export const DRAGON_FRAMES = [ASSETS.dragon];
+export const DRAGON_FPS = 12;
+
+// Desktop dragon placement (Stage design units), sitting above the console.
+export const DRAGON_STATIC = { x: 460, y: 8, width: 480, height: 290 };
