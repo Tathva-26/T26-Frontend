@@ -1,5 +1,35 @@
-@theme inline {
-  --font-alata: var(--font-alata-local);
-  --font-calm-serif: var(--font-calm-serif-local), serif;
-  --font-bowlby-one-sc: var(--font-bowlby-one-sc-local), sans-serif;
+@font-face {
+  font-family: 'Calm Serif';
+  src: url('/fonts/calm-serif-demo.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Alata';
+  src: url('/fonts/alata-regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bowlby One SC';
+  src: url('/fonts/BowlbyOneSC-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-alata {
+  font-family: var(--font-alata-local), 'Alata', sans-serif;
+}
+
+.font-calm-serif {
+  font-family: var(--font-calm-serif-local), 'Calm Serif', serif;
+}
+
+.font-bowlby-one-sc {
+  font-family: var(--font-bowlby-one-sc-local), 'Bowlby One SC', sans-serif;
 }

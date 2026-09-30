@@ -155,7 +155,7 @@ function DesktopFrame({ className, scale = "desktop", containerRef }) {
 
       <div
         className="robowars-motion robowars-date pointer-events-none absolute flex items-center justify-between text-white will-change-transform"
-        style={frameStyle({ x: 452, y: 408, width: 422, height: 30 })}
+        style={frameStyle({ x: 496, y: 408, width: 422, height: 30 })}
       >
         <span className="h-[2px] w-[32%] bg-white" />
         <span className="font-alata whitespace-nowrap text-[1.85cqw] leading-[1.25]">
@@ -166,21 +166,21 @@ function DesktopFrame({ className, scale = "desktop", containerRef }) {
 
       <div
         className="robowars-motion robowars-prizes pointer-events-none absolute text-right font-alata text-[1.38cqw] leading-[1.18] uppercase will-change-transform"
-        style={frameStyle({ x: 457, y: 480, width: 183, height: 56 })}
+        style={frameStyle({ x: 489, y: 480, width: 183, height: 56 })}
       >
         <p className="m-0 text-white">PRIZES WORTH INR</p>
         <p className="m-0 text-[#eb9a58]">8 LAKH</p>
       </div>
       <div
         className="robowars-motion robowars-arena pointer-events-none absolute text-left font-alata text-[1.38cqw] leading-[1.22] uppercase text-white will-change-transform"
-        style={frameStyle({ x: 707, y: 480, width: 252, height: 56 })}
+        style={frameStyle({ x: 739, y: 480, width: 252, height: 56 })}
       >
         <p className="m-0">16 x 16 FT. ARENA</p>
         <p className="m-0">8KG \ 15KG</p>
       </div>
       <div
         className="robowars-motion robowars-date pointer-events-none absolute w-px bg-white/55 will-change-transform"
-        style={frameStyle({ x: 674, y: 488, width: 1, height: 37 })}
+        style={frameStyle({ x: 706, y: 488, width: 1, height: 37 })}
       />
 
       <Art
