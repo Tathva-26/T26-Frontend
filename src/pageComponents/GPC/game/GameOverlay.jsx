@@ -20,14 +20,7 @@ const screenRectStyle = {
   height: `${CONSOLE_SCREEN_INSET.height}%`,
 };
 
-/**
- * Lifecycle: closed -> opening (zoom in) -> playing -> closing (zoom out) -> closed.
- *
- * Rendered via a portal, so it's mounted outside GpcHero's DOM subtree -
- * the next/font variable classes are re-applied here for that reason,
- * since CSS custom properties only inherit through the DOM tree.
- */
-export default function GameOverlay({ open, originRef, onClosed }) {
+export default function GameOverlay({ open, originRef, onClosed, isMobile }) {
   const [playing, setPlaying] = useState(false);
   const [stats, setStats] = useState(INITIAL_STATS);
 
@@ -44,8 +37,9 @@ export default function GameOverlay({ open, originRef, onClosed }) {
     if (!open || !scale || hasOpenedRef.current) return;
     hasOpenedRef.current = true;
     setPlaying(true);
+    if (originRef.current) originRef.current.style.visibility = "hidden";
     zoom.play("in", () => rootRef.current?.focus());
-  }, [open, scale, zoom]);
+  }, [open, scale, zoom, originRef]);
 
   const handleExit = useCallback(() => {
     if (!playing) return;
@@ -54,7 +48,10 @@ export default function GameOverlay({ open, originRef, onClosed }) {
       hasOpenedRef.current = false;
       setStats(INITIAL_STATS);
       onClosed();
-      originRef.current?.focus();
+      if (originRef.current) {
+        originRef.current.style.visibility = "";
+        originRef.current.focus();
+      }
     });
   }, [playing, zoom, onClosed, originRef]);
 
@@ -64,6 +61,12 @@ export default function GameOverlay({ open, originRef, onClosed }) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [playing, handleExit]);
+
+  useEffect(() => {
+    return () => {
+      if (originRef.current) originRef.current.style.visibility = "";
+    };
+  }, [originRef]);
 
   if (!open) return null;
 
@@ -89,14 +92,12 @@ export default function GameOverlay({ open, originRef, onClosed }) {
       >
         <Image src={ASSETS.console} alt="" fill priority unoptimized sizes="100vw" className="object-contain" />
 
-        {/* Solid cover for console.png's baked-in screen art, opaque before
-            ConsoleScreenCanvas paints its first frame. */}
         <div className="absolute overflow-hidden rounded-[18px] bg-[#050414]" style={screenRectStyle} aria-hidden="true" />
 
         <ConsoleScreenCanvas backgroundOnly={playing} />
 
         <div ref={revealRef} className="absolute inset-0 opacity-0">
-          <ConsoleFrame active={playing} stats={stats} onStats={setStats} onExit={handleExit} />
+          <ConsoleFrame active={playing} stats={stats} onStats={setStats} onExit={handleExit} isMobile={isMobile} />
         </div>
       </div>
     </div>,

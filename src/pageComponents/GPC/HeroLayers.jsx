@@ -1,4 +1,5 @@
 import ConsoleScreenCanvas from "./ConsoleScreenCanvas";
+import AuroraOverlay from "@/pageComponents/GPC/mobile/AuroraOverlay";
 import {
   ASSETS,
   CLICK_TO_PLAY,
@@ -19,22 +20,29 @@ const CORNERS = [
  * `data-layer` attributes are the hooks for useHeroTimeline.
  *
  * Custom fonts (Orbitron, Press Start 2P, Akira, Bebas) are applied via
- * inline `style={{ fontFamily: "var(--font-x)" }}` rather than Tailwind
+ * inline style={{ fontFamily: "var(--font-x)" }} rather than Tailwind
  * classes, since none of them are registered as Tailwind utilities.
  *
  * The console <img> uses object-contain to match GameOverlay's enlarged
  * console - both must show the same framing of the asset for the zoom
  * transition to land without a visible jump.
+ *
+ * AuroraOverlay adds animated aurora light on top of banner.png via
+ * mix-blend-mode: screen, matching the mobile hero's same background.
+ * getProgress is static here (desktop has no scroll-progress source for
+ * the banner the way the mobile hero does) - wire it to useHeroTimeline's
+ * scroll progress if scroll-linked movement is wanted later.
  */
 export default function HeroLayers({ consoleRef, onPlay }) {
   return (
     <>
       <div
         data-layer="banner"
-        className="absolute left-0 top-[91px] h-[530px] w-full"
+        className="absolute left-0 top-[91px] h-[530px] w-full overflow-hidden"
         style={{ clipPath: CLIP.end }}
       >
         <img src={ASSETS.banner} alt="" className="h-full w-full object-cover object-bottom" />
+        <AuroraOverlay getProgress={() => 0} />
       </div>
 
       <div data-layer="brackets" className="pointer-events-none absolute left-0 top-[150px] h-[471px] w-full opacity-0">
