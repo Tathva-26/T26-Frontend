@@ -115,48 +115,6 @@
   height: 76%;
 }
 
-/* Festival badge. Desktop pins it to the featured-column seam. */
-.festival-mark {
-  position: absolute;
-  top: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100px;
-  height: 34px;
-  background: #464646;
-  clip-path: polygon(12% 0, 88% 0, 100% 50%, 88% 100%, 12% 100%, 0 50%);
-  font-family: 'Bebas Neue:Regular', sans-serif;
-  line-height: 0.8;
-  text-align: center;
-  flex-direction: column;
-}
-
-.festival-mark span {
-  font-size: 12px;
-}
-
-.festival-mark small {
-  font-size: 5px;
-  letter-spacing: 0.22em;
-}
-
-/* Badge straddles the column seam; translateX(50%) derives the offset from
-   the column width instead of hard-coding 47.2%. */
-@media (min-width: 769px) {
-  .proshow-section > .festival-mark {
-    position: sticky;
-    z-index: 2;
-    /* above .featured-column and .artist-list (both z-index: 1) */
-
-    grid-column: 1 / 2;
-    grid-row: 1 / -1;
-    justify-self: end;
-    /* sticky needs a box shorter than its grid area to travel inside */
-    align-self: start;
-    transform: translateX(50%);
-  }
-}
 
 .schedule-card {
   position: absolute;
@@ -368,8 +326,7 @@
 
   .global-bg-container,
   .featured-column,
-  .artist-list,
-  .proshow-section > .festival-mark {
+  .artist-list {
     display: none;
   }
 

@@ -30,14 +30,6 @@ const artists = [
   },
 ]
 
-function FestivalMark() {
-  return (
-    <div className="festival-mark" aria-label="Tathva 2026">
-      <span>TATHVA 2026</span>
-      <small>NIT CALICUT</small>
-    </div>
-  )
-}
 
 function ScheduleCard() {
   return (
@@ -520,8 +512,6 @@ export default function App() {
         </div>
       </section>
 
-      {/* Desktop badge: direct child so .featured-viewport's overflow:hidden doesn't slice it. */}
-      <FestivalMark />
 
       <section className="artist-list" aria-label="Proshow artists">
         {artists.map((artist) => (
