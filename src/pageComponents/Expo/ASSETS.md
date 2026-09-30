@@ -99,14 +99,17 @@ Projected SVG connectors follow the live crystal; fallback rendering keeps
 approximate anchors. Reduced motion removes the shared canvas and pin entirely.
 The standalone `/expo` route retains its own crystal with idle and pointer motion.
 
-The revised transition uses one viewport-sized camera. The crystal first emerges
-through an expanding mask while TechConclave blurs and dissolves. `ConclaveVeil.jsx`
-renders moving procedural mist with displaced samples of the existing Conclave
-background; a clearing follows the crystal so its rotation remains readable.
+The revised transition uses one viewport-sized camera. No geometric canvas mask
+is used. TechConclave blurs and erodes through a deterministic SVG turbulence
+alpha mask, while `ConclaveVeil.jsx` renders viewport-wide procedural mist with
+displaced samples of the existing Conclave background. Dense foreground clouds
+conceal the incoming crystal, then noise contours open into drifting wisps so
+the robot and crystal facets emerge before the descent finishes.
 Expo appears underneath during this overlap. The crystal then travels downward
 through one complete, unwrapped end-over-end revolution, rocks into place, and
 receives idle/pointer motion before the Expo copy and connectors finish revealing.
 CSS mist and a positioned illustration remain available when WebGL fails.
+The turbulence mask is removed when reduced motion disables the transition.
 
 Browser checks covered desktop and phone layouts, viewport resizing, reverse
 scroll, gallery release, cursor response, modal open/Escape/focus return, live

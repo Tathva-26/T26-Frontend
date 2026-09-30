@@ -46,9 +46,7 @@
   width: 100%;
   height: 100%;
   opacity: 0;
-  background:
-    radial-gradient(ellipse at 30% 45%, #64d9ff66, transparent 55%),
-    radial-gradient(ellipse at 65% 35%, #8391d955, transparent 60%);
+  background: linear-gradient(115deg, transparent 8%, #9cb8cc55 38%, #556c9455 62%, transparent 94%);
   transform: translateY(var(--veil-drift, 0%));
   filter: blur(16px);
   mix-blend-mode: screen;

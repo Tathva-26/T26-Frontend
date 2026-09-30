@@ -97,7 +97,6 @@ export default function TechConclaveExpoTransition() {
       const { x, y } = journeyScreenPoint(pose, box)
       gsap.set(crystal.current, {
         width: box.width, height: box.height, opacity: pose.opacity,
-        maskImage: pose.emerge > .99 ? 'none' : `radial-gradient(ellipse at ${box.startX}px ${box.startY}px, #000 ${pose.emerge * box.height * 1.2}px, transparent ${pose.emerge * box.height * 1.2 + 45}px)`,
         pointerEvents: progress > .72 ? 'auto' : 'none',
       })
       const fallback = crystal.current.querySelector('img')
@@ -105,6 +104,13 @@ export default function TechConclaveExpoTransition() {
       const veil = Math.sin(Math.PI * Math.min(1, Math.max(0, (progress - .04) / .66)))
       gsap.set(mist, { opacity: veil * .48, '--veil-drift': `${progress * -18}%` })
       gsap.set(tc, { filter: `blur(${veil * 3}px) saturate(${1 - veil * .35})` })
+      // Erode the poster through a fixed cloud field, rather than opening a
+      // geometric window around the incoming exhibit. Alpha thresholds are
+      // deterministic so reversing scroll reconstructs the same poster.
+      const dissolve = Math.min(1, Math.max(0, (progress - .16) / .36))
+      const cloudMask = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640"><filter id="cloud"><feTurbulence type="fractalNoise" baseFrequency=".012 .018" numOctaves="3" seed="7"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 4 4 4 0 ${2 - dissolve * 14}"/></filter><rect width="100%" height="100%" filter="url(#cloud)"/></svg>`
+      tc.style.maskImage = dissolve === 0 ? 'none' : `url("data:image/svg+xml,${encodeURIComponent(cloudMask)}")`
+      tc.style.maskSize = '100% 100%'
       page.style.pointerEvents = progress > .80 ? 'auto' : 'none'
       if (crystal.current.querySelector('[data-crystal-state]')?.dataset.crystalState !== 'ready') {
         const effectiveScale = pose.scale * 8 / (8 - pose.depth)
@@ -138,7 +144,7 @@ export default function TechConclaveExpoTransition() {
       trigger = timeline.scrollTrigger
       timeline.to({}, { duration: 1, onUpdate: () => render(timeline.progress()) }, 0)
         .fromTo(page, { autoAlpha: 0 }, { autoAlpha: 1, duration: .32, ease: 'none' }, .22)
-        .fromTo(tc, { autoAlpha: 1 }, { autoAlpha: 0, duration: .34, ease: 'none' }, .16)
+        .fromTo(tc, { autoAlpha: 1 }, { autoAlpha: 0, duration: .16, ease: 'none' }, .40)
         .fromTo(copy, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, stagger: .025, duration: .12 }, .78)
         .fromTo(lines, { opacity: 0 }, { opacity: .8, duration: .12 }, .83)
       render(0)
@@ -155,6 +161,8 @@ export default function TechConclaveExpoTransition() {
       cancelAnimationFrame(refresh)
       resize.disconnect()
       context.revert()
+      tc.style.removeProperty('mask-image')
+      tc.style.removeProperty('mask-size')
       page.style.removeProperty('pointer-events')
       delete element.dataset.expoProgress
       delete element.dataset.expoStart
