@@ -81,3 +81,41 @@ desktop hover/leave, tablet/desktop resizing, mobile touch drag/release, vertica
 scrolling, mobile navigation, context loss, missing head texture, reduced motion, and
 disabled JavaScript. Normal browser pages reported no runtime errors. The igloo working
 tree remains unchanged.
+
+## TechConclave to Expo transition (2026-10-01)
+
+The homepage now composes both sections in `TechConclaveExpoTransition.jsx`.
+One crystal stays mounted above both backgrounds: it emerges at the visible
+TechConclave robot's column, rolls end-over-end along a curved path, and settles
+into the existing Expo crystal slot. Tall phone posters finish their readable
+content before pinning; an offscreen robot's column supplies a clamped origin.
+
+`expoJourney.mjs` supplies deterministic travel, scale, tumble and settling
+values. GSAP uses the existing `.main-scroll`/Lenis integration, with a lower
+refresh priority so upstream pin spacing is measured first. Desktop travel
+occupies 2.4 viewport heights; phones use 1.5. Reversing scroll reverses the
+same motion. Scroll, idle and pointer rotations use separate nested model groups.
+Projected SVG connectors follow the live crystal; fallback rendering keeps
+approximate anchors. Reduced motion removes the shared canvas and pin entirely.
+The standalone `/expo` route retains its own crystal with idle and pointer motion.
+
+The revised transition uses one viewport-sized camera. The crystal first emerges
+through an expanding mask while TechConclave blurs and dissolves. `ConclaveVeil.jsx`
+renders moving procedural mist with displaced samples of the existing Conclave
+background; a clearing follows the crystal so its rotation remains readable.
+Expo appears underneath during this overlap. The crystal then travels downward
+through one complete, unwrapped end-over-end revolution, rocks into place, and
+receives idle/pointer motion before the Expo copy and connectors finish revealing.
+CSS mist and a positioned illustration remain available when WebGL fails.
+
+Browser checks covered desktop and phone layouts, viewport resizing, reverse
+scroll, gallery release, cursor response, modal open/Escape/focus return, live
+motion-preference changes and simulated WebGL context loss. The revised flow was
+also checked after live resizing through desktop, portrait and landscape layouts.
+`node scripts/check-expo-motion.mjs` checks finite values, bounded scale/interaction,
+angular continuity, downward descent, navigation clearance, a complete revolution,
+and final anchors on those three layouts. Scoped lint passed;
+repository lint reported zero errors and 84 existing warnings. Production build
+verification was blocked by Google Fonts download failures; the network-enabled
+retry also encountered an EPERM error on a generated `.next/build` chunk.
+These checks do not establish performance on physical mobile hardware.
