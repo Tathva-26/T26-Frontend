@@ -1,3 +1,4 @@
+import Preloader from '@/pageComponents/Loading/Loading'
 import HeroFrameController from '@/pageComponents/Hero/HeroFrameController'
 import ProfilePage from '@/pageComponents/ProfilePage/ProfilePage'
 import HorizontalGallery from '@/pageComponents/HorizontalGallery/HorizontalGallery'
@@ -21,6 +22,7 @@ import GPC from './gpc/page'
 export default function Home() {
   return (
     <div className='main-scroll relative h-dvh w-full overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-black'>
+      <Preloader />
       <SmoothScroll />
       <Navbar />
 
