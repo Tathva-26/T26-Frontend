@@ -122,3 +122,36 @@ repository lint reported zero errors and 84 existing warnings. Production build
 verification was blocked by Google Fonts download failures; the network-enabled
 retry also encountered an EPERM error on a generated `.next/build` chunk.
 These checks do not establish performance on physical mobile hardware.
+
+## Expo to gallery exit
+
+The shared timeline now has entry (0–1), an interactive reading hold (1–1.45),
+and departure (1.45–2.15). `expoExit` keeps the crystal's rotation unwrapped
+through a second full revolution, moves it upward and into depth, reduces its
+scale, and eases out pointer influence. Its glow lifts during departure.
+Copy fades and connectors contract first; charcoal/purple cloud coverage then
+conceals the crystal and clears over the actual gallery. Exit clouds do not
+sample the TechConclave poster.
+
+The bridge owns one gallery instance, following it with a one-viewport overlap
+only when motion is enabled. Desktop gallery scrolling starts at `top top`
+after the handoff; its refresh priority follows the bridge's pin calculation.
+Phones retain the vertical gallery. Reduced motion removes the overlap and pin.
+The standalone Expo route remains independent.
+
+Checks passed for upward motion, a complete exit revolution, continuity, shrinking
+scale, final invisibility, desktop/mobile handoff, live resizing, reverse return,
+Explore/Escape/focus return, reduced-motion toggling, and WebGL fallback. Scoped
+lint has no errors; the gallery retains four existing image-element warnings.
+
+The gallery's coordinated start is explicitly anchored to the bridge's release
+scroll coordinate. Its track uses a zero-based `fromTo` on every rebuild, and
+horizontal travel ends before the sticky viewport releases (`bottom bottom`).
+The bridge follows Lenis directly, avoiding a second scrub delay that could
+leave clouds obscuring an already-advancing gallery. Wheel checks showed the
+opening cards after the handoff, all ten cards became fully visible before
+release, and both desktop resize checks returned to a zero track offset.
+Reimplementation from `b7661fa` additionally verifies that the ready 3D model
+hides its illustration through CSS, while context loss restores that fallback.
+Browser assertions covered the wheel-driven opening, all ten fully visible
+desktop cards, a zero offset after resizing, and the phone's first gallery card.
