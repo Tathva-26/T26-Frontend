@@ -6,9 +6,10 @@ import { Canvas, useLoader, useThree } from "@react-three/fiber";
 import { NoToneMapping, PMREMGenerator } from "three";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import CrystalModel from "./CrystalModel";
+import ConclaveVeil from "./ConclaveVeil";
 import { interactionTargets, localPointer } from "./crystalGeometry.mjs";
 
-function SceneEnvironment() {
+function SceneEnvironment({ shared }) {
   const { gl, scene, camera, size } = useThree();
   const environment = useLoader(EXRLoader, "/images/expo/crystal/studio.exr");
   useEffect(() => {
@@ -21,6 +22,12 @@ function SceneEnvironment() {
   }, [gl, scene, environment]);
 
   useEffect(() => {
+    if (shared) {
+      camera.position.set(0, 0, 8);
+      camera.lookAt(0, 0, 0);
+      camera.updateProjectionMatrix();
+      return;
+    }
     const mobile = size.width < 360;
     const halfVertical = (camera.fov * Math.PI) / 360;
     const halfHorizontal = Math.atan(Math.tan(halfVertical) * size.width / Math.max(size.height, 1));
@@ -28,7 +35,7 @@ function SceneEnvironment() {
     camera.position.z = Math.max(1.9 / Math.tan(halfVertical), 1.25 / Math.tan(halfHorizontal)) * (mobile ? 1.02 : 1);
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
-  }, [camera, size]);
+  }, [camera, size, shared]);
   return null;
 }
 
@@ -42,7 +49,7 @@ function ContextEvents({ onFailure }) {
   return null;
 }
 
-export default function CrystalScene({ active, onReady, onFailure }) {
+export default function CrystalScene({ active, onReady, onFailure, journey, onProject }) {
   const target = useRef({ tiltX: 0, tiltY: 0 });
   const pointer = useRef(null);
   const [dpr, setDpr] = useState(1);
@@ -84,11 +91,12 @@ export default function CrystalScene({ active, onReady, onFailure }) {
     <div style={{ width: "100%", height: "100%", touchAction: "pan-y pinch-zoom" }} onPointerDown={down} onPointerMove={update} onPointerUp={release} onPointerCancel={release} onPointerLeave={reset} onLostPointerCapture={reset} aria-describedby="crystal-instructions" role="img" aria-label="Interactive Tathva crystal">
       <Canvas dpr={dpr} frameloop={active ? "always" : "never"} camera={{ fov: 32, position: [0, 0, 7], near: .1, far: 30 }} gl={{ alpha: true, antialias: true, powerPreference: "low-power" }} onCreated={({ gl }) => { gl.setClearColor(0, 0); gl.toneMapping = NoToneMapping; gl.transmissionResolutionScale = .75; }} fallback={null}>
         <ContextEvents onFailure={onFailure} />
-        <Suspense fallback={null}><SceneEnvironment /></Suspense>
+        <Suspense fallback={null}><SceneEnvironment shared={!!journey} /></Suspense>
         <ambientLight intensity={.08} />
         <directionalLight position={[-3, 4, 3]} color="#7bbaff" intensity={.6} />
         <pointLight position={[1.8, -1.2, 1]} color="#ee49cf" intensity={4} distance={5} decay={2} />
-        <Suspense fallback={null}><CrystalModel target={target} onReady={onReady} /></Suspense>
+        <Suspense fallback={null}><CrystalModel target={target} onReady={onReady} journey={journey} onProject={onProject} /></Suspense>
+        {journey && <Suspense fallback={null}><ConclaveVeil journey={journey} /></Suspense>}
       </Canvas>
     </div>
   );

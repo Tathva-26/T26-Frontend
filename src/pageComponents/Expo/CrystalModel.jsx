@@ -14,6 +14,7 @@ import {
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
 import { createCrystalVeins } from './crystalGeometry.mjs'
+import { journeyScreenPoint } from './expoJourney.mjs'
 
 const geometryLoader = new DRACOLoader()
   .setDecoderPath('/images/expo/decoders/draco/')
@@ -105,8 +106,11 @@ function createEnergy() {
   return texture
 }
 
-export default function CrystalModel({ target, onReady }) {
+export default function CrystalModel({ target, onReady, journey, onProject }) {
   const group = useRef()
+  const travel = useRef()
+  const idle = useRef()
+  const anchor = useMemo(() => new Vector3(), [])
   const started = useRef(false)
   const gl = useThree((state) => state.gl)
   const robotSource = useLoader(TextureLoader, '/images/expo/robot-head.svg')
@@ -151,11 +155,38 @@ export default function CrystalModel({ target, onReady }) {
     },
     [geometry, veins, glow, energy, robot],
   )
-  useFrame((_, delta) => {
+  useFrame(({ clock, camera, size }, delta) => {
     const dt = Math.min(delta, 0.05)
     const body = group.current
-    body.rotation.x = MathUtils.damp(body.rotation.x, target.current.tiltX, 4.1, dt)
-    body.rotation.y = MathUtils.damp(body.rotation.y, target.current.tiltY, 4.1, dt)
+    const pose = journey?.current
+    const influence = pose ? pose.interaction : 1
+    body.rotation.x = MathUtils.damp(body.rotation.x, target.current.tiltX * influence, 4.1, dt)
+    body.rotation.y = MathUtils.damp(body.rotation.y, target.current.tiltY * influence, 4.1, dt)
+    travel.current.rotation.set(pose?.pitch ?? 0, pose?.yaw ?? 0, pose?.roll ?? 0)
+    if (pose?.layout) {
+      const point = journeyScreenPoint(pose, pose.layout)
+      const halfHeight = Math.tan(camera.fov * Math.PI / 360) * (8 - pose.depth)
+      const halfWidth = halfHeight * size.width / size.height
+      travel.current.position.set((point.x / size.width * 2 - 1) * halfWidth, (1 - point.y / size.height * 2) * halfHeight, pose.depth)
+      // Match the old slot's 3.8-unit framing, while using one viewport camera.
+      const baseScale = Math.tan(camera.fov * Math.PI / 360) * 16 * pose.layout.slotHeight / size.height / 3.8
+      travel.current.scale.setScalar(baseScale * pose.scale)
+      camera.position.x = MathUtils.damp(camera.position.x, target.current.tiltY * .4 * influence, 3.2, dt)
+      camera.position.y = MathUtils.damp(camera.position.y, -target.current.tiltX * .3 * influence, 3.2, dt)
+      camera.lookAt(0, 0, 0)
+      camera.updateMatrixWorld()
+    }
+    const time = clock.elapsedTime
+    idle.current.position.y = Math.sin(time * .85) * .035 * influence
+    idle.current.rotation.set(Math.sin(time * .48) * .025 * influence, Math.sin(time * .32) * .065 * influence, Math.sin(time * .39) * .022 * influence)
+    if (onProject) {
+      travel.current.updateWorldMatrix(true, true)
+      const points = [[-.65, .8, .3], [.7, -.05, .3], [-.35, -1.1, .3]].map(([x, y, z]) => {
+        anchor.set(x, y, z).applyMatrix4(body.matrixWorld).project(camera)
+        return { x: anchor.x, y: anchor.y }
+      })
+      onProject(points)
+    }
   })
 
   const firstFrame = () => {
@@ -166,7 +197,9 @@ export default function CrystalModel({ target, onReady }) {
   }
 
   return (
-    <group ref={group}>
+    <group ref={travel}>
+      <group ref={idle}>
+      <group ref={group}>
       <group>
         <mesh
           geometry={geometry}
@@ -236,6 +269,8 @@ export default function CrystalModel({ target, onReady }) {
             />
           </lineSegments>
         </group>
+      </group>
+      </group>
       </group>
     </group>
   )
