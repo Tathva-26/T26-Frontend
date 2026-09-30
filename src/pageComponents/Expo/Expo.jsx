@@ -1,15 +1,14 @@
 'use client'
 
-import Image from 'next/image'
 import { useRef } from 'react'
 import Crystal3D from './Crystal3D'
 import styles from './Expo.module.css'
 
-export default function Expo() {
+export default function Expo({ sharedCrystal = false }) {
   const details = useRef(null)
 
   return (
-    <main className={styles.page}>
+    <section className={styles.page} data-expo-page>
       <section className={styles.stage} aria-labelledby='expo-title'>
         <h1 id='expo-title' className={styles.title}>
           <span className={styles.desktopTitle}>EXPO</span>
@@ -57,8 +56,8 @@ export default function Expo() {
         >
           <path d='M131 337L154 275L208 306 M157 565L79 650 M205 564L247 627H271' />
         </svg>
-        <div className={styles.crystalSlot}>
-          <Crystal3D />
+        <div className={styles.crystalSlot} data-expo-slot>
+          {!sharedCrystal && <Crystal3D />}
         </div>
         <p className={styles.description}>
           National Institute of
@@ -82,6 +81,7 @@ export default function Expo() {
         <dialog
           ref={details}
           className={styles.details}
+          data-lenis-prevent
           onClick={(event) => {
             if (event.target === event.currentTarget) details.current.close()
           }}
@@ -102,6 +102,6 @@ export default function Expo() {
           </p>
         </dialog>
       </section>
-    </main>
+    </section>
   )
 }
