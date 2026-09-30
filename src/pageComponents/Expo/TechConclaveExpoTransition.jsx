@@ -6,7 +6,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import TechConclave from '../TechConclave/TechConclave'
 import Expo from './Expo'
 import Crystal3D from './Crystal3D'
-import { expoJourney, journeyScreenPoint } from './expoJourney.mjs'
+import { expoJourney, expoExit, journeyScreenPoint } from './expoJourney.mjs'
+import HorizontalGallery from '../HorizontalGallery/HorizontalGallery'
 import styles from './ExpoTransition.module.css'
 import expoStyles from './Expo.module.css'
 
@@ -89,35 +90,43 @@ export default function TechConclaveExpoTransition() {
     }
     const render = (progress) => {
       if (disposed || !crystal.current) return
-      const pose = expoJourney(progress)
+      // Timeline units: entry 0–1, readable Expo hold 1–1.45, exit 1.45–2.15.
+      const phase = progress * 2.15
+      const exit = Math.min(1, Math.max(0, (phase - 1.45) / .70))
+      const entry = Math.min(1, phase)
+      const pose = phase > 1.45 ? expoExit(exit) : expoJourney(entry)
       const box = geometry.current
       if (!box) return
       pose.layout = box
       journey.current = pose
       const { x, y } = journeyScreenPoint(pose, box)
       gsap.set(crystal.current, {
-        width: box.width, height: box.height, opacity: pose.opacity,
-        pointerEvents: progress > .72 ? 'auto' : 'none',
+        width: box.width, height: box.height, opacity: exit > 0 ? 1 : pose.opacity,
+        pointerEvents: entry > .72 && exit === 0 ? 'auto' : 'none',
       })
       const fallback = crystal.current.querySelector('img')
-      gsap.set(fallback, { width: box.slotWidth, height: box.slotHeight, x: x - box.slotWidth / 2, y: y - box.slotHeight / 2, scale: pose.scale * 8 / (8 - pose.depth), rotationX: pose.pitch * 180 / Math.PI })
-      const veil = Math.sin(Math.PI * Math.min(1, Math.max(0, (progress - .04) / .66)))
+      // Keep opacity in CSS so the ready state can hide the illustration when
+      // the model loads, even if scrolling is paused at that moment.
+      gsap.set(fallback, { '--journey-fallback-opacity': pose.opacity, width: box.slotWidth, height: box.slotHeight, x: x - box.slotWidth / 2, y: y - box.slotHeight / 2, scale: pose.scale * 8 / (8 - pose.depth), rotationX: pose.pitch * 180 / Math.PI })
+      const veil = exit > 0 ? Math.sin(exit * Math.PI) : Math.sin(Math.PI * Math.min(1, Math.max(0, (entry - .04) / .66)))
       gsap.set(mist, { opacity: veil * .48, '--veil-drift': `${progress * -18}%` })
       gsap.set(tc, { filter: `blur(${veil * 3}px) saturate(${1 - veil * .35})` })
       // Erode the poster through a fixed cloud field, rather than opening a
       // geometric window around the incoming exhibit. Alpha thresholds are
       // deterministic so reversing scroll reconstructs the same poster.
-      const dissolve = Math.min(1, Math.max(0, (progress - .16) / .36))
+      const dissolve = Math.min(1, Math.max(0, (entry - .16) / .36))
       const cloudMask = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640"><filter id="cloud"><feTurbulence type="fractalNoise" baseFrequency=".012 .018" numOctaves="3" seed="7"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 4 4 4 0 ${2 - dissolve * 14}"/></filter><rect width="100%" height="100%" filter="url(#cloud)"/></svg>`
       tc.style.maskImage = dissolve === 0 ? 'none' : `url("data:image/svg+xml,${encodeURIComponent(cloudMask)}")`
       tc.style.maskSize = '100% 100%'
-      page.style.pointerEvents = progress > .80 ? 'auto' : 'none'
+      page.style.pointerEvents = entry > .80 && exit === 0 ? 'auto' : 'none'
+      gsap.set(lines, { scale: 1 - exit * .65, transformOrigin: `${box.endX}px ${box.endY}px` })
       if (crystal.current.querySelector('[data-crystal-state]')?.dataset.crystalState !== 'ready') {
         const effectiveScale = pose.scale * 8 / (8 - pose.depth)
         const points = [[-.25, -.25], [.30, 0], [-.12, .30]].map(([dx, dy]) => ({ x: (x + dx * box.slotWidth * effectiveScale) / box.width * 2 - 1, y: 1 - (y + dy * box.slotHeight * effectiveScale) / box.height * 2 }))
         project(points)
       }
       element.dataset.expoProgress = progress.toFixed(3)
+      element.dataset.expoExit = exit.toFixed(3)
       if (trigger) {
         element.dataset.expoStart = trigger.start
         element.dataset.expoEnd = trigger.end
@@ -129,8 +138,10 @@ export default function TechConclaveExpoTransition() {
         scrollTrigger: {
           id: 'techconclave-expo', trigger: element, pin: element,
           scroller: scroller || undefined,
-          start: 'bottom bottom', end: () => `+=${plane.clientHeight * (plane.clientWidth < 768 ? 1.5 : 2.4)}`,
-          scrub: .45, invalidateOnRefresh: true, anticipatePin: 1,
+          start: 'bottom bottom', end: () => `+=${plane.clientHeight * (plane.clientWidth < 768 ? 1.5 : 2.4) * 2.15}`,
+          // Lenis already smooths input. Additional scrub lag can leave the
+          // exit clouds onscreen while the gallery has advanced underneath.
+          scrub: true, invalidateOnRefresh: true, anticipatePin: 1,
           // Upstream Artist/Wheels pins register in effects after this layout
           // effect. Measure Expo after their pin spacing has been applied.
           refreshPriority: -10,
@@ -142,11 +153,14 @@ export default function TechConclaveExpoTransition() {
         },
       })
       trigger = timeline.scrollTrigger
-      timeline.to({}, { duration: 1, onUpdate: () => render(timeline.progress()) }, 0)
+      timeline.to({}, { duration: 2.15, onUpdate: () => render(timeline.progress()) }, 0)
         .fromTo(page, { autoAlpha: 0 }, { autoAlpha: 1, duration: .32, ease: 'none' }, .22)
         .fromTo(tc, { autoAlpha: 1 }, { autoAlpha: 0, duration: .16, ease: 'none' }, .40)
         .fromTo(copy, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, stagger: .025, duration: .12 }, .78)
         .fromTo(lines, { opacity: 0 }, { opacity: .8, duration: .12 }, .83)
+        .to(copy, { autoAlpha: 0, y: -12, duration: .14, stagger: .015 }, 1.45)
+        .to(lines, { opacity: 0, duration: .16 }, 1.45)
+        .to(page, { autoAlpha: 0, duration: .44, ease: 'none' }, 1.58)
       render(0)
     }, element)
     const resize = new ResizeObserver(() => {
@@ -167,11 +181,13 @@ export default function TechConclaveExpoTransition() {
       delete element.dataset.expoProgress
       delete element.dataset.expoStart
       delete element.dataset.expoEnd
+      delete element.dataset.expoExit
       window.__lenis?.resize()
     }
   }, [animated, project])
 
   return (
+    <>
     <div ref={root} className={`${styles.bridge} ${animated ? styles.animated : ''}`}>
       <div data-conclave><TechConclave /></div>
       <Expo sharedCrystal={animated} />
@@ -185,5 +201,7 @@ export default function TechConclaveExpoTransition() {
         </svg>
       </div>}
     </div>
+    <div className={animated ? styles.galleryHandoff : ''}><HorizontalGallery coordinatedEntrance={animated} /></div>
+    </>
   )
 }

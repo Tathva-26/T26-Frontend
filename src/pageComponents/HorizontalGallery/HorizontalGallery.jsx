@@ -137,7 +137,7 @@ const MOBILE_CONFIG = {
   10: { align: 'justify-end', width: 'w-[50vw] max-w-[250px]', aspect: 'aspect-[31.69/30.9]' },
 };
 
-export default function HorizontalGallery() {
+export default function HorizontalGallery({ coordinatedEntrance = false }) {
   const containerRef = useRef(null);
   const sectionRef = useRef(null);
   const trackRef = useRef(null);
@@ -199,6 +199,12 @@ export default function HorizontalGallery() {
         const exitShift = vh * 0.6;
         const totalTranslation = scrollAmount + exitShift;
         const totalDuration = vh * 2 + scrollAmount;
+        const openingScroll = () => {
+          const release = Number(document.querySelector('[data-expo-end]')?.dataset.expoEnd);
+          // Child layout effects can run before the bridge has registered its
+          // pin. The scheduled global refresh will replace this initial value.
+          return Number.isFinite(release) ? release : (scroller.scrollTop || 0) + container.getBoundingClientRect().top;
+        };
 
         container.style.height = `${totalDuration}px`;
 
@@ -207,18 +213,27 @@ export default function HorizontalGallery() {
           scrollTrigger: {
             scroller,
             trigger: container,
-            start: 'top bottom',
-            end: 'bottom top',
+            // Use the bridge's exact release coordinate rather than deriving
+            // a second entrance from overlapping sticky/pinned geometry.
+            start: () => coordinatedEntrance && Number.isFinite(openingScroll()) ? openingScroll() : 'top bottom',
+            end: coordinatedEntrance ? () => openingScroll() + container.offsetHeight - window.innerHeight : 'bottom top',
             // Lenis already smooths the scroll position, so `true` tracks it
             // directly instead of adding a second layer of lag.
             scrub: true,
             invalidateOnRefresh: true,
+            // The Expo bridge establishes its upstream pin spacing first.
+            refreshPriority: coordinatedEntrance ? -20 : 0,
+            onRefresh: (self) => {
+              container.dataset.galleryStart = self.start;
+              container.dataset.galleryEnd = self.end;
+            },
           },
         });
 
         /* Horizontal movement */
-        tl.to(
+        tl.fromTo(
           track,
+          { x: 0 },
           { x: -totalTranslation, duration: totalDuration, ease: 'none' },
           0
         );
@@ -260,8 +275,12 @@ export default function HorizontalGallery() {
       };
     }, container);
 
-    return () => ctx.revert();
-  }, []);
+    return () => {
+      ctx.revert();
+      delete container.dataset.galleryStart;
+      delete container.dataset.galleryEnd;
+    };
+  }, [coordinatedEntrance]);
 
   return (
     <div ref={containerRef} className="relative w-full shrink-0">

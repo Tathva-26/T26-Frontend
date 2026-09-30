@@ -158,7 +158,7 @@
 .fallback {
   object-fit: contain;
   pointer-events: none;
-  opacity: 1;
+  opacity: var(--journey-fallback-opacity, 1);
   transition: opacity 0.65s ease;
 }
 .canvas {

@@ -1,7 +1,6 @@
 import Preloader from '@/pageComponents/Loading/Loading'
 import HeroFrameController from '@/pageComponents/Hero/HeroFrameController'
 import ProfilePage from '@/pageComponents/ProfilePage/ProfilePage'
-import HorizontalGallery from '@/pageComponents/HorizontalGallery/HorizontalGallery'
 import ProshowCarousel from '@/pageComponents/ProshowCarousel/ProshowCarousel'
 import WheelsExperience from '@/pageComponents/wheels/WheelsExperience'
 import Lead from '@/pageComponents/Team/Lead'
@@ -40,7 +39,6 @@ export default function Home() {
         <Accommodation />
         <TathvaPasses />
         <TechConclaveExpoTransition />
-        <HorizontalGallery />
         <Footer />
       </HeroFrameController>
     </div>

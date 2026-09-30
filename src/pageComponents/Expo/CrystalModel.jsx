@@ -110,6 +110,7 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
   const group = useRef()
   const travel = useRef()
   const idle = useRef()
+  const glowMaterial = useRef()
   const anchor = useMemo(() => new Vector3(), [])
   const started = useRef(false)
   const gl = useThree((state) => state.gl)
@@ -160,6 +161,8 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
     const body = group.current
     const pose = journey?.current
     const influence = pose ? pose.interaction : 1
+    travel.current.visible = !pose || pose.opacity > .005
+    glowMaterial.current.opacity = .8 + Math.sin((pose?.exit ?? 0) * Math.PI) * .2
     body.rotation.x = MathUtils.damp(body.rotation.x, target.current.tiltX * influence, 4.1, dt)
     body.rotation.y = MathUtils.damp(body.rotation.y, target.current.tiltY * influence, 4.1, dt)
     travel.current.rotation.set(pose?.pitch ?? 0, pose?.yaw ?? 0, pose?.roll ?? 0)
@@ -241,6 +244,7 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
           <mesh position={[0, 0.15, 0.65]} scale={[2, 2.3, 1]}>
             <planeGeometry />
             <meshBasicMaterial
+              ref={glowMaterial}
               map={glow}
               transparent
               opacity={0.8}

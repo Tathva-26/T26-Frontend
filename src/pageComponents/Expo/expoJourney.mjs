@@ -22,7 +22,31 @@ export function expoJourney(progress) {
   }
 }
 
+// Entry remains its own unit of progress. A readable hold separates it from
+// this exit, so the crystal never departs while Expo is still revealing.
+export function expoExit(progress) {
+  const p = clamp(progress)
+  const flight = smooth((p - .12) / .76)
+  return {
+    ...expoJourney(1), exit: p,
+    opacity: 1 - smooth((p - .67) / .22),
+    scale: 1 - flight * .62,
+    depth: -flight * 4,
+    pitch: Math.PI * 2 + flight * Math.PI * 2 - Math.sin(p * Math.PI) * .18,
+    yaw: Math.sin(flight * Math.PI) * -.38,
+    roll: Math.sin(flight * Math.PI) * .24,
+    interaction: 1 - smooth(p / .20),
+  }
+}
+
 export function journeyScreenPoint(pose, layout) {
+  if (pose.exit != null) {
+    const flight = smooth((pose.exit - .12) / .76)
+    return {
+      x: layout.endX + Math.sin(flight * Math.PI) * layout.width * .10,
+      y: layout.endY - flight * (layout.endY + layout.height * .24),
+    }
+  }
   const releaseX = layout.startX + (layout.endX - layout.startX) * .18
   // Keep the top of the released shell below the measured navigation edge.
   const safeTop = (layout.navigationBottom ?? 64) + layout.slotHeight * .84 * .68 / 2
