@@ -5,10 +5,14 @@ import { useFrame, useLoader, useThree } from '@react-three/fiber'
 import {
   AdditiveBlending,
   CanvasTexture,
+  BufferGeometry,
+  Float32BufferAttribute,
   MathUtils,
+  Raycaster,
   ShaderChunk,
   SRGBColorSpace,
   TextureLoader,
+  Vector2,
   Vector3,
 } from 'three'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
@@ -111,6 +115,18 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
   const travel = useRef()
   const idle = useRef()
   const glowMaterial = useRef()
+  const shell = useRef()
+  const glass = useRef()
+  const robotMotion = useRef()
+  const cursorLight = useRef()
+  const fractures = useRef()
+  const motes = useRef()
+  const mist = useRef()
+  const energyMaterial = useRef()
+  const life = useRef({ hover: 0 })
+  const raycaster = useMemo(() => new Raycaster(), [])
+  const pointerNdc = useMemo(() => new Vector2(), [])
+  const lightPoint = useMemo(() => new Vector3(0, .2, .9), [])
   const anchor = useMemo(() => new Vector3(), [])
   const started = useRef(false)
   const gl = useThree((state) => state.gl)
@@ -142,7 +158,20 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
   const veins = useMemo(() => createCrystalVeins(), [])
   const glow = useMemo(() => createGlow(), [])
   const energy = useMemo(() => createEnergy(), [])
-  const energyUniforms = useMemo(() => ({ map: { value: energy } }), [energy])
+  const energyUniforms = useMemo(() => ({ map: { value: energy }, brightness: { value: 1 } }), [energy])
+  const veinUniforms = useMemo(() => ({ time: { value: 0 }, hover: { value: 0 }, pointer: { value: new Vector3() } }), [])
+  const mistUniforms = useMemo(() => ({ time: { value: 0 }, opacity: { value: 0 } }), [])
+  const dust = useMemo(() => {
+    const positions = []
+    for (let i = 0; i < 48; i++) {
+      const angle = i * 2.39996
+      const radius = 1.45 + (Math.sin(i * 13.71) * .5 + .5) * .8
+      positions.push(Math.cos(angle) * radius, Math.sin(angle) * radius * .85, -.9 + Math.sin(i * 7.13) * .35)
+    }
+    const result = new BufferGeometry()
+    result.setAttribute('position', new Float32BufferAttribute(positions, 3))
+    return result
+  }, [])
   // All decode promises have resolved before this component commits. Keep the
   // cached GPU assets, but release the now-idle decoder workers immediately.
   useEffect(releaseCrystalDecoders, [])
@@ -153,18 +182,45 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
       glow.dispose()
       energy.dispose()
       robot.dispose()
+      dust.dispose()
     },
-    [geometry, veins, glow, energy, robot],
+    [geometry, veins, glow, energy, robot, dust],
   )
   useFrame(({ clock, camera, size }, delta) => {
     const dt = Math.min(delta, 0.05)
     const body = group.current
     const pose = journey?.current
     const influence = pose ? pose.interaction : 1
+    const time = clock.elapsedTime
+    // Raycast the actual ice, not the viewport rectangle surrounding it.
+    travel.current.updateWorldMatrix(true, true)
+    let hit = null
+    if (target.current.active && influence > .01) {
+      pointerNdc.set(target.current.x, target.current.y)
+      raycaster.setFromCamera(pointerNdc, camera)
+      hit = raycaster.intersectObject(shell.current, false)[0]
+    }
+    life.current.hover = MathUtils.damp(life.current.hover, hit ? influence : 0, 5.2, dt)
+    const hover = life.current.hover
+    if (hit) {
+      anchor.copy(hit.point)
+      body.worldToLocal(anchor)
+      lightPoint.lerp(anchor, 1 - Math.exp(-dt * 7))
+    }
+    cursorLight.current.position.set(lightPoint.x, lightPoint.y, 1.2)
+    cursorLight.current.intensity = hover * 1.6
+    glass.current.envMapIntensity = 1.7 + hover * .25
+    glass.current.roughness = .045 - hover * .012
+    body.scale.setScalar(1 + hover * .025)
     travel.current.visible = !pose || pose.opacity > .005
-    glowMaterial.current.opacity = .8 + Math.sin((pose?.exit ?? 0) * Math.PI) * .2
-    body.rotation.x = MathUtils.damp(body.rotation.x, target.current.tiltX * influence, 4.1, dt)
-    body.rotation.y = MathUtils.damp(body.rotation.y, target.current.tiltY * influence, 4.1, dt)
+    const breath = Math.sin(time * 1.15) * .065 + Math.sin(time * .47) * .025
+    glowMaterial.current.opacity = .8 + (breath + hover * .12) * influence + Math.sin((pose?.exit ?? 0) * Math.PI) * .2
+    energyMaterial.current.uniforms.brightness.value = 1 + (breath + hover * .18) * influence
+    fractures.current.uniforms.time.value = time
+    fractures.current.uniforms.hover.value = hover
+    fractures.current.uniforms.pointer.value.copy(lightPoint)
+    body.rotation.x = MathUtils.damp(body.rotation.x, target.current.tiltX * influence * (1 + hover * .55), 4.1, dt)
+    body.rotation.y = MathUtils.damp(body.rotation.y, target.current.tiltY * influence * (1 + hover * .55), 4.1, dt)
     travel.current.rotation.set(pose?.pitch ?? 0, pose?.yaw ?? 0, pose?.roll ?? 0)
     if (pose?.layout) {
       const point = journeyScreenPoint(pose, pose.layout)
@@ -179,9 +235,19 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
       camera.lookAt(0, 0, 0)
       camera.updateMatrixWorld()
     }
-    const time = clock.elapsedTime
-    idle.current.position.y = Math.sin(time * .85) * .035 * influence
-    idle.current.rotation.set(Math.sin(time * .48) * .025 * influence, Math.sin(time * .32) * .065 * influence, Math.sin(time * .39) * .022 * influence)
+    idle.current.position.y = (Math.sin(time * .85) * .035 + Math.sin(time * .31) * .012) * influence
+    idle.current.rotation.set(Math.sin(time * .48) * .055 * influence, (Math.sin(time * .24) * .18 + Math.sin(time * .53) * .035) * influence, Math.sin(time * .39) * .045 * influence)
+    robotMotion.current.rotation.set(
+      MathUtils.damp(robotMotion.current.rotation.x, (.035 * Math.sin(time * .43) - body.rotation.x * .35) * influence, 2.8, dt),
+      .12 + MathUtils.damp(robotMotion.current.rotation.y - .12, (.065 * Math.sin(time * .35) - body.rotation.y * .30) * influence, 2.8, dt),
+      .085 + Math.sin(time * .42) * .035 * influence, 'ZYX')
+    robotMotion.current.position.y = Math.sin(time * .67 + .8) * .025 * influence
+    motes.current.rotation.z = Math.sin(time * .12) * .12
+    motes.current.position.y = Math.sin(time * .23) * .10
+    motes.current.material.opacity = .18 * influence
+    mist.current.position.x = Math.sin(time * .16) * .22
+    mist.current.material.uniforms.time.value = time
+    mist.current.material.uniforms.opacity.value = .10 * influence
     if (onProject) {
       travel.current.updateWorldMatrix(true, true)
       const points = [[-.65, .8, .3], [.7, -.05, .3], [-.35, -1.1, .3]].map(([x, y, z]) => {
@@ -203,6 +269,16 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
     <group ref={travel}>
       <group ref={idle}>
       <group ref={group}>
+      <pointLight ref={cursorLight} color='#75dfff' intensity={0} distance={4} decay={2} />
+      <points ref={motes} geometry={dust}>
+        <pointsMaterial color='#acdfff' map={glow} size={.055} transparent opacity={.18} depthWrite={false} blending={AdditiveBlending} />
+      </points>
+      <mesh ref={mist} position={[0, -.4, -.9]} scale={[4.5, 2.2, 1]}>
+        <planeGeometry />
+        <shaderMaterial transparent depthWrite={false} blending={AdditiveBlending} uniforms={mistUniforms}
+          vertexShader={'varying vec2 vUv; void main(){vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }'}
+          fragmentShader={'uniform float time,opacity; varying vec2 vUv; float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);} float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);} void main(){vec2 p=vUv*vec2(5.,2.)+vec2(time*.06,-time*.015);float n=noise(p)*.65+noise(p*2.1)*.35; float feather=smoothstep(0.,.18,vUv.x)*smoothstep(0.,.18,1.-vUv.x)*smoothstep(0.,.22,vUv.y)*smoothstep(0.,.22,1.-vUv.y);float band=exp(-pow((vUv.y-.5-sin(vUv.x*6.+time*.12)*.12)*4.,2.));gl_FragColor=vec4(.20,.43,.65,opacity*feather*band*smoothstep(.24,.72,n));\n#include <colorspace_fragment>\n}'} />
+      </mesh>
       <group>
         <mesh
           geometry={geometry}
@@ -211,6 +287,7 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
           onAfterRender={firstFrame}
         >
           <shaderMaterial
+            ref={energyMaterial}
             transparent
             depthWrite={false}
             uniforms={energyUniforms}
@@ -218,12 +295,13 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
               'varying vec2 vEnergyUv; void main(){vEnergyUv=position.xy/vec2(2.18,3.4)+.5;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}'
             }
             fragmentShader={
-              'uniform sampler2D map; varying vec2 vEnergyUv; void main(){vec4 tex=texture2D(map,vEnergyUv); if(tex.a<0.04) discard; gl_FragColor=vec4(tex.rgb,tex.a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'
+              'uniform sampler2D map; uniform float brightness; varying vec2 vEnergyUv; void main(){vec4 tex=texture2D(map,vEnergyUv); if(tex.a<0.04) discard; gl_FragColor=vec4(tex.rgb*brightness,tex.a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'
             }
           />
         </mesh>
-        <mesh geometry={geometry}>
+        <mesh ref={shell} geometry={geometry}>
           <meshPhysicalMaterial
+            ref={glass}
             color='#b9d0f4'
             metalness={0}
             roughness={0.045}
@@ -240,7 +318,7 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
           />
         </mesh>
         {/* Preserve the artwork's fixed alignment with the shell geometry. */}
-        <group rotation={[0, 0.12, 0.085, 'ZYX']}>
+        <group ref={robotMotion} rotation={[0, 0.12, 0.085, 'ZYX']}>
           <mesh position={[0, 0.15, 0.65]} scale={[2, 2.3, 1]}>
             <planeGeometry />
             <meshBasicMaterial
@@ -264,12 +342,14 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
         </group>
         <group>
           <lineSegments geometry={veins}>
-            <lineBasicMaterial
-              vertexColors
+            <shaderMaterial
+              ref={fractures}
               transparent
-              opacity={0.24}
-              blending={AdditiveBlending}
               depthWrite={false}
+              blending={AdditiveBlending}
+              uniforms={veinUniforms}
+              vertexShader={'varying vec3 vLocal; void main(){vLocal=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }'}
+              fragmentShader={'uniform float time,hover; uniform vec3 pointer; varying vec3 vLocal; void main(){float near=exp(-length(vLocal.xy-pointer.xy)*2.8); float scan=.5+.5*sin(vLocal.y*5.-time*2.2); vec3 color=mix(vec3(.12,.32,.8),vec3(.55,.94,1.),near*hover); gl_FragColor=vec4(color,.15+hover*near*(.50+scan*.24));\n#include <colorspace_fragment>\n}'}
             />
           </lineSegments>
         </group>

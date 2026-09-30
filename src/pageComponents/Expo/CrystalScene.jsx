@@ -50,13 +50,13 @@ function ContextEvents({ onFailure }) {
 }
 
 export default function CrystalScene({ active, onReady, onFailure, journey, onProject }) {
-  const target = useRef({ tiltX: 0, tiltY: 0 });
+  const target = useRef({ tiltX: 0, tiltY: 0, x: 0, y: 0, active: false });
   const pointer = useRef(null);
   const [dpr, setDpr] = useState(1);
 
   const reset = () => {
     pointer.current = null;
-    Object.assign(target.current, { tiltX: 0, tiltY: 0 });
+    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: false });
   };
   const update = (event) => {
     const touch = event.pointerType !== "mouse";
@@ -66,7 +66,7 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
     const start = pointer.current?.start;
     const drag = start ? { x: point.x - start.x, y: point.y - start.y } : { x: 0, y: 0 };
     const { tiltX, tiltY } = interactionTargets(point, drag, touch);
-    Object.assign(target.current, { tiltX, tiltY });
+    Object.assign(target.current, { tiltX, tiltY, x: point.x, y: point.y, active: true });
   };
   const down = (event) => {
     if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;

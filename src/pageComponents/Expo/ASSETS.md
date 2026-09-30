@@ -155,3 +155,20 @@ Reimplementation from `b7661fa` additionally verifies that the ready 3D model
 hides its illustration through CSS, while context loss restores that fallback.
 Browser assertions covered the wheel-driven opening, all ten fully visible
 desktop cards, a zero offset after resizing, and the phone's first gallery card.
+
+## Living crystal interaction
+
+The ice now uses bounded multi-frequency idle rotation and bobbing; the robot
+has a separate floating group with delayed counter-rotation. The core's energy
+brightness and glow breathe slowly. Surface raycasting drives damped hover
+enlargement (up to 2.5%), stronger tilt, a local cyan point light, and animated
+fracture highlights around the hit point. Reflections brighten slightly on hover.
+Forty-eight small motes and one faint procedural mist sheet provide atmosphere.
+These effects share the existing render loop and use no additional render target
+or postprocessing pass. The journey's interaction weight removes them during
+entry/exit, and the existing reduced-motion fallback remains static.
+
+Scoped lint and motion checks passed. Desktop/shared and standalone views were
+visually checked; phone touch drag/release, modal focus return, reduced motion,
+and simulated context loss were checked in the browser. Physical phone frame
+rate has not been measured.
