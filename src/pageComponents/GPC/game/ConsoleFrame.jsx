@@ -1,0 +1,81 @@
+"use client";
+
+import Image from "next/image";
+import SpaceShooterCanvas from "./SpaceShooterCanvas";
+import Hearts from "./Hearts";
+import { RULES } from "@/lib/spaceShooter/constants";
+import { ASSETS, CONSOLE_SCREEN_INSET, EXIT_BUTTON } from "@/pageComponents/GPC/gpcConfig";
+
+function Message({ phase }) {
+  const isOver = phase === "over";
+  return (
+    <div
+      className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center"
+      style={{ fontFamily: "var(--font-pixel)" }}
+    >
+      {isOver && <p className="text-[22px] leading-relaxed tracking-widest">GAME OVER</p>}
+      <p className="text-[11px] leading-relaxed tracking-wider text-white/80">
+        {isOver ? "PRESS SPACE TO RETRY" : "PRESS SPACE TO START"}
+      </p>
+      {!isOver && (
+        <p className="mt-4 text-[9px] leading-loose tracking-wider text-white/60">
+          ARROW KEYS TO MOVE
+          <br />
+          SPACE TO SHOOT
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Hud({ stats }) {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 text-white"
+      style={{ fontFamily: "var(--font-pixel)" }}
+    >
+      <div className="absolute left-4 top-3">
+        <Hearts lives={stats.lives} max={RULES.lives} />
+      </div>
+      <p className="absolute right-4 top-3 text-[11px] leading-relaxed tracking-widest">
+        <span className="text-white/50">HI {String(stats.highScore).padStart(5, "0")}</span>{" "}
+        {String(stats.score).padStart(5, "0")}
+      </p>
+      {stats.phase !== "playing" && <Message phase={stats.phase} />}
+    </div>
+  );
+}
+
+export default function ConsoleFrame({ active, stats, onStats, onExit }) {
+  return (
+    <>
+      <div
+        className="absolute overflow-hidden rounded-[18px]"
+        style={{
+          left: `${CONSOLE_SCREEN_INSET.left}%`,
+          top: `${CONSOLE_SCREEN_INSET.top}%`,
+          width: `${CONSOLE_SCREEN_INSET.width}%`,
+          height: `${CONSOLE_SCREEN_INSET.height}%`,
+        }}
+      >
+        <SpaceShooterCanvas active={active} onStats={onStats} />
+        <Hud stats={stats} />
+      </div>
+
+      <button
+        type="button"
+        onClick={onExit}
+        aria-label="Exit game"
+        className="absolute transition-transform hover:scale-110 active:scale-95"
+        style={{
+          right: `${EXIT_BUTTON.right}%`,
+          top: `${EXIT_BUTTON.top}%`,
+          width: `${EXIT_BUTTON.size}%`,
+          aspectRatio: "1",
+        }}
+      >
+        <Image src={ASSETS.exit} alt="" fill priority sizes="48px" className="object-cover" />
+      </button>
+    </>
+  );
+}
