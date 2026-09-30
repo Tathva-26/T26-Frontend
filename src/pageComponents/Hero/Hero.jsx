@@ -1190,13 +1190,10 @@ export const Hero = ({
               }}
               aria-hidden='true'
             >
-              {/* One pre-baked halo (bake_portal_glow.py) replaces the old
-                                box-shadow stack + 4 mix-blend-mode glow layers. It sits
-                                inside .portal, so it zooms with the portal for free. */}
-              <div
+              {/* <div
                 className={styles.portalHalo}
                 style={{ backgroundImage: `url(${assetBase}portal-glow.png)` }}
-              />
+              /> */}
               {/* REMOVED (baked into portal-glow.png):
                             <div className={styles.portalGlow} />
                             <div className={styles.portalHaze} />
