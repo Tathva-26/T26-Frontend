@@ -45,6 +45,10 @@ export default function TechConclaveExpoTransition() {
     })
   }, [])
 
+  const projectModel = useCallback((points) => {
+    if (crystal.current?.dataset.expoRenderer !== 'fallback') project(points)
+  }, [project])
+
   useLayoutEffect(() => {
     if (!animated) return
     gsap.registerPlugin(ScrollTrigger)
@@ -93,6 +97,11 @@ export default function TechConclaveExpoTransition() {
       if (disposed || !crystal.current) return
       // Timeline units: entry 0–1, readable Expo hold 1–1.45, exit 1.45–2.15.
       const phase = progress * 2.15
+      const state = crystal.current.querySelector('[data-crystal-state]')?.dataset.crystalState
+      // Pick one representation before emergence. Never swap a late model into
+      // a visible tumble; a reverse to the concealed start can upgrade it safely.
+      if (phase <= .08) delete crystal.current.dataset.expoRenderer
+      else if (!crystal.current.dataset.expoRenderer) crystal.current.dataset.expoRenderer = state === 'ready' ? 'model' : 'fallback'
       const exit = Math.min(1, Math.max(0, (phase - 1.45) / .70))
       const entry = Math.min(1, phase)
       const pose = phase > 1.45 ? expoExit(exit) : expoJourney(entry)
@@ -121,7 +130,7 @@ export default function TechConclaveExpoTransition() {
       tc.style.maskSize = '100% 100%'
       page.style.pointerEvents = entry > .80 && exit === 0 ? 'auto' : 'none'
       gsap.set(lines, { scale: 1 - exit * .65, transformOrigin: `${box.endX}px ${box.endY}px` })
-      if (crystal.current.querySelector('[data-crystal-state]')?.dataset.crystalState !== 'ready') {
+      if (state !== 'ready' || crystal.current.dataset.expoRenderer === 'fallback') {
         const effectiveScale = pose.scale * 8 / (8 - pose.depth)
         const points = [[-.25, -.25], [.30, 0], [-.12, .30]].map(([dx, dy]) => ({ x: (x + dx * box.slotWidth * effectiveScale) / box.width * 2 - 1, y: 1 - (y + dy * box.slotHeight * effectiveScale) / box.height * 2 }))
         project(points)
@@ -195,7 +204,7 @@ export default function TechConclaveExpoTransition() {
       {animated && <div className={styles.plane} data-expo-plane>
         <div className={styles.mist} data-expo-mist aria-hidden='true' />
         <div ref={crystal} className={styles.crystal}>
-          <Crystal3D journey={journey} onProject={project} />
+          <Crystal3D journey={journey} onProject={projectModel} preload />
         </div>
         <svg className={styles.connectors} data-expo-connectors aria-hidden='true'>
           {[0, 1, 2].map((index) => <path key={index} ref={(node) => { paths.current[index] = node }} />)}

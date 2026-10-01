@@ -14,10 +14,10 @@ class SceneBoundary extends Component {
   render() { return this.state.failed ? null : this.props.children; }
 }
 
-export default function Crystal3D({ journey, onProject }) {
+export default function Crystal3D({ journey, onProject, preload = false }) {
   const wrapper = useRef(null);
   const [visible, setVisible] = useState(false);
-  const [requested, setRequested] = useState(false);
+  const [requested, setRequested] = useState(preload);
   const [reduced, setReduced] = useState(false);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -46,10 +46,10 @@ export default function Crystal3D({ journey, onProject }) {
 
   // A stalled GPU/texture load also leaves the illustration visible.
   useEffect(() => {
-    if (!visible || ready || failed || reduced) return;
+    if (!requested || ready || failed || reduced) return;
     const timeout = window.setTimeout(onFailure, 20000);
     return () => window.clearTimeout(timeout);
-  }, [visible, ready, failed, reduced, onFailure]);
+  }, [requested, ready, failed, reduced, onFailure]);
 
   return (
     <div ref={wrapper} className={`${styles.crystal} ${ready && !failed && !reduced ? styles.ready : ""}`} data-crystal-state={failed ? "fallback" : reduced ? "reduced-motion" : ready ? "ready" : "loading"}>
@@ -58,7 +58,7 @@ export default function Crystal3D({ journey, onProject }) {
       {!failed && !reduced && requested && (
         <div className={styles.canvas}>
           <SceneBoundary onFailure={onFailure}>
-            <CrystalScene active={awake && visible} onReady={onReady} onFailure={onFailure} journey={journey} onProject={onProject} />
+            <CrystalScene active={awake && (visible || !ready)} onReady={onReady} onFailure={onFailure} journey={journey} onProject={onProject} />
           </SceneBoundary>
         </div>
       )}

@@ -210,3 +210,25 @@ settling at several update rates, plus fracture-region discrimination. Browser
 checks covered keyboard and real touch wake, drag/release, shared-scene wake,
 gallery release at Placeholder 01, and reduced-motion removal. Scoped lint and
 the existing entry/exit motion checks pass; no production build was revalidated.
+
+## First-visit scene readiness
+
+The shared Expo crystal now mounts its client scene when the bridge mounts,
+before the user reaches TechConclave. Offscreen frames run only until the first
+crystal render, then return to visibility-based rendering. The model, reflection
+environment and cloud texture share one Suspense boundary, so readiness includes
+all three. The concealed initial journey pose permits that first GPU render;
+otherwise its invisible group would prevent the readiness callback entirely.
+The load timeout starts when the scene is requested, including offscreen loads.
+
+At emergence, the bridge selects the ready model or the animated illustration
+for that journey. Late downloads cannot replace a visible tumbling illustration
+or change its connector anchors. Returning to the concealed start allows a ready
+model to take over. Failure still restores the illustration, and reduced motion
+keeps the static section. No global preloader or other section was changed.
+
+Browser checks covered readiness before reaching Expo, a deliberately held shell
+download, stable fallback after that download finished, reverse-scroll upgrade,
+desktop/mobile framing, live reduced-motion changes, gallery opening at the
+first card, context loss and reload. Scoped lint and the motion/interaction
+scripts passed. Production build and physical-device FPS were not revalidated.

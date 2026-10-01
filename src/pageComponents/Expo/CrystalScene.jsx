@@ -124,12 +124,15 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
       <Canvas dpr={dpr} frameloop={active ? "always" : "never"} camera={{ fov: 32, position: [0, 0, 7], near: .1, far: 30 }} gl={{ alpha: true, antialias: true, powerPreference: "low-power" }} onCreated={({ gl }) => { gl.setClearColor(0, 0); gl.toneMapping = NoToneMapping; gl.transmissionResolutionScale = .75; }} fallback={null}>
         <ContextEvents onFailure={onFailure} />
         <RenderBudget compact={compact} />
-        <Suspense fallback={null}><SceneEnvironment shared={!!journey} /></Suspense>
         <ambientLight intensity={.08} />
         <directionalLight position={[-3, 4, 3]} color="#7bbaff" intensity={.6} />
         <pointLight position={[1.8, -1.2, 1]} color="#ee49cf" intensity={4} distance={5} decay={2} />
-        <Suspense fallback={null}><CrystalModel target={target} compact={compact} onReady={onReady} onMood={reportMood} journey={journey} onProject={onProject} /></Suspense>
-        {journey && <Suspense fallback={null}><ConclaveVeil journey={journey} /></Suspense>}
+        {/* Readiness includes every asset needed for the entrance, not just the shell. */}
+        <Suspense fallback={null}>
+          <SceneEnvironment shared={!!journey} />
+          <CrystalModel target={target} compact={compact} onReady={onReady} onMood={reportMood} journey={journey} onProject={onProject} />
+          {journey && <ConclaveVeil journey={journey} />}
+        </Suspense>
       </Canvas>
       <span ref={feedback} aria-live='polite' style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)' }} />
     </div>

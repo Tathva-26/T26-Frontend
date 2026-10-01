@@ -258,7 +258,9 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     glass.current.envMapIntensity = 1.7 + hover * .25
     glass.current.roughness = .045 - hover * .012
     body.scale.setScalar(1 + hover * .025 + pulse * .012)
-    travel.current.visible = !pose || pose.opacity > .005
+    // Warm the hidden canvas once so GPU upload/readiness can finish before entry.
+    // After that first render, offscreen/transparent journey poses stay hidden.
+    travel.current.visible = !started.current || !pose || pose.opacity > .005
     const breath = Math.sin(time * 1.15) * .065 + Math.sin(time * .47) * .025
     glowMaterial.current.opacity = .8 + (breath + hover * .12 + chargeLevel * .15 + (awake ? .25 : 0)) * influence + Math.sin((pose?.exit ?? 0) * Math.PI) * .2
     // Press feedback lives on the inner shell and its fractures, never a screen-space halo.
