@@ -119,6 +119,9 @@ export default function Footer() {
           letter-spacing: 0;
           color: transparent;
           -webkit-text-stroke: 1.5px #444444;
+          cursor: default;
+          -webkit-user-select: none;
+          user-select: none;
         }
         .footer-panel-shape-mobile {
           display: none;
@@ -180,7 +183,8 @@ export default function Footer() {
               fontFamily="'Akira Expanded', 'Anton', sans-serif"
               fontWeight={800}
               measureRef={headlineRef}
-              radius={120}
+              radius={132}
+              spread={1.4}
               zIndex={-1}
             />
           </h2>
