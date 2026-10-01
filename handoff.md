@@ -58,6 +58,6 @@ Run:
 - `node scripts/check-expo-motion.mjs`
 - `node scripts/check-crystal-interaction.mjs`
 
-These passed in the previous session. Browser checks covered desktop, tablet, phone, short landscape, touch tap versus swipe, drag cancellation, keyboard, Close/Escape, focus, long content, reduced motion, simulated WebGL failure, and gallery Placeholder 01. Physical mobile FPS remains unmeasured.
+These passed in the previous session. Browser checks covered desktop, tablet, phone, short landscape, touch tap versus swipe,   drag cancellation, keyboard, Close/Escape, focus, long content, reduced motion, simulated WebGL failure, and gallery Placeholder 01. Physical mobile FPS remains unmeasured.
 
 The latest production build was not verified: existing Google Fonts requests failed without network; a retry encountered Windows EPERM on a generated `.next/build` file while the dev server used `.next`. Avoid deleting user-owned build files or stopping their server without reason.
