@@ -41,6 +41,9 @@ const FooterLink = memo(function FooterLink({ label }) {
   const textRef = useRef(null)
   const { contextSafe } = useGSAP()
 
+  // contextSafe wraps an event handler that only reads refs when the
+  // pointer event actually fires, never during render.
+  // eslint-disable-next-line react-hooks/refs
   const onEnter = contextSafe((e) => {
     // Touch browsers fire synthetic pointerenter/mouseenter on tap with no
     // matching leave until the next tap elsewhere, which left the hover
@@ -62,6 +65,7 @@ const FooterLink = memo(function FooterLink({ label }) {
     })
   })
 
+  // eslint-disable-next-line react-hooks/refs
   const onLeave = contextSafe((e) => {
     if (e.pointerType && e.pointerType !== 'mouse') return
     gsap.to(textRef.current, {

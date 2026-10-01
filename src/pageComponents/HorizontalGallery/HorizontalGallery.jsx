@@ -447,7 +447,7 @@ export default function HorizontalGallery() {
                         md:mb-6
                       "
                     >
-                      "{group.quote}"
+                      &ldquo;{group.quote}&rdquo;
                     </p>
                   )}
 
@@ -492,7 +492,7 @@ export default function HorizontalGallery() {
                         md:mt-6
                       "
                     >
-                      "{group.quote}"
+                      &ldquo;{group.quote}&rdquo;
                     </p>
                   )}
                 </div>
@@ -580,7 +580,7 @@ export default function HorizontalGallery() {
                   {/* TOP QUOTE */}
                   {isTopQuote && group.quote && (
                     <p className="font-serif italic font-light text-neutral-200 text-center leading-relaxed text-base px-4 max-w-xs sm:max-w-sm">
-                      "{group.quote}"
+                      &ldquo;{group.quote}&rdquo;
                     </p>
                   )}
 
@@ -599,7 +599,7 @@ export default function HorizontalGallery() {
                   {/* BOTTOM QUOTE */}
                   {!isTopQuote && group.quote && (
                     <p className="font-serif italic font-light text-neutral-200 text-center leading-relaxed text-base px-4 max-w-xs sm:max-w-sm">
-                      "{group.quote}"
+                      &ldquo;{group.quote}&rdquo;
                     </p>
                   )}
                 </div>
