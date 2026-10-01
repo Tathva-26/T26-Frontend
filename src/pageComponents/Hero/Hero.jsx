@@ -52,7 +52,7 @@ const PORTAL_FRAME = {
 // ---------------------------------------------------------------------
 const LAYOUT = {
     background: {
-        driftY: -1, scaleTo: 1.02,
+        driftY: -1, scaleFrom: 1.08, scaleTo: 1.1, // scaleFrom = zoom at the start of the scroll (default 1)
         z: 0, zLift: 0,
     },
     island: {
@@ -98,8 +98,8 @@ const MOTION = {
   ground: { scrub: 0.4, ease: 'power1.out' },
   bgrocks: { scrub: 0.45, ease: 'power1.inOut' },
   glyph: { scrub: 0.6, ease: 'power2.out' },
-  portal: { scrub: 0.18, ease: 'none' },
-  girl: { scrub: 0.3, ease: 'power1.inOut' },
+  portal: { scrub: 0.9, ease: 'none' },
+  girl: { scrub: 0.9, ease: 'none' },
   // chrome: { scrub: 0.0001, ease: "power1.out" }, // UNUSED: chrome fade uses quickSetter, not MOTION
 }
 
@@ -122,7 +122,8 @@ const CHROME = {
 const LAYOUT_MOBILE = {
   background: {
     driftY: -1,
-    scaleTo: 1.02,
+    scaleFrom: 1.08,
+    scaleTo: 1.1,
     z: 0,
     zLift: 0,
   },
@@ -643,7 +644,7 @@ export const Hero = ({
       // mask (the "clip") grows around it. Both are transform-only, so it stays on the compositor.
       const createParallaxLayer = (ref, config, motion, fadeAt, counterRef) => {
         if (!ref.current) return
-        const fromVars = { scale: 1, x: 0, y: 0 }
+        const fromVars = { scale: config.scaleFrom ?? 1, x: 0, y: 0 }
         const toVars = { duration: 1, ease: motion.ease }
         if (config.xPercent !== undefined) {
           fromVars.xPercent = config.xPercent
@@ -739,7 +740,8 @@ export const Hero = ({
           const vr = viewportRef.current.getBoundingClientRect()
           return { ox: sr.left - vr.left, oy: sr.top - vr.top }
         }
-        const m = { left: 0, top: 0, w: 1, h: 1, ox: 0, oy: 0, vw: 1, vh: 1, target: 2 }
+        // sw/sh = scene size in scene-local px (used to keep the clip-path coordinates small)
+        const m = { left: 0, top: 0, w: 1, h: 1, ox: 0, oy: 0, vw: 1, vh: 1, sw: 1, sh: 1, target: 2 }
         const measure = () => {
           const portalEl = portalRef.current
           if (!portalEl) return
@@ -749,6 +751,8 @@ export const Hero = ({
           m.h = portalEl.offsetHeight
           m.vw = viewportRef.current.clientWidth
           m.vh = viewportRef.current.clientHeight
+          m.sw = sceneRef.current.offsetWidth
+          m.sh = sceneRef.current.offsetHeight
           const o = sceneOrigin()
           m.ox = o.ox
           m.oy = o.oy
@@ -832,10 +836,19 @@ export const Hero = ({
             wrap.style.visibility = 'visible'
           }
 
-          // outer rect + inner rect, even-odd fill = a rectangular hole
-          const B = 20000
+          // Outer rect (just past the scene) + inner rect (the hole), even-odd = a rectangular hole.
+          // Kept as two separate sub-paths with SMALL coordinates (the old ±20000px polygon joined
+          // them with a zero-width bridge, which Chrome rasterises badly on a scaled, animated layer).
+          // The hole is clamped to the outer rect; anything beyond it is off-scene anyway.
+          const P = 50
+          const clampX = (v) => Math.min(m.sw + P, Math.max(-P, v))
+          const clampY = (v) => Math.min(m.sh + P, Math.max(-P, v))
+          const X0 = clampX(x0)
+          const X1 = clampX(x1)
+          const Y0 = clampY(y0)
+          const Y1 = clampY(y1)
           const f = (n) => n.toFixed(1)
-          const clip = `polygon(evenodd, ${-B}px ${-B}px, ${B}px ${-B}px, ${B}px ${B}px, ${-B}px ${B}px, ${-B}px ${-B}px, ${f(x0)}px ${f(y0)}px, ${f(x1)}px ${f(y0)}px, ${f(x1)}px ${f(y1)}px, ${f(x0)}px ${f(y1)}px, ${f(x0)}px ${f(y0)}px)`
+          const clip = `path(evenodd, "M${-P} ${-P}H${m.sw + P}V${m.sh + P}H${-P}Z M${f(X0)} ${f(Y0)}H${f(X1)}V${f(Y1)}H${f(X0)}Z")`
           if (clip !== lastClip) {
             lastClip = clip
             wrap.style.clipPath = clip
@@ -1153,11 +1166,25 @@ export const Hero = ({
                         */}
 
             {/* Everything behind the portal. A rectangular hole is clipped out of this wrapper
-                (see syncPortalFrame) so the real Frame underneath shows through the portal. */}
+                (see syncPortalFrame) so the real Frame underneath shows through the portal.
+                The first child is a dark backing that BLEEDS 40px past every edge of the scene
+                (the viewport clips it). The scene is a scaled layer, so its own top edge can land
+                on a fractional pixel and anti-alias into a thin see-through row that leaks the
+                Frame; with the bleed, the screen edge is never the scene edge. The hole is cut out
+                of it too (outer clip rect is 50px past the scene), so the portal still shows the Frame. */}
             <div
               ref={backLayersRef}
-              style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 1,
+                pointerEvents: 'none',
+              }}
             >
+            <div
+              aria-hidden='true'
+              style={{ position: 'absolute', inset: '-40px', background: '#000' }}
+            />
             <div
               ref={backgroundRef}
               className={styles.background}
