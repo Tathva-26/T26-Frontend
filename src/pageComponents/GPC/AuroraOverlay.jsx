@@ -6,14 +6,20 @@ import { mountAuroraOverlay } from "@/lib/nightScene/auroraOverlay";
 /**
  * Animated aurora light layered on top of the real banner.png photo via
  * mix-blend-mode: screen - adds moving light without redrawing the scene.
+ * `paused` stops it while something else (the game overlay) covers it.
  */
-export default function AuroraOverlay({ getProgress }) {
+export default function AuroraOverlay({ paused = false }) {
   const canvasRef = useRef(null);
+  const pausedRef = useRef(paused);
 
   useEffect(() => {
-    const stop = mountAuroraOverlay(canvasRef.current, { getProgress });
+    pausedRef.current = paused;
+  }, [paused]);
+
+  useEffect(() => {
+    const stop = mountAuroraOverlay(canvasRef.current, { isPaused: () => pausedRef.current });
     return stop;
-  }, [getProgress]);
+  }, []);
 
   return (
     <canvas

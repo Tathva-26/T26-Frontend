@@ -1,13 +1,11 @@
 "use client";
 
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import { SPRITE_PATHS } from "@/pageComponents/GPC/gpcConfig";
+import { SPRITE_PATHS } from "@/lib/spaceShooter/constants";
 import { createSpaceShooter } from "@/lib/spaceShooter/engine";
+import { haptics } from "@/lib/haptics";
 
-const SpaceShooterCanvas = forwardRef(function SpaceShooterCanvas(
-  { active, interactive = true, onStats },
-  ref
-) {
+const SpaceShooterCanvas = forwardRef(function SpaceShooterCanvas({ active, onStats }, ref) {
   const canvasRef = useRef(null);
   const hostRef = useRef(null);
   const gameRef = useRef(null);
@@ -22,13 +20,17 @@ const SpaceShooterCanvas = forwardRef(function SpaceShooterCanvas(
 
     const game = createSpaceShooter(canvas, {
       onStats,
+      onHit: () => haptics.select(),
       spritePaths: SPRITE_PATHS,
     });
 
     gameRef.current = game;
 
+    // clientWidth and ResizeObserver report the layout size, which the
+    // overlay's zoom transform doesn't change - so the canvas is sized for
+    // the full console even though it mounts while that zoom is tiny.
     const resize = () => {
-      const width = host.getBoundingClientRect().width;
+      const width = host.clientWidth;
       if (width > 0) {
         game.resize(width);
       }
@@ -46,13 +48,11 @@ const SpaceShooterCanvas = forwardRef(function SpaceShooterCanvas(
   }, [onStats]);
 
   useEffect(() => {
-    gameRef.current?.setPaused(!active || !interactive);
-  }, [active, interactive]);
+    gameRef.current?.setPaused(!active);
+  }, [active]);
 
   useImperativeHandle(ref, () => ({
     start: () => gameRef.current?.start(),
-    enableTilt: () => gameRef.current?.enableTilt(),
-    disableTilt: () => gameRef.current?.disableTilt(),
     setFiring: (isDown) => gameRef.current?.setFiring(isDown),
     setJoystick: (x, y) => gameRef.current?.setJoystick(x, y),
   }));

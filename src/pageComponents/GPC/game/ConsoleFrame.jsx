@@ -9,26 +9,31 @@ import { RULES } from "@/lib/spaceShooter/constants";
 import { ASSETS, CONSOLE_SCREEN_INSET, EXIT_BUTTON } from "@/pageComponents/GPC/gpcConfig";
 
 /**
- * Mobile control placement, as % of the whole console image.
- * Tweak these until they sit nicely on the console body.
- *   left / right / bottom: offset from that edge
- *   size: width of the control (square)
+ * Touch control placement on the console body.
+ *   left / right / bottom: offset from that edge, as % of the console
+ *   size: width of the control (square), as % of the console's width
+ *   min: smallest it may get (px), so it stays easy to hit on a small phone
  */
 const CONTROLS = {
-  joystick: { left: 9, bottom: 5, size: 20 },
-  fire: { right: 11, bottom: 7, size: 13 },
+  joystick: { left: 9, bottom: 5, size: 20, min: 64 },
+  fire: { right: 11, bottom: 7, size: 13, min: 48 },
 };
 
-function Message({ phase, isMobile }) {
+// Sizes below use container units: `cqw` is 1% of the nearest container's
+// width - the screen for the HUD, the whole console for the controls - so
+// everything scales with the console and is clamped to stay readable.
+const HUD_TEXT = "text-[clamp(8px,1.5cqw,18px)]";
+
+function Message({ phase, touchControls }) {
   const isOver = phase === "over";
   return (
     <div
-      className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center"
+      className="absolute inset-x-0 top-1/2 -translate-y-1/2 px-[3cqw] text-center"
       style={{ fontFamily: "var(--font-pixel)" }}
     >
-      {isOver && <p className="text-[22px] leading-relaxed tracking-widest">GAME OVER</p>}
-      <p className="text-[11px] leading-relaxed tracking-wider text-white/80">
-        {isMobile
+      {isOver && <p className="text-[clamp(13px,2.9cqw,34px)] leading-relaxed tracking-widest">GAME OVER</p>}
+      <p className={`${HUD_TEXT} leading-relaxed tracking-wider text-white/80`}>
+        {touchControls
           ? isOver
             ? "TAP TO RETRY"
             : "TAP TO PLAY"
@@ -37,8 +42,8 @@ function Message({ phase, isMobile }) {
             : "PRESS SPACE TO START"}
       </p>
       {!isOver && (
-        <p className="mt-4 text-[9px] leading-loose tracking-wider text-white/60">
-          {isMobile ? (
+        <p className="mt-[2cqw] text-[clamp(7px,1.2cqw,15px)] leading-loose tracking-wider text-white/60">
+          {touchControls ? (
             <>
               STICK TO MOVE
               <br />
@@ -46,7 +51,7 @@ function Message({ phase, isMobile }) {
             </>
           ) : (
             <>
-              ARROW KEYS TO MOVE
+              ARROWS OR WASD TO MOVE
               <br />
               SPACE TO SHOOT
             </>
@@ -57,31 +62,32 @@ function Message({ phase, isMobile }) {
   );
 }
 
-function Hud({ stats, isMobile }) {
+function Hud({ stats, touchControls }) {
   return (
     <div className="pointer-events-none absolute inset-0 text-white" style={{ fontFamily: "var(--font-pixel)" }}>
-      <div className="absolute left-4 top-3">
+      <div className="absolute left-[max(8px,2cqw)] top-[max(6px,1.5cqw)]">
         <Hearts lives={stats.lives} max={RULES.lives} />
       </div>
-      <p className="absolute right-4 top-3 text-[11px] leading-relaxed tracking-widest">
+      <p className={`absolute right-[max(8px,2cqw)] top-[max(6px,1.5cqw)] ${HUD_TEXT} leading-relaxed tracking-widest`}>
         <span className="text-white/50">HI {String(stats.highScore).padStart(5, "0")}</span>{" "}
         {String(stats.score).padStart(5, "0")}
       </p>
-      {stats.phase !== "playing" && <Message phase={stats.phase} isMobile={isMobile} />}
+      {stats.phase !== "playing" && <Message phase={stats.phase} touchControls={touchControls} />}
     </div>
   );
 }
 
 /**
- * The real, playable game: screen content, HUD, exit button, and (on mobile)
- * retro arcade controls mounted on the console body below the screen.
+ * The real, playable game: screen content, HUD, exit button, and (for touch
+ * players) retro arcade controls mounted on the console body below the screen.
  */
-export default function ConsoleFrame({ active, stats, onStats, onExit, isMobile }) {
+export default function ConsoleFrame({ active, stats, onStats, onExit, touchControls }) {
   const gameRef = useRef(null);
+  const waiting = stats.phase !== "playing";
 
-  const handleScreenTap = () => {
-    if (!isMobile || stats.phase === "playing") return;
-    gameRef.current?.start();
+  // Tapping or clicking the screen starts a round, whatever the device.
+  const handleScreenPress = () => {
+    if (waiting) gameRef.current?.start();
   };
 
   const fire = (isDown) => gameRef.current?.setFiring(isDown);
@@ -89,27 +95,28 @@ export default function ConsoleFrame({ active, stats, onStats, onExit, isMobile 
   return (
     <>
       <div
-        className="absolute overflow-hidden rounded-[18px]"
+        className={`@container absolute overflow-hidden ${waiting ? "cursor-pointer" : ""}`}
         style={{
           left: `${CONSOLE_SCREEN_INSET.left}%`,
           top: `${CONSOLE_SCREEN_INSET.top}%`,
           width: `${CONSOLE_SCREEN_INSET.width}%`,
           height: `${CONSOLE_SCREEN_INSET.height}%`,
+          borderRadius: CONSOLE_SCREEN_INSET.radius,
         }}
-        onClick={handleScreenTap}
+        onClick={handleScreenPress}
       >
         <SpaceShooterCanvas ref={gameRef} active={active} onStats={onStats} />
-        <Hud stats={stats} isMobile={isMobile} />
+        <Hud stats={stats} touchControls={touchControls} />
       </div>
 
-      {isMobile && (
+      {touchControls && (
         <>
           <div
             className="absolute"
             style={{
               left: `${CONTROLS.joystick.left}%`,
               bottom: `${CONTROLS.joystick.bottom}%`,
-              width: `${CONTROLS.joystick.size}%`,
+              width: `max(${CONTROLS.joystick.size}cqw, ${CONTROLS.joystick.min}px)`,
               aspectRatio: "1",
             }}
           >
@@ -123,10 +130,10 @@ export default function ConsoleFrame({ active, stats, onStats, onExit, isMobile 
             style={{
               right: `${CONTROLS.fire.right}%`,
               bottom: `${CONTROLS.fire.bottom}%`,
-              width: `${CONTROLS.fire.size}%`,
+              width: `max(${CONTROLS.fire.size}cqw, ${CONTROLS.fire.min}px)`,
               aspectRatio: "1",
               fontFamily: "var(--font-pixel)",
-              fontSize: "clamp(7px, 1.6vw, 12px)",
+              fontSize: "clamp(8px, 2.4cqw, 22px)",
               letterSpacing: "0.05em",
               background: "radial-gradient(circle at 35% 30%, #ff8a8a 0%, #e02020 45%, #9a0000 100%)",
               border: "3px solid #3a0000",
@@ -143,6 +150,7 @@ export default function ConsoleFrame({ active, stats, onStats, onExit, isMobile 
               fire(false);
             }}
             onPointerCancel={() => fire(false)}
+            onLostPointerCapture={() => fire(false)}
             onContextMenu={(event) => event.preventDefault()}
           >
             FIRE
@@ -150,19 +158,25 @@ export default function ConsoleFrame({ active, stats, onStats, onExit, isMobile 
         </>
       )}
 
+      {/* The button is the hit area; the icon inside it can be smaller. */}
       <button
         type="button"
         onClick={onExit}
         aria-label="Exit game"
-        className="absolute transition-transform hover:scale-110 active:scale-95"
+        className="group/exit absolute flex items-start justify-end"
         style={{
           right: `${EXIT_BUTTON.right}%`,
           top: `${EXIT_BUTTON.top}%`,
-          width: `${EXIT_BUTTON.size}%`,
+          width: `max(${EXIT_BUTTON.size}cqw, ${EXIT_BUTTON.minHit}px)`,
           aspectRatio: "1",
         }}
       >
-        <Image src={ASSETS.exit} alt="" fill priority sizes="48px" className="object-cover" />
+        <span
+          className="relative block aspect-square transition-transform group-hover/exit:scale-110 group-active/exit:scale-95"
+          style={{ width: `max(${EXIT_BUTTON.size}cqw, ${EXIT_BUTTON.minIcon}px)` }}
+        >
+          <Image src={ASSETS.exit} alt="" fill loading="eager" sizes="96px" className="object-cover" />
+        </span>
       </button>
     </>
   );

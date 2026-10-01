@@ -1,15 +1,10 @@
+import { GAME, SPRITE_PATHS } from "@/lib/spaceShooter/constants";
 import { randomBetween } from "@/lib/spaceShooter/random";
 
-// Logical drawing resolution. Matches the console screen cutout's own aspect
-// ratio (~1.553), so it fills the box with a single uniform scale, no stretch.
-const W = 800;
-const H = 515;
-
-const SPRITE_PATHS = {
-  ship: "/images/GPC/space-shooter/spaceship.png",
-  enemy: "/images/GPC/space-shooter/enemy2.png",
-  bullet: "/images/GPC/space-shooter/bullet.png",
-};
+// Logical drawing resolution: the same box the real game draws in, so it
+// fills the screen cutout with a single uniform scale, no stretch.
+const W = GAME.width;
+const H = GAME.height;
 
 const STAR_COUNT = 90;
 const ENEMY_COUNT = 4;
@@ -18,6 +13,7 @@ const ENEMY_SIZE = 38;
 const BULLET = { width: 4, height: 14, speed: 340 };
 const FIRE_INTERVAL = [0.5, 1.0]; // seconds between shots, randomized
 const MAX_DELTA = 0.05; // clamp dt so a backgrounded tab doesn't jump on return
+const MAX_PIXEL_RATIO = 3;
 
 const loadSprite = (src) => Object.assign(new Image(), { src });
 
@@ -36,6 +32,8 @@ const createEnemy = (startAboveScreen) => ({
   speed: randomBetween(55, 110),
 });
 
+// Centre-to-centre test: things here are positioned by their centre, unlike
+// the real game's top-left boxes in spaceShooter/collision.js.
 const overlaps = (a, b, sizeA, sizeB) =>
   Math.abs(a.x - b.x) < (sizeA + sizeB) / 2 && Math.abs(a.y - b.y) < (sizeA + sizeB) / 2;
 
@@ -56,6 +54,13 @@ const overlaps = (a, b, sizeA, sizeB) =>
  * drawn on top with a transparent clear) as its background, so the two
  * ships/enemy sets don't visually collide.
  *
+ * `options.isPaused`, if given, is called once per frame. While it returns
+ * true nothing is updated or drawn, e.g. while the game overlay covers this.
+ *
+ * `options.getScale`, if given, returns how much an ancestor's CSS transform
+ * enlarges this canvas on screen (the hero Stage's fit scale), so the backing
+ * store is sized for what is actually displayed instead of the layout size.
+ *
  * Returns a cleanup function.
  */
 export function mountConsoleScreen(canvas, options = {}) {
@@ -63,6 +68,8 @@ export function mountConsoleScreen(canvas, options = {}) {
   const spill = options.spill ?? null;
   const sctx = spill?.getContext("2d") ?? null;
   const isBackgroundOnly = options.isBackgroundOnly ?? (() => false);
+  const isPaused = options.isPaused ?? (() => false);
+  const getScale = options.getScale ?? (() => 1);
   const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
   const sprites = {
@@ -80,21 +87,23 @@ export function mountConsoleScreen(canvas, options = {}) {
   let lastTime = 0;
   let frameId = 0;
   let running = false;
-  let dpr = 1;
+  let ratio = 0;
   let cw = 0;
   let ch = 0;
 
   function resize() {
-    dpr = Math.min(2, window.devicePixelRatio || 1);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const nextRatio = Math.min(MAX_PIXEL_RATIO, dpr * (getScale() || 1));
     // Use offsetWidth/offsetHeight to avoid CSS transform complications
     // from ancestor animations during measurement.
     const w = Math.max(1, canvas.offsetWidth);
     const h = Math.max(1, canvas.offsetHeight);
-    if (w === cw && h === ch) return;
+    if (w === cw && h === ch && nextRatio === ratio) return;
     cw = w;
     ch = h;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
+    ratio = nextRatio;
+    canvas.width = Math.round(w * ratio);
+    canvas.height = Math.round(h * ratio);
     const scale = Math.min(canvas.width / W, canvas.height / H);
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     if (spill) {
@@ -225,6 +234,7 @@ export function mountConsoleScreen(canvas, options = {}) {
     frameId = requestAnimationFrame(frame);
     const dt = Math.min((time - lastTime) / 1000, MAX_DELTA);
     lastTime = time;
+    if (isPaused()) return;
     t += dt;
     resize();
     drawFrame(dt);

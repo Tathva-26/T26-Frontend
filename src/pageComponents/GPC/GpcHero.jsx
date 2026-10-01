@@ -1,52 +1,52 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import Stage from "@/pageComponents/GPC/Stage";
+import { useCallback, useEffect, useRef, useState } from "react";
 import GameOverlay from "@/pageComponents/GPC/game/GameOverlay";
 import HeroLayers from "./HeroLayers";
 import HeroLayersMobile from "./mobile/HeroLayersMobile";
-import { useFitScale } from "@/hooks/useFitScale";
-import { useIsMobile } from "@/hooks/useIsMobile";
-import { STAGE } from "@/pageComponents/GPC/gpcConfig";
-import { orbitron, hammersmithOne, pressStart2P } from "@/pageComponents/GPC/gpcFonts";
+import { useGpcLayout } from "@/pageComponents/GPC/hooks/useGpcLayout";
+import { useTouchControls } from "@/pageComponents/GPC/hooks/useTouchControls";
+import { pressStart2P } from "@/pageComponents/GPC/gpcFonts";
 import "@/pageComponents/GPC/gpc.css";
 
 /**
- * One screen, no scrolling. html/body are overflow:hidden in globals.css and
- * we leave that alone, so no scroll-unlock or scroll timeline is needed.
+ * One screen, no scrolling. The section is always rendered at full height -
+ * on the server and on the very first client render too - so the page around
+ * it never sees it at zero height; only its contents wait for the layout to
+ * be measured. The game overlay sits outside the layout switch, so resizing
+ * or rotating between layouts doesn't restart a game in progress.
  */
 export default function GpcHero() {
+  const sectionRef = useRef(null);
   const consoleRef = useRef(null);
+  const wasOpenRef = useRef(false);
   const [gameOpen, setGameOpen] = useState(false);
 
-  const isMobile = useIsMobile();
-  const scale = useFitScale(STAGE);
+  const layout = useGpcLayout(sectionRef);
+  const touch = useTouchControls();
 
   const openGame = useCallback(() => setGameOpen(true), []);
   const closeGame = useCallback(() => setGameOpen(false), []);
 
-  const fontVars = `${orbitron.variable} ${hammersmithOne.variable} ${pressStart2P.variable}`;
+  // Hand keyboard focus back to the console once it is visible again.
+  useEffect(() => {
+    if (wasOpenRef.current && !gameOpen) {
+      consoleRef.current?.querySelector("button")?.focus({ preventScroll: true });
+    }
+    wasOpenRef.current = gameOpen;
+  }, [gameOpen]);
 
-  if (isMobile === null) return null;
-
-  if (isMobile) {
-    return (
-      <div className={fontVars}>
-        <HeroLayersMobile consoleRef={consoleRef} onPlay={openGame} />
-        <GameOverlay open={gameOpen} originRef={consoleRef} onClosed={closeGame} isMobile={isMobile} />
-      </div>
-    );
-  }
+  const hero = { consoleRef, onPlay: openGame, consoleHidden: gameOpen, paused: gameOpen, touch };
 
   return (
     <section
-      className={`relative flex h-dvh w-full items-center justify-center overflow-hidden bg-[#101010] ${fontVars}`}
+      ref={sectionRef}
+      className={`gpc-section relative flex h-dvh w-full items-center justify-center overflow-hidden bg-[#101010] ${pressStart2P.variable}`}
     >
-      <Stage {...STAGE} scale={scale}>
-        <HeroLayers consoleRef={consoleRef} onPlay={openGame} />
-      </Stage>
+      {layout?.mode === "stage" && <HeroLayers scale={layout.scale} {...hero} />}
+      {layout?.mode === "stacked" && <HeroLayersMobile {...hero} />}
 
-      <GameOverlay open={gameOpen} originRef={consoleRef} onClosed={closeGame} isMobile={isMobile} />
+      <GameOverlay open={gameOpen} originRef={consoleRef} onClosed={closeGame} touchControls={touch} />
     </section>
   );
 }

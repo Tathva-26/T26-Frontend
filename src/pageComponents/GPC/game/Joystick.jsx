@@ -1,8 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-
-const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+import { clamp } from "@/lib/spaceShooter/math";
 
 /**
  * Retro arcade joystick. Fills whatever box the parent gives it (the parent
@@ -75,6 +74,7 @@ export default function Joystick({ onChange }) {
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
+      onLostPointerCapture={handlePointerUp}
     >
       {/* crosshair grooves */}
       <div className="absolute left-1/2 top-[12%] h-[76%] w-[3px] -translate-x-1/2 bg-black/50" />
