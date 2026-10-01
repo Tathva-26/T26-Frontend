@@ -56,7 +56,9 @@ function RenderBudget({ compact }) {
 }
 
 export default function CrystalScene({ active, onReady, onFailure, journey, onProject }) {
-  const target = useRef({ tiltX: 0, tiltY: 0, x: 0, y: 0, active: false });
+  const target = useRef({ tiltX: 0, tiltY: 0, x: 0, y: 0, active: false, activation: 0, keyboard: false });
+  const feedback = useRef(null);
+  const reportMood = (awake) => { if (feedback.current) feedback.current.textContent = awake ? 'The robot awakens.' : ''; };
   const pointer = useRef(null);
   const [dpr, setDpr] = useState(1);
   const [compact, setCompact] = useState(true);
@@ -64,7 +66,7 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
 
   const reset = () => {
     pointer.current = null;
-    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: false });
+    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: false, keyboard: false });
   };
   const update = (event) => {
     const touch = event.pointerType !== "mouse";
@@ -74,29 +76,34 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
     const local = localPointer(event.clientX, event.clientY, controlsRect(event.currentTarget));
     const start = pointer.current?.start;
     const drag = start ? { x: local.x - start.x, y: local.y - start.y } : { x: 0, y: 0 };
+    if (pointer.current && Math.hypot(event.clientX - pointer.current.clientX, event.clientY - pointer.current.clientY) > 8) pointer.current.moved = true;
     const { tiltX, tiltY } = interactionTargets(local, drag, touch);
-    Object.assign(target.current, { tiltX, tiltY, x: point.x, y: point.y, active: true });
+    Object.assign(target.current, { tiltX, tiltY, x: point.x, y: point.y, active: true, keyboard: false });
   };
   const down = (event) => {
     if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
-    pointer.current = { id: event.pointerId, start: localPointer(event.clientX, event.clientY, controlsRect(event.currentTarget)) };
+    pointer.current = { id: event.pointerId, clientX: event.clientX, clientY: event.clientY, moved: false, start: localPointer(event.clientX, event.clientY, controlsRect(event.currentTarget)) };
     event.currentTarget.setPointerCapture(event.pointerId);
     update(event);
   };
   const keyboard = (event) => {
     if (event.key === 'Escape') { reset(); return; }
-    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    const activate = event.key === 'Enter' || event.key === ' ';
+    if (!activate && !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
     event.preventDefault();
     const slot = controlsRect(event.currentTarget);
     const point = localPointer(slot.left + slot.width / 2, slot.top + slot.height / 2, event.currentTarget.getBoundingClientRect());
-    Object.assign(target.current, { x: point.x, y: point.y, active: true,
+    if (activate && !event.repeat) target.current.activation++;
+    Object.assign(target.current, { x: point.x, y: point.y, active: true, keyboard: true,
       tiltX: Math.max(-.15, Math.min(.15, target.current.tiltX + (event.key === 'ArrowUp' ? -.035 : event.key === 'ArrowDown' ? .035 : 0))),
       tiltY: Math.max(-.22, Math.min(.22, target.current.tiltY + (event.key === 'ArrowLeft' ? -.045 : event.key === 'ArrowRight' ? .045 : 0))) });
   };
   const release = (event) => {
     if (pointer.current && pointer.current.id !== event.pointerId) return;
+    if (event.type === 'pointerup' && pointer.current && !pointer.current.moved) target.current.activation++;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-    reset();
+    pointer.current = null;
+    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: event.type === 'pointerup', keyboard: false });
   };
 
   useEffect(() => {
@@ -121,9 +128,10 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
         <ambientLight intensity={.08} />
         <directionalLight position={[-3, 4, 3]} color="#7bbaff" intensity={.6} />
         <pointLight position={[1.8, -1.2, 1]} color="#ee49cf" intensity={4} distance={5} decay={2} />
-        <Suspense fallback={null}><CrystalModel target={target} compact={compact} onReady={onReady} journey={journey} onProject={onProject} /></Suspense>
+        <Suspense fallback={null}><CrystalModel target={target} compact={compact} onReady={onReady} onMood={reportMood} journey={journey} onProject={onProject} /></Suspense>
         {journey && <Suspense fallback={null}><ConclaveVeil journey={journey} /></Suspense>}
       </Canvas>
+      <span ref={feedback} aria-live='polite' style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)' }} />
     </div>
   );
 }

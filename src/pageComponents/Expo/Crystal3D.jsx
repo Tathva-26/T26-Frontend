@@ -54,7 +54,7 @@ export default function Crystal3D({ journey, onProject }) {
   return (
     <div ref={wrapper} className={`${styles.crystal} ${ready && !failed && !reduced ? styles.ready : ""}`} data-crystal-state={failed ? "fallback" : reduced ? "reduced-motion" : ready ? "ready" : "loading"}>
       <Image className={styles.fallback} src="/images/expo/crystal-fallback.png" alt="A cyan Tathva robot glowing inside a dark, faceted crystal" width={534} height={703} priority unoptimized />
-      <span id="crystal-instructions" className={styles.hint}>Move your pointer or gently drag the crystal to tilt it. Vertical swipes scroll the page. When focused, use arrow keys to tilt and Escape to reset.</span>
+      <span id="crystal-instructions" className={styles.hint}>Move your pointer or gently drag the crystal to tilt it. Trace its fractures or tap three times to wake the robot. Vertical swipes scroll the page. When focused, arrows tilt, Enter or Space activates, and Escape resets.</span>
       {!failed && !reduced && requested && (
         <div className={styles.canvas}>
           <SceneBoundary onFailure={onFailure}>
