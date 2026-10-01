@@ -1,5 +1,6 @@
 'use client'
 import React from 'react'
+import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -10,19 +11,15 @@ const person1 = '/images/techconclave/person2.png'
 const person2 = '/images/techconclave/person1.png'
 const robot = '/images/techconclave/robot.png'
 const logo = '/images/techconclave/logo.png'
-const bigStar = '/images/techconclave/bigstar.png'
 
 /*
   ── HOW THIS FILE IS ORGANISED ───────────────────────────────────────────
   DesktopPoster  → your existing, pixel-tuned layout for 1280×800 / 1440×900.
                    Untouched. Shown only at widths >= 1025px.
-  MobilePoster   → a new layout for tablet/phone. Instead of scaling the
-                   fixed 1413×753 canvas down (which was making things
-                   cramped/overlapping on small screens), it reflows the
-                   same images/text into a flex-wrap stack: a header row,
-                   a hero row, and a people grid that wraps from 3 → 2
-                   columns as the screen narrows.
-  Both are rendered; CSS `display` (via matching media queries) shows only
+  MobilePoster   → a new layout for phones (< 640px). It reflows the same
+                   images/text into a flex-wrap stack.
+  TabletPoster   → layout for 640px – 1024px.
+  All are rendered; CSS `display` (via matching media queries) shows only
   one at a time, so there's no layout-shift/hydration flicker.
 
   SPEAKER CARDS — every speaker tile (all three layouts) is a `.tc-card`:
@@ -31,12 +28,6 @@ const bigStar = '/images/techconclave/bigstar.png'
     • cursor spotlight   → radial gradient driven by --mx / --my
     • accent ring        → 1.5px #7c3aed border fades in
     • floating badge     → slides/fades in at the bottom-left corner
-  SCROLL DRIFT — while the poster passes through the viewport, the left
-  speaker column drifts up and the right column drifts down. It uses the
-  CSS `translate` property (separate from `transform`), so it never fights
-  the hover lift, and it's transform-only, so no layout box moves. When the
-  poster is centred in the viewport both columns sit at their exact
-  original positions.
   ──────────────────────────────────────────────────────────────────────── */
 
 const FW = 1413
@@ -70,6 +61,30 @@ const manTiles = [
   { color: '#000000', shape: [870, 475, 158, 161], img: [870, 443, 158, 195] },
 ]
 
+/* 5 speakers: 2 purple (row 1), 3 red (row 2 + centered row 3) */
+const centerTile = {
+  color: '#000000',
+  shape: [769, 475, 158, 161], // centred between the two columns, row 3
+  img: [769, 443, 158, 195],
+}
+
+const deskSpeakers = [
+  { tile: womanTiles[0], src: person1, glow: 'purple', col: 'tc-col-left' },
+  { tile: manTiles[0], src: person2, glow: 'purple', col: 'tc-col-right' },
+  { tile: womanTiles[1], src: person1, glow: 'red', col: 'tc-col-left' },
+  { tile: manTiles[1], src: person2, glow: 'red', col: 'tc-col-right' },
+  { tile: centerTile, src: person2, glow: 'red', col: '' },
+]
+
+/* used by both the mobile and tablet flex-wrap grids (2 + 2 + 1) */
+const gridSpeakers = [
+  { ...womanTiles[0], img: person1, glow: 'purple' },
+  { ...manTiles[0], img: person2, glow: 'purple' },
+  { ...womanTiles[1], img: person1, glow: 'red' },
+  { ...manTiles[1], img: person2, glow: 'red' },
+  { ...manTiles[2], img: person2, glow: 'red' },
+]
+
 const Plus = ({ style, rotate = 0 }) => (
   <svg
     className='tc-abs tc-deco'
@@ -81,76 +96,73 @@ const Plus = ({ style, rotate = 0 }) => (
   </svg>
 )
 
-/* ───────────────────────── SCROLL DRIFT HOOK ─────────────────────────
-   Writes --tc-p (-1 → 0 → 1) on the poster's <main>:
-     -1 = poster just entering from the bottom of the viewport
-      0 = poster centred in the viewport (tiles at their original spots)
-      1 = poster leaving through the top
-   Smoothed with a small lerp for an eased, "floating" feel. Only runs
-   while the poster is on screen; hidden layouts (display:none) never
-   intersect, so they cost nothing. */
-function useScrollDrift() {
-  const ref = React.useRef(null)
-
+/* ───────────────────────── FLOAT ON VIEW HOOK ─────────────────────────
+   Adds data-floating="true" on <main> while the poster is on screen.
+   CSS uses that to run the floating animation on the speaker cards. */
+function useFloatOnView(ref) {
   React.useEffect(() => {
     const el = ref.current
     if (!el || typeof window === 'undefined') return undefined
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches)
       return undefined
 
-    let visible = false
-    let raf = 0
-    let current = 0
-    let target = 0
-    let primed = false
-
-    const measure = () => {
-      const r = el.getBoundingClientRect()
-      const vh = window.innerHeight || 1
-      const range = (vh + r.height) / 2 || 1
-      const p = (vh / 2 - (r.top + r.height / 2)) / range
-      target = Math.max(-1, Math.min(1, p))
-      if (!primed) {
-        current = target // no jump on first paint
-        primed = true
-        el.style.setProperty('--tc-p', current.toFixed(4))
-      }
-    }
-
-    // Runs every animation frame while the poster is on screen, instead of
-    // waiting for scroll/resize events. Scroll-event dispatch is where
-    // browsers/devices disagree (nested scroll containers like the tablet
-    // layout's own overflow-y:auto wrapper, devtool device emulation not
-    // always firing a clean resize, etc.) — polling position every frame
-    // sidesteps all of that, it just can't miss an update.
-    const loop = () => {
-      if (!visible) {
-        raf = 0
-        return
-      }
-      measure()
-      current += (target - current) * 0.12
-      if (Math.abs(target - current) < 0.0005) current = target
-      el.style.setProperty('--tc-p', current.toFixed(4))
-      raf = requestAnimationFrame(loop)
-    }
-
-    const io = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting
-      if (visible && !raf) raf = requestAnimationFrame(loop)
-    })
-
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        el.dataset.floating = entry.isIntersecting ? 'true' : 'false'
+      },
+      { threshold: 0.35 },
+    )
     io.observe(el)
-    measure()
-    raf = requestAnimationFrame(loop)
+    return () => io.disconnect()
+  }, [ref])
+}
 
+function usePosterRef() {
+  const ref = React.useRef(null)
+  useFloatOnView(ref)
+  return ref
+}
+
+/* One shared clock drives every card's float, so they always move together.
+   Same motion as the old tc-float: 5s period, 10px travel. On hover/tap/focus
+   a card's float eases out to 0 (steady lift) and eases back in afterwards. */
+function useSyncedFloat() {
+  React.useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+      return undefined
+
+    const PERIOD = 5 // seconds
+    const AMP = 10 // px
+
+    const tick = () => {
+      const t = performance.now() / 1000
+      const y = -(AMP / 2) * (1 - Math.cos((2 * Math.PI * t) / PERIOD))
+      const k = 1 - Math.pow(1 - 0.12, gsap.ticker.deltaRatio(60))
+
+      document.querySelectorAll('.tc-card').forEach((el) => {
+        if (!el.closest('[data-floating="true"]')) {
+          el.style.translate = ''
+          return
+        }
+        let hovered = el.classList.contains('tc-active')
+        try {
+          hovered = hovered || el.matches(':focus-visible')
+        } catch (_) {}
+        const w = el._fw ?? 1
+        const nw = w + ((hovered ? 0 : 1) - w) * k
+        el._fw = nw
+        el.style.translate = `0 ${(y * nw).toFixed(2)}px`
+      })
+    }
+
+    gsap.ticker.add(tick)
     return () => {
-      io.disconnect()
-      if (raf) cancelAnimationFrame(raf)
+      gsap.ticker.remove(tick)
+      document.querySelectorAll('.tc-card').forEach((el) => {
+        el.style.translate = ''
+      })
     }
   }, [])
-
-  return ref
 }
 
 function useIntroAnimation(ref) {
@@ -214,6 +226,625 @@ function useIntroAnimation(ref) {
   }, [ref])
 }
 
+/* ───────────────────────── SPEAKER CALLOUT ─────────────────────────────
+   Ported from the Workshops page "annotation callout": a leader line draws
+   out of the hovered card and a label decodes (scramble → text) with the
+   speaker's name, role and description.
+
+   • Mouse / pen (laptop, desktop, tablet with a mouse)
+       hover or keyboard-focus a card → line + label.
+   • Touch (phones, tablets)
+       tap a card → the SAME leader-line + decoding label animation plays
+       (identical to the laptop hover). Tap the card again, tap elsewhere,
+       or press Escape to close.
+
+   In both cases the label width shrinks to the space available beside the
+   card. Only if there is genuinely no room on either side does it fall back
+   to the bottom sheet.
+
+   The card's lift / glow / zoom is driven by the `tc-active` class (set on
+   mouse hover and on touch tap, cleared when the callout closes) instead of
+   CSS :hover, so touch devices don't get a "stuck" hover state.
+
+   One overlay, portalled to <body>, shared by the desktop, mobile and tablet
+   posters. It never re-renders React: everything is driven by refs + GSAP,
+   so it can't disturb the poster's own layout or animations.
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* ── EDIT THESE: one entry per speaker card, in card order (index 0-4).
+      `side` is the preferred side for the leader line on roomy screens. ── */
+const SPEAKERS = [
+  {
+    name: 'Speaker One',
+    role: 'Role · Organisation',
+    bio: 'A short description of the speaker and what they will talk about at Tech Conclave.',
+    side: 'left',
+  },
+  {
+    name: 'Speaker Two',
+    role: 'Role · Organisation',
+    bio: 'A short description of the speaker and what they will talk about at Tech Conclave.',
+    side: 'right',
+  },
+  {
+    name: 'Speaker Three',
+    role: 'Role · Organisation',
+    bio: 'A short description of the speaker and what they will talk about at Tech Conclave.',
+    side: 'left',
+  },
+  {
+    name: 'Speaker Four',
+    role: 'Role · Organisation',
+    bio: 'A short description of the speaker and what they will talk about at Tech Conclave.',
+    side: 'right',
+  },
+  {
+    name: 'Speaker Five',
+    role: 'Role · Organisation',
+    bio: 'A short description of the speaker and what they will talk about at Tech Conclave.',
+    side: 'right',
+  },
+]
+
+// Geometry
+const CALLOUT_MAX_WIDTH = 280
+const CALLOUT_MIN_WIDTH = 170
+const CALLOUT_MIN_WIDTH_TOUCH = 120 // phones have less room beside a card
+const CALLOUT_GAP = 34 // card edge → label near edge
+const CALLOUT_STUB = 16 // short first leader segment
+const CALLOUT_MARGIN = 16 // viewport margin
+const CALLOUT_ANCHOR_Y = 26 // where the line meets the label (title line)
+const CALLOUT_LABEL_LAG = 0.06 // smoothing while following a moving card
+const SHEET_MAX_WIDTH = 420
+const SHEET_BOTTOM_OFFSET = 14
+// Motion
+const CALLOUT_FADE_IN = 0.18
+const CALLOUT_EXIT_DURATION = 0.4
+const LINE_DRAW_DURATION = 0.45
+const LINE_DRAW_EASE = 'power2.out'
+const TITLE_START = 0.2
+const TITLE_DECODE = 0.4
+const ROLE_START = 0.4
+const ROLE_DECODE = 0.4
+const DESC_START = 0.55
+const DESC_DECODE = 0.55
+const SCRAMBLE_CHARS =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*_-+=<>/\\|[]{}'
+
+/* ── decode helpers (same technique as the workshop callout) ── */
+const randomScrambleChar = () =>
+  SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)]
+
+const buildDecodeThresholds = (length) => {
+  const t = new Array(length)
+  for (let i = 0; i < length; i++) {
+    const base = length > 1 ? i / (length - 1) : 0
+    t[i] = Math.min(base * 0.75 + Math.random() * 0.25, 1)
+  }
+  return t
+}
+
+const renderDecodeText = (el, text, thresholds, progress) => {
+  if (!el) return
+  if (progress >= 1) {
+    el.textContent = text
+    return
+  }
+  let out = ''
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]
+    out += ch === ' ' || progress >= thresholds[i] ? ch : randomScrambleChar()
+  }
+  el.textContent = out
+}
+
+const SpeakerCalloutContext = React.createContext(null)
+
+/* Cards call this; outside a provider it is a harmless no-op. */
+function useSpeakerCallout() {
+  const ctx = React.useContext(SpeakerCalloutContext)
+  return ctx || { bind: () => ({}) }
+}
+
+function SpeakerCalloutProvider({ children }) {
+  const [mounted, setMounted] = React.useState(false)
+
+  const pathRef = React.useRef(null)
+  const labelRef = React.useRef(null)
+  const titleRef = React.useRef(null)
+  const roleRef = React.useRef(null)
+  const descRef = React.useRef(null)
+
+  const st = React.useRef({
+    el: null,
+    index: null,
+    mode: 'line', // 'line' | 'sheet'
+    side: 'right',
+    width: CALLOUT_MAX_WIDTH,
+    height: 120,
+    visible: false,
+    animating: false,
+    tl: null,
+    lastPointerType: 'mouse',
+  })
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const api = React.useMemo(() => {
+    const s = st.current
+
+    /* `tc-active` = the card is "hovered" (mouse) or "tapped" (touch).
+       The CSS lift / glow / zoom reads this class, not :hover. */
+    let activeEl = null
+    const setActive = (el) => {
+      if (activeEl && activeEl !== el) activeEl.classList.remove('tc-active')
+      activeEl = el
+      if (el) el.classList.add('tc-active')
+    }
+    const clearActive = (el) => {
+      if (!activeEl || (el && activeEl !== el)) return
+      activeEl.classList.remove('tc-active')
+      activeEl = null
+    }
+
+    const reducedMotion = () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    /* decide line vs bottom sheet for this card.
+       Touch uses the same leader-line animation as mouse hover; it just
+       accepts a narrower label (CALLOUT_MIN_WIDTH_TOUCH) because phones have
+       less room beside a card. The sheet is only a last-resort fallback. */
+    const pickMode = (el, pointerType, preferred) => {
+      const minWidth =
+        pointerType === 'touch' ? CALLOUT_MIN_WIDTH_TOUCH : CALLOUT_MIN_WIDTH
+      const rect = el.getBoundingClientRect()
+      const chrome = CALLOUT_GAP + CALLOUT_STUB + CALLOUT_MARGIN
+      const spaceFor = (side) =>
+        side === 'right'
+          ? window.innerWidth - rect.right - chrome
+          : rect.left - chrome
+      const order = preferred === 'left' ? ['left', 'right'] : ['right', 'left']
+      for (const side of order) {
+        const space = spaceFor(side)
+        if (space >= minWidth) {
+          return {
+            mode: 'line',
+            side,
+            width: Math.min(CALLOUT_MAX_WIDTH, space),
+          }
+        }
+      }
+      return { mode: 'sheet' }
+    }
+
+    const lineGeometry = (rect) => {
+      const { side, width, height } = s
+      const cy = rect.top + rect.height / 2
+      const anchor = {
+        x: side === 'right' ? rect.right : rect.left,
+        y: cy,
+      }
+      const labelX =
+        side === 'right'
+          ? rect.right + CALLOUT_GAP
+          : rect.left - CALLOUT_GAP - width
+      const labelY = Math.min(
+        Math.max(cy - height / 2, CALLOUT_MARGIN),
+        Math.max(window.innerHeight - height - CALLOUT_MARGIN, CALLOUT_MARGIN),
+      )
+      return { anchor, labelX, labelY }
+    }
+
+    const buildPath = (anchor, labelX, labelY) => {
+      const { side, width } = s
+      const stubX =
+        side === 'right' ? anchor.x + CALLOUT_STUB : anchor.x - CALLOUT_STUB
+      const endX = side === 'right' ? labelX : labelX + width
+      const endY = labelY + CALLOUT_ANCHOR_Y
+      return `M ${anchor.x} ${anchor.y} L ${stubX} ${anchor.y} L ${stubX} ${endY} L ${endX} ${endY}`
+    }
+
+    const sheetPosition = () => ({
+      x: (window.innerWidth - s.width) / 2,
+      y: window.innerHeight - s.height - SHEET_BOTTOM_OFFSET,
+    })
+
+    function tick() {
+      if (!s.visible || s.mode !== 'line' || !s.el) return
+      const pathEl = pathRef.current
+      const labelEl = labelRef.current
+      if (!pathEl || !labelEl) return
+
+      const rect = s.el.getBoundingClientRect()
+      // card hidden (breakpoint switched) or unmounted → close
+      if (!s.el.isConnected || rect.width === 0 || rect.height === 0) {
+        hide()
+        return
+      }
+
+      const g = lineGeometry(rect)
+      const f = 1 - Math.pow(1 - CALLOUT_LABEL_LAG, gsap.ticker.deltaRatio(60))
+      const curX = gsap.getProperty(labelEl, 'x') || 0
+      const curY = gsap.getProperty(labelEl, 'y') || 0
+      const nx = curX + (g.labelX - curX) * f
+      const ny = curY + (g.labelY - curY) * f
+      gsap.set(labelEl, { x: nx, y: ny })
+      pathEl.setAttribute('d', buildPath(g.anchor, nx, ny))
+    }
+
+    const hardReset = () => {
+      if (s.tl) {
+        s.tl.kill()
+        s.tl = null
+      }
+      s.animating = false
+      s.visible = false
+      gsap.ticker.remove(tick)
+      if (labelRef.current) {
+        gsap.killTweensOf(labelRef.current)
+        gsap.set(labelRef.current, { opacity: 0 })
+      }
+      if (pathRef.current) {
+        gsap.killTweensOf(pathRef.current)
+        gsap.set(pathRef.current, { opacity: 0 })
+      }
+    }
+
+    function hide(index) {
+      if (index === undefined) clearActive()
+      if (index !== undefined && s.index !== index) return
+      if (!s.visible) return
+      if (s.tl) {
+        s.tl.kill()
+        s.tl = null
+      }
+      s.animating = false
+      s.visible = false
+      s.index = null
+      gsap.ticker.remove(tick)
+
+      if (labelRef.current) {
+        gsap.killTweensOf(labelRef.current)
+        gsap.to(labelRef.current, {
+          opacity: 0,
+          duration: CALLOUT_EXIT_DURATION,
+          ease: 'power2.out',
+          overwrite: 'auto',
+        })
+      }
+      if (pathRef.current) {
+        gsap.killTweensOf(pathRef.current)
+        gsap.to(pathRef.current, {
+          opacity: 0,
+          duration: CALLOUT_EXIT_DURATION,
+          ease: 'power2.out',
+          overwrite: 'auto',
+        })
+      }
+    }
+
+    function show(index, el, pointerType) {
+      const data = SPEAKERS[index]
+      const labelEl = labelRef.current
+      const pathEl = pathRef.current
+      if (!data || !el || !labelEl || !pathEl) return
+
+      hardReset()
+
+      const picked = pickMode(el, pointerType, data.side)
+      s.el = el
+      s.index = index
+      s.mode = picked.mode
+
+      const sheet = picked.mode === 'sheet'
+      if (sheet) {
+        s.width = Math.min(
+          SHEET_MAX_WIDTH,
+          window.innerWidth - CALLOUT_MARGIN * 2,
+        )
+      } else {
+        s.side = picked.side
+        s.width = picked.width
+      }
+
+      const title = String(data.name ?? '').toUpperCase()
+      const role = String(data.role ?? '')
+      const desc = String(data.bio ?? '')
+
+      /* measure the final text first so the label is positioned with its
+         real height, then blank it for the decode */
+      gsap.set(labelEl, { width: s.width })
+      titleRef.current.textContent = title
+      roleRef.current.textContent = role
+      descRef.current.textContent = desc
+      roleRef.current.style.display = role ? 'block' : 'none'
+      s.height = labelEl.offsetHeight || 120
+      titleRef.current.textContent = ''
+      roleRef.current.textContent = ''
+      descRef.current.textContent = ''
+
+      labelEl.style.background = sheet
+        ? 'rgba(10, 10, 20, 0.92)'
+        : 'rgba(8, 8, 16, 0.74)'
+
+      const still = reducedMotion()
+
+      if (sheet) {
+        const p = sheetPosition()
+        gsap.set(labelEl, { x: p.x, y: p.y, opacity: 0 })
+        gsap.set(pathEl, { opacity: 0 })
+      } else {
+        const g = lineGeometry(el.getBoundingClientRect())
+        gsap.set(labelEl, { x: g.labelX, y: g.labelY, opacity: 0 })
+        pathEl.setAttribute('d', buildPath(g.anchor, g.labelX, g.labelY))
+        const len = pathEl.getTotalLength()
+        gsap.set(pathEl, {
+          opacity: 1,
+          strokeDasharray: len,
+          strokeDashoffset: still ? 0 : len,
+        })
+        gsap.ticker.add(tick)
+      }
+
+      s.visible = true
+
+      if (still) {
+        titleRef.current.textContent = title
+        roleRef.current.textContent = role
+        descRef.current.textContent = desc
+        gsap.set(labelEl, { opacity: 1 })
+        return
+      }
+
+      s.animating = true
+      const tl = gsap.timeline({
+        onComplete: () => {
+          s.animating = false
+          if (!sheet && pathRef.current) {
+            // drop the dash so the line can follow the moving card freely
+            gsap.set(pathRef.current, {
+              strokeDasharray: 'none',
+              strokeDashoffset: 0,
+            })
+          }
+        },
+      })
+      s.tl = tl
+
+      tl.to(
+        labelEl,
+        { opacity: 1, duration: CALLOUT_FADE_IN, ease: 'power1.out' },
+        0,
+      )
+      if (!sheet) {
+        tl.to(
+          pathEl,
+          {
+            strokeDashoffset: 0,
+            duration: LINE_DRAW_DURATION,
+            ease: LINE_DRAW_EASE,
+          },
+          0,
+        )
+      }
+
+      const decode = (elRef, text, start, dur) => {
+        const thresholds = buildDecodeThresholds(text.length)
+        const proxy = { p: 0 }
+        tl.to(
+          proxy,
+          {
+            p: 1,
+            duration: dur,
+            ease: 'none',
+            onUpdate: () =>
+              renderDecodeText(elRef.current, text, thresholds, proxy.p),
+          },
+          start,
+        )
+      }
+      decode(titleRef, title, TITLE_START, TITLE_DECODE)
+      decode(roleRef, role, ROLE_START, ROLE_DECODE)
+      decode(descRef, desc, DESC_START, DESC_DECODE)
+    }
+
+    /* props spread onto each speaker card */
+    const bind = (index) => ({
+      onPointerEnter: (e) => {
+        if (e.pointerType === 'touch') return
+        setActive(e.currentTarget)
+        show(index, e.currentTarget, e.pointerType || 'mouse')
+      },
+      onPointerLeave: (e) => {
+        if (e.pointerType === 'touch') return
+        clearActive(e.currentTarget)
+        hide(index)
+      },
+      onPointerDown: (e) => {
+        s.lastPointerType = e.pointerType || 'mouse'
+      },
+      /* Touch is handled on pointerup (not click): the cards are constantly
+         floating/lifting, and a `click` can be dropped or retargeted when the
+         element moves between press and release. pointerup always fires on the
+         card the finger started on, and is not sent after a scroll/pan
+         (that becomes pointercancel), so scrolling never opens the callout.
+         Tap = same line + decode animation as laptop hover. */
+      onPointerUp: (e) => {
+        if (e.pointerType !== 'touch') return
+        if (s.visible && s.index === index) {
+          clearActive(e.currentTarget)
+          hide(index)
+        } else {
+          setActive(e.currentTarget)
+          show(index, e.currentTarget, 'touch')
+        }
+      },
+      onClick: () => {
+        // touch is fully handled by onPointerUp above; nothing to do here
+      },
+      onFocus: (e) => {
+        // keyboard focus only — a touch tap also focuses, but is handled by onPointerUp
+        let kb = false
+        try {
+          kb = e.currentTarget.matches(':focus-visible')
+        } catch (_) {}
+        if (kb) show(index, e.currentTarget, 'mouse')
+      },
+      onBlur: () => hide(index),
+    })
+
+    /* global dismissers: tap outside, scroll (sheet), resize, Escape */
+    const onDocPointerDown = (e) => {
+      if (!s.visible) return
+      if (e.target && e.target.closest && e.target.closest('.tc-card')) return
+      hide()
+    }
+    const onScroll = () => {
+      if (s.visible && s.mode === 'sheet') hide()
+    }
+    const onResize = () => hide()
+    const onKey = (e) => {
+      if (e.key === 'Escape') hide()
+    }
+
+    return {
+      bind,
+      hide,
+      attach() {
+        document.addEventListener('pointerdown', onDocPointerDown)
+        window.addEventListener('scroll', onScroll, { passive: true })
+        window.addEventListener('resize', onResize)
+        window.addEventListener('keydown', onKey)
+      },
+      detach() {
+        document.removeEventListener('pointerdown', onDocPointerDown)
+        window.removeEventListener('scroll', onScroll)
+        window.removeEventListener('resize', onResize)
+        window.removeEventListener('keydown', onKey)
+        clearActive()
+        hardReset()
+      },
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  React.useEffect(() => {
+    api.attach()
+    return () => api.detach()
+  }, [api])
+
+  return (
+    <SpeakerCalloutContext.Provider value={api}>
+      {children}
+      {mounted &&
+        createPortal(
+          <div
+            aria-hidden='true'
+            style={{
+              position: 'fixed',
+              inset: 0,
+              pointerEvents: 'none',
+              zIndex: 9999,
+              overflow: 'hidden',
+            }}
+          >
+            <svg
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none',
+              }}
+            >
+              <path
+                ref={pathRef}
+                fill='none'
+                stroke='rgba(255,255,255,0.55)'
+                strokeWidth='1'
+                strokeLinecap='butt'
+                strokeLinejoin='miter'
+                style={{ opacity: 0 }}
+              />
+            </svg>
+
+            <div
+              ref={labelRef}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: `${CALLOUT_MAX_WIDTH}px`,
+                boxSizing: 'border-box',
+                padding: '14px 16px',
+                opacity: 0,
+                textAlign: 'left',
+                border: '1px solid rgba(124, 58, 237, 0.5)',
+                borderRadius: '12px',
+                background: 'rgba(8, 8, 16, 0.74)',
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
+                willChange: 'transform, opacity',
+              }}
+            >
+              <div
+                ref={titleRef}
+                style={{
+                  fontFamily: '"Bebas Neue", "Oswald", Impact, sans-serif',
+                  fontSize: '1.45rem',
+                  fontWeight: 400,
+                  letterSpacing: '0.05em',
+                  color: '#ffffff',
+                  lineHeight: 1.15,
+                  textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+                  overflowWrap: 'anywhere',
+                }}
+              />
+              <div
+                ref={roleRef}
+                style={{
+                  marginTop: '6px',
+                  fontFamily:
+                    'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+                  fontSize: '0.72rem',
+                  letterSpacing: '0.04em',
+                  color: '#8f9cff',
+                  lineHeight: 1.45,
+                  overflowWrap: 'anywhere',
+                }}
+              />
+              <div
+                style={{
+                  margin: '10px 0',
+                  width: '32px',
+                  height: '1px',
+                  background: 'rgba(255,255,255,0.32)',
+                }}
+              />
+              <div
+                ref={descRef}
+                style={{
+                  fontFamily: '"Space Grotesk", system-ui, sans-serif',
+                  fontSize: '0.95rem',
+                  fontWeight: 400,
+                  letterSpacing: '0.012em',
+                  color: 'rgba(255,255,255,0.94)',
+                  lineHeight: 1.5,
+                  textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+                  overflowWrap: 'anywhere',
+                }}
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
+    </SpeakerCalloutContext.Provider>
+  )
+}
+
 /* ───────────────────────── SPEAKER CARD HELPERS ───────────────────────── */
 
 /* Writes the pointer position into CSS vars so the spotlight follows the
@@ -232,7 +863,8 @@ const trackLight = (e) => {
 /* Desktop tile: the photo is taller than its black shape so the head pops
    out above it. The card box = photo box; shape / light / ring are placed
    inside it at the shape's exact original position. */
-function DeskTile({ tile, src, alt, col }) {
+function DeskTile({ tile, src, alt, col, glow, index }) {
+  const callout = useSpeakerCallout()
   const [ix, iy, iw, ih] = tile.img
   const [sx, sy, sw, sh] = tile.shape
   const inner = {
@@ -244,10 +876,11 @@ function DeskTile({ tile, src, alt, col }) {
 
   return (
     <div
-      className={`tc-card tc-card--desk tc-animate-card ${col}`}
-      style={box(...tile.img)}
+      className={`tc-card tc-card--desk tc-animate-card ${col} ${glow === 'red' ? 'tc-card--red' : ''}`}
+      style={{ ...box(...tile.img), '--i': index }}
       tabIndex={0}
       onPointerMove={trackLight}
+      {...callout.bind(index)}
     >
       <div
         className='tc-card-shape tc-shape'
@@ -265,7 +898,7 @@ function DeskTile({ tile, src, alt, col }) {
 /* ───────────────────────── DESKTOP (unchanged) ───────────────────────── */
 
 function DesktopPoster() {
-  const driftRef = useScrollDrift()
+  const driftRef = usePosterRef()
   useIntroAnimation(driftRef)
 
   return (
@@ -294,22 +927,15 @@ function DesktopPoster() {
         </p>
 
         {/* people grid — interactive speaker cards */}
-        {womanTiles.map((t, i) => (
+        {deskSpeakers.map((s, i) => (
           <DeskTile
-            key={`w${i}`}
-            tile={t}
-            src={person1}
+            key={i}
+            tile={s.tile}
+            src={s.src}
             alt={i === 0 ? 'Speaker' : ''}
-            col='tc-col-left'
-          />
-        ))}
-        {manTiles.map((t, i) => (
-          <DeskTile
-            key={`m${i}`}
-            tile={t}
-            src={person2}
-            alt={i === 0 ? 'Speaker' : ''}
-            col='tc-col-right'
+            col={s.col}
+            glow={s.glow}
+            index={i}
           />
         ))}
 
@@ -369,14 +995,7 @@ function DesktopPoster() {
           src={robot}
           alt='Waving robot'
         />
-
-        {/* stars */}
-        <img
-          className='tc-abs tc-deco'
-          style={box(-180, -30, 200, 210)}
-          src={bigStar}
-          alt=''
-        />
+      
         {/* right column */}
         <div
           className='tc-abs tc-hero-heading'
@@ -411,33 +1030,14 @@ function DesktopPoster() {
   )
 }
 
-/* ─────────────────────── MOBILE / TABLET (new) ────────────────────────
-   Rebuilt to match the supplied mobile mock: TECH / CONCLAVE stacked
-   title, the robot + colour-block + 2×3 people-grid + pink block treated
-   as one illustration group, an eyebrow line, the big OCT date, then a
-   compact logo lockup + tagline at the bottom.
+/* ─────────────────────── MOBILE (flex-wrap) ────────────────────────
+   TECH / CONCLAVE stacked title, the robot + colour-block + people-grid +
+   pink block treated as one illustration group, an eyebrow line, the big
+   OCT date, then a compact logo lockup + tagline at the bottom.
 
-   Two real flex-wrap mechanisms are doing the responsive work:
-   1. `.tc-m-people` — the 6 speaker tiles are flex items with
-      `flex-wrap: wrap`, so they sit 2-per-row automatically.
-   2. `.tc-m-stage` — the "visual" group and the "info" group (date +
-      footer) are flex items with `flex-wrap: wrap` and a min basis. On a
-      phone-width screen there's only room for one per row, so they stack
-      top-to-bottom exactly like the mock. On a wider, tablet-width screen
-      there's room for both, so they naturally sit side-by-side instead —
-      no extra breakpoint needed for that switch.
-
-   The illustration itself (purple block behind the robot, robot
-   overlapping the pink block, overlapping the grid, stars/plus) is
-   one composited scene, so — same as the desktop version — its pieces
-   are placed with percentage coordinates *inside that one scene only*
-   (mbox helper, on its own small canvas), not scattered absolute
-   positioning across the whole page.
-
-   Note: the mock's wireframe globe in the top-right corner isn't one of
-   the provided image assets, so it's approximated here with a small
-   inline SVG rather than invented as a new image file. Swap in a real
-   asset if you have one.
+   The illustration itself is one composited scene, so its pieces are
+   placed with percentage coordinates *inside that one scene only*
+   (mbox helper, on its own small canvas).
 ------------------------------------------------------------------------ */
 
 const MW = 424
@@ -450,14 +1050,9 @@ const mbox = (x, y, w, h) => ({
 })
 
 function MobilePoster() {
-  const driftRef = useScrollDrift()
+  const driftRef = usePosterRef()
   useIntroAnimation(driftRef)
-
-  // interleaved so flex-wrap lands them green/pink, yellow/red, blue/purple
-  const people = womanTiles.flatMap((w, i) => [
-    { ...w, img: person1 },
-    { ...manTiles[i], img: person2 },
-  ])
+  const callout = useSpeakerCallout()
 
   return (
     <main
@@ -493,14 +1088,15 @@ function MobilePoster() {
               role='list'
               aria-label='Speakers'
             >
-              {people.map((t, i) => (
+              {gridSpeakers.map((t, i) => (
                 <div
-                  className={`tc-m-tile tc-card tc-animate-card ${i % 2 === 0 ? 'tc-col-left' : 'tc-col-right'}`}
-                  style={{ '--tile-color': t.color }}
+                  className={`tc-m-tile tc-card tc-animate-card ${t.glow === 'red' ? 'tc-card--red' : ''}`}
+                  style={{ '--tile-color': t.color, '--i': i }}
                   key={i}
                   role='listitem'
                   tabIndex={0}
                   onPointerMove={trackLight}
+                  {...callout.bind(i)}
                 >
                   <img
                     className='tc-m-tile-img tc-card-img'
@@ -518,12 +1114,6 @@ function MobilePoster() {
               style={mbox(-75, 35, 350, 350)}
               src={robot}
               alt='Waving robot'
-            />
-            <img
-              className='tc-abs tc-deco'
-              style={mbox(-37, -15, 80, 80)}
-              src={bigStar}
-              alt=''
             />
           </div>
 
@@ -571,13 +1161,9 @@ function TabletPlus({ style, rotate = 0 }) {
 }
 
 function TabletPoster() {
-  const driftRef = useScrollDrift()
+  const driftRef = usePosterRef()
   useIntroAnimation(driftRef)
-
-  const speakers = womanTiles.flatMap((woman, index) => [
-    { ...woman, img: person1 },
-    { ...manTiles[index], img: person2 },
-  ])
+  const callout = useSpeakerCallout()
 
   return (
     <main
@@ -609,14 +1195,15 @@ function TabletPoster() {
               role='list'
               aria-label='Speakers'
             >
-              {speakers.map((speaker, index) => (
+              {gridSpeakers.map((speaker, index) => (
                 <div
-                  className={`tc-t-speaker tc-card tc-animate-card ${index % 2 === 0 ? 'tc-col-left' : 'tc-col-right'}`}
-                  style={{ '--tile-color': speaker.color }}
+                  className={`tc-t-speaker tc-card tc-animate-card ${speaker.glow === 'red' ? 'tc-card--red' : ''}`}
+                  style={{ '--tile-color': speaker.color, '--i': index }}
                   key={index}
                   role='listitem'
                   tabIndex={0}
                   onPointerMove={trackLight}
+                  {...callout.bind(index)}
                 >
                   <img
                     className='tc-t-speaker-img tc-card-img'
@@ -633,12 +1220,6 @@ function TabletPoster() {
               style={mbox(-100, 5, 400, 400)}
               src={robot}
               alt='Waving robot'
-            />
-            <img
-              className='tc-t-abs tc-t-star tc-deco'
-              style={mbox(-55, -20, 110, 110)}
-              src={bigStar}
-              alt=''
             />
           </div>
 
@@ -669,13 +1250,14 @@ function TabletPoster() {
 }
 
 export default function TechConclave() {
+  useSyncedFloat()
   return (
-    <>
+    <SpeakerCalloutProvider>
       <style>{css}</style>
       <DesktopPoster />
       <MobilePoster />
       <TabletPoster />
-    </>
+    </SpeakerCalloutProvider>
   )
 }
 
@@ -755,7 +1337,7 @@ html, body { margin: 0; padding: 0; }
   border-bottom-right-radius: 15%;
   border-bottom-left-radius: 15%;
   }
-.tc-person { object-fit: cover; object-position: center bottom; border-bottom-right-radius: 15%;
+.tc-person { object-fit: cover; object-position: center top; border-bottom-right-radius: 15%;
   border-bottom-left-radius: 15%; }
 .tc-type text { font-family: "Bebas Neue", "Oswald", Impact, sans-serif; }
 
@@ -779,7 +1361,7 @@ html, body { margin: 0; padding: 0; }
   pointer-events: none;
   /* Removed transform translateY which was causing offset bugs */
 }
-/* ============================ MOBILE / TABLET (new, flex-wrap) ============================ */
+/* ============================ MOBILE (flex-wrap) ============================ */
 
 .tc-m-stage {
   width: 100%;
@@ -794,9 +1376,7 @@ html, body { margin: 0; padding: 0; }
   font-family: "Bebas Neue", "Oswald", Impact, sans-serif;
 }
 
-/* each panel takes the full row on a phone (nothing else fits next to
-   380px+240px under ~660px), and shares the row once the stage is wide
-   enough — that's the actual "tablet" reflow, done with flex-wrap alone */
+/* each panel takes the full row on a phone */
 .tc-m-panel { display: flex; flex-direction: column; gap: 16px; }
 
 .tc-m-panel--visual {
@@ -868,7 +1448,10 @@ html, body { margin: 0; padding: 0; }
   margin: 0;
   text-align: left;
   font-family: Bebas Neue;
-  font-size: 17px;
+  /* scales down on very small phones so the line never runs off-screen;
+     resolves to the original 17px from ~390px wide upwards */
+  font-size: clamp(12px, 4.4vw, 17px);
+  white-space: nowrap;
   color: #6d7fff;
   transform: translate(-36px, -3px);
 }
@@ -883,7 +1466,9 @@ html, body { margin: 0; padding: 0; }
 
 }
 .tc-m-oct {
-  font-size: clamp(7.6rem, 9vw, 3.2rem);
+  /* capped by viewport width so OCT + 10-11 fit on ~320px phones;
+     identical to the original 7.6rem from ~370px upwards */
+  font-size: min(7.6rem, 33vw);
   line-height: 1;
   transform: translateY(-0.2em);
   font-weight: 500;
@@ -891,7 +1476,7 @@ html, body { margin: 0; padding: 0; }
 .tc-m-days {
   font-weight: 500;
   font-style: medium;
-  font-size: clamp(4.9rem, 9vw, 3.2rem);
+  font-size: min(4.9rem, 21vw);
    transform: translateY(-0.3em);
 }
 .tc-m-footer { display: flex; flex-direction: column; gap: 8px; }
@@ -955,7 +1540,7 @@ text-align: center;
   max-height: none !important;
 }
 
-/* the actual "flex-wrap" grid: 2 columns, 3 rows, from wrapping 6 flex items */
+/* the actual "flex-wrap" grid: 2 columns, 3 rows, from wrapping flex items */
 .tc-m-people {
   display: flex;
   flex-wrap: wrap;
@@ -987,7 +1572,7 @@ text-align: center;
   transition: box-shadow 0.45s var(--tc-ease);
 }
 
-.tc-m-tile:is(:hover, :focus-visible)::before {
+.tc-m-tile:is(.tc-active, :focus-visible)::before {
   box-shadow: var(--tc-glow);
 }
 
@@ -1007,7 +1592,9 @@ text-align: center;
 
 /*-------------------------------TABLETS----------------------------------------------*/
 .tc-t-page {
-  min-height: 100vh;
+  /* no forced full-screen height: the page is exactly as tall as its content,
+     so tall tablets (iPad portrait / Pro) don't get a big empty band */
+  min-height: 0;
   width: 100%;
   overflow-x: clip;
   background-color: #101014;
@@ -1023,9 +1610,9 @@ text-align: center;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  gap: 4vh;
+  gap: clamp(20px, 3vw, 40px); /* fixed-range gap (was 4vh, which grew on tall screens) */
   width: 100%;
-  min-height: 100vh;
+  min-height: 0;               /* was 100vh */
   margin: 0 auto;
   padding: clamp(28px, 5vw, 56px) clamp(48px, 8vw, 88px) clamp(28px, 5vw, 56px) clamp(64px, 10vw, 110px);
 }
@@ -1039,10 +1626,10 @@ text-align: center;
 
 .tc-t-visual { flex: 0 0 auto; justify-content: center; }
 .tc-t-info {
-  flex: 1 1 auto;               /* takes the leftover height under the art */
+  flex: 0 0 auto;               /* sits right under the art — no stretching into leftover height */
   flex-direction: row;
-  flex-wrap: nowrap;              /* narrow tablets wrap instead of colliding sideways */
-  align-items: center;          /* was: flex-end; centres in the leftover space */
+  flex-wrap: nowrap;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
 }
@@ -1091,7 +1678,6 @@ text-align: center;
 .tc-t-pink-block { z-index: 0; }
 .tc-t-plus { z-index: 2; }
 .tc-t-robot { z-index: 2; }
-.tc-t-star { z-index: 5; }
 
  .tc-t-speakers {
   display: flex;
@@ -1100,7 +1686,7 @@ text-align: center;
   gap: 19px;
   transform:translateX(46px)
 }
-.tc-t-speaker:is(:hover, :focus-visible) {
+.tc-t-speaker:is(.tc-active, :focus-visible) {
   z-index: 10;
 }
 
@@ -1126,7 +1712,7 @@ text-align: center;
   transition: box-shadow 0.8s var(--tc-ease);
 }
 
-.tc-t-speaker:is(:hover, :focus-visible)::before {
+.tc-t-speaker:is(.tc-active, :focus-visible)::before {
   box-shadow: var(--tc-glow);
 }
 
@@ -1226,12 +1812,18 @@ text-align: center;
   will-change: transform, translate;
 }
 
+/* red glow variant (3 of the 5 speakers) — purple stays the default */
+.tc-card--red {
+  --tc-glow: 0 12px 28px rgba(239, 68, 68, 0.45), 0 0 22px rgba(239, 68, 68, 0.3);
+  --tc-ring: rgba(239, 68, 68, 0.35);
+}
+
 /* 1 ─ floating lift + glow */
-.tc-card:is(:hover, :focus-visible) {
+.tc-card:is(.tc-active, :focus-visible) {
   transform: scale(1.05) translateY(-8px);
   z-index: 6;
 }
-.tc-card:not(.tc-card--desk):not(.tc-m-tile):not(.tc-t-speaker):is(:hover, :focus-visible) {
+.tc-card:not(.tc-card--desk):not(.tc-m-tile):not(.tc-t-speaker):is(.tc-active, :focus-visible) {
   box-shadow: var(--tc-glow);
 }
 
@@ -1241,7 +1833,7 @@ text-align: center;
   transform-origin: center bottom;
   transition: transform 0.6s var(--tc-ease), filter 0.6s var(--tc-ease);
 }
-.tc-card:is(:hover, :focus-visible) .tc-card-img {
+.tc-card:is(.tc-active, :focus-visible) .tc-card-img {
   transform: scale(1.1);
   filter: saturate(1.08) contrast(1.04);
 }
@@ -1260,13 +1852,13 @@ text-align: center;
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  box-shadow: inset 0 0 14px rgba(124, 58, 237, 0.35);
+  box-shadow: inset 0 0 14px var(--tc-ring, rgba(124, 58, 237, 0.35));
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.35s var(--tc-ease);
 }
 
-.tc-card:is(:hover, :focus-visible) .tc-card-ring {
+.tc-card:is(.tc-active, :focus-visible) .tc-card-ring {
   opacity: 1;
 }
 
@@ -1279,6 +1871,13 @@ text-align: center;
   border-radius: 15%;
 }
 
+/* mobile/tablet: the lone 5th speaker sits centred in its own wrapped row */
+.tc-m-tile:nth-child(5),
+.tc-t-speaker:nth-child(5) {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* desktop tile: card = photo box; shape / light / ring sit at the shape spot */
 .tc-card--desk { position: absolute; display: block; }
 .tc-card-shape {
@@ -1286,7 +1885,7 @@ text-align: center;
   z-index: 0;
   transition: box-shadow 0.45s var(--tc-ease);
 }
-.tc-card--desk:is(:hover, :focus-visible) .tc-card-shape { box-shadow: var(--tc-glow); }
+.tc-card--desk:is(.tc-active, :focus-visible) .tc-card-shape { box-shadow: var(--tc-glow); }
 
 /* clips the zoom on the sides and (rounded) bottom but leaves headroom on
    top so the head still breaks out of the shape */
@@ -1309,30 +1908,26 @@ text-align: center;
   border-radius: 15%;   /* matches .tc-shape */
 }
 
-.tc-card--desk:is(:hover, :focus-visible) { opacity: 1; }
+.tc-card--desk:is(.tc-active, :focus-visible) { opacity: 1; }
 
 
-/* ===================== SCROLL DRIFT — columns ===================== */
-/* --tc-p is written by useScrollDrift() on the poster's <main>.
-   Uses the standalone translate property, so it stacks with the hover
-   transform instead of replacing it, and never touches layout boxes.
-   The % is relative to each tile's own height, so the drift scales
-   the same on phone, tablet and laptop. */
-.tc-col-left,
-.tc-col-right { --tc-drift: 22%; }
-.tc-col-left  { translate: 0 calc(var(--tc-p, 0) * -1 * var(--tc-drift)); } /* moves up   */
-.tc-col-right { translate: 0 calc(var(--tc-p, 0) * var(--tc-drift)); }      /* moves down */
+/* ===================== FLOATING CARDS ===================== */
+/* The bob itself is now driven by one shared clock (useSyncedFloat in JS)
+   so every card moves in lock-step; it sets the CSS \`translate\` property. */
+@keyframes tc-float {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -10px; }
+}
 
 /* respect reduced-motion: keep glow, ring and badge, drop the movement */
 @media (prefers-reduced-motion: reduce) {
   .tc-card,
   .tc-card-img,
   .tc-badge { transition-duration: 0.01ms; }
-  .tc-card:is(:hover, :focus-visible),
-  .tc-card:is(:hover, :focus-visible) .tc-card-img,
-  .tc-card:is(:hover, :focus-visible) .tc-badge { transform: none; }
-  .tc-col-left,
-  .tc-col-right { translate: none; }
+  .tc-card:is(.tc-active, :focus-visible),
+  .tc-card:is(.tc-active, :focus-visible) .tc-card-img,
+  .tc-card:is(.tc-active, :focus-visible) .tc-badge { transform: none; }
+  .tc-card { animation: none !important; }
 }
 
 /* Clean, non-conflicting width ranges */
@@ -1368,5 +1963,10 @@ text-align: center;
     transform: translate(21px, 20px);
   }
 }
+
+/* Phones: height follows the content instead of forcing a full screen,
+   so tall phones don't get extra empty background above/below the poster.
+   (Placed last so it wins over the shared .tc-page min-height.) */
+.tc-page.tc-mobile-only { min-height: 0; }
 
 `
