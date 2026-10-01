@@ -383,26 +383,18 @@ export function GlowLetters({
 
       // Follow the cursor on a soft spring so the light lags behind, then
       // overshoots and settles rather than sliding straight to a stop.
-      if (reduceMotion) {
-        lens.x = pointer.x;
-        lens.y = pointer.y;
-      } else {
-        const stiffness = follow * 0.12;
-        const damping = 0.86;
-        lens.vx = (lens.vx + (pointer.x - lens.x) * stiffness) * damping;
-        lens.vy = (lens.vy + (pointer.y - lens.y) * stiffness) * damping;
-        lens.x += lens.vx;
-        lens.y += lens.vy;
-      }
+            // Glow is locked directly to the cursor: no lag, no spring, no bounce.
+      lens.x = pointer.x;
+      lens.y = pointer.y;
+      lens.vx = 0;
+      lens.vy = 0;
 
       // Chain of laggier followers behind the head, stretching the blob
       // into a gooey trail (merged below via blurred, overlapping blobs).
-      trail[0].x = lens.x;
-      trail[0].y = lens.y;
-      for (let i = 1; i < trail.length; i++) {
-        const chase = reduceMotion ? 1 : 0.5;
-        trail[i].x += (trail[i - 1].x - trail[i].x) * chase;
-        trail[i].y += (trail[i - 1].y - trail[i].y) * chase;
+            // All blobs sit on the cursor, so there is no trailing lag.
+      for (let i = 0; i < trail.length; i++) {
+        trail[i].x = lens.x;
+        trail[i].y = lens.y;
       }
 
       ctx.clearRect(0, 0, w, h);
