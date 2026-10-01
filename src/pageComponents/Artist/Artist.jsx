@@ -234,8 +234,10 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
   // (and re-render) every time the parent re-renders.
   const getFromRef = useRef(getFrom)
   const getToRef = useRef(getTo)
-  getFromRef.current = getFrom
-  getToRef.current = getTo
+  useLayoutEffect(() => {
+    getFromRef.current = getFrom
+    getToRef.current = getTo
+  })
 
   useLayoutEffect(() => {
     const measure = () => {
@@ -366,7 +368,10 @@ function ArtistContent({ artist, connectorRefs, connectorBaseIndex = 0 }) {
       <svg className='connector-overlay' aria-hidden='true'>
         <ConnectorArrow
           ref={(el) => {
+            // connectorRefs is a parent-owned imperative-handle collection,
+            // not render state; writing into it here is the intended pattern.
             if (connectorRefs)
+              // eslint-disable-next-line react-hooks/immutability
               connectorRefs.current[connectorBaseIndex + 0] = el
           }}
           slideRef={slideRef}
@@ -377,6 +382,7 @@ function ArtistContent({ artist, connectorRefs, connectorBaseIndex = 0 }) {
         <ConnectorArrow
           ref={(el) => {
             if (connectorRefs)
+              // eslint-disable-next-line react-hooks/immutability
               connectorRefs.current[connectorBaseIndex + 1] = el
           }}
           slideRef={slideRef}
@@ -387,6 +393,7 @@ function ArtistContent({ artist, connectorRefs, connectorBaseIndex = 0 }) {
         <ConnectorArrow
           ref={(el) => {
             if (connectorRefs)
+              // eslint-disable-next-line react-hooks/immutability
               connectorRefs.current[connectorBaseIndex + 2] = el
           }}
           slideRef={slideRef}
