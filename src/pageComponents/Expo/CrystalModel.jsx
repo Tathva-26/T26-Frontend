@@ -19,6 +19,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
 import { createCrystalVeins } from './crystalGeometry.mjs'
 import { journeyScreenPoint } from './expoJourney.mjs'
+import { detailMotion } from './expoDetailMotion.mjs'
 import { useExpoDetails } from './ExpoDetails'
 import { springStep, fractureSector } from './crystalInteraction.mjs'
 import CrystalShards from './CrystalShards'
@@ -116,6 +117,8 @@ function createEnergy() {
 export default function CrystalModel({ target, compact = false, onReady, onMood, journey, onProject }) {
   const details = useExpoDetails()
   const detailGroup = useRef()
+  const idleClock = useRef(0)
+  const savedPose = useRef(null)
   const group = useRef()
   const travel = useRef()
   const idle = useRef()
@@ -200,11 +203,19 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const pose = journey?.current
     const detail = details?.progress.current
     const detailAmount = detail?.value ?? 0
-    const influence = (pose ? pose.interaction : 1) * (1 - detailAmount)
-    const surge = Math.sin(Math.min(1, detailAmount / .42) * Math.PI)
-    detailGroup.current.scale.setScalar(detail?.reduced ? 1 : 1 + .08 * detailAmount + .07 * Math.sin(detailAmount * Math.PI))
-    detailGroup.current.rotation.z = detail?.reduced ? 0 : Math.sin(detailAmount * Math.PI) * .055
+    const motion = detailMotion(detailAmount, detail?.reduced)
+    const influence = (pose ? pose.interaction : 1) * motion.interaction
+    const surge = motion.pulse
+    detailGroup.current.scale.setScalar(1)
+    detailGroup.current.rotation.set(motion.pitch, 0, motion.roll)
+    const inDetails = detail && detail.state !== 'closed'
+    if (!inDetails) idleClock.current += dt
     const time = clock.elapsedTime
+    const idleTime = idleClock.current
+    if (inDetails && !savedPose.current) {
+      savedPose.current = { x: body.rotation.x, y: body.rotation.y, cameraX: camera.position.x, cameraY: camera.position.y }
+    }
+    if (!inDetails && savedPose.current) savedPose.current = null
     // Raycast the actual ice, not the viewport rectangle surrounding it.
     const activationPending = target.current.activation !== life.current.activation
     if ((target.current.active || activationPending) && influence > .01) {
@@ -261,6 +272,9 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const chargeLevel = Math.max(life.current.charge, traceLevel)
     life.current.hover = MathUtils.damp(life.current.hover, life.current.hitStrength * influence, 5.2, dt)
     const hover = life.current.hover
+    const interactive = !inDetails && (pose?.interaction ?? 1) > .99 && !(pose?.exit > 0) && life.current.hitStrength > 0
+    const control = gl.domElement.closest('[data-crystal-control]')
+    if (control) control.style.cursor = interactive ? 'pointer' : 'auto'
     cursorLight.current.position.set(lightPoint.x, lightPoint.y, 1.2)
     cursorLight.current.intensity = hover * 1.6
     glass.current.envMapIntensity = 2.2 + hover * .25
@@ -281,6 +295,11 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const sy = springStep(body.rotation.y, life.current.vy, target.current.tiltY * influence * (1 + hover * .55), dt)
     body.rotation.x = sx.position; life.current.vx = sx.velocity
     body.rotation.y = sy.position; life.current.vy = sy.velocity
+    if (inDetails && savedPose.current) {
+      body.rotation.x = savedPose.current.x * motion.interaction
+      body.rotation.y = savedPose.current.y * motion.interaction
+      life.current.vx = 0; life.current.vy = 0
+    }
     travel.current.rotation.set(pose?.pitch ?? 0, pose?.yaw ?? 0, pose?.roll ?? 0)
     if (pose?.layout) {
       const point = journeyScreenPoint(pose, pose.layout)
@@ -292,11 +311,23 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
       travel.current.scale.setScalar(baseScale * pose.scale)
       camera.position.x = MathUtils.damp(camera.position.x, target.current.tiltY * .4 * influence, 3.2, dt)
       camera.position.y = MathUtils.damp(camera.position.y, -target.current.tiltX * .3 * influence, 3.2, dt)
+      if (inDetails && savedPose.current) {
+        camera.position.x = savedPose.current.cameraX * motion.interaction
+        camera.position.y = savedPose.current.cameraY * motion.interaction
+      }
       camera.lookAt(0, 0, 0)
       camera.updateMatrixWorld()
     }
-    idle.current.position.y = (Math.sin(time * .85) * .035 + Math.sin(time * .31) * .012) * influence
-    idle.current.rotation.set(Math.sin(time * .48) * .055 * influence, (Math.sin(time * .24) * .18 + Math.sin(time * .53) * .035) * influence, Math.sin(time * .39) * .045 * influence)
+    // Convert world depth to local units; the parent scale is responsive.
+    const peakLimit = size.width < 768 ? .68 : size.height < 520 ? .75 : 1
+    detailGroup.current.position.z = motion.depth * peakLimit / Math.max(.01, travel.current.scale.x)
+    if (detail) {
+      travel.current.updateWorldMatrix(true, true)
+      detailGroup.current.getWorldPosition(anchor).project(camera)
+      details.setCenter(anchor.x * .5 + .5, anchor.y * .5 + .5)
+    }
+    idle.current.position.y = (Math.sin(idleTime * .85) * .035 + Math.sin(idleTime * .31) * .012) * influence
+    idle.current.rotation.set(Math.sin(idleTime * .48) * .055 * influence, (Math.sin(idleTime * .24) * .18 + Math.sin(idleTime * .53) * .035) * influence, Math.sin(idleTime * .39) * .045 * influence)
     robotMotion.current.rotation.set(
       MathUtils.damp(robotMotion.current.rotation.x, (.035 * Math.sin(time * .43) - body.rotation.x * .35 + lightPoint.y * hover * .055 + Math.sin(age * 9) * pulse * .09) * influence, 2.8, dt),
       .12 + MathUtils.damp(robotMotion.current.rotation.y - .12, (awake ? -.12 : .065 * Math.sin(time * .35) - body.rotation.y * .30 + lightPoint.x * hover * .10) * influence, 2.8, dt),
