@@ -147,34 +147,101 @@ export default function Preloader({ onComplete }) {
   }, [])
 
   // -------------------------------------------------------------
-  // 2. LOADING SEQUENCE — waits for the page's real assets (images,
-  //    video, fonts) to finish loading via `window.load`, not a fixed
-  //    timer. MIN keeps the preloader from flashing on a cached reload;
-  //    MAX is a safety net so a stalled asset can't hang it forever.
+  // 2. LOADING SEQUENCE — waits for every image/video on the page to
+  //    finish loading, not just Hero's. `window.load` isn't enough here:
+  //    some sections (e.g. TechConclave) only mount their real content
+  //    after their own hydration-guard effect fires, so their <img>/
+  //    <video> tags don't exist yet at the moment `load` would fire, and
+  //    native `loading="lazy"` images (ProshowCarousel, HorizontalGallery)
+  //    don't start fetching until they're near the viewport. So instead
+  //    we scan the live DOM directly, force lazy images to fetch now, and
+  //    use a MutationObserver to keep catching media that mounts late —
+  //    only finishing once nothing new has appeared for a short quiet
+  //    period and nothing tracked is still pending.
+  //    MIN keeps the preloader from flashing on a cached reload; MAX is a
+  //    safety net so one stalled asset can't hang it forever.
   // -------------------------------------------------------------
   useEffect(() => {
     const MIN_VISIBLE_MS = 1200
-    const MAX_WAIT_MS = 12000
+    const MAX_WAIT_MS = 15000
+    const QUIET_MS = 400
     const start = performance.now()
 
     let settled = false
+    let quietTimer = null
+    const pending = new Set()
+
     const finish = () => {
       if (settled) return
       settled = true
+      observer.disconnect()
+      clearTimeout(quietTimer)
+      clearTimeout(maxTimer)
       const remaining = Math.max(0, MIN_VISIBLE_MS - (performance.now() - start))
       setTimeout(() => setRevealing(true), remaining)
     }
 
-    if (document.readyState === 'complete') {
-      finish()
-    } else {
-      window.addEventListener('load', finish)
+    const maybeFinishWhenQuiet = () => {
+      clearTimeout(quietTimer)
+      quietTimer = setTimeout(() => {
+        if (pending.size === 0) finish()
+      }, QUIET_MS)
     }
+
+    const trackMedia = (el) => {
+      const isImage = el.tagName === 'IMG'
+      const isVideo = el.tagName === 'VIDEO'
+      if (!isImage && !isVideo) return
+
+      // Native lazy-loading defers the fetch until near the viewport —
+      // force it now so the preloader can actually wait on it.
+      if (isImage && el.loading === 'lazy') el.loading = 'eager'
+
+      const isReady = isImage
+        ? el.complete && el.naturalWidth > 0
+        : el.readyState >= 3 // HAVE_FUTURE_DATA
+
+      if (isReady) return
+
+      pending.add(el)
+      const onSettle = () => {
+        pending.delete(el)
+        el.removeEventListener('load', onSettle)
+        el.removeEventListener('error', onSettle)
+        el.removeEventListener('loadeddata', onSettle)
+        el.removeEventListener('canplaythrough', onSettle)
+        maybeFinishWhenQuiet()
+      }
+      el.addEventListener('load', onSettle)
+      el.addEventListener('error', onSettle)
+      el.addEventListener('loadeddata', onSettle)
+      el.addEventListener('canplaythrough', onSettle)
+    }
+
+    const scan = (root) => {
+      if (root.tagName === 'IMG' || root.tagName === 'VIDEO') trackMedia(root)
+      root.querySelectorAll?.('img, video').forEach(trackMedia)
+    }
+
+    scan(document.body)
+    maybeFinishWhenQuiet()
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1) scan(node)
+        })
+      }
+      maybeFinishWhenQuiet()
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
 
     const maxTimer = setTimeout(finish, MAX_WAIT_MS)
 
     return () => {
-      window.removeEventListener('load', finish)
+      settled = true
+      observer.disconnect()
+      clearTimeout(quietTimer)
       clearTimeout(maxTimer)
     }
   }, [])
