@@ -1,102 +1,45 @@
 import ConsoleScreenCanvas from "./ConsoleScreenCanvas";
-import {
-  ASSETS,
-  CLICK_TO_PLAY,
-  CLIP,
-  CONSOLE_BUTTON,
-  DRAGON_FRAME_2,
-} from "@/pageComponents/GPC/gpcConfig";
-
-const CORNERS = [
-  "left-0 top-0 border-l-[1.5px] border-t-[1.5px] rounded-tl-md",
-  "right-0 top-0 border-r-[1.5px] border-t-[1.5px] rounded-tr-md",
-  "left-0 bottom-0 border-l-[1.5px] border-b-[1.5px] rounded-bl-md",
-  "right-0 bottom-0 border-r-[1.5px] border-b-[1.5px] rounded-br-md",
-];
+import AuroraOverlay from "@/pageComponents/GPC/mobile/AuroraOverlay";
+import DragonLoop from "./DragonLoop";
+import { ASSETS, CLICK_TO_PLAY, CLIP, CONSOLE_BUTTON, DRAGON_STATIC } from "@/pageComponents/GPC/gpcConfig";
 
 /**
- * Every layer is styled in its FINAL state (Figma frame 165:1712 / 724:1856).
- * `data-layer` attributes are the hooks for useHeroTimeline.
+ * Static one-screen desktop hero (the old "frame 2" state). The dragon sits
+ * above the console; the intro layers (top GPC heading, first explore-more
+ * CTA, corner brackets) and the second explore-more button are removed.
  *
- * Custom fonts (Orbitron, Press Start 2P, Akira, Bebas) are applied via
- * inline `style={{ fontFamily: "var(--font-x)" }}` rather than Tailwind
- * classes, since none of them are registered as Tailwind utilities.
- *
- * The console <img> uses object-contain to match GameOverlay's enlarged
- * console - both must show the same framing of the asset for the zoom
- * transition to land without a visible jump.
+ * consoleRef lives on the console wrapper so GameOverlay's zoom-origin
+ * measurement still has a stable bounding box.
  */
 export default function HeroLayers({ consoleRef, onPlay }) {
   return (
     <>
       <div
-        data-layer="banner"
-        className="absolute left-0 top-[91px] h-[530px] w-full"
+        className="absolute left-0 top-[91px] h-[530px] w-full overflow-hidden"
         style={{ clipPath: CLIP.end }}
       >
         <img src={ASSETS.banner} alt="" className="h-full w-full object-cover object-bottom" />
+        <AuroraOverlay getProgress={() => 0} />
       </div>
 
-      <div data-layer="brackets" className="pointer-events-none absolute left-0 top-[150px] h-[471px] w-full opacity-0">
-        {CORNERS.map((position) => (
-          <span key={position} className={`absolute h-24 w-24 border-[#4fb4e3] ${position}`} />
-        ))}
-      </div>
-
-      <img
-        data-layer="dragon"
-        src={ASSETS.dragon}
-        alt=""
-        className="absolute origin-top-left"
+      <DragonLoop
+        className="absolute object-contain"
         style={{
-          left: DRAGON_FRAME_2.x,
-          top: DRAGON_FRAME_2.y,
-          width: DRAGON_FRAME_2.width,
-          height: DRAGON_FRAME_2.height,
+          left: DRAGON_STATIC.x,
+          top: DRAGON_STATIC.y,
+          width: DRAGON_STATIC.width,
+          height: DRAGON_STATIC.height,
         }}
       />
 
       <p
-        data-layer="title-a"
-        className="absolute left-[32px] top-[-21px] opacity-0 text-[147px] leading-[1.2] text-white"
-        style={{ fontFamily: "var(--font-orbitron)" }}
-      >
-        GPC
-      </p>
-      <span
-        data-layer="cta-a"
-        className="absolute left-[201px] top-[500px] opacity-0 border border-white p-2 text-[37px] text-white"
-        style={{ fontFamily: "var(--font-orbitron)" }}
-      >
-        EXPLORE MORE →
-      </span>
-
-      <p
-        data-layer="title-b"
         className="absolute left-[707px] top-[464px] text-[107px] leading-[1.2] text-white"
         style={{ fontFamily: "var(--font-akira)" }}
       >
         GPC
       </p>
-      <button
-        data-layer="cta-b"
-        type="button"
-        className="group absolute left-[1038px] top-[528px] w-[94px] cursor-pointer text-left text-[14px] leading-tight text-white transition-colors duration-200 hover:text-[#4fb4e3] focus-visible:text-[#4fb4e3]"
-        style={{ fontFamily: "var(--font-akira)" }}
-      >
-        EXPLORE MORE{" "}
-        <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
-      </button>
 
-      {/* A div, not a button: holds two clickable controls (play + mute),
-          and a button can't nest a button. consoleRef / data-layer="console"
-          live here so both useHeroTimeline and GameOverlay's zoom-origin
-          measurement have a stable bounding box to work from. */}
-      <div
-        ref={consoleRef}
-        data-layer="console"
-        className="group absolute left-[364px] top-[304px] h-[281px] w-[322px]"
-      >
+      <div ref={consoleRef} className="group absolute left-[364px] top-[304px] h-[281px] w-[322px]">
         <button
           type="button"
           onClick={onPlay}
@@ -139,7 +82,6 @@ export default function HeroLayers({ consoleRef, onPlay }) {
       </div>
 
       <p
-        data-layer="tagline"
         className="absolute left-[320px] top-[623px] w-[796px] text-[50px] uppercase leading-[1.2] text-white"
         style={{ fontFamily: "var(--font-bebas)" }}
       >

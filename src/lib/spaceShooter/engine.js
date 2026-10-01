@@ -7,14 +7,12 @@ import { loadHighScore, saveHighScore } from "./highScore";
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-/** How many enemies are on screen after `elapsed` seconds of play. */
 export const enemyCountAt = (elapsed) =>
   Math.min(
     DIFFICULTY.maxEnemies,
     DIFFICULTY.startEnemies + Math.floor(elapsed / DIFFICULTY.secondsPerEnemy)
   );
 
-/** How fast enemies fall (units per second) after `elapsed` seconds of play. */
 export const enemySpeedAt = (elapsed) =>
   Math.min(DIFFICULTY.maxSpeed, DIFFICULTY.startSpeed + elapsed * DIFFICULTY.speedPerSecond);
 
@@ -26,7 +24,7 @@ const spawnEnemy = () => ({
 });
 
 const createWorld = () => ({
-  phase: "ready", // Phase states
+  phase: "ready",
   score: 0,
   lives: RULES.lives,
   elapsed: 0,
@@ -44,9 +42,10 @@ const createWorld = () => ({
 
 /**
  * Creates a Space Shooter bound to a canvas.
- * `spritePaths` maps ship/enemy/bullet to image URLs. Returns { resize, start, setPaused, destroy }.
- * `onStats` fires only when phase, score, high score or lives change, so React never
- * re-renders per frame.
+ * `spritePaths` maps ship/enemy/bullet to image URLs. Returns
+ * { resize, start, setPaused, setJoystick, setFiring, destroy }.
+ * `onStats` fires only when phase, score, high score or lives change, so
+ * React never re-renders per frame.
  */
 export function createSpaceShooter(canvas, { onStats, spritePaths } = {}) {
   const ctx = canvas.getContext("2d");
@@ -61,9 +60,6 @@ export function createSpaceShooter(canvas, { onStats, spritePaths } = {}) {
   const input = createInput((code) => {
     if ((code === "Space" || code === "Enter") && world.phase !== "playing") start();
   });
-
-  const axis = (negative, positive) =>
-    Number(input.isDown(positive)) - Number(input.isDown(negative));
 
   function start() {
     if (world.phase === "playing") return;
@@ -81,8 +77,8 @@ export function createSpaceShooter(canvas, { onStats, spritePaths } = {}) {
 
   function moveShip(dt) {
     const { ship } = world;
-    ship.x = clamp(ship.x + axis("ArrowLeft", "ArrowRight") * SHIP.speed * dt, 0, GAME.width - ship.w);
-    ship.y = clamp(ship.y + axis("ArrowUp", "ArrowDown") * SHIP.speed * dt, 0, GAME.height - ship.h);
+    ship.x = clamp(ship.x + input.getAxis("x") * SHIP.speed * dt, 0, GAME.width - ship.w);
+    ship.y = clamp(ship.y + input.getAxis("y") * SHIP.speed * dt, 0, GAME.height - ship.h);
   }
 
   function fire(dt) {
@@ -175,7 +171,6 @@ export function createSpaceShooter(canvas, { onStats, spritePaths } = {}) {
     emitStats();
   }
 
-  /** Match the backing store to the displayed width; game logic stays in logical units. */
   function resize(cssWidth) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(cssWidth * dpr);
@@ -198,6 +193,8 @@ export function createSpaceShooter(canvas, { onStats, spritePaths } = {}) {
     setPaused(value) {
       paused = value;
     },
+    setJoystick: (x, y) => input.setJoystick(x, y),
+    setFiring: (isDown) => input.setVirtualFire(isDown),
     destroy() {
       cancelAnimationFrame(frameId);
       input.dispose();
