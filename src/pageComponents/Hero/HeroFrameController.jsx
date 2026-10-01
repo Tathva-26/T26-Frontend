@@ -9,11 +9,6 @@ import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
 // (Just under 1.0 so a smoothed wheel scroll that stops a few px short still triggers it.)
 const AUTO_ENTER_PROGRESS = 0.995;
 
-// Panels hidden with `visibility: hidden` aren't rasterised, so the incoming one needs a few
-// frames to paint after it becomes visible. We keep the outgoing panel on top for this many
-// frames so the swap never shows an unpainted frame.
-const SWAP_FRAMES = 3;
-
 // Same breakpoint Hero uses for its mobile layout.
 const MOBILE_QUERY = "(max-width: 768px)";
 const subscribeMobile = (cb) => {
@@ -30,10 +25,9 @@ export default function HeroFrameController({ children }) {
   const isMobile = useSyncExternalStore(subscribeMobile, getIsMobile, getIsMobileServer);
   const [section, setSection] = useState("hero"); // "hero" | "frame"
   const sectionRef = useRef("hero");
-  // Which panels are actually visible. During a swap both are visible for a few frames.
+  // Only Hero is ever hidden. Frame is the real, always-painted background: Hero cuts a hole
+  // through itself (the portal) and Frame shows through it, so the hand-over is just hiding Hero.
   const [heroVisible, setHeroVisible] = useState(true);
-  const [frameVisible, setFrameVisible] = useState(false);
-  const swapRaf = useRef(0);
   // latest progress of Hero's portal animation (0..1)
   const heroProgressRef = useRef(0);
 
@@ -47,31 +41,16 @@ export default function HeroFrameController({ children }) {
     sectionRef.current = section;
   }, [section]);
 
-  // Swap panels without a gap: show the incoming one underneath, wait until it has painted,
-  // then hide the outgoing one.
+  // Hero <-> Frame. Frame is already painted underneath and the open portal looks exactly like
+  // it, so the swap is just showing/hiding the Hero panel (no waiting for a repaint).
   const swapTo = useCallback((target) => {
     if (sectionRef.current === target) return;
-    cancelAnimationFrame(swapRaf.current);
     sectionRef.current = target;
     setSection(target);
-    if (target === "frame") setFrameVisible(true);
-    else setHeroVisible(true);
-
-    let frames = 0;
-    const tick = () => {
-      if (++frames < SWAP_FRAMES) {
-        swapRaf.current = requestAnimationFrame(tick);
-        return;
-      }
-      if (target === "frame") setHeroVisible(false);
-      else setFrameVisible(false);
-    };
-    swapRaf.current = requestAnimationFrame(tick);
+    setHeroVisible(target === "hero");
   }, []);
 
-  useEffect(() => () => cancelAnimationFrame(swapRaf.current), []);
-
-  // Hero -> Frame. The Frame inside the portal is identical to the real one, so just swap.
+  // Hero -> Frame.
   const enterFrame = useCallback(() => swapTo("frame"), [swapTo]);
 
   // Frame -> Hero. Hero is still parked at the end of its runway (portal fully open, which
@@ -147,7 +126,6 @@ export default function HeroFrameController({ children }) {
           onScrollBeyondEnd={handleHeroScrollBeyondEnd}
           onAutoEnter={enterFrame}
           isActive={section === "hero" && !unlocked}
-          portalContent={heroVisible && !unlocked ? <Frame isActive={false} /> : null}
         />
       </div>
 
@@ -155,7 +133,6 @@ export default function HeroFrameController({ children }) {
         style={{
           position: unlocked ? "relative" : "absolute",
           inset: unlocked ? undefined : 0,
-          visibility: frameVisible ? "visible" : "hidden",
           zIndex: unlocked ? undefined : 2,
         }}
       >

@@ -14,8 +14,8 @@ gsap.registerPlugin(ScrollTrigger, useGSAP, MotionPathPlugin)
 
 const assetBase = '/images/hero/'
 
-// The portal is drawn by this image; it sits on top of the (static) Frame and fades out as the
-// portal grows. PORTAL_IMG_FADE_END = portal progress (0..1) at which it is fully gone.
+// The portal is drawn by this video; it sits over a hole cut in the scene (the real Frame shows
+// through the hole) and fades out as the portal grows. PORTAL_IMG_FADE_END = portal progress (0..1) at which it is fully gone.
 const PORTAL_VIDEO = 'portalloop.mp4' // small, low-res, muted, seamless loop
 const PORTAL_POSTER = 'img.png' // shown until the first video frame is ready
 const PORTAL_IMG_FADE_END = 0.85
@@ -38,7 +38,8 @@ const PORTAL_FRAME = {
   outsetX: 0,
   outsetY: 0,
   opacity: 1,
-  fadeStart: 0,
+  fadeStart: 0.8,
+  fadeEnd: 1,
   aboveVideo: true,
 }
 
@@ -207,7 +208,6 @@ export const Hero = ({
   onScrollBeyondEnd,
   onAutoEnter,
   isActive = true,
-  portalContent = null, // rendered INSIDE the portal (the Frame preview)
 }) => {
   const [hasEntered, setHasEntered] = useState(false)
   const [ripples, setRipples] = useState([])
@@ -226,7 +226,7 @@ export const Hero = ({
   const bgrocksRef = useRef(null)
   const t1Ref = useRef(null)
   const portalRef = useRef(null)
-  const frameClipRef = useRef(null)
+  const backLayersRef = useRef(null)
   const portalVideoRef = useRef(null)
   const portalFrameImgRef = useRef(null)
   const portalVideoVisibleRef = useRef(true)
@@ -278,22 +278,6 @@ export const Hero = ({
     }
     scrollerRef.current?.toggleAttribute('data-paused', !isActive)
   }, [isActive])
-
-  // The static Frame preview mounts BEFORE the layout effect below has sized its wrapper, so
-  // anything in Frame that measures its container on mount could see the wrong size. Once the
-  // wrapper is sized, tell Frame to re-measure.
-  const hasPortalContent = Boolean(portalContent)
-  useEffect(() => {
-    if (!hasPortalContent) return undefined
-    let raf2 = 0
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => window.dispatchEvent(new Event('resize')))
-    })
-    return () => {
-      cancelAnimationFrame(raf1)
-      cancelAnimationFrame(raf2)
-    }
-  }, [hasPortalContent])
 
   // Enter click: ripple at the click point, then animate the hero
   // scroll runway to its end (portal zoom), then let the page scroll
@@ -520,21 +504,6 @@ export const Hero = ({
       scene.style.setProperty('--design-scale', scale)
       scrollerRef.current?.style.setProperty('--design-scale', scale)
 
-      // Static Frame preview: laid out at real viewport px and counter-scaled by 1/scale so it
-      // lands 1:1 on screen. Its scene-local position comes from where the scene actually sits in
-      // the viewport (desktop: left/bottom anchored; mobile: centred, and wider than the screen on
-      // tall phones), so it always lines up with the viewport. Set once per resize, never animated.
-      const frameClip = frameClipRef.current
-      if (frameClip) {
-        const sr = scene.getBoundingClientRect()
-        const vr = viewport.getBoundingClientRect()
-        frameClip.style.left = `${(vr.left - sr.left) / scale}px`
-        frameClip.style.top = `${(vr.top - sr.top) / scale}px`
-        frameClip.style.width = `${viewportWidth}px`
-        frameClip.style.height = `${viewportHeight}px`
-        frameClip.style.transform = `scale(${1 / scale})`
-      }
-
       // Chrome anchoring — maps a local point in .scene's design
       // space to its exact screen position.
       const canvasW = mobileMode ? 24.375 : 88.3125
@@ -758,10 +727,11 @@ export const Hero = ({
           return target
         }
 
-        // The Frame is static: full viewport size, never scaled or moved. The portal is only a
-        // window onto it, done with clip-path: each update we work out where the portal is on
-        // screen (pure math on cached numbers, no DOM reads) and clip the Frame to that rect.
-        // The portal video on top fades out with scroll to reveal it.
+        // The REAL Frame (rendered by HeroFrameController) sits underneath the whole Hero panel,
+        // static, never scaled or moved. Every scene layer behind the portal lives in one wrapper
+        // (backLayersRef); each update we cut a hole in that wrapper exactly where the portal is
+        // (scene-local maths on the portal's own GSAP transform, no DOM reads), so the Frame
+        // shows through. The portal video on top fades out with scroll to reveal it.
         // Screen position (relative to the viewport) of scene-local (0,0). Desktop: left/bottom
         // anchored. Mobile: centred horizontally, so this is negative on tall phones.
         const sceneOrigin = () => {
@@ -786,6 +756,7 @@ export const Hero = ({
         }
 
         let lastClip = ''
+        let wasOpen = false
         let lastVideoOpacity = -1
         let lastFrameImgOpacity = -1
         const syncPortalFrame = () => {
@@ -830,26 +801,44 @@ export const Hero = ({
             }
           }
 
-          const clipEl = frameClipRef.current
-          if (!clipEl) return
-          // portal's on-screen rect (scene is bottom-left anchored and scaled by d)
-          const d = designScaleRef.current || 1
-          const cx = m.ox + d * (m.left + m.w / 2 + tx)
-          const cy = m.oy + d * (m.top + m.h / 2 + ty)
-          const hw = (d * m.w * s) / 2
-          const hh = (d * m.h * s) / 2
-          const top = Math.max(0, cy - hh)
-          const right = Math.max(0, m.vw - (cx + hw))
-          const bottom = Math.max(0, m.vh - (cy + hh))
-          const left = Math.max(0, cx - hw)
+          const wrap = backLayersRef.current
+          if (!wrap) return
+          // hole = portal's current rect in scene-local px
+          const cx = m.left + m.w / 2 + tx
+          const cy = m.top + m.h / 2 + ty
+          const hw = (m.w * s) / 2
+          const hh = (m.h * s) / 2
+          const x0 = cx - hw
+          const x1 = cx + hw
+          const y0 = cy - hh
+          const y1 = cy + hh
 
-          const clip =
-            top + right + bottom + left === 0
-              ? 'none' // fully open: drop the clip entirely
-              : `inset(${top.toFixed(1)}px ${right.toFixed(1)}px ${bottom.toFixed(1)}px ${left.toFixed(1)}px)`
+          // Does the hole already cover the whole viewport? (screen = origin + d * local)
+          const d = designScaleRef.current || 1
+          const open =
+            m.ox + d * x0 <= 0 &&
+            m.oy + d * y0 <= 0 &&
+            m.ox + d * x1 >= m.vw &&
+            m.oy + d * y1 >= m.vh
+          if (open) {
+            if (!wasOpen) {
+              wasOpen = true
+              wrap.style.visibility = 'hidden' // nothing left to paint behind the portal
+            }
+            return
+          }
+          if (wasOpen) {
+            wasOpen = false
+            wrap.style.visibility = 'visible'
+          }
+
+          // outer rect + inner rect, even-odd fill = a rectangular hole
+          const B = 20000
+          const f = (n) => n.toFixed(1)
+          const clip = `polygon(evenodd, ${-B}px ${-B}px, ${B}px ${-B}px, ${B}px ${B}px, ${-B}px ${B}px, ${-B}px ${-B}px, ${f(x0)}px ${f(y0)}px, ${f(x1)}px ${f(y0)}px, ${f(x1)}px ${f(y1)}px, ${f(x0)}px ${f(y1)}px, ${f(x0)}px ${f(y0)}px)`
           if (clip !== lastClip) {
             lastClip = clip
-            clipEl.style.clipPath = clip
+            wrap.style.clipPath = clip
           }
         }
         measure()
@@ -992,6 +981,7 @@ export const Hero = ({
       id='hero-scroller'
       ref={scrollerRef}
       className={styles.scroller}
+      style={{ background: 'transparent' }} // the real Frame underneath shows through the portal hole
       tabIndex={0}
       aria-label='Scroll to move toward the black box'
     >
@@ -1162,6 +1152,12 @@ export const Hero = ({
                         </svg>
                         */}
 
+            {/* Everything behind the portal. A rectangular hole is clipped out of this wrapper
+                (see syncPortalFrame) so the real Frame underneath shows through the portal. */}
+            <div
+              ref={backLayersRef}
+              style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }}
+            >
             <div
               ref={backgroundRef}
               className={styles.background}
@@ -1309,28 +1305,6 @@ export const Hero = ({
               </div>
             </div>
 
-            {/* Static Frame preview (never scaled). Clipped to the portal's on-screen rect by
-                syncPortalFrame. Same z as the portal but earlier in the DOM, so the portal video
-                sits on top and fades out to reveal it. Inner layer is promoted so its raster
-                stays cached while only the clip changes. */}
-            <div
-              ref={frameClipRef}
-              aria-hidden='true'
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                width: '100vw',
-                height: '100svh',
-                transformOrigin: '0 0',
-                zIndex: activeLayout.portal.z,
-                pointerEvents: 'none',
-                clipPath: 'inset(50%)', // empty until the first sync
-              }}
-            >
-              <div style={{ position: 'absolute', inset: 0, willChange: 'transform' }}>
-                {portalContent}
-              </div>
             </div>
 
             <div
