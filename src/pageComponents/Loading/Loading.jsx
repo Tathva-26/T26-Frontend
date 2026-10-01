@@ -6,7 +6,6 @@ const EASE_OUT_CUBIC = (t) => 1 - Math.pow(1 - t, 3)
 const REVEAL_DURATION = 900 // ms, radial mask reveal after loading completes
 
 export default function Preloader({ onComplete }) {
-  const [progress, setProgress] = useState(0)
   const [revealing, setRevealing] = useState(false)
   const [done, setDone] = useState(false)
 
@@ -148,25 +147,36 @@ export default function Preloader({ onComplete }) {
   }, [])
 
   // -------------------------------------------------------------
-  // 2. LOADING SEQUENCE
+  // 2. LOADING SEQUENCE — waits for the page's real assets (images,
+  //    video, fonts) to finish loading via `window.load`, not a fixed
+  //    timer. MIN keeps the preloader from flashing on a cached reload;
+  //    MAX is a safety net so a stalled asset can't hang it forever.
   // -------------------------------------------------------------
   useEffect(() => {
-    const duration = 4500
-    const intervalTime = 30
-    const incrementSteps = 100 / (duration / intervalTime)
+    const MIN_VISIBLE_MS = 1200
+    const MAX_WAIT_MS = 12000
+    const start = performance.now()
 
-    const loadInterval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(loadInterval)
-          setTimeout(() => setRevealing(true), 400)
-          return 100
-        }
-        return prev + incrementSteps
-      })
-    }, intervalTime)
+    let settled = false
+    const finish = () => {
+      if (settled) return
+      settled = true
+      const remaining = Math.max(0, MIN_VISIBLE_MS - (performance.now() - start))
+      setTimeout(() => setRevealing(true), remaining)
+    }
 
-    return () => clearInterval(loadInterval)
+    if (document.readyState === 'complete') {
+      finish()
+    } else {
+      window.addEventListener('load', finish)
+    }
+
+    const maxTimer = setTimeout(finish, MAX_WAIT_MS)
+
+    return () => {
+      window.removeEventListener('load', finish)
+      clearTimeout(maxTimer)
+    }
   }, [])
 
   // -------------------------------------------------------------
