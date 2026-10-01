@@ -196,11 +196,28 @@ export default function HorizontalGallery() {
         /* DESKTOP */
         const vh = window.innerHeight;
         const scrollAmount = Math.max(track.scrollWidth - vw, 0);
-        const exitShift = vh * 0.6;
-        const totalTranslation = scrollAmount + exitShift;
-        const totalDuration = vh * 2 + scrollAmount;
 
-        container.style.height = `${totalDuration}px`;
+        /*
+          CONTINUOUS DIAGONAL EXIT (no stop-then-go)
+
+          The horizontal travel is spread evenly across the WHOLE scroll
+          range, so the cards never pause: they keep sliding left while
+          the section rises in, stays pinned, and scrolls out.
+
+          Phases (scroll distance):
+          1) ENTRANCE [0 -> vh]            section rises, cards already moving
+          2) PINNED   [vh -> vh + pin]     section pinned, cards moving
+          3) EXIT     [vh + pin -> range]  section scrolls up, cards STILL moving
+
+          The pin is shortened by the 2 viewport heights spent in entrance
+          and exit, so cards still travel 1:1 with the scroll:
+          range = pin + 2vh = scrollAmount
+        */
+        const pin = Math.max(scrollAmount - vh * 2, 0);
+        const range = pin + vh * 2;
+
+        // Sticky pin length = container height - vh = pin
+        container.style.height = `${pin + vh}px`;
 
         tl = gsap.timeline({
           defaults: { ease: 'none' },
@@ -216,10 +233,10 @@ export default function HorizontalGallery() {
           },
         });
 
-        /* Horizontal movement */
+        /* Horizontal movement: one linear tween over the entire range */
         tl.to(
           track,
-          { x: -totalTranslation, duration: totalDuration, ease: 'none' },
+          { x: -scrollAmount, duration: range, ease: 'none' },
           0
         );
 
@@ -229,14 +246,6 @@ export default function HorizontalGallery() {
           { opacity: 0.85 },
           { opacity: 1, duration: vh, ease: 'none' },
           0
-        );
-
-        /* Exit opacity */
-        tl.fromTo(
-          track,
-          { opacity: 1 },
-          { opacity: 0.85, duration: vh, ease: 'none', immediateRender: false },
-          vh + scrollAmount
         );
       };
 
@@ -284,7 +293,7 @@ export default function HorizontalGallery() {
 
           w-full
           md:overflow-hidden
-          bg-[#080808]
+          bg-[#1d1725]
         "
       >
         {/* TOP GRADIENT */}
@@ -301,8 +310,8 @@ export default function HorizontalGallery() {
             md:h-32
 
             bg-gradient-to-b
-            from-[#080808]
-            via-[#080808]/50
+            from-[#1d1725]
+            via-[#1d1725]/50
             to-transparent
           "
         />
@@ -321,8 +330,8 @@ export default function HorizontalGallery() {
             md:h-48
 
             bg-gradient-to-t
-            from-[#080808]
-            via-[#080808]/60
+            from-[#1d1725]
+            via-[#1d1725]/60
             to-transparent
           "
         />
@@ -332,14 +341,14 @@ export default function HorizontalGallery() {
         ===================================== */}
         <TopoBackground
           fixed={false}
-          background="#080808"
-          lineColor="111, 72, 177"
+          background="#1d1725"
+          lineColor="138,111,174"
           lineOpacity={0.22}
           lineWidth={1}
           levels={7}
           scale={0.0016}
           speed={0.06}
-          cell={10}
+          cell={16}
         />
 
         {/* =========================================
@@ -359,7 +368,7 @@ export default function HorizontalGallery() {
             md:items-center
 
             md:py-0
-            md:pl-[80vw]
+            md:pl-[150vw]
 
             will-change-transform
           "
