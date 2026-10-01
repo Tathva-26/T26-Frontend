@@ -232,3 +232,40 @@ download, stable fallback after that download finished, reverse-scroll upgrade,
 desktop/mobile framing, live reduced-motion changes, gallery opening at the
 first card, context loss and reload. Scoped lint and the motion/interaction
 scripts passed. Production build and physical-device FPS were not revalidated.
+
+## Figma composition update
+
+Reference: file `L9cB9cvVtlQKAg3pP9jEyp`, Desktop – 44 (`1490:2669`),
+1413 × 697. The background is CSS `#131219`; EXPO uses the existing local
+Bowlby One SC font and the Explore button uses self-hosted Alexandria with its
+OFL notice. Copy remains live VCR OSD Mono text. Desktop proportions follow
+Figma; portrait phones, tablets and short landscape have separate constraints.
+The global navigation is unchanged.
+
+The live crystal keeps the existing licensed geometry, cursor response and
+independent robot, with brighter reflections and internal fracture highlights.
+It approximates the raster artwork; it is not an exact 3D reconstruction.
+`crystal-figma.png` is the original transparent image fill from node `1490:2684`,
+used only for loading, reduced motion and renderer failure. No temporary Figma
+URLs are referenced at runtime.
+
+Six code-built faceted shards share one 80-triangle geometry and physical
+material in an instanced mesh; compact devices use four. Their transforms are
+static relative to the crystal group, with visibility tied to existing journey
+weights. Matrix uploads stop once the reveal weight settles. SVG facets supply
+decorations when WebGL is unavailable. No new animation timeline, dependencies,
+postprocessing or render target was added. Existing scroll curves and durations
+are unchanged. The Figma motion export had empty animation targets, so no new
+shard motion was inferred from its two-second cohort.
+
+Leaders use measured resting text/button bounds and four projected crystal
+anchors. Portrait leaders route outside the text; the right-hand desktop leader
+forms the reference triangle. Standalone Expo now shares the same viewport scene
+framing, so decorative shards are not clipped to the crystal slot.
+
+Scoped lint and motion/interaction scripts passed. Browser checks covered
+320/390 px phones, 667 px landscape, 820 px tablet and desktop, modal/Escape,
+keyboard wake, reduced motion, the shared model's pre-entry readiness and the
+gallery's first card. Physical-device FPS is not measured. Production build
+was blocked by existing Google Fonts network failures; a network-enabled retry
+encountered Windows EPERM while unlinking a generated `.next/build` chunk.

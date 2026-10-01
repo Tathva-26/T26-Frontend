@@ -20,6 +20,7 @@ import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
 import { createCrystalVeins } from './crystalGeometry.mjs'
 import { journeyScreenPoint } from './expoJourney.mjs'
 import { springStep, fractureSector } from './crystalInteraction.mjs'
+import CrystalShards from './CrystalShards'
 
 const geometryLoader = new DRACOLoader()
   .setDecoderPath('/images/expo/decoders/draco/')
@@ -50,7 +51,7 @@ function prepareGlass(shader) {
   )
   shader.fragmentShader = shader.fragmentShader.replace(
     'vec3 outgoingLight = totalDiffuse + totalSpecular + totalEmissiveRadiance;',
-    'float edge = pow(1. - abs(dot(normal, normalize(vViewPosition))), 1.3); vec3 edgeTint = mix(vec3(.65,.82,1.),vec3(1.,.35,.85),smoothstep(.2,1.5,vWorldPosition.x-vWorldPosition.y*.3)); float pink = exp(-8.*pow(vWorldPosition.x-.75,2.)-2.*pow(vWorldPosition.y+.6,2.)); vec3 rimGlow = (vec3(.008,.025,.055)+vec3(.35,.025,.24)*pink)*edge; vec3 outgoingLight = totalDiffuse + totalSpecular * mix(.12,1.,edge) * edgeTint + totalEmissiveRadiance + rimGlow;',
+    'float edge = pow(1. - abs(dot(normal, normalize(vViewPosition))), 1.3); vec3 edgeTint = mix(vec3(.65,.82,1.),vec3(1.,.35,.85),smoothstep(.2,1.5,vWorldPosition.x-vWorldPosition.y*.3)); float pink = exp(-8.*pow(vWorldPosition.x-.75,2.)-2.*pow(vWorldPosition.y+.6,2.)); vec3 rimGlow = (vec3(.012,.035,.075)+vec3(.45,.045,.32)*pink)*edge; vec3 outgoingLight = totalDiffuse + totalSpecular * mix(.24,1.25,edge) * edgeTint + totalEmissiveRadiance + rimGlow;',
   )
 }
 
@@ -126,7 +127,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const energyMaterial = useRef()
   const life = useRef({ hover: 0, hitStrength: 0, lastRay: -1, lastHit: -10, activation: 0, charge: 0, sectors: 0, pulseAt: -10, awakeUntil: -10, awake: false, vx: 0, vy: 0 })
   const intersections = useRef([])
-  const projectedAnchors = useMemo(() => [[-.65, .8, .3], [.7, -.05, .3], [-.35, -1.1, .3]].map(([x, y, z]) => ({ source: new Vector3(x, y, z), x: 0, y: 0 })), [])
+  const projectedAnchors = useMemo(() => [[-.76, .55, .3], [.76, .35, .3], [.7, -.55, .3], [-.4, -1.05, .3]].map(([x, y, z]) => ({ source: new Vector3(x, y, z), x: 0, y: 0 })), [])
   const raycaster = useMemo(() => new Raycaster(), [])
   const pointerNdc = useMemo(() => new Vector2(), [])
   const lightPoint = useMemo(() => new Vector3(0, .2, .9), [])
@@ -255,7 +256,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const hover = life.current.hover
     cursorLight.current.position.set(lightPoint.x, lightPoint.y, 1.2)
     cursorLight.current.intensity = hover * 1.6
-    glass.current.envMapIntensity = 1.7 + hover * .25
+    glass.current.envMapIntensity = 2.2 + hover * .25
     glass.current.roughness = .045 - hover * .012
     body.scale.setScalar(1 + hover * .025 + pulse * .012)
     // Warm the hidden canvas once so GPU upload/readiness can finish before entry.
@@ -264,7 +265,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const breath = Math.sin(time * 1.15) * .065 + Math.sin(time * .47) * .025
     glowMaterial.current.opacity = .8 + (breath + hover * .12 + chargeLevel * .15 + (awake ? .25 : 0)) * influence + Math.sin((pose?.exit ?? 0) * Math.PI) * .2
     // Press feedback lives on the inner shell and its fractures, never a screen-space halo.
-    energyMaterial.current.uniforms.brightness.value = 1 + (breath + hover * .18 + chargeLevel * .25) * influence + pulse * 1.2
+    energyMaterial.current.uniforms.brightness.value = 1.6 + (breath + hover * .18 + chargeLevel * .25) * influence + pulse * 1.2
     fractures.current.uniforms.time.value = time
     fractures.current.uniforms.hover.value = hover
     fractures.current.uniforms.pulse.value = pulse
@@ -321,6 +322,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     <group ref={travel}>
       <group ref={idle}>
       <group ref={group}>
+      <CrystalShards journey={journey} compact={compact} prepareGlass={prepareGlass} />
       <pointLight ref={cursorLight} color='#75dfff' intensity={0} distance={4} decay={2} />
       <points ref={motes} geometry={dust}>
         <pointsMaterial color='#acdfff' map={glow} size={.055} transparent opacity={.18} depthWrite={false} blending={AdditiveBlending} />
@@ -365,7 +367,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
             ior={1.18}
             reflectivity={0.3}
             clearcoat={0}
-            envMapIntensity={1.7}
+            envMapIntensity={2.2}
             onBeforeCompile={prepareGlass}
           />
         </mesh>
@@ -382,12 +384,15 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
               depthWrite={false}
             />
           </mesh>
-          <mesh position={[0, 0.18, 0.64]} scale={[1.7, 1.7, 1]}>
+          <mesh position={[0, 0.18, 0.64]} scale={[1.7, 1.7, 1]} renderOrder={10}>
             <planeGeometry />
             <meshBasicMaterial
               map={robot}
               color={[0.27, 0.57, 1.5]}
               alphaTest={0.1}
+              transparent
+              depthTest={false}
+              depthWrite={false}
               toneMapped={false}
             />
           </mesh>
@@ -401,7 +406,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
               blending={AdditiveBlending}
               uniforms={veinUniforms}
               vertexShader={'varying vec3 vLocal; void main(){vLocal=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }'}
-              fragmentShader={'uniform float time,hover,pulse; uniform vec3 pointer; varying vec3 vLocal; void main(){float near=exp(-length(vLocal.xy-pointer.xy)*2.8); float scan=.5+.5*sin(vLocal.y*5.-time*2.2); float activation=pulse*(.35+.65*near); vec3 color=mix(vec3(.12,.32,.8),vec3(.55,.94,1.),clamp(near*hover+activation,0.,1.)); gl_FragColor=vec4(color,clamp(.15+hover*near*(.50+scan*.24)+activation*.65,0.,1.));\n#include <colorspace_fragment>\n}'}
+              fragmentShader={'uniform float time,hover,pulse; uniform vec3 pointer; varying vec3 vLocal; void main(){float near=exp(-length(vLocal.xy-pointer.xy)*2.8); float scan=.5+.5*sin(vLocal.y*5.-time*2.2); float activation=pulse*(.35+.65*near); vec3 base=mix(vec3(.18,.45,1.),vec3(.75,.25,.9),smoothstep(.0,.8,vLocal.x-vLocal.y*.3)); vec3 color=mix(base,vec3(.55,.94,1.),clamp(near*hover+activation,0.,1.)); gl_FragColor=vec4(color,clamp(.38+hover*near*(.50+scan*.24)+activation*.65,0.,1.));\n#include <colorspace_fragment>\n}'}
             />
           </lineSegments>
         </group>

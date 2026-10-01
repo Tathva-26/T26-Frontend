@@ -10,6 +10,7 @@ import { expoJourney, expoExit, journeyScreenPoint } from './expoJourney.mjs'
 import HorizontalGallery from '../HorizontalGallery/HorizontalGallery'
 import styles from './ExpoTransition.module.css'
 import expoStyles from './Expo.module.css'
+import { measureExpoLabels, expoLeaderPaths } from './expoLeaders.mjs'
 
 const subscribeMotion = (callback) => {
   const query = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -32,17 +33,7 @@ export default function TechConclaveExpoTransition() {
     // forced layout reads for every animated frame.
     const plane = geometry.current
     if (!plane) return
-    const mobile = plane.width < 768
-    const labels = mobile
-      ? [[.30, .31], [.69, .74], [.45, .82]]
-      : [[.32, .29], [.74, .55], [.34, .86]]
-    points.forEach((point, index) => {
-      const x = (point.x * .5 + .5) * plane.width
-      const y = (-point.y * .5 + .5) * plane.height
-      const lx = labels[index][0] * plane.width
-      const ly = labels[index][1] * plane.height
-      paths.current[index]?.setAttribute('d', `M${lx},${ly} H${lx + (x - lx) * .45} L${x},${y} m-3,0 h6 m-3,-3 v6`)
-    })
+    expoLeaderPaths(points, plane).forEach((path, index) => paths.current[index]?.setAttribute('d', path))
   }, [])
 
   const projectModel = useCallback((points) => {
@@ -84,6 +75,7 @@ export default function TechConclaveExpoTransition() {
         height: viewport.height,
         slotWidth: destination.width,
         slotHeight: destination.height,
+        labels: measureExpoLabels(page, viewport),
         // Fixed navigation is measured in viewport coordinates. Before pinning
         // or during a resize, the plane itself may still be far offscreen.
         navigationBottom: Math.max(64, ...navigation.map((rect) => rect.bottom)),
@@ -132,7 +124,7 @@ export default function TechConclaveExpoTransition() {
       gsap.set(lines, { scale: 1 - exit * .65, transformOrigin: `${box.endX}px ${box.endY}px` })
       if (state !== 'ready' || crystal.current.dataset.expoRenderer === 'fallback') {
         const effectiveScale = pose.scale * 8 / (8 - pose.depth)
-        const points = [[-.25, -.25], [.30, 0], [-.12, .30]].map(([dx, dy]) => ({ x: (x + dx * box.slotWidth * effectiveScale) / box.width * 2 - 1, y: 1 - (y + dy * box.slotHeight * effectiveScale) / box.height * 2 }))
+        const points = [[-.25, -.18], [.27, -.10], [.25, .18], [-.12, .30]].map(([dx, dy]) => ({ x: (x + dx * box.slotWidth * effectiveScale) / box.width * 2 - 1, y: 1 - (y + dy * box.slotHeight * effectiveScale) / box.height * 2 }))
         project(points)
       }
       element.dataset.expoProgress = progress.toFixed(3)
@@ -178,6 +170,7 @@ export default function TechConclaveExpoTransition() {
       render(trigger?.animation?.progress() ?? 0)
     })
     resize.observe(plane)
+    document.fonts.ready.then(() => { if (!disposed) { measure(); render(trigger?.animation?.progress() ?? 0) } })
     // HeroFrameController can change the page's available height after mount.
     const refresh = requestAnimationFrame(() => { ScrollTrigger.refresh(); window.__lenis?.resize() })
     return () => {

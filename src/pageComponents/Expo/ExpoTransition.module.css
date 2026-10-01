@@ -16,10 +16,10 @@
   isolation: auto;
 }
 /* Keep text and the mobile Explore hit target above the canvas rectangle. */
-.animated > [data-expo-page] > section > h1,
 .animated > [data-expo-page] > section > p,
 .animated > [data-expo-page] > section > button { z-index: 5; }
-.animated > [data-expo-page] svg[aria-hidden] { visibility: hidden; }
+.animated > [data-expo-page] > section > h1 { z-index: 1; }
+.animated > [data-expo-page] svg[aria-hidden]:not([data-expo-fallback-shards]) { visibility: hidden; }
 .plane {
   position: absolute;
   bottom: 0;
@@ -42,6 +42,7 @@
 .crystal img { inset: auto; top: 0; left: 0; transform-origin: center; }
 .crystal[data-expo-renderer='fallback'] [role='img'] { visibility: hidden; }
 .crystal[data-expo-renderer='fallback'] img { opacity: var(--journey-fallback-opacity, 1); }
+.animated:has([data-crystal-state='ready']):not(:has([data-expo-renderer='fallback'])) [data-expo-fallback-shards] { visibility: hidden; }
 .mist {
   position: absolute;
   top: 0;
