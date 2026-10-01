@@ -369,6 +369,9 @@ function SpeakerCalloutProvider({ children }) {
   })
 
   React.useEffect(() => {
+    // One-time hydration guard so client-only UI renders after mount, not
+    // a cascade — this effect only ever runs once, on mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
   }, [])
 
@@ -696,7 +699,7 @@ function SpeakerCalloutProvider({ children }) {
       onBlur: () => hide(index),
     })
 
-    /* global dismissers: tap outside, scroll (sheet), resize, Escape */
+    // Document-level dismissers: tap outside, scroll (sheet), resize, Escape
     const onDocPointerDown = (e) => {
       if (!s.visible) return
       if (e.target && e.target.closest && e.target.closest('.tc-card')) return
