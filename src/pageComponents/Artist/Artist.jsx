@@ -877,15 +877,15 @@ export default function App() {
         }
 
         /* -------------------------------------------------------------
-           DESKTOP/LAPTOP SCHEDULE CARD: Shifted & Enlarged
+           DESKTOP/LAPTOP SCHEDULE CARD: Shifted Higher & Proportionally Sized
            ------------------------------------------------------------- */
         .schedule-card {
           position: absolute;
           z-index: 3;
-          top: 8%;
-          right: 10%;
-          width: min(390px, 54%);
-          min-width: 300px;
+          top: 5.5%;
+          right: -1%;
+          width: min(420px, 50%);
+          min-width: 330px;
           overflow: hidden;
           border: 1px solid #323231;
           border-radius: 14px;
@@ -898,16 +898,18 @@ export default function App() {
           grid-template-columns: repeat(3, 1fr);
           align-items: center;
           height: 52px;
-          padding: 8px 18px;
+          padding: 6px 14px;
           border-bottom: 1px solid #d63d5e;
           font-family: 'Arial Black', sans-serif;
+          font-size: 15px;
+          font-weight: 900;
         }
 
         .schedule-days button {
-          height: 34px;
+          height: 36px;
           padding: 0;
           border: 0;
-          border-radius: 9px;
+          border-radius: 8px;
           background: transparent;
           font-size: 15px;
           font-weight: 900;
@@ -926,9 +928,9 @@ export default function App() {
 
         .schedule-card p {
           margin: 0;
-          padding: 16px 28px 24px;
-          font-size: 15px;
-          line-height: 1.4;
+          padding: 20px 28px 24px;
+          font-size: 19px;
+          line-height: 1.5;
           font-variation-settings: 'wdth' 100;
           transition: opacity 0.25s ease;
         }
@@ -1159,13 +1161,14 @@ export default function App() {
           .mobile-days {
             position: absolute;
             left: 6px;
-            top: calc(50% - 27dvh - 38px);
+            top: calc(50% - 30dvh - 38px);
             z-index: 10;
             display: flex;
             flex-direction: column;
             gap: 32px;
+            width: 48px;
             align-items: center;
-            padding: 56px 8px;
+            padding: 40px 8px;
             border: 1px solid #323231;
             border-radius: 12px;
             background: #202020;
@@ -1178,7 +1181,7 @@ export default function App() {
             background: transparent;
             color: #fff;
             font-family: 'Bebas Neue', 'Bebas Neue:Regular', sans-serif;
-            font-size: 18px;
+            font-size: 20px;
             letter-spacing: 0.04em;
             writing-mode: vertical-rl;
             transform: rotate(180deg);
@@ -1236,16 +1239,16 @@ export default function App() {
             margin: 22px 0 0;
             color: #fff;
             font-family: 'Bebas Neue', 'Bebas Neue:Regular', sans-serif;
-            font-size: clamp(46px, 12vw, 66px);
+            font-size: clamp(6px, 12vw, 66px);
             line-height: 0.95;
             text-transform: uppercase;
           }
 
           .mobile-desc {
             margin: 12px 0 0;
-            max-width: 34ch;
-            font-size: 14.5px;
-            line-height: 1.45;
+            // max-width: 34ch;
+            font-size: 20.5px;
+            line-height: 1.25;
             opacity: 0.92;
           }
         }
