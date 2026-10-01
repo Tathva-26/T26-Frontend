@@ -189,3 +189,24 @@ the interaction. A visible focus outline and hidden instructions describe it.
 Checks covered 320/390 px phones, short landscape, portrait/landscape tablets,
 and 1920 px desktop; real browser touch events preserved vertical scrolling.
 Scoped lint and motion checks passed. Hardware FPS remains unmeasured.
+
+## Deliberate interaction
+
+Pointer/drag tilt now uses a bounded damped spring. The robot looks toward the
+surface hit with a delayed response. A deliberate tap/click brightens the energy
+mapped to the inner crystal shell and its fracture lines, with a small robot nod.
+There is no expanding ring or press-driven particle expansion outside the ice;
+the ambient mist still thins near the pointer.
+Three taps, or three Enter/Space activations while focused, charge the core and
+wake the robot for 2.4 seconds, with a short cooldown and a polite accessible
+announcement. Traversing three distinct fracture-height regions also wakes it;
+hit regions are measured against the vein segments, not arbitrary canvas areas.
+Charge and traced regions recover after inactivity and clear during departure.
+Vertical movement beyond the tap threshold, pointer cancellation and clicks
+outside the ice do not activate it. Keyboard auto-repeat is excluded.
+
+`node scripts/check-crystal-interaction.mjs` checks spring bounds, overshoot and
+settling at several update rates, plus fracture-region discrimination. Browser
+checks covered keyboard and real touch wake, drag/release, shared-scene wake,
+gallery release at Placeholder 01, and reduced-motion removal. Scoped lint and
+the existing entry/exit motion checks pass; no production build was revalidated.
