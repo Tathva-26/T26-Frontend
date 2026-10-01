@@ -76,7 +76,7 @@ function Art({
         priority={priority}
         sizes={`${Math.ceil(width)}px`}
         draggable={false}
-        className="select-none object-fill"
+        className="robowars-art select-none object-fill"
       />
     </div>
   );
@@ -122,7 +122,7 @@ function DesktopFrame({ className, scale = "desktop", containerRef }) {
         width={368}
         height={612}
         priority={!isTablet}
-        className="robowars-motion robowars-left-robot pointer-events-none will-change-transform"
+        className="robowars-motion robowars-robot robowars-left-robot pointer-events-none"
       />
       <Art
         src="arena-right-robot.svg"
@@ -132,7 +132,7 @@ function DesktopFrame({ className, scale = "desktop", containerRef }) {
         width={342}
         height={573}
         priority={!isTablet}
-        className="robowars-motion robowars-right-robot pointer-events-none will-change-transform"
+        className="robowars-motion robowars-robot robowars-right-robot pointer-events-none"
       />
 
       <div
@@ -213,7 +213,7 @@ function MobileFrame({ containerRef }) {
         frameWidth={MOBILE_FRAME_WIDTH}
         frameHeight={MOBILE_FRAME_HEIGHT}
         priority
-        className="robowars-motion robowars-left-robot pointer-events-none will-change-transform"
+        className="robowars-motion robowars-robot robowars-left-robot pointer-events-none"
       />
       <Art
         src="arena-right-robot.svg"
@@ -225,7 +225,7 @@ function MobileFrame({ containerRef }) {
         frameWidth={MOBILE_FRAME_WIDTH}
         frameHeight={MOBILE_FRAME_HEIGHT}
         priority
-        className="robowars-motion robowars-right-robot pointer-events-none will-change-transform"
+        className="robowars-motion robowars-robot robowars-right-robot pointer-events-none"
       />
 
       <div
