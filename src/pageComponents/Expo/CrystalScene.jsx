@@ -49,10 +49,18 @@ function ContextEvents({ onFailure }) {
   return null;
 }
 
+function RenderBudget({ compact }) {
+  const gl = useThree((state) => state.gl);
+  useEffect(() => { gl.transmissionResolutionScale = compact ? .5 : .75; }, [gl, compact]);
+  return null;
+}
+
 export default function CrystalScene({ active, onReady, onFailure, journey, onProject }) {
   const target = useRef({ tiltX: 0, tiltY: 0, x: 0, y: 0, active: false });
   const pointer = useRef(null);
   const [dpr, setDpr] = useState(1);
+  const [compact, setCompact] = useState(true);
+  const controlsRect = (element) => element.closest('[data-expo-progress]')?.querySelector('[data-expo-slot]')?.getBoundingClientRect() || element.getBoundingClientRect();
 
   const reset = () => {
     pointer.current = null;
@@ -63,16 +71,27 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
     if (touch && pointer.current?.id !== event.pointerId) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const point = localPointer(event.clientX, event.clientY, rect);
+    const local = localPointer(event.clientX, event.clientY, controlsRect(event.currentTarget));
     const start = pointer.current?.start;
-    const drag = start ? { x: point.x - start.x, y: point.y - start.y } : { x: 0, y: 0 };
-    const { tiltX, tiltY } = interactionTargets(point, drag, touch);
+    const drag = start ? { x: local.x - start.x, y: local.y - start.y } : { x: 0, y: 0 };
+    const { tiltX, tiltY } = interactionTargets(local, drag, touch);
     Object.assign(target.current, { tiltX, tiltY, x: point.x, y: point.y, active: true });
   };
   const down = (event) => {
     if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
-    pointer.current = { id: event.pointerId, start: localPointer(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect()) };
+    pointer.current = { id: event.pointerId, start: localPointer(event.clientX, event.clientY, controlsRect(event.currentTarget)) };
     event.currentTarget.setPointerCapture(event.pointerId);
     update(event);
+  };
+  const keyboard = (event) => {
+    if (event.key === 'Escape') { reset(); return; }
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault();
+    const slot = controlsRect(event.currentTarget);
+    const point = localPointer(slot.left + slot.width / 2, slot.top + slot.height / 2, event.currentTarget.getBoundingClientRect());
+    Object.assign(target.current, { x: point.x, y: point.y, active: true,
+      tiltX: Math.max(-.15, Math.min(.15, target.current.tiltX + (event.key === 'ArrowUp' ? -.035 : event.key === 'ArrowDown' ? .035 : 0))),
+      tiltY: Math.max(-.22, Math.min(.22, target.current.tiltY + (event.key === 'ArrowLeft' ? -.045 : event.key === 'ArrowRight' ? .045 : 0))) });
   };
   const release = (event) => {
     if (pointer.current && pointer.current.id !== event.pointerId) return;
@@ -82,20 +101,27 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
 
   useEffect(() => {
     const query = window.matchMedia("(pointer: coarse), (max-width: 767px)");
-    const resize = () => setDpr(query.matches ? 1 : Math.min(window.devicePixelRatio, 1.5));
+    const resize = () => {
+      const modestHardware = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) || (navigator.deviceMemory && navigator.deviceMemory <= 4);
+      const small = query.matches || modestHardware;
+      setCompact(Boolean(small));
+      setDpr(Math.min(window.devicePixelRatio || 1, small ? 1 : window.innerWidth < 1200 ? 1.25 : 1.5));
+    };
     resize(); query.addEventListener("change", resize);
-    return () => query.removeEventListener("change", resize);
+    window.addEventListener('resize', resize);
+    return () => { query.removeEventListener("change", resize); window.removeEventListener('resize', resize); };
   }, []);
 
   return (
-    <div style={{ width: "100%", height: "100%", touchAction: "pan-y pinch-zoom" }} onPointerDown={down} onPointerMove={update} onPointerUp={release} onPointerCancel={release} onPointerLeave={reset} onLostPointerCapture={reset} aria-describedby="crystal-instructions" role="img" aria-label="Interactive Tathva crystal">
+    <div style={{ width: "100%", height: "100%", touchAction: "pan-y pinch-zoom" }} tabIndex={0} onKeyDown={keyboard} onBlur={reset} onPointerDown={down} onPointerMove={update} onPointerUp={release} onPointerCancel={release} onPointerLeave={reset} onLostPointerCapture={reset} aria-describedby="crystal-instructions" role="img" aria-label="Interactive Tathva crystal">
       <Canvas dpr={dpr} frameloop={active ? "always" : "never"} camera={{ fov: 32, position: [0, 0, 7], near: .1, far: 30 }} gl={{ alpha: true, antialias: true, powerPreference: "low-power" }} onCreated={({ gl }) => { gl.setClearColor(0, 0); gl.toneMapping = NoToneMapping; gl.transmissionResolutionScale = .75; }} fallback={null}>
         <ContextEvents onFailure={onFailure} />
+        <RenderBudget compact={compact} />
         <Suspense fallback={null}><SceneEnvironment shared={!!journey} /></Suspense>
         <ambientLight intensity={.08} />
         <directionalLight position={[-3, 4, 3]} color="#7bbaff" intensity={.6} />
         <pointLight position={[1.8, -1.2, 1]} color="#ee49cf" intensity={4} distance={5} decay={2} />
-        <Suspense fallback={null}><CrystalModel target={target} onReady={onReady} journey={journey} onProject={onProject} /></Suspense>
+        <Suspense fallback={null}><CrystalModel target={target} compact={compact} onReady={onReady} journey={journey} onProject={onProject} /></Suspense>
         {journey && <Suspense fallback={null}><ConclaveVeil journey={journey} /></Suspense>}
       </Canvas>
     </div>

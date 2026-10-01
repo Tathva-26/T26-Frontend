@@ -172,3 +172,20 @@ Scoped lint and motion checks passed. Desktop/shared and standalone views were
 visually checked; phone touch drag/release, modal focus return, reduced motion,
 and simulated context loss were checked in the browser. Physical phone frame
 rate has not been measured.
+
+## Input and device budgets
+
+Touch/small or modest-hardware devices use DPR at most 1, a half-resolution
+transmission buffer, 24 motes and 20 Hz surface picking. Other tablets cap DPR
+at 1.25; large desktops at 1.5, with 48 motes and 30 Hz picking. Hover damping
+continues at render frequency. Hit arrays and projected anchors are reused;
+connector projection uses cached viewport measurements instead of per-frame
+DOM layout reads. Budgets update after resize and pointer-capability changes.
+
+Shared-canvas tilt input is relative to the crystal slot, while raycasting stays
+relative to the canvas. Vertical touch panning and pinch zoom remain enabled.
+The crystal is keyboard focusable: arrows tilt, Escape resets, and blur releases
+the interaction. A visible focus outline and hidden instructions describe it.
+Checks covered 320/390 px phones, short landscape, portrait/landscape tablets,
+and 1920 px desktop; real browser touch events preserved vertical scrolling.
+Scoped lint and motion checks passed. Hardware FPS remains unmeasured.

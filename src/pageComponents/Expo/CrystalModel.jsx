@@ -110,7 +110,7 @@ function createEnergy() {
   return texture
 }
 
-export default function CrystalModel({ target, onReady, journey, onProject }) {
+export default function CrystalModel({ target, compact = false, onReady, journey, onProject }) {
   const group = useRef()
   const travel = useRef()
   const idle = useRef()
@@ -123,7 +123,9 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
   const motes = useRef()
   const mist = useRef()
   const energyMaterial = useRef()
-  const life = useRef({ hover: 0 })
+  const life = useRef({ hover: 0, hitStrength: 0, lastRay: -1 })
+  const intersections = useRef([])
+  const projectedAnchors = useMemo(() => [[-.65, .8, .3], [.7, -.05, .3], [-.35, -1.1, .3]].map(([x, y, z]) => ({ source: new Vector3(x, y, z), x: 0, y: 0 })), [])
   const raycaster = useMemo(() => new Raycaster(), [])
   const pointerNdc = useMemo(() => new Vector2(), [])
   const lightPoint = useMemo(() => new Vector3(0, .2, .9), [])
@@ -172,6 +174,7 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
     result.setAttribute('position', new Float32BufferAttribute(positions, 3))
     return result
   }, [])
+  useEffect(() => { dust.setDrawRange(0, compact ? 24 : 48); }, [dust, compact])
   // All decode promises have resolved before this component commits. Keep the
   // cached GPU assets, but release the now-idle decoder workers immediately.
   useEffect(releaseCrystalDecoders, [])
@@ -193,20 +196,29 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
     const influence = pose ? pose.interaction : 1
     const time = clock.elapsedTime
     // Raycast the actual ice, not the viewport rectangle surrounding it.
-    travel.current.updateWorldMatrix(true, true)
-    let hit = null
     if (target.current.active && influence > .01) {
-      pointerNdc.set(target.current.x, target.current.y)
-      raycaster.setFromCamera(pointerNdc, camera)
-      hit = raycaster.intersectObject(shell.current, false)[0]
+      // Surface picking need not run at render frequency. Reuse its result
+      // between samples; damping still runs every frame.
+      if (time - life.current.lastRay >= (compact ? 1 / 20 : 1 / 30)) {
+        life.current.lastRay = time
+        travel.current.updateWorldMatrix(true, true)
+        pointerNdc.set(target.current.x, target.current.y)
+        raycaster.setFromCamera(pointerNdc, camera)
+        intersections.current.length = 0
+        raycaster.intersectObject(shell.current, false, intersections.current)
+        const hit = intersections.current[0]
+        life.current.hitStrength = hit ? 1 : 0
+        if (hit) {
+          anchor.copy(hit.point)
+          body.worldToLocal(anchor)
+          lightPoint.lerp(anchor, .35)
+        }
+      }
+    } else {
+      life.current.hitStrength = 0
     }
-    life.current.hover = MathUtils.damp(life.current.hover, hit ? influence : 0, 5.2, dt)
+    life.current.hover = MathUtils.damp(life.current.hover, life.current.hitStrength * influence, 5.2, dt)
     const hover = life.current.hover
-    if (hit) {
-      anchor.copy(hit.point)
-      body.worldToLocal(anchor)
-      lightPoint.lerp(anchor, 1 - Math.exp(-dt * 7))
-    }
     cursorLight.current.position.set(lightPoint.x, lightPoint.y, 1.2)
     cursorLight.current.intensity = hover * 1.6
     glass.current.envMapIntensity = 1.7 + hover * .25
@@ -248,13 +260,13 @@ export default function CrystalModel({ target, onReady, journey, onProject }) {
     mist.current.position.x = Math.sin(time * .16) * .22
     mist.current.material.uniforms.time.value = time
     mist.current.material.uniforms.opacity.value = .10 * influence
-    if (onProject) {
+    if (onProject && influence > .01) {
       travel.current.updateWorldMatrix(true, true)
-      const points = [[-.65, .8, .3], [.7, -.05, .3], [-.35, -1.1, .3]].map(([x, y, z]) => {
-        anchor.set(x, y, z).applyMatrix4(body.matrixWorld).project(camera)
-        return { x: anchor.x, y: anchor.y }
+      projectedAnchors.forEach((point) => {
+        anchor.copy(point.source).applyMatrix4(body.matrixWorld).project(camera)
+        point.x = anchor.x; point.y = anchor.y
       })
-      onProject(points)
+      onProject(projectedAnchors)
     }
   })
 

@@ -28,16 +28,17 @@ export default function TechConclaveExpoTransition() {
   const paths = useRef([])
 
   const project = useCallback((points) => {
-    const box = crystal.current?.getBoundingClientRect()
-    const plane = root.current?.querySelector('[data-expo-plane]')?.getBoundingClientRect()
-    if (!box || !plane) return
+    // Canvas and connector SVG share the same viewport; cached geometry avoids
+    // forced layout reads for every animated frame.
+    const plane = geometry.current
+    if (!plane) return
     const mobile = plane.width < 768
     const labels = mobile
       ? [[.30, .31], [.69, .74], [.45, .82]]
       : [[.32, .29], [.74, .55], [.34, .86]]
     points.forEach((point, index) => {
-      const x = box.left - plane.left + (point.x * .5 + .5) * box.width
-      const y = box.top - plane.top + (-point.y * .5 + .5) * box.height
+      const x = (point.x * .5 + .5) * plane.width
+      const y = (-point.y * .5 + .5) * plane.height
       const lx = labels[index][0] * plane.width
       const ly = labels[index][1] * plane.height
       paths.current[index]?.setAttribute('d', `M${lx},${ly} H${lx + (x - lx) * .45} L${x},${y} m-3,0 h6 m-3,-3 v6`)
