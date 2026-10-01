@@ -890,7 +890,7 @@ export default function TathvaMenu() {
           hidden
           h-auto
           w-[130px]
-          aspect-[100/28]
+          aspect-[3/1]
           -translate-x-1/2
           cursor-pointer
           items-start
@@ -903,8 +903,8 @@ export default function TathvaMenu() {
         '
       >
         <img
-          src='/images/menu/tathva.png'
-          alt='Tathva 26'
+          src='/images/W1/The%20thing%20on%20top.svg'
+          alt='Tathva 2026'
           draggable={false}
           className='
             pointer-events-none

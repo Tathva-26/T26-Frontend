@@ -4,6 +4,7 @@ import "./w1.css";
 
 // Desktop Constants
 const desktopAssetBase = "https://c.animaapp.com/Dp7bguVy/img";
+const localAssetBase = "/images/W1";
 const desktopCards = [
   {
     id: "workshops",
@@ -11,7 +12,7 @@ const desktopCards = [
     title: "WORKSHOPS",
     description: [""],
     frame: `${desktopAssetBase}/vector-29.png`,
-    image: `${desktopAssetBase}/tathva-26-generate-the-same-image---ar-321487---edit-httpss-m-97@2x.png`,
+    image: `${localAssetBase}/Workshops.svg`,
     titleClass: "top-[140px] left-0 w-[204px] text-xl tracking-[5.00px]",
     descriptionClass: "top-[154px] left-0 w-[204px]",
     markerClass: "top-[45px] left-[77px]",
@@ -23,6 +24,7 @@ const desktopCards = [
     title: "COMPETITIONS",
     description: [""],
     frame: `${desktopAssetBase}/group-35.png`,
+    image: `${localAssetBase}/Competitions.svg`,
     titleClass: "top-[140px] left-px w-[204px] text-lg tracking-[4.50px]",
     descriptionClass: "top-[154px] left-px w-[204px]",
     markerClass: "top-[45px] left-[77px]",
@@ -34,6 +36,7 @@ const desktopCards = [
     title: "LECTURES",
     description: [""],
     frame: `${desktopAssetBase}/group-36.png`,
+    image: `${localAssetBase}/Lectures.svg`,
     titleClass: "top-[140px] left-[21px] w-[171px] text-xl tracking-[5.00px]",
     descriptionClass: "top-[158px] left-px w-[204px]",
     markerClass: "top-[45px] left-[77px]",
@@ -45,6 +48,7 @@ const desktopCards = [
     title: "HACKATHONS",
     description: [""],
     frame: `${desktopAssetBase}/group-37.png`,
+    image: `${localAssetBase}/hackathon.svg`,
     titleClass: "top-[140px] left-px w-[204px] text-xl tracking-[5.00px]",
     descriptionClass: "top-[157px] left-px w-[204px]",
     markerClass: "top-[42px] left-[79px]",
@@ -251,8 +255,8 @@ function DesktopView() {
       data-model-id="998:1701"
     >
       <div className="absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-500 pointer-events-none z-10 page-overlay" />
-      <img src="/images/menu/border_left.png" alt="" className="absolute left-[30px] top-1/2 -translate-y-1/2 h-[50%] max-h-[350px] w-auto pointer-events-none z-50" />
-      <img src="/images/menu/border_right.png" alt="" className="absolute right-[30px] top-1/2 -translate-y-1/2 h-[50%] max-h-[350px] w-auto pointer-events-none z-50" />
+      <img src={`${localAssetBase}/left%20border.svg`} alt="" className="absolute left-[30px] top-1/2 -translate-y-1/2 h-[50%] max-h-[350px] w-auto pointer-events-none z-50" />
+      <img src={`${localAssetBase}/right%20border.svg`} alt="" className="absolute right-[30px] top-1/2 -translate-y-1/2 h-[50%] max-h-[350px] w-auto pointer-events-none z-50" />
       <div className="w-[1413px] h-full relative mx-auto flex shrink-0 items-center justify-center">
         <section
           className="relative w-[988px] h-[590px] flex shrink-0"
