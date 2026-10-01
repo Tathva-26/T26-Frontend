@@ -39,7 +39,7 @@ function makeNoise(seed = 7) {
 
 export default function TopoBackground({
   background = "#1d1725",
-  lineColor = "138,111,174",
+  lineColor = "138, 111, 174",
   lineOpacity = 0.22,
   lineWidth = 1,
   levels = 7,

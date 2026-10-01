@@ -196,27 +196,11 @@ export default function HorizontalGallery() {
         /* DESKTOP */
         const vh = window.innerHeight;
         const scrollAmount = Math.max(track.scrollWidth - vw, 0);
+        const exitShift = vh * 0.6;
+        const totalTranslation = scrollAmount + exitShift;
+        const totalDuration = vh * 2 + scrollAmount;
 
-        // Extra pinned hold after the cards finish scrolling (tweak to taste)
-        const exitExtension = vh * 1.0;
-
-        /*
-          Timeline phases (scroll distance):
-          1) ENTRANCE  [0 -> vh]
-             Section rises into view while cards already move left (diagonal feel).
-          2) PINNED    [vh -> vh + scrollAmount]
-             Section is pinned, cards finish scrolling horizontally.
-          3) HOLD      [vh + scrollAmount -> vh + scrollAmount + exitExtension]
-             Last frame lingers, still pinned.
-          4) EXIT      [... + vh]
-             Normal exit: section scrolls up, cards are static (no horizontal move).
-        */
-        const moveDuration = vh + scrollAmount;
-        const holdStart = moveDuration;
-        const totalDuration = vh + scrollAmount + exitExtension + vh;
-
-        // Pinned length = container height - vh, so:
-        container.style.height = `${vh + scrollAmount + exitExtension}px`;
+        container.style.height = `${totalDuration}px`;
 
         tl = gsap.timeline({
           defaults: { ease: 'none' },
@@ -227,15 +211,15 @@ export default function HorizontalGallery() {
             end: 'bottom top',
             // Lenis already smooths the scroll position, so `true` tracks it
             // directly instead of adding a second layer of lag.
-            scrub: 1.2,
+            scrub: true,
             invalidateOnRefresh: true,
           },
         });
 
-        /* Horizontal movement: starts at entrance, ends when pinned part is done */
+        /* Horizontal movement */
         tl.to(
           track,
-          { x: -scrollAmount, duration: moveDuration, ease: 'none' },
+          { x: -totalTranslation, duration: totalDuration, ease: 'none' },
           0
         );
 
@@ -247,8 +231,13 @@ export default function HorizontalGallery() {
           0
         );
 
-        /* Pad timeline: hold + normal exit (no movement) so it matches scroll range */
-        tl.to({}, { duration: totalDuration - holdStart }, holdStart);
+        /* Exit opacity */
+        tl.fromTo(
+          track,
+          { opacity: 1 },
+          { opacity: 0.85, duration: vh, ease: 'none', immediateRender: false },
+          vh + scrollAmount
+        );
       };
 
       build();
@@ -295,7 +284,7 @@ export default function HorizontalGallery() {
 
           w-full
           md:overflow-hidden
-          bg-[#1d1725]
+          bg-[#080808]
         "
       >
         {/* TOP GRADIENT */}
@@ -312,8 +301,8 @@ export default function HorizontalGallery() {
             md:h-32
 
             bg-gradient-to-b
-            from-[#1d1725]
-            via-[#1d1725]/50
+            from-[#080808]
+            via-[#080808]/50
             to-transparent
           "
         />
@@ -332,8 +321,8 @@ export default function HorizontalGallery() {
             md:h-48
 
             bg-gradient-to-t
-            from-[#1d1725]
-            via-[#1d1725]/60
+            from-[#080808]
+            via-[#080808]/60
             to-transparent
           "
         />
@@ -343,14 +332,14 @@ export default function HorizontalGallery() {
         ===================================== */}
         <TopoBackground
           fixed={false}
-          background="#1d1725"
-          lineColor="138,111,174"
+          background="#080808"
+          lineColor="111, 72, 177"
           lineOpacity={0.22}
           lineWidth={1}
           levels={7}
           scale={0.0016}
           speed={0.06}
-          cell={16}
+          cell={10}
         />
 
         {/* =========================================
@@ -370,7 +359,7 @@ export default function HorizontalGallery() {
             md:items-center
 
             md:py-0
-            md:pl-[90vw]
+            md:pl-[80vw]
 
             will-change-transform
           "
