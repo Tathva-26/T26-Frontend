@@ -56,7 +56,7 @@ const LAYOUT = {
         z: 0, zLift: 0,
     },
     island: {
-        top: -1, left: 33.8, width: 50, height: 37,
+        top: 2, left: 38.8, width: 45, height: 37,
         driftX: 0, driftY: -50, scaleTo: 1.04,
         z: 1, zLift: 0,
     },
@@ -72,7 +72,7 @@ const LAYOUT = {
     },
     // T1 renders the full "TATHVA" wordmark on its own.
     t1: {
-        top: 15.5, left: -1, width: 90, height: 30.6,
+        top: 15.5, left: -1, width: 85, height: 30.6,
         driftX: 0, driftY: -25, scaleTo: 1,
         z: 3, zLift: 0,
     },
@@ -1279,18 +1279,20 @@ export const Hero = ({
                 }}
               >
                 <div className={styles.titleVideoWrap}>
-                  <video
-                    ref={videoRef}
-                    className={styles.titleVideo}
-                    style={titleVideoStyle}
-                    src={`${assetBase}titlebg.mp4`}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload='auto'
-                    aria-hidden='true'
-                  />
+                <video
+                  ref={videoRef}
+                  className={styles.titleVideo}
+                  style={titleVideoStyle}
+                  src={`${assetBase}titlebg.mp4`}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload='auto'
+                  aria-hidden='true'
+                  disablePictureInPicture
+                  disableRemotePlayback
+                />
                 </div>
                 <img
                   className={styles.titleLetter}
