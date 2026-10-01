@@ -84,8 +84,8 @@ export function DotsBackground({ dotSpacing = 32, dotBaseRadius = 1.25, lightRad
       ctx.clearRect(0, 0, w, h);
 
       // Lerp mouse coordinates for smooth dot illumination
-      currentPos.x += (mouse.x - currentPos.x) * 0.18;
-      currentPos.y += (mouse.y - currentPos.y) * 0.18;
+      currentPos.x += (mouse.x - currentPos.x) * 0.14;
+      currentPos.y += (mouse.y - currentPos.y) * 0.14;
 
       const cols = Math.ceil(w / dotSpacing) + 1;
       const rows = Math.ceil(h / dotSpacing) + 1;
@@ -186,6 +186,7 @@ export function GlowLetters({
   follow = 0.85,
   growSpeed = 0.22,    // Snappy expansion on first contact
   shrinkSpeed = 0.16,  // Smooth contraction to a point on leave
+  spread = 1.25,       // NEW: how far the soft glow reaches (bigger = more spread out)
   zIndex = 1,          // negative drops the glow behind its measured text
 }) {
   const canvasRef = useRef(null);
@@ -201,7 +202,7 @@ export function GlowLetters({
     const baseLayer = document.createElement("canvas");
     const litCanvas = document.createElement("canvas");
     const litCtx = litCanvas.getContext("2d");
-    // Holds the trailing, blurred blobs used as the spotlight mask below.
+    // Holds the soft, trailing gradient blobs used as the spotlight mask below.
     const gooCanvas = document.createElement("canvas");
     const gooCtx = gooCanvas.getContext("2d");
     let textCtx = null;
@@ -241,7 +242,7 @@ export function GlowLetters({
     };
     const lens = { x: 0, y: 0, vx: 0, vy: 0 };
     // A short chain of followers, each lagging the one before it, so the
-    // blob stretches into a gooey trail instead of staying a rigid circle.
+    // blob stretches into a soft trail instead of staying a rigid circle.
     const TRAIL_LEN = 5;
     const trail = Array.from({ length: TRAIL_LEN }, () => ({ x: 0, y: 0 }));
 
@@ -437,26 +438,25 @@ export function GlowLetters({
         if (scale < 0.003) scale = 0;
       }
 
-      // Follow the cursor on a soft spring so the light lags behind, then
-      // overshoots and settles rather than sliding straight to a stop.
+      // Light easing: a smooth trail behind the cursor, with no spring
+      // so there is no overshoot or bounce.
       if (reduceMotion) {
         lens.x = pointer.x;
         lens.y = pointer.y;
       } else {
-        const stiffness = follow * 0.12;
-        const damping = 0.86;
-        lens.vx = (lens.vx + (pointer.x - lens.x) * stiffness) * damping;
-        lens.vy = (lens.vy + (pointer.y - lens.y) * stiffness) * damping;
-        lens.x += lens.vx;
-        lens.y += lens.vy;
+        const ease = 0.16; // 1 = instant, 0.1 = very floaty
+        lens.x += (pointer.x - lens.x) * ease;
+        lens.y += (pointer.y - lens.y) * ease;
       }
+      lens.vx = 0;
+      lens.vy = 0;
 
-      // Chain of laggier followers behind the head, stretching the blob
-      // into a gooey trail (merged below via blurred, overlapping blobs).
+      // Chain of laggier followers behind the head, stretching the glow
+      // into a soft trail.
       trail[0].x = lens.x;
       trail[0].y = lens.y;
       for (let i = 1; i < trail.length; i++) {
-        const chase = reduceMotion ? 1 : 0.5;
+        const chase = reduceMotion ? 1 : 0.5; // higher = tighter
         trail[i].x += (trail[i - 1].x - trail[i].x) * chase;
         trail[i].y += (trail[i - 1].y - trail[i].y) * chase;
       }
@@ -469,10 +469,13 @@ export function GlowLetters({
       // Physical current radius in pixels (shrinks directly to a point: R -> 0)
       const currentRadius = radius * scale;
 
-      const rx = Math.max(0, Math.floor(lens.x - currentRadius));
-      const ry = Math.max(0, Math.floor(lens.y - currentRadius));
-      const rw = Math.min(w, Math.ceil(lens.x + currentRadius)) - rx;
-      const rh = Math.min(h, Math.ceil(lens.y + currentRadius)) - ry;
+      // Padded draw region so the larger, softer glow is never clipped
+      // by the box it is drawn into (that would show a hard edge).
+      const pad = currentRadius * spread * 1.15;
+      const rx = Math.max(0, Math.floor(lens.x - pad));
+      const ry = Math.max(0, Math.floor(lens.y - pad));
+      const rw = Math.min(w, Math.ceil(lens.x + pad)) - rx;
+      const rh = Math.min(h, Math.ceil(lens.y + pad)) - ry;
 
       const ang = reduceMotion ? look.angle : look.angle + look.spin * time;
       const slide = reduceMotion ? 0.5 : 0.5 + 0.5 * Math.sin(time * look.slide + look.phase);
@@ -488,8 +491,8 @@ export function GlowLetters({
 
       // Render glowing spotlight strictly clipped to letters while open
       if (scale > 0.01 && rw > 0 && rh > 0 && currentRadius > 1.5) {
-        const dx = Math.cos(ang) * currentRadius * 1.15;
-        const dy = Math.sin(ang) * currentRadius * 1.15;
+        const dx = Math.cos(ang) * currentRadius * spread * 1.15;
+        const dy = Math.sin(ang) * currentRadius * spread * 1.15;
 
         litCtx.globalCompositeOperation = "source-over";
         litCtx.globalAlpha = 1;
@@ -512,24 +515,31 @@ export function GlowLetters({
         litCtx.fillRect(rx, ry, rw, rh);
         litCtx.globalAlpha = 1;
 
-        // C. Gooey spotlight mask: layer soft blurred blobs along the
-        // trailing chain so their edges bleed into each other, reading as
-        // one drifting, merging shape instead of a hard-edged circle.
+        // C. Soft spotlight mask: each blob is a radial gradient that fades
+        // smoothly to fully transparent, so the glow spreads out and melts
+        // into the resting letters instead of ending at a solid edge.
         gooCtx.clearRect(rx, ry, rw, rh);
         gooCtx.globalCompositeOperation = "source-over";
-        gooCtx.fillStyle = "#fff";
-        gooCtx.filter = `blur(${Math.max(4, currentRadius * 0.18)}px)`;
+        gooCtx.filter = "none";
         for (let i = 0; i < trail.length; i++) {
           const t = i / (trail.length - 1);
-          const blobRadius = currentRadius * (0.62 - t * 0.3);
+          const blobRadius = currentRadius * spread * (1 - t * 0.3);
           if (blobRadius <= 0) continue;
-          gooCtx.globalAlpha = 1 - t * 0.35;
+          const peak = 1 - t * 0.4;
+          const g = gooCtx.createRadialGradient(
+            trail[i].x, trail[i].y, 0,
+            trail[i].x, trail[i].y, blobRadius
+          );
+          g.addColorStop(0, `rgba(255,255,255,${peak})`);
+          g.addColorStop(0.3, `rgba(255,255,255,${peak * 0.7})`);
+          g.addColorStop(0.6, `rgba(255,255,255,${peak * 0.28})`);
+          g.addColorStop(0.85, `rgba(255,255,255,${peak * 0.07})`);
+          g.addColorStop(1, "rgba(255,255,255,0)");
+          gooCtx.fillStyle = g;
           gooCtx.beginPath();
           gooCtx.arc(trail[i].x, trail[i].y, blobRadius, 0, Math.PI * 2);
           gooCtx.fill();
         }
-        gooCtx.filter = "none";
-        gooCtx.globalAlpha = 1;
 
         litCtx.globalCompositeOperation = "destination-in";
         litCtx.drawImage(gooCanvas, rx * dpr, ry * dpr, rw * dpr, rh * dpr, rx, ry, rw, rh);
@@ -645,7 +655,7 @@ export function GlowLetters({
       document.documentElement.removeEventListener("pointerleave", onPointerLeave);
       window.removeEventListener("blur", onPointerLeave);
     };
-  }, [text, imageSrc, textColor, textFit, textY, fontFamily, fontWeight, fontSize, measureRef, baseFontSize, textYOffset, radius, intensity, follow, growSpeed, shrinkSpeed]);
+  }, [text, imageSrc, textColor, textFit, textY, fontFamily, fontWeight, fontSize, measureRef, baseFontSize, textYOffset, radius, intensity, follow, growSpeed, shrinkSpeed, spread, zIndex]);
 
   return (
     <canvas
