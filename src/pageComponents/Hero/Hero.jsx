@@ -1181,7 +1181,7 @@ export const Hero = ({
                 className={styles.island}
                 alt=''
                 aria-hidden='true'
-                src={`${assetBase}floatingisland.png`}
+                src={`${assetBase}islandv2.png`}
               />
               <div className={styles.trailWrap}>
                 <svg
@@ -1222,7 +1222,7 @@ export const Hero = ({
                       className={styles.birdImg}
                       alt=''
                       aria-hidden='true'
-                      src={`${assetBase}bird.svg`}
+                      src={`${assetBase}birdv2.png`}
                     />
                   </div>
                 </div>
