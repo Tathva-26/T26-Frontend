@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { useExpoDetails } from './ExpoDetails'
 import { IcosahedronGeometry, Object3D } from 'three'
 
 // Figma's asymmetric arrangement, expressed in the main crystal's local space.
@@ -12,6 +13,7 @@ const SHARDS = [
 ]
 
 export default function CrystalShards({ journey, compact, prepareGlass }) {
+  const details = useExpoDetails()
   const mesh = useRef()
   const geometry = useMemo(() => new IcosahedronGeometry(1, 1), [])
   const dummy = useMemo(() => new Object3D(), [])
@@ -19,7 +21,7 @@ export default function CrystalShards({ journey, compact, prepareGlass }) {
   useEffect(() => () => geometry.dispose(), [geometry])
   useFrame(() => {
     const pose = journey?.current
-    const reveal = pose ? (pose.exit != null ? 1 - pose.exit : pose.interaction) : 1
+    const reveal = (pose ? (pose.exit != null ? 1 - pose.exit : pose.interaction) : 1) * (1 - Math.min(1, (details?.progress.current.value ?? 0) / .42))
     const count = compact ? 4 : 6
     if (previous.current.reveal === reveal && previous.current.count === count) return
     previous.current = { reveal, count }

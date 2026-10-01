@@ -5,6 +5,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import TechConclave from '../TechConclave/TechConclave'
 import Expo from './Expo'
+import { ExpoDetailsProvider, useExpoDetails } from './ExpoDetails'
 import Crystal3D from './Crystal3D'
 import { expoJourney, expoExit, journeyScreenPoint } from './expoJourney.mjs'
 import HorizontalGallery from '../HorizontalGallery/HorizontalGallery'
@@ -21,6 +22,11 @@ const motionSnapshot = () => !window.matchMedia('(prefers-reduced-motion: reduce
 const serverSnapshot = () => false
 
 export default function TechConclaveExpoTransition() {
+  return <ExpoDetailsProvider><ExpoTransitionContent /></ExpoDetailsProvider>
+}
+
+function ExpoTransitionContent() {
+  const details = useExpoDetails()
   const animated = useSyncExternalStore(subscribeMotion, motionSnapshot, serverSnapshot)
   const root = useRef(null)
   const crystal = useRef(null)
@@ -88,7 +94,7 @@ export default function TechConclaveExpoTransition() {
     const render = (progress) => {
       if (disposed || !crystal.current) return
       // Timeline units: entry 0–1, readable Expo hold 1–1.45, exit 1.45–2.15.
-      const phase = progress * 2.15
+      const phase = details.progress.current.state !== 'closed' && details.progress.current.frozenPhase != null ? details.progress.current.frozenPhase : progress * 2.15
       const state = crystal.current.querySelector('[data-crystal-state]')?.dataset.crystalState
       // Pick one representation before emergence. Never swap a late model into
       // a visible tumble; a reverse to the concealed start can upgrade it safely.
@@ -187,7 +193,7 @@ export default function TechConclaveExpoTransition() {
       delete element.dataset.expoExit
       window.__lenis?.resize()
     }
-  }, [animated, project])
+  }, [animated, project, details])
 
   return (
     <>

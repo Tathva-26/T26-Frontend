@@ -1,0 +1,15 @@
+.root { display: contents; --detail-copy: 1; --detail-dark: 0; --detail-text: 0; --detail-scale: 1; }
+.root :is([data-expo-intro], [data-expo-description], [data-expo-explore], [data-expo-title], [data-expo-fallback-shards]) { filter: opacity(var(--detail-copy)); }
+.root [data-expo-connectors] { filter: opacity(var(--detail-copy)); scale: var(--detail-copy); }
+.root [data-expo-fallback-image] { scale: var(--detail-scale); }
+.dialog { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; margin: 0; border: 0; padding: max(100px, env(safe-area-inset-top)) 24px max(48px, env(safe-area-inset-bottom)); box-sizing: border-box; color: #e6eeff; background: transparent; overflow-y: auto; overscroll-behavior: contain; }
+.dialog::backdrop { background: rgb(9 10 20 / calc(var(--detail-dark) * .86)); }
+.atmosphere { position: fixed; inset: 0; pointer-events: none; opacity: calc(var(--detail-dark) * .5); background: radial-gradient(ellipse at 12% 70%, #47426266, transparent 48%), radial-gradient(ellipse at 80% 22%, #50607155, transparent 43%), radial-gradient(ellipse at 45% 105%, #43436388, transparent 58%); transform: translateY(calc((1 - var(--detail-dark)) * 3vh)); }
+.content { position: relative; max-width: 560px; margin: max(3vh, 12px) auto; opacity: var(--detail-text); transform: translateY(calc((1 - var(--detail-text)) * 12px)); font: 400 clamp(14px, 1.1vw, 17px)/1.65 var(--font-vcr), monospace; }
+.content h2 { font: 500 clamp(30px, 4vw, 48px)/1.15 'Expo Alexandria', sans-serif; margin: 20px 0 32px; }
+.content p { margin-bottom: 24px; }
+.eyebrow, .note { color: #aebbd1; }
+.close { position: fixed; z-index: 1; top: max(20px, env(safe-area-inset-top)); right: max(24px, env(safe-area-inset-right)); min-width: 88px; min-height: 44px; border: 1px solid #8390ac77; padding: 8px 16px; color: #e6eeff; background: #131219cc; font: 14px var(--font-vcr), monospace; cursor: pointer; }
+.close span { margin-left: 12px; }
+.close:focus-visible { outline: 2px solid #91dcff; outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { .content, .atmosphere { transform: none; } .root [data-expo-connectors] { scale: 1; } }

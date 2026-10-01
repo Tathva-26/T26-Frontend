@@ -93,14 +93,17 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
     event.preventDefault();
     const slot = controlsRect(event.currentTarget);
     const point = localPointer(slot.left + slot.width / 2, slot.top + slot.height / 2, event.currentTarget.getBoundingClientRect());
-    if (activate && !event.repeat) target.current.activation++;
+    if (activate && !event.repeat) { target.current.activation++; target.current.opener = event.currentTarget; }
     Object.assign(target.current, { x: point.x, y: point.y, active: true, keyboard: true,
       tiltX: Math.max(-.15, Math.min(.15, target.current.tiltX + (event.key === 'ArrowUp' ? -.035 : event.key === 'ArrowDown' ? .035 : 0))),
       tiltY: Math.max(-.22, Math.min(.22, target.current.tiltY + (event.key === 'ArrowLeft' ? -.045 : event.key === 'ArrowRight' ? .045 : 0))) });
   };
   const release = (event) => {
     if (pointer.current && pointer.current.id !== event.pointerId) return;
-    if (event.type === 'pointerup' && pointer.current && !pointer.current.moved) target.current.activation++;
+    if (event.type === 'pointerup' && pointer.current && !pointer.current.moved) {
+      update(event);
+      if (!pointer.current.moved) { target.current.activation++; target.current.opener = event.currentTarget; event.currentTarget.focus({ preventScroll: true }); }
+    }
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     pointer.current = null;
     Object.assign(target.current, { tiltX: 0, tiltY: 0, active: event.type === 'pointerup', keyboard: false });
@@ -120,7 +123,7 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
   }, []);
 
   return (
-    <div style={{ width: "100%", height: "100%", touchAction: "pan-y pinch-zoom" }} tabIndex={0} onKeyDown={keyboard} onBlur={reset} onPointerDown={down} onPointerMove={update} onPointerUp={release} onPointerCancel={release} onPointerLeave={reset} onLostPointerCapture={reset} aria-describedby="crystal-instructions" role="img" aria-label="Interactive Tathva crystal">
+    <div style={{ width: "100%", height: "100%", touchAction: "pan-y pinch-zoom" }} tabIndex={0} onKeyDown={keyboard} onBlur={reset} onPointerDown={down} onPointerMove={update} onPointerUp={release} onPointerCancel={release} onPointerLeave={reset} onLostPointerCapture={reset} aria-describedby="crystal-instructions" data-crystal-control role="button" aria-haspopup="dialog" aria-label="Interactive Tathva crystal">
       <Canvas dpr={dpr} frameloop={active ? "always" : "never"} camera={{ fov: 32, position: [0, 0, 7], near: .1, far: 30 }} gl={{ alpha: true, antialias: true, powerPreference: "low-power" }} onCreated={({ gl }) => { gl.setClearColor(0, 0); gl.toneMapping = NoToneMapping; gl.transmissionResolutionScale = .75; }} fallback={null}>
         <ContextEvents onFailure={onFailure} />
         <RenderBudget compact={compact} />

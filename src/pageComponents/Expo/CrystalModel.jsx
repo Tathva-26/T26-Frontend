@@ -19,6 +19,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
 import { createCrystalVeins } from './crystalGeometry.mjs'
 import { journeyScreenPoint } from './expoJourney.mjs'
+import { useExpoDetails } from './ExpoDetails'
 import { springStep, fractureSector } from './crystalInteraction.mjs'
 import CrystalShards from './CrystalShards'
 
@@ -113,6 +114,8 @@ function createEnergy() {
 }
 
 export default function CrystalModel({ target, compact = false, onReady, onMood, journey, onProject }) {
+  const details = useExpoDetails()
+  const detailGroup = useRef()
   const group = useRef()
   const travel = useRef()
   const idle = useRef()
@@ -195,7 +198,12 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const dt = Math.min(delta, 0.05)
     const body = group.current
     const pose = journey?.current
-    const influence = pose ? pose.interaction : 1
+    const detail = details?.progress.current
+    const detailAmount = detail?.value ?? 0
+    const influence = (pose ? pose.interaction : 1) * (1 - detailAmount)
+    const surge = Math.sin(Math.min(1, detailAmount / .42) * Math.PI)
+    detailGroup.current.scale.setScalar(detail?.reduced ? 1 : 1 + .08 * detailAmount + .07 * Math.sin(detailAmount * Math.PI))
+    detailGroup.current.rotation.z = detail?.reduced ? 0 : Math.sin(detailAmount * Math.PI) * .055
     const time = clock.elapsedTime
     // Raycast the actual ice, not the viewport rectangle surrounding it.
     const activationPending = target.current.activation !== life.current.activation
@@ -229,12 +237,11 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
       life.current.hitStrength = 0
     }
     if (activationPending) {
-      const activations = Math.min(3, target.current.activation - life.current.activation)
       life.current.activation = target.current.activation
       if (influence > .8 && (life.current.hitStrength || target.current.keyboard)) {
         life.current.lastHit = time
         life.current.pulseAt = time
-        if (time > life.current.awakeUntil + 1) life.current.charge += .36 * activations
+        details?.open(target.current.opener)
       }
     }
     life.current.charge = Math.max(0, life.current.charge - dt * (time - life.current.lastHit > 2 ? .18 : .025))
@@ -263,12 +270,12 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     // After that first render, offscreen/transparent journey poses stay hidden.
     travel.current.visible = !started.current || !pose || pose.opacity > .005
     const breath = Math.sin(time * 1.15) * .065 + Math.sin(time * .47) * .025
-    glowMaterial.current.opacity = .8 + (breath + hover * .12 + chargeLevel * .15 + (awake ? .25 : 0)) * influence + Math.sin((pose?.exit ?? 0) * Math.PI) * .2
+    glowMaterial.current.opacity = .8 + (breath + hover * .12 + chargeLevel * .15 + (awake ? .25 : 0)) * influence + breath * detailAmount * .18 + Math.sin((pose?.exit ?? 0) * Math.PI) * .2
     // Press feedback lives on the inner shell and its fractures, never a screen-space halo.
-    energyMaterial.current.uniforms.brightness.value = 1.6 + (breath + hover * .18 + chargeLevel * .25) * influence + pulse * 1.2
+    energyMaterial.current.uniforms.brightness.value = 1.6 + (breath + hover * .18 + chargeLevel * .25) * influence + pulse * 1.2 + surge * 1.6 + breath * detailAmount * .18
     fractures.current.uniforms.time.value = time
     fractures.current.uniforms.hover.value = hover
-    fractures.current.uniforms.pulse.value = pulse
+    fractures.current.uniforms.pulse.value = pulse + surge * .65
     fractures.current.uniforms.pointer.value.copy(lightPoint)
     const sx = springStep(body.rotation.x, life.current.vx, target.current.tiltX * influence * (1 + hover * .55), dt)
     const sy = springStep(body.rotation.y, life.current.vy, target.current.tiltY * influence * (1 + hover * .55), dt)
@@ -320,6 +327,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
 
   return (
     <group ref={travel}>
+      <group ref={detailGroup}>
       <group ref={idle}>
       <group ref={group}>
       <CrystalShards journey={journey} compact={compact} prepareGlass={prepareGlass} />
@@ -410,6 +418,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
             />
           </lineSegments>
         </group>
+      </group>
       </group>
       </group>
       </group>

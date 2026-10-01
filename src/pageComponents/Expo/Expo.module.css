@@ -62,52 +62,6 @@
   overflow: hidden;
   clip-path: inset(50%);
 }
-.details {
-  position: fixed;
-  inset: 0;
-  margin: auto;
-  max-width: 480px;
-  width: calc(100% - 40px);
-  padding: 48px 34px 34px;
-  border: 1px solid #8794bb;
-  color: #e6eeff;
-  background: #24304beb;
-  backdrop-filter: blur(20px);
-}
-.details::backdrop {
-  background: #11182ab0;
-  backdrop-filter: blur(5px);
-}
-.details h2 {
-  font-size: 34px;
-  line-height: 1.1;
-  margin: 18px 0;
-}
-.details p {
-  line-height: 1.6;
-}
-.eyebrow {
-  font:
-    12px var(--font-vcr),
-    monospace;
-  color: #9faaff;
-}
-.detailsNote {
-  margin-top: 24px;
-  font-size: 13px;
-  opacity: 0.7;
-}
-.close {
-  position: absolute;
-  right: 15px;
-  top: 10px;
-  font-size: 30px;
-  background: none;
-  border: 0;
-  color: inherit;
-  cursor: pointer;
-}
-
 @media (min-width: 768px) and (max-width: 1023px) {
  .title { left: 30%; top: 10%; } .desktopTitle { font-size: 17vw; }
  .intro { left: 9%; top: 25%; width: 22%; } .crystalSlot { left: 25%; top: 25%; width: 48%; height: 65%; }
@@ -124,8 +78,13 @@
 }
 @media (prefers-reduced-motion: reduce) { .fallback, .canvas { transition: none; } }
 .standaloneCrystal { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
-.standaloneCrystal [role='img'] { pointer-events: auto; }
+.standaloneCrystal [data-crystal-control] { pointer-events: auto; }
 .standaloneCrystal .fallback { inset: auto; left: var(--expo-slot-left); top: var(--expo-slot-top); width: var(--expo-slot-width); height: var(--expo-slot-height); }
 .fallbackShards { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
 .stage:has([data-crystal-state='ready']) .fallbackShards { visibility: hidden; }
 @media (max-width: 767px) { .fallbackShards use:nth-of-type(n+5) { display: none; } }
+
+.fallbackActivate { position: absolute; inset: 10% 20%; border: 0; background: transparent; cursor: pointer; pointer-events: auto; }
+.crystalSlot:has(.fallbackActivate) { z-index: 4; pointer-events: none; }
+.page:has([data-crystal-state="ready"]) .fallbackActivate { display: none; }
+.fallbackActivate:focus-visible { outline: 2px solid #91dcff; outline-offset: 4px; }

@@ -6,9 +6,15 @@ import styles from './Expo.module.css'
 import { expoJourney } from './expoJourney.mjs'
 import { measureExpoLabels, expoLeaderPaths } from './expoLeaders.mjs'
 import FallbackShards from './FallbackShards'
+import { ExpoDetailsProvider, useExpoDetails } from './ExpoDetails'
 
-export default function Expo({ sharedCrystal = false }) {
-  const details = useRef(null)
+export default function Expo(props) {
+  const context = useExpoDetails()
+  return context ? <ExpoContent {...props} /> : <ExpoDetailsProvider><ExpoContent {...props} /></ExpoDetailsProvider>
+}
+
+function ExpoContent({ sharedCrystal = false }) {
+  const details = useExpoDetails()
   const stage = useRef(null)
   const layout = useRef(null)
   const journey = useRef(expoJourney(1))
@@ -47,7 +53,7 @@ export default function Expo({ sharedCrystal = false }) {
   return (
     <section className={styles.page} data-expo-page>
       <section ref={stage} className={styles.stage} aria-labelledby='expo-title'>
-        <h1 id='expo-title' className={styles.title}>
+        <h1 id='expo-title' className={styles.title} data-expo-title>
           <span className={styles.desktopTitle}>EXPO</span>
         </h1>
         <FallbackShards />
@@ -57,10 +63,11 @@ export default function Expo({ sharedCrystal = false }) {
           the trending, the innovations, the age-old,
           and many more.
         </p>
-        <svg className={styles.desktopLines} aria-hidden='true'>
+        <svg data-expo-connectors className={styles.desktopLines} aria-hidden='true'>
           {[0, 1, 2].map(index => <path key={index} ref={node => { leaders.current[index] = node }} />)}
         </svg>
         <div className={styles.crystalSlot} data-expo-slot>
+        <button className={styles.fallbackActivate} aria-label='Explore the Tathva crystal' aria-haspopup='dialog' onClick={event => details.open(event.currentTarget)} />
         </div>
         {!sharedCrystal && <div className={styles.standaloneCrystal}><Crystal3D journey={journey} onProject={project} preload /></div>}
         <p className={styles.description} data-expo-description>
@@ -72,35 +79,13 @@ export default function Expo({ sharedCrystal = false }) {
         </p>
         <button
           className={styles.explore} data-expo-explore
-          onClick={() => details.current?.showModal()}
+          onClick={event => details.open(event.currentTarget)}
           aria-haspopup='dialog'
         >
           <span>EXPLORE</span>
         </button>
 
-        <dialog
-          ref={details}
-          className={styles.details}
-          data-lenis-prevent
-          onClick={(event) => {
-            if (event.target === event.currentTarget) details.current.close()
-          }}
-        >
-          <form method='dialog'>
-            <button aria-label='Close Expo details' className={styles.close}>
-              ×
-            </button>
-          </form>
-          <p className={styles.eyebrow}>TATHVA ’26 / NIT CALICUT</p>
-          <h2>Ideas take shape.</h2>
-          <p>
-            Explore technology, meet the innovators, and discover what comes
-            next at Tathva Expo.
-          </p>
-          <p className={styles.detailsNote}>
-            Exhibitor and programme details will be announced here.
-          </p>
-        </dialog>
+
       </section>
     </section>
   )
