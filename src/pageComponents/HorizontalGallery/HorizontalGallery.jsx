@@ -197,26 +197,27 @@ export default function HorizontalGallery() {
         const vh = window.innerHeight;
         const scrollAmount = Math.max(track.scrollWidth - vw, 0);
 
-        // Extra pinned hold after the cards finish scrolling (tweak to taste)
-        const exitExtension = vh * 0.15;
-
         /*
-          Timeline phases (scroll distance):
-          1) ENTRANCE  [0 -> vh]
-             Section rises into view while cards already move left (diagonal feel).
-          2) PINNED    [vh -> vh + scrollAmount]
-             Section is pinned, cards finish scrolling horizontally.
-          3) HOLD      [vh + scrollAmount -> vh + scrollAmount + exitExtension]
-             Last frame lingers, still pinned.
-          4) EXIT      [... + vh]
-             Normal exit: section scrolls up, cards are static (no horizontal move).
-        */
-        const moveDuration = vh + scrollAmount;
-        const holdStart = moveDuration;
-        const totalDuration = vh + scrollAmount + exitExtension + vh;
+          CONTINUOUS DIAGONAL EXIT (no stop-then-go)
 
-        // Pinned length = container height - vh, so:
-        container.style.height = `${vh + scrollAmount + exitExtension}px`;
+          The horizontal travel is spread evenly across the WHOLE scroll
+          range, so the cards never pause: they keep sliding left while
+          the section rises in, stays pinned, and scrolls out.
+
+          Phases (scroll distance):
+          1) ENTRANCE [0 -> vh]            section rises, cards already moving
+          2) PINNED   [vh -> vh + pin]     section pinned, cards moving
+          3) EXIT     [vh + pin -> range]  section scrolls up, cards STILL moving
+
+          The pin is shortened by the 2 viewport heights spent in entrance
+          and exit, so cards still travel 1:1 with the scroll:
+          range = pin + 2vh = scrollAmount
+        */
+        const pin = Math.max(scrollAmount - vh * 2, 0);
+        const range = pin + vh * 2;
+
+        // Sticky pin length = container height - vh = pin
+        container.style.height = `${pin + vh}px`;
 
         tl = gsap.timeline({
           defaults: { ease: 'none' },
@@ -232,10 +233,10 @@ export default function HorizontalGallery() {
           },
         });
 
-        /* Horizontal movement: starts at entrance, ends when pinned part is done */
+        /* Horizontal movement: one linear tween over the entire range */
         tl.to(
           track,
-          { x: -scrollAmount, duration: moveDuration, ease: 'none' },
+          { x: -scrollAmount, duration: range, ease: 'none' },
           0
         );
 
@@ -246,9 +247,6 @@ export default function HorizontalGallery() {
           { opacity: 1, duration: vh, ease: 'none' },
           0
         );
-
-        /* Pad timeline: hold + normal exit (no movement) so it matches scroll range */
-        tl.to({}, { duration: totalDuration - holdStart }, holdStart);
       };
 
       build();
@@ -370,7 +368,7 @@ export default function HorizontalGallery() {
             md:items-center
 
             md:py-0
-            md:pl-[130vw]
+            md:pl-[150vw]
 
             will-change-transform
           "
