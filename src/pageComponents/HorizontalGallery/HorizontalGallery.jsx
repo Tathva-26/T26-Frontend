@@ -198,7 +198,7 @@ export default function HorizontalGallery() {
         const scrollAmount = Math.max(track.scrollWidth - vw, 0);
 
         // Extra pinned hold after the cards finish scrolling (tweak to taste)
-        const exitExtension = vh * 1.0;
+        const exitExtension = vh * 0.15;
 
         /*
           Timeline phases (scroll distance):
@@ -227,7 +227,7 @@ export default function HorizontalGallery() {
             end: 'bottom top',
             // Lenis already smooths the scroll position, so `true` tracks it
             // directly instead of adding a second layer of lag.
-            scrub: 1.2,
+            scrub: true,
             invalidateOnRefresh: true,
           },
         });
@@ -370,7 +370,7 @@ export default function HorizontalGallery() {
             md:items-center
 
             md:py-0
-            md:pl-[80vw]
+            md:pl-[130vw]
 
             will-change-transform
           "
