@@ -234,7 +234,7 @@ function PortalText({ text }) {
 
 const allMenuItems = [...leftMenu, ...rightMenu]
 
-export default function TathvaMenu() {
+export default function TathvaMenu({ isHero = false }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
@@ -247,6 +247,30 @@ export default function TathvaMenu() {
   const rightColumnRef = useRef(null)
 
   const timelineRef = useRef(null)
+
+  // Outside the hero/frame the trigger shows the heading of the section in view.
+  const [sectionTitle, setSectionTitle] = useState('')
+  useEffect(() => {
+    if (isHero) return undefined
+    const scroller = document.querySelector('.main-scroll') || window
+    const update = () => {
+      const marks = document.querySelectorAll('[data-menu-title]')
+      let current = ''
+      for (const el of marks) {
+        if (el.getBoundingClientRect().top <= window.innerHeight * 0.35) {
+          current = el.getAttribute('data-menu-title')
+        }
+      }
+      setSectionTitle(current)
+    }
+    update()
+    scroller.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    return () => {
+      scroller.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+    }
+  }, [isHero])
 
   // Close menus on Escape key
   useEffect(() => {
@@ -315,7 +339,7 @@ export default function TathvaMenu() {
       tl.to(
         triggerRef.current,
         {
-          y: 380,
+          y: 335,
           duration: 0.5,
           ease: 'power2.inOut',
         },
@@ -325,7 +349,7 @@ export default function TathvaMenu() {
       tl.to(
         panelRef.current,
         {
-          height: 385,
+          height: 340,
           duration: 0.5,
           ease: 'power2.inOut',
         },
@@ -347,7 +371,7 @@ export default function TathvaMenu() {
       tl.to(
         dividerRef.current,
         {
-          height: 320,
+          height: 280,
           opacity: 1,
           duration: 0.35,
           ease: 'power3.out',
@@ -643,7 +667,7 @@ export default function TathvaMenu() {
 
       <div
         ref={panelRef}
-        className='
+        className={`
           pointer-events-auto
           absolute
           left-1/2
@@ -656,7 +680,7 @@ export default function TathvaMenu() {
           bg-[#2E2E2F]
           shadow-2xl
           [clip-path:polygon(0_0,100%_0,100%_92%,93%_100%,7%_100%,0_92%)]
-        '
+        `}
       >
         {/* LEFT MENU */}
 
@@ -672,9 +696,10 @@ export default function TathvaMenu() {
             flex-col
             items-center
             justify-center
-            gap-[18px]
+            gap-[22px]
             px-4
-            py-6
+            pt-6
+            pb-9
           '
         >
           {leftMenu.map((item) => (
@@ -692,7 +717,7 @@ export default function TathvaMenu() {
                 justify-center
                 gap-2.5
                 whitespace-nowrap
-                text-[18px]
+                text-[22px]
                 font-normal
                 leading-none
                 tracking-[1px]
@@ -776,9 +801,10 @@ export default function TathvaMenu() {
             flex-col
             items-center
             justify-center
-            gap-[18px]
+            gap-[22px]
             px-4
-            py-6
+            pt-6
+            pb-9
           '
         >
           {rightMenu.map((item) => (
@@ -796,7 +822,7 @@ export default function TathvaMenu() {
                 justify-center
                 gap-2.5
                 whitespace-nowrap
-                text-[18px]
+                text-[22px]
                 font-normal
                 leading-none
                 tracking-[1px]
@@ -861,16 +887,16 @@ export default function TathvaMenu() {
         onClick={toggleMenu}
         aria-label={isOpen ? 'Close menu' : 'Open menu'}
         aria-expanded={isOpen}
-        className='
+        className={`
           pointer-events-auto
           absolute
+          [container-type:inline-size]
           left-1/2
           top-0
           z-20
           flex
           h-auto
-          w-[130px]
-          aspect-[100/28]
+          w-[clamp(360px,calc(100vw_-_940px),1000px)] aspect-[296/15]
           -translate-x-1/2
           cursor-pointer
           items-start
@@ -879,10 +905,10 @@ export default function TathvaMenu() {
           bg-transparent
           p-0
           outline-none
-        '
+        `}
       >
         <img
-          src='/images/menu/tathva.png'
+          src='/images/hero/Bezel-empty.svg'
           alt='Tathva 26'
           draggable={false}
           className='
@@ -895,6 +921,12 @@ export default function TathvaMenu() {
             object-top
           '
         />
+        <span
+          className={`${jockeyOne.className} pointer-events-none absolute left-[49.8%] top-[47%] -translate-x-1/2 -translate-y-1/2 select-none whitespace-nowrap leading-none tracking-[0.12em] text-white`}
+          style={{ fontSize: 'max(8px, 2cqw)' }}
+        >
+          {(!isHero && sectionTitle) || 'TATHVA 2026'}
+        </span>
       </button>
       <style>{`
         .mlink-flip {

@@ -337,7 +337,7 @@ export default function HeroFrameController({ children }) {
         aria-hidden="true"
       />
 
-      <TathvaMenu />
+      <TathvaMenu isHero={!unlocked} />
 
       {hasReachedContent && children}
     </div>

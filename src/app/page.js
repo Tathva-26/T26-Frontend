@@ -29,21 +29,21 @@ export default function Home() {
       <HeroFrameController>
         {/* <ProfilePage /> */}
         {/* <ProshowCarousel /> */}
-        <ArtistPage />
-        <GPC />
+        <div data-menu-title='PROSHOW'><ArtistPage /></div>
+        <div data-menu-title='GPC'><GPC /></div>
 
-        <WheelsExperience revealUnderlay />
-        <RobowarsPage />
+        <div data-menu-title='WHEELS'><WheelsExperience revealUnderlay /></div>
+        <div data-menu-title='ROBOWARS'><RobowarsPage /></div>
         {/* <Lead />
         <Frontend />
         <Backend />
         <Uiux /> */}
-        <Accommodation />
-        <TathvaPasses />
-        <TechConclave />
-        <Expo />
-        <HorizontalGallery />
-        <Footer />
+        <div data-menu-title='ACCOMMODATION'><Accommodation /></div>
+        <div data-menu-title='PASSES'><TathvaPasses /></div>
+        <div data-menu-title='TECH CONCLAVE'><TechConclave /></div>
+        <div data-menu-title='EXPO'><Expo /></div>
+        <div data-menu-title='GALLERY'><HorizontalGallery /></div>
+        <div data-menu-title='CONTACT'><Footer /></div>
       </HeroFrameController>
     </div>
   )
