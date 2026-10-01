@@ -198,6 +198,7 @@ export default function Preloader({ onComplete }) {
       }
 
       setDone(true)
+      window.dispatchEvent(new Event('tathva:ready'))
       if (onComplete) onComplete()
     }
 
@@ -270,6 +271,7 @@ export default function Preloader({ onComplete }) {
       {/* PRELOADER WRAPPER */}
       <div
         ref={overlayRef}
+        data-preloader=''
         className={`fixed inset-0 z-[10050] flex items-center justify-center bg-[#030303] ${
           revealing ? 'pointer-events-none' : ''
         }`}
