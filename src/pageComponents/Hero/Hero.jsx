@@ -11,8 +11,45 @@ import styles from './Hero.module.css'
 // Register once at module level so ScrollTrigger.refresh() is safe to
 // call from any effect, regardless of effect order.
 gsap.registerPlugin(ScrollTrigger, useGSAP, MotionPathPlugin)
+gsap.config({ force3D: true })
+
+// The animated clip-path hole (see syncPortalFrame) repaints the whole scene on software/
+// low-VRAM raster. Default to a plain cross-fade of the back layers instead; append ?clip=1
+// to the URL to force the old hole-cut path for comparison/debugging.
+const USE_CLIP_HOLE =
+  typeof window !== 'undefined' &&
+  new URLSearchParams(window.location.search).get('clip') === '1'
 
 const assetBase = '/images/hero/'
+
+// The portal is drawn by this video; it sits over a hole cut in the scene (the real Frame shows
+// through the hole) and fades out as the portal grows. PORTAL_IMG_FADE_END = portal progress (0..1) at which it is fully gone.
+const PORTAL_VIDEO = 'portalloop.mp4' // small, low-res, muted, seamless loop
+const PORTAL_POSTER = 'img.png' // shown until the first video frame is ready
+const PORTAL_IMG_FADE_END = 0.85
+
+// Decorative PNG frame around the portal. It sits inside the portal div, so it zooms with it.
+// All values are static (set once, never animated) except the fade.
+//   scale            multiplies the PNG size around its centre (1 = as sized by outset)
+//   offsetX/offsetY  nudge the PNG, in % of its own width / height (+x right, +y down)
+//   outsetX/outsetY  how far the PNG extends past the portal box, in % of portal width / height
+//                    (0 = exactly the portal box)
+//   opacity          max opacity while visible (0..1)
+//   fadeStart/End    portal progress (0..1) where it starts / finishes fading out
+//                    (fadeEnd optional: defaults to PORTAL_IMG_FADE_END)
+//   aboveVideo       true = over the portal video, false = under it
+const PORTAL_FRAME = {
+  src: 'frame.png',
+  scale: 1.2,
+  offsetX: 0,
+  offsetY: 3,
+  outsetX: 0,
+  outsetY: 0,
+  opacity: 1,
+  fadeStart: 0.8,
+  fadeEnd: 1,
+  aboveVideo: true,
+}
 
 // ---------------------------------------------------------------------
 // SCENE LAYOUT (desktop) — positions/sizes in .scene design-space rem
@@ -22,78 +59,42 @@ const assetBase = '/images/hero/'
 // background. z / zLift = z-index at rest / added by end of scroll.
 // ---------------------------------------------------------------------
 const LAYOUT = {
-  background: {
-    driftY: -1,
-    scaleTo: 1.02,
-    z: 0,
-    zLift: 0,
-  },
-  island: {
-    top: 0.1,
-    left: 41.8,
-    width: 40,
-    height: 37,
-    driftX: 0,
-    driftY: -50,
-    scaleTo: 1.04,
-    z: 1,
-    zLift: 0,
-  },
-  ground: {
-    top: 45,
-    left: 5,
-    width: 88.3125,
-    height: 26,
-    driftX: 0,
-    driftY: -4,
-    scaleTo: 1.02,
-    z: 2,
-    zLift: 0,
-  },
-  bgrocks: {
-    top: 42,
-    left: 0,
-    width: 88.3125,
-    height: 14,
-    driftX: 0,
-    driftY: -2,
-    scaleTo: 1.25,
-    z: 1,
-    zLift: 0,
-  },
-  // T1 renders the full "TATHVA" wordmark on its own.
-  t1: {
-    top: 14.5,
-    left: 7,
-    width: 75,
-    height: 30.6,
-    driftX: 0,
-    driftY: -25,
-    scaleTo: 1,
-    z: 3,
-    zLift: 0,
-  },
-  portal: {
-    top: 31.5,
-    left: 36.25,
-    width: 9.125,
-    height: 20.1875,
-    zoomMultiplier: 1.04, // slight overshoot so it fully covers the viewport
-    z: 4,
-    zLift: 0,
-  },
-  girl: {
-    top: 36,
-    left: 18.5,
-    width: 54,
-    height: 15,
-    driftX: 1100,
-    driftY: 1500,
-    scaleTo: 15.55,
-    z: 5,
-    zLift: 10,
-  },
-}
+    background: {
+        driftY: -1, scaleFrom: 1.08, scaleTo: 1.1, // scaleFrom = zoom at the start of the scroll (default 1)
+        z: 0, zLift: 0,
+    },
+    island: {
+        top: 2, left: 38.8, width: 45, height: 37,
+        driftX: 0, driftY: -50, scaleTo: 1.04,
+        z: 1, zLift: 0,
+    },
+    ground: {
+        top: 45, left: 5, width: 88.3125, height: 26,
+        driftX: 0, driftY: -4, scaleTo: 1.02,
+        z: 2, zLift: 0,
+    },
+    bgrocks: {
+        top: 42, left: 0, width: 88.3125, height: 14,
+        driftX: 0, driftY: -2, scaleTo: 1.25,
+        z: 1, zLift: 0,
+    },
+    // T1 renders the full "TATHVA" wordmark on its own.
+    t1: {
+        top: 15.5, left: -1, width: 85, height: 30.6,
+        driftX: 0, driftY: -25, scaleTo: 1,
+        z: 3, zLift: 0,
+    },
+    portal: {
+        top: 31.5, left: 36.25, width: 9.125, height: 20.1875,
+        zoomMultiplier: 1.04, // slight overshoot so it fully covers the viewport
+        z: 4, zLift: 0,
+    },
+    girl: {
+        top: 36.5, left: 12.5, width: 65, height: 15,
+        driftX: 2100, driftY: 500, scaleTo: 15.55,
+        z: 5, zLift: 10,
+    },
+};
 
 // ---------------------------------------------------------------------
 // MOTION RESPONSE — per-layer scrub (seconds of lag behind the real
@@ -105,8 +106,8 @@ const MOTION = {
   ground: { scrub: 0.4, ease: 'power1.out' },
   bgrocks: { scrub: 0.45, ease: 'power1.inOut' },
   glyph: { scrub: 0.6, ease: 'power2.out' },
-  portal: { scrub: 0.18, ease: 'none' },
-  girl: { scrub: 1.3, ease: 'power1.inOut' },
+  portal: { scrub: 0.9, ease: 'none' },
+  girl: { scrub: 0.9, ease: 'none' },
   // chrome: { scrub: 0.0001, ease: "power1.out" }, // UNUSED: chrome fade uses quickSetter, not MOTION
 }
 
@@ -116,12 +117,12 @@ const MOTION = {
 // position and writes it to CSS variables (--theme-left etc.).
 // ---------------------------------------------------------------------
 const CHROME = {
-  identity: { top: 7, left: 82.125 },
-  coords: { top: 17.3125, left: 82.175 },
-  exhibits: { top: 30.8125, left: 78.6875 },
-  theme: { top: 10.125, left: 3.25 },
-  enter: { top: 39.625, left: 6.8125, width: 11.0625, height: 3.0625 },
-}
+    identity: { top: 7, left: 82.125 },
+    coords: { top: 18.7125, left: 81.875 },
+    exhibits: { top: 34.8125, left: 77.6875 },
+    theme: { top: 8.125, left: 3.25 },
+    enter: { top: 39.625, left: 9.8125, width: 11.0625, height: 3.0625 },
+};
 
 // ---------------------------------------------------------------------
 // MOBILE LAYOUT — portrait canvas 24.375 x 49.0625 rem (~390 x 785 px).
@@ -129,7 +130,8 @@ const CHROME = {
 const LAYOUT_MOBILE = {
   background: {
     driftY: -1,
-    scaleTo: 1.02,
+    scaleFrom: 1.08,
+    scaleTo: 1.1,
     z: 0,
     zLift: 0,
   },
@@ -187,11 +189,11 @@ const LAYOUT_MOBILE = {
     zLift: 0,
   },
   girl: {
-    top: 30,
-    left: 0.9,
-    width: 30.5,
+    top: 31,
+    left: -1.9,
+    width: 35.5,
     height: 20,
-    driftX: 2090,
+    driftX: 2590,
     driftY: -1550,
     scaleTo: 60,
     z: 5,
@@ -233,6 +235,9 @@ export const Hero = ({
   const bgrocksRef = useRef(null)
   const t1Ref = useRef(null)
   const portalRef = useRef(null)
+  const backLayersRef = useRef(null)
+  const portalVideoRef = useRef(null)
+  const portalFrameImgRef = useRef(null)
   const islandRef = useRef(null)
   const trailPathRef = useRef(null)
   const birdLayerRef = useRef(null)
@@ -248,6 +253,9 @@ export const Hero = ({
 
   // Cover scale applied to the fixed-size design canvas.
   const designScaleRef = useRef(1)
+  // Set inside useGSAP once syncPortalFrame exists; forces a full resync (bypassing the
+  // lastClip/lastVideoOpacity/... guards) the frame after Hero becomes active again.
+  const forceSyncRef = useRef(null)
 
   const onProgressRef = useRef(onProgress)
   const onScrollBeyondEndRef = useRef(onScrollBeyondEnd)
@@ -274,7 +282,20 @@ export const Hero = ({
       if (isActive) video.play().catch(() => {})
       else video.pause()
     }
+    const pv = portalVideoRef.current
+    if (pv) {
+      if (isActive) pv.play().catch(() => {})
+      else pv.pause()
+    }
     scrollerRef.current?.toggleAttribute('data-paused', !isActive)
+
+    // Coming back active: the scene was frozen (no scroll ticks) while hidden, so force one
+    // resync past the lastClip/lastVideoOpacity/... guards to repaint it for the current frame.
+    if (isActive) {
+      const id = requestAnimationFrame(() => forceSyncRef.current?.())
+      return () => cancelAnimationFrame(id)
+    }
+    return undefined
   }, [isActive])
 
   // Enter click: ripple at the click point, then animate the hero
@@ -606,13 +627,8 @@ export const Hero = ({
         end: 'bottom bottom',
       }
 
-      // Report scroll progress for scroll-driven whiteout transition.
-      ScrollTrigger.create({
-        ...scrollTriggerBase,
-        onUpdate: (self) => {
-          onProgressRef.current?.(self.progress)
-        },
-      })
+      // Progress is reported from the portal's own (scrubbed) timeline below, not from the raw
+      // scroll position, so the hand-over to Frame only happens once the portal has really finished.
 
       // Chrome fade: gone within the first 10% of the runway.
       // PERF: no animation is attached here, so scrub/invalidateOnRefresh
@@ -646,7 +662,7 @@ export const Hero = ({
       // mask (the "clip") grows around it. Both are transform-only, so it stays on the compositor.
       const createParallaxLayer = (ref, config, motion, fadeAt, counterRef) => {
         if (!ref.current) return
-        const fromVars = { scale: 1, x: 0, y: 0 }
+        const fromVars = { scale: config.scaleFrom ?? 1, x: 0, y: 0 }
         const toVars = { duration: 1, ease: motion.ease }
         if (config.xPercent !== undefined) {
           fromVars.xPercent = config.xPercent
@@ -730,12 +746,161 @@ export const Hero = ({
           return target
         }
 
-        gsap
+        // The REAL Frame (rendered by HeroFrameController) sits underneath the whole Hero panel,
+        // static, never scaled or moved. Every scene layer behind the portal lives in one wrapper
+        // (backLayersRef); each update we cut a hole in that wrapper exactly where the portal is
+        // (scene-local maths on the portal's own GSAP transform, no DOM reads), so the Frame
+        // shows through. The portal video on top fades out with scroll to reveal it.
+        // Screen position (relative to the viewport) of scene-local (0,0). Desktop: left/bottom
+        // anchored. Mobile: centred horizontally, so this is negative on tall phones.
+        const sceneOrigin = () => {
+          const sr = sceneRef.current.getBoundingClientRect()
+          const vr = viewportRef.current.getBoundingClientRect()
+          return { ox: sr.left - vr.left, oy: sr.top - vr.top }
+        }
+        // sw/sh = scene size in scene-local px (used to keep the clip-path coordinates small)
+        const m = { left: 0, top: 0, w: 1, h: 1, ox: 0, oy: 0, vw: 1, vh: 1, sw: 1, sh: 1, target: 2 }
+        const measure = () => {
+          const portalEl = portalRef.current
+          if (!portalEl) return
+          m.left = portalEl.offsetLeft
+          m.top = portalEl.offsetTop
+          m.w = portalEl.offsetWidth
+          m.h = portalEl.offsetHeight
+          m.vw = viewportRef.current.clientWidth
+          m.vh = viewportRef.current.clientHeight
+          m.sw = sceneRef.current.offsetWidth
+          m.sh = sceneRef.current.offsetHeight
+          const o = sceneOrigin()
+          m.ox = o.ox
+          m.oy = o.oy
+          m.target = portalTargetScale()
+        }
+
+        let lastClip = ''
+        let wasOpen = false
+        let lastVideoOpacity = -1
+        let lastFrameImgOpacity = -1
+        let lastWrapOpacity = -1
+        let lastGirlHidden = false
+        const syncPortalFrame = () => {
+          const portalEl = portalRef.current
+          if (!portalEl) return
+          const s = gsap.getProperty(portalEl, 'scaleX')
+          const tx = gsap.getProperty(portalEl, 'x')
+          const ty = gsap.getProperty(portalEl, 'y')
+          const p = gsap.utils.clamp(0, 1, (s - 1) / (m.target - 1))
+
+          const pv = portalVideoRef.current
+          if (pv) {
+            const o = 1 - gsap.utils.clamp(0, 1, p / PORTAL_IMG_FADE_END)
+            if (o !== lastVideoOpacity) {
+              lastVideoOpacity = o
+              pv.style.opacity = o
+            }
+          }
+
+          const frameImg = portalFrameImgRef.current
+          if (frameImg) {
+            const fadeEnd = PORTAL_FRAME.fadeEnd ?? PORTAL_IMG_FADE_END
+            const fo =
+              PORTAL_FRAME.opacity *
+              (1 -
+                gsap.utils.clamp(
+                  0,
+                  1,
+                  (p - PORTAL_FRAME.fadeStart) /
+                    Math.max(0.0001, fadeEnd - PORTAL_FRAME.fadeStart),
+                ))
+            if (fo !== lastFrameImgOpacity) {
+              lastFrameImgOpacity = fo
+              frameImg.style.opacity = fo
+            }
+          }
+
+          // The girl layer is scaled up to 15.55x (desktop) / 60x (mobile) by the time the
+          // portal is fully open, which keeps a huge decoded texture alive for nothing (it's
+          // fully covered by the portal/Frame by then). Drop it once covered, restore on the way back.
+          if (girlRef.current) {
+            const hideGirl = p >= 0.9
+            if (hideGirl !== lastGirlHidden) {
+              lastGirlHidden = hideGirl
+              girlRef.current.style.visibility = hideGirl ? 'hidden' : 'visible'
+            }
+          }
+
+          const wrap = backLayersRef.current
+          if (!wrap) return
+
+          // Default: cross-fade the whole back-layers wrapper out instead of cutting an
+          // animated clip-path hole in it (the hole is expensive to rasterise on software/
+          // low-VRAM GPUs and is what causes the half-painted-scene flicker). ?clip=1 forces
+          // the legacy hole-cut path below for comparison.
+          if (!USE_CLIP_HOLE) {
+            const wo = 1 - gsap.utils.clamp(0, 1, (p - 0.5) / 0.4)
+            if (wo !== lastWrapOpacity) {
+              lastWrapOpacity = wo
+              wrap.style.opacity = wo
+            }
+            return
+          }
+
+          // hole = portal's current rect in scene-local px
+          const cx = m.left + m.w / 2 + tx
+          const cy = m.top + m.h / 2 + ty
+          const hw = (m.w * s) / 2
+          const hh = (m.h * s) / 2
+          const x0 = cx - hw
+          const x1 = cx + hw
+          const y0 = cy - hh
+          const y1 = cy + hh
+
+          // Does the hole already cover the whole viewport? (screen = origin + d * local)
+          const d = designScaleRef.current || 1
+          const open =
+            m.ox + d * x0 <= 0 &&
+            m.oy + d * y0 <= 0 &&
+            m.ox + d * x1 >= m.vw &&
+            m.oy + d * y1 >= m.vh
+          if (open) {
+            wasOpen = true // nothing left to paint behind the portal; keep the last clip
+            return
+          }
+
+          // Outer rect (just past the scene) + inner rect (the hole), even-odd = a rectangular hole.
+          // Kept as two separate sub-paths with SMALL coordinates (the old ±20000px polygon joined
+          // them with a zero-width bridge, which Chrome rasterises badly on a scaled, animated layer).
+          // The hole is clamped to the outer rect; anything beyond it is off-scene anyway.
+          const P = 50
+          const clampX = (v) => Math.min(m.sw + P, Math.max(-P, v))
+          const clampY = (v) => Math.min(m.sh + P, Math.max(-P, v))
+          const X0 = clampX(x0)
+          const X1 = clampX(x1)
+          const Y0 = clampY(y0)
+          const Y1 = clampY(y1)
+          const f = (n) => Math.round(n)
+          const clip = `path(evenodd, "M${-P} ${-P}H${m.sw + P}V${m.sh + P}H${-P}Z M${f(X0)} ${f(Y0)}H${f(X1)}V${f(Y1)}H${f(X0)}Z")`
+          if (clip !== lastClip) {
+            lastClip = clip
+            wrap.style.clipPath = clip
+          }
+        }
+        measure()
+
+        const portalTl = gsap
           .timeline({
+            onUpdate: () => {
+              syncPortalFrame()
+              onProgressRef.current?.(portalTl.progress())
+            },
             scrollTrigger: {
               ...scrollTriggerBase,
               scrub: MOTION.portal.scrub,
               invalidateOnRefresh: true,
+              onRefresh: () => {
+                measure()
+                syncPortalFrame()
+              },
             },
           })
           .fromTo(
@@ -744,18 +909,15 @@ export const Hero = ({
             {
               scale: portalTargetScale,
               x: () =>
-                viewportRef.current.clientWidth /
-                  2 /
+                (viewportRef.current.clientWidth / 2 - sceneOrigin().ox) /
                   (designScaleRef.current || 1) -
                 (portalRef.current.offsetLeft +
                   portalRef.current.offsetWidth / 2),
               y: () =>
-                sceneRef.current.offsetHeight -
+                (viewportRef.current.clientHeight / 2 - sceneOrigin().oy) /
+                  (designScaleRef.current || 1) -
                 (portalRef.current.offsetTop +
-                  portalRef.current.offsetHeight / 2) -
-                viewportRef.current.clientHeight /
-                  2 /
-                  (designScaleRef.current || 1),
+                  portalRef.current.offsetHeight / 2),
               ...(L.portal.zLift
                 ? {
                     zIndex: L.portal.z + L.portal.zLift,
@@ -767,6 +929,18 @@ export const Hero = ({
             },
             0,
           )
+        syncPortalFrame()
+
+        // Lets the isActive effect force a full repaint (bypassing the lastClip/
+        // lastVideoOpacity/... guards) the frame Hero becomes active again, since no scroll
+        // tick runs while it's hidden and those guards would otherwise skip a no-op-looking write.
+        forceSyncRef.current = () => {
+          lastClip = ''
+          lastVideoOpacity = -1
+          lastFrameImgOpacity = -1
+          lastWrapOpacity = -1
+          syncPortalFrame()
+        }
       }
 
       // Bird flight — flies along the combined trail (both segments merged
@@ -862,6 +1036,7 @@ export const Hero = ({
       id='hero-scroller'
       ref={scrollerRef}
       className={styles.scroller}
+      style={{ background: 'transparent' }} // the real Frame underneath shows through the portal hole
       tabIndex={0}
       aria-label='Scroll to move toward the black box'
     >
@@ -1032,10 +1207,25 @@ export const Hero = ({
                         </svg>
                         */}
 
+            {/* Everything behind the portal. A rectangular hole is clipped out of this wrapper
+                (see syncPortalFrame) so the real Frame underneath shows through the portal.
+                The first child is a dark backing that BLEEDS 40px past every edge of the scene
+                (the viewport clips it). The scene is a scaled layer, so its own top edge can land
+                on a fractional pixel and anti-alias into a thin see-through row that leaks the
+                Frame; with the bleed, the screen edge is never the scene edge. The hole is cut out
+                of it too (outer clip rect is 50px past the scene), so the portal still shows the Frame. */}
+            <div
+              ref={backLayersRef}
+              className={styles.backLayers}
+            >
+            <div
+              aria-hidden='true'
+              style={{ position: 'absolute', inset: '-40px', background: '#000' }}
+            />
             <div
               ref={backgroundRef}
               className={styles.background}
-              style={{ backgroundImage: `url(${assetBase}background1.png)` }}
+              style={{ backgroundImage: `url(${assetBase}bg.png)` }}
               aria-hidden='true'
             />
 
@@ -1055,7 +1245,7 @@ export const Hero = ({
                 className={styles.island}
                 alt=''
                 aria-hidden='true'
-                src={`${assetBase}floatingisland.png`}
+                src={`${assetBase}islandv2.png`}
               />
               <div className={styles.trailWrap}>
                 <svg
@@ -1096,7 +1286,7 @@ export const Hero = ({
                       className={styles.birdImg}
                       alt=''
                       aria-hidden='true'
-                      src={`${assetBase}bird.svg`}
+                      src={`${assetBase}birdv2.png`}
                     />
                   </div>
                 </div>
@@ -1153,18 +1343,20 @@ export const Hero = ({
                 }}
               >
                 <div className={styles.titleVideoWrap}>
-                  <video
-                    ref={videoRef}
-                    className={styles.titleVideo}
-                    style={titleVideoStyle}
-                    src={`${assetBase}titlebg.mp4`}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload='auto'
-                    aria-hidden='true'
-                  />
+                <video
+                  ref={videoRef}
+                  className={styles.titleVideo}
+                  style={titleVideoStyle}
+                  src={`${assetBase}titlebg.mp4`}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload='auto'
+                  aria-hidden='true'
+                  disablePictureInPicture
+                  disableRemotePlayback
+                />
                 </div>
                 <img
                   className={styles.titleLetter}
@@ -1179,6 +1371,8 @@ export const Hero = ({
               </div>
             </div>
 
+            </div>
+
             <div
               ref={portalRef}
               className={styles.portal}
@@ -1187,16 +1381,55 @@ export const Hero = ({
                 left: `${activeLayout.portal.left}rem`,
                 width: `${activeLayout.portal.width}rem`,
                 height: `${activeLayout.portal.height}rem`,
+                background: 'transparent', // was the white core
               }}
               aria-hidden='true'
             >
-              {/* One pre-baked halo (bake_portal_glow.py) replaces the old
-                                box-shadow stack + 4 mix-blend-mode glow layers. It sits
-                                inside .portal, so it zooms with the portal for free. */}
-              <div
+              <video
+                ref={portalVideoRef}
+                src={`${assetBase}${PORTAL_VIDEO}`}
+                poster={`${assetBase}${PORTAL_POSTER}`}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload='auto'
+                disablePictureInPicture
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  zIndex: 1,
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                }}
+              />
+              <img
+                ref={portalFrameImgRef}
+                src={`${assetBase}${PORTAL_FRAME.src}`}
+                alt=''
+                aria-hidden='true'
+                decoding='async'
+                style={{
+                  position: 'absolute',
+                  left: `${-PORTAL_FRAME.outsetX}%`,
+                  top: `${-PORTAL_FRAME.outsetY}%`,
+                  width: `${100 + 2 * PORTAL_FRAME.outsetX}%`,
+                  height: `${100 + 2 * PORTAL_FRAME.outsetY}%`,
+                  maxWidth: 'none',
+                  transformOrigin: '50% 50%',
+                  transform: `translate(${PORTAL_FRAME.offsetX}%, ${PORTAL_FRAME.offsetY}%) scale(${PORTAL_FRAME.scale})`,
+                  zIndex: PORTAL_FRAME.aboveVideo ? 2 : 0,
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                }}
+              />
+              {/* <div
                 className={styles.portalHalo}
                 style={{ backgroundImage: `url(${assetBase}portal-glow.png)` }}
-              />
+              /> */}
               {/* REMOVED (baked into portal-glow.png):
                             <div className={styles.portalGlow} />
                             <div className={styles.portalHaze} />
@@ -1220,7 +1453,7 @@ export const Hero = ({
                 className={styles.girl}
                 alt=''
                 aria-hidden='true'
-                src={`${assetBase}girl4.png`}
+                src={`${assetBase}girl4.webp`}
               />
               <div className={styles.girlContact} />
             </div>
