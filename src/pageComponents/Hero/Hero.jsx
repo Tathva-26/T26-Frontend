@@ -31,7 +31,7 @@ const PORTAL_IMG_FADE_END = 0.85
 //                    (fadeEnd optional: defaults to PORTAL_IMG_FADE_END)
 //   aboveVideo       true = over the portal video, false = under it
 const PORTAL_FRAME = {
-  src: 'frame.png',
+  src: 'frame.webp',
   scale: 1.2,
   offsetX: 0,
   offsetY: 3,
@@ -1026,7 +1026,7 @@ export const Hero = ({
             className={styles.themePlanet}
             alt=''
             aria-hidden='true'
-            src={`${assetBase}planeticon.png`}
+            src={`${assetBase}planeticon.webp`}
           />
         </div>
         <p className={styles.themeCopy}>
@@ -1051,7 +1051,7 @@ export const Hero = ({
           className={styles.identityMark}
           alt=''
           aria-hidden='true'
-          src={`${assetBase}butterfly.png`}
+          src={`${assetBase}butterfly.webp`}
         />
       </aside>
 
@@ -1188,7 +1188,7 @@ export const Hero = ({
             <div
               ref={backgroundRef}
               className={styles.background}
-              style={{ backgroundImage: `url(${assetBase}bg.png)` }}
+              style={{ backgroundImage: `url(${assetBase}bg.webp)` }}
               aria-hidden='true'
             />
 
@@ -1208,7 +1208,7 @@ export const Hero = ({
                 className={styles.island}
                 alt=''
                 aria-hidden='true'
-                src={`${assetBase}islandv2.png`}
+                src={`${assetBase}islandv2.webp`}
               />
               <div className={styles.trailWrap}>
                 <svg
@@ -1249,7 +1249,7 @@ export const Hero = ({
                       className={styles.birdImg}
                       alt=''
                       aria-hidden='true'
-                      src={`${assetBase}birdv2.png`}
+                      src={`${assetBase}birdv2.webp`}
                     />
                   </div>
                 </div>
