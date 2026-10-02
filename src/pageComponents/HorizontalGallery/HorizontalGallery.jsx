@@ -1,20 +1,20 @@
-'use client';
+'use client'
 
-import { useRef, useLayoutEffect, useEffect } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useRef, useLayoutEffect, useEffect } from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 // Adjust this path if your alias differs (file lives at src/app/components/TopoBackground.jsx)
-import TopoBackground from '@/components/TopoBackground';
-import './HorizontalGallery.css';
+import TopoBackground from '@/components/TopoBackground'
+import './HorizontalGallery.css'
 
 if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger);
+  gsap.registerPlugin(ScrollTrigger)
 }
 
-const GRID_SPACER = 'clamp(2rem, 6vw, 6rem)';
+const GRID_SPACER = 'clamp(2rem, 6vw, 6rem)'
 
 const IMG_BASE =
-  'relative shrink-0 flex items-center justify-center overflow-hidden rounded-xl border border-white/12 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.7)] bg-[#121212]';
+  'relative shrink-0 flex items-center justify-center overflow-hidden rounded-xl border border-white/12 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.7)] bg-[#121212]'
 
 const GALLERY_GROUPS = [
   // 01 + 02
@@ -55,14 +55,16 @@ const GALLERY_GROUPS = [
     items: [
       {
         id: 4,
-        itemClass: 'w-[calc(var(--vh,1vh)*31.75)] h-[calc(var(--vh,1vh)*28.75)]',
+        itemClass:
+          'w-[calc(var(--vh,1vh)*31.75)] h-[calc(var(--vh,1vh)*28.75)]',
         src: 'https://placehold.co/800x1000/18181b/c084fc?text=Placeholder+04',
         alt: 'Lando playing golf',
         extraClass: '-translate-y-20 md:-translate-y-28',
       },
       {
         id: 5,
-        itemClass: 'h-[calc(var(--vh,1vh)*20.96)] w-[calc(var(--vh,1vh)*21.98)]',
+        itemClass:
+          'h-[calc(var(--vh,1vh)*20.96)] w-[calc(var(--vh,1vh)*21.98)]',
         src: 'https://placehold.co/800x1000/18181b/a855f7?text=Placeholder+05',
         alt: 'Lando in helmet',
         extraClass: 'translate-y-12 md:translate-y-20',
@@ -76,14 +78,16 @@ const GALLERY_GROUPS = [
     items: [
       {
         id: 6,
-        itemClass: 'w-[calc(var(--vh,1vh)*21.38)] h-[calc(var(--vh,1vh)*26.48)]',
+        itemClass:
+          'w-[calc(var(--vh,1vh)*21.38)] h-[calc(var(--vh,1vh)*26.48)]',
         src: 'https://placehold.co/800x1000/18181b/e879f9?text=Placeholder+06',
         alt: 'Lando gala',
         extraClass: '-translate-y-16 md:-translate-y-24',
       },
       {
         id: 7,
-        itemClass: 'w-[calc(var(--vh,1vh)*20.74)] h-[calc(var(--vh,1vh)*20.74)]',
+        itemClass:
+          'w-[calc(var(--vh,1vh)*20.74)] h-[calc(var(--vh,1vh)*20.74)]',
         src: 'https://placehold.co/800x1000/18181b/c084fc?text=Placeholder+07',
         alt: 'Lando battersea',
         extraClass: 'translate-y-16 md:translate-y-24',
@@ -108,7 +112,8 @@ const GALLERY_GROUPS = [
     items: [
       {
         id: 9,
-        itemClass: 'h-[calc(var(--vh,1vh)*24.91)] w-[calc(var(--vh,1vh)*27.42)]',
+        itemClass:
+          'h-[calc(var(--vh,1vh)*24.91)] w-[calc(var(--vh,1vh)*27.42)]',
         src: 'https://placehold.co/800x1000/18181b/e879f9?text=Placeholder+09',
         alt: 'Lando austria',
         extraClass: '-translate-y-20 md:-translate-y-28',
@@ -122,25 +127,65 @@ const GALLERY_GROUPS = [
       },
     ],
   },
-];
+]
 
 const MOBILE_CONFIG = {
-  1: { align: 'justify-start', width: 'w-[46vw] max-w-[230px]', aspect: 'aspect-[0.81/1]' },
-  2: { align: 'justify-end', width: 'w-[50vw] max-w-[250px]', aspect: 'aspect-square' },
-  3: { align: 'justify-center', width: 'w-[86vw] max-w-md', aspect: 'aspect-[1.1/1]' },
-  4: { align: 'justify-end', width: 'w-[52vw] max-w-[260px]', aspect: 'aspect-[31.75/28.75]' },
-  5: { align: 'justify-start', width: 'w-[36vw] max-w-[180px]', aspect: 'aspect-[21.98/20.96]' },
-  6: { align: 'justify-start', width: 'w-[44vw] max-w-[220px]', aspect: 'aspect-[21.38/26.48]' },
-  7: { align: 'justify-end', width: 'w-[42vw] max-w-[210px]', aspect: 'aspect-square' },
-  8: { align: 'justify-center', width: 'w-[86vw] max-w-md', aspect: 'aspect-square' },
-  9: { align: 'justify-start', width: 'w-[46vw] max-w-[230px]', aspect: 'aspect-[27.42/24.91]' },
-  10: { align: 'justify-end', width: 'w-[50vw] max-w-[250px]', aspect: 'aspect-[31.69/30.9]' },
-};
+  1: {
+    align: 'justify-start',
+    width: 'w-[46vw] max-w-[230px]',
+    aspect: 'aspect-[0.81/1]',
+  },
+  2: {
+    align: 'justify-end',
+    width: 'w-[50vw] max-w-[250px]',
+    aspect: 'aspect-square',
+  },
+  3: {
+    align: 'justify-center',
+    width: 'w-[86vw] max-w-md',
+    aspect: 'aspect-[1.1/1]',
+  },
+  4: {
+    align: 'justify-end',
+    width: 'w-[52vw] max-w-[260px]',
+    aspect: 'aspect-[31.75/28.75]',
+  },
+  5: {
+    align: 'justify-start',
+    width: 'w-[36vw] max-w-[180px]',
+    aspect: 'aspect-[21.98/20.96]',
+  },
+  6: {
+    align: 'justify-start',
+    width: 'w-[44vw] max-w-[220px]',
+    aspect: 'aspect-[21.38/26.48]',
+  },
+  7: {
+    align: 'justify-end',
+    width: 'w-[42vw] max-w-[210px]',
+    aspect: 'aspect-square',
+  },
+  8: {
+    align: 'justify-center',
+    width: 'w-[86vw] max-w-md',
+    aspect: 'aspect-square',
+  },
+  9: {
+    align: 'justify-start',
+    width: 'w-[46vw] max-w-[230px]',
+    aspect: 'aspect-[27.42/24.91]',
+  },
+  10: {
+    align: 'justify-end',
+    width: 'w-[50vw] max-w-[250px]',
+    aspect: 'aspect-[31.69/30.9]',
+  },
+}
 
 export default function HorizontalGallery() {
-  const containerRef = useRef(null);
-  const sectionRef = useRef(null);
-  const trackRef = useRef(null);
+  const containerRef = useRef(null)
+  const sectionRef = useRef(null)
+  const trackRef = useRef(null)
 
   /* -----------------------------------------
      VIEWPORT HEIGHT VARIABLE
@@ -149,53 +194,53 @@ export default function HorizontalGallery() {
     const updateVh = () => {
       document.documentElement.style.setProperty(
         '--vh',
-        `${window.innerHeight * 0.01}px`
-      );
-    };
+        `${window.innerHeight * 0.01}px`,
+      )
+    }
 
-    updateVh();
-    window.addEventListener('resize', updateVh);
+    updateVh()
+    window.addEventListener('resize', updateVh)
 
     return () => {
-      window.removeEventListener('resize', updateVh);
-    };
-  }, []);
+      window.removeEventListener('resize', updateVh)
+    }
+  }, [])
 
   /* -----------------------------------------
      DESKTOP GSAP HORIZONTAL SCROLL
      MOBILE: GSAP disabled, normal vertical scroll.
   ----------------------------------------- */
   useLayoutEffect(() => {
-    const scroller = document.querySelector('.main-scroll') || window;
-    const container = containerRef.current;
-    const section = sectionRef.current;
-    const track = trackRef.current;
+    const scroller = document.querySelector('.main-scroll') || window
+    const container = containerRef.current
+    const section = sectionRef.current
+    const track = trackRef.current
 
-    if (!container || !section || !track) return;
+    if (!container || !section || !track) return
 
     const ctx = gsap.context(() => {
-      let tl;
+      let tl
 
       const build = () => {
         /* Kill previous animation */
         if (tl) {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-          tl = null;
+          tl.scrollTrigger?.kill()
+          tl.kill()
+          tl = null
         }
 
-        const vw = window.innerWidth;
+        const vw = window.innerWidth
 
         /* MOBILE */
         if (vw < 768) {
-          gsap.set([container, section, track], { clearProps: 'all' });
-          container.style.height = 'auto';
-          return;
+          gsap.set([container, section, track], { clearProps: 'all' })
+          container.style.height = 'auto'
+          return
         }
 
         /* DESKTOP */
-        const vh = window.innerHeight;
-        const scrollAmount = Math.max(track.scrollWidth - vw, 0);
+        const vh = window.innerHeight
+        const scrollAmount = Math.max(track.scrollWidth - vw, 0)
 
         /*
           CONTINUOUS DIAGONAL EXIT (no stop-then-go)
@@ -213,11 +258,11 @@ export default function HorizontalGallery() {
           and exit, so cards still travel 1:1 with the scroll:
           range = pin + 2vh = scrollAmount
         */
-        const pin = Math.max(scrollAmount - vh * 2, 0);
-        const range = pin + vh * 2;
+        const pin = Math.max(scrollAmount - vh * 2, 0)
+        const range = pin + vh * 2
 
         // Sticky pin length = container height - vh = pin
-        container.style.height = `${pin + vh}px`;
+        container.style.height = `${pin + vh}px`
 
         tl = gsap.timeline({
           defaults: { ease: 'none' },
@@ -231,49 +276,45 @@ export default function HorizontalGallery() {
             scrub: true,
             invalidateOnRefresh: true,
           },
-        });
+        })
 
         /* Horizontal movement: one linear tween over the entire range */
-        tl.to(
-          track,
-          { x: -scrollAmount, duration: range, ease: 'none' },
-          0
-        );
+        tl.to(track, { x: -scrollAmount, duration: range, ease: 'none' }, 0)
 
         /* Entrance opacity */
         tl.fromTo(
           track,
           { opacity: 0.85 },
           { opacity: 1, duration: vh, ease: 'none' },
-          0
-        );
-      };
+          0,
+        )
+      }
 
-      build();
+      build()
 
-      let resizeTimer;
+      let resizeTimer
 
       const handleResize = () => {
-        clearTimeout(resizeTimer);
+        clearTimeout(resizeTimer)
         resizeTimer = setTimeout(() => {
-          build();
-          ScrollTrigger.refresh();
-        }, 150);
-      };
+          build()
+          ScrollTrigger.refresh()
+        }, 150)
+      }
 
-      window.addEventListener('resize', handleResize);
+      window.addEventListener('resize', handleResize)
 
       return () => {
-        clearTimeout(resizeTimer);
-        window.removeEventListener('resize', handleResize);
-      };
-    }, container);
+        clearTimeout(resizeTimer)
+        window.removeEventListener('resize', handleResize)
+      }
+    }, container)
 
-    return () => ctx.revert();
-  }, []);
+    return () => ctx.revert()
+  }, [])
 
   return (
-    <div ref={containerRef} className="relative w-full shrink-0">
+    <div ref={containerRef} className='relative w-full shrink-0'>
       {/* =========================================
           STICKY SECTION
           `isolate` creates a stacking context so the
@@ -282,7 +323,7 @@ export default function HorizontalGallery() {
       ========================================= */}
       <section
         ref={sectionRef}
-        className="
+        className='
           relative
           isolate
           md:sticky
@@ -294,11 +335,11 @@ export default function HorizontalGallery() {
           w-full
           md:overflow-hidden
           bg-[#1d1725]
-        "
+        '
       >
         {/* TOP GRADIENT */}
         <div
-          className="
+          className='
             pointer-events-none
             absolute
             top-0
@@ -313,12 +354,12 @@ export default function HorizontalGallery() {
             from-[#1d1725]
             via-[#1d1725]/50
             to-transparent
-          "
+          '
         />
 
         {/* BOTTOM GRADIENT */}
         <div
-          className="
+          className='
             pointer-events-none
             absolute
             bottom-0
@@ -333,7 +374,7 @@ export default function HorizontalGallery() {
             from-[#1d1725]
             via-[#1d1725]/60
             to-transparent
-          "
+          '
         />
 
         {/* =====================================
@@ -341,8 +382,8 @@ export default function HorizontalGallery() {
         ===================================== */}
         <TopoBackground
           fixed={false}
-          background="#1d1725"
-          lineColor="138,111,174"
+          background='#1d1725'
+          lineColor='138,111,174'
           lineOpacity={0.22}
           lineWidth={1}
           levels={7}
@@ -356,7 +397,7 @@ export default function HorizontalGallery() {
         ========================================= */}
         <div
           ref={trackRef}
-          className="
+          className='
             relative
             z-10
 
@@ -368,16 +409,16 @@ export default function HorizontalGallery() {
             md:items-center
 
             md:py-0
-            md:pl-[150vw]
+            md:pl-[95vw]
 
             will-change-transform
-          "
-          style={{ paddingRight: GRID_SPACER }}
+          '
+          // style={{ paddingRight: GRID_SPACER }}
         >
           {GALLERY_GROUPS.map((group, gIdx) => (
             <div
               key={`g-${gIdx}`}
-              className="
+              className='
                 flex
                 flex-col
 
@@ -387,12 +428,12 @@ export default function HorizontalGallery() {
 
                 md:flex-row
                 md:w-auto
-              "
+              '
             >
               {/* SPACE BETWEEN GROUPS */}
               {gIdx > 0 && (
                 <div
-                  className="
+                  className='
                     flex-none
 
                     h-20
@@ -400,14 +441,14 @@ export default function HorizontalGallery() {
 
                     md:h-auto
                     md:w-[clamp(2rem,6vw,6rem)]
-                  "
+                  '
                 />
               )}
 
               {/* FEATURED IMAGE */}
               {group.type === 'featured' ? (
                 <div
-                  className="
+                  className='
                     flex
                     flex-col
                     items-center
@@ -421,12 +462,12 @@ export default function HorizontalGallery() {
 
                     md:w-auto
                     md:py-0
-                  "
+                  '
                 >
                   {/* TOP QUOTE */}
                   {group.quotePosition === 'top' && (
                     <p
-                      className="
+                      className='
                         font-serif
                         italic
                         font-light
@@ -443,7 +484,7 @@ export default function HorizontalGallery() {
                         md:max-w-lg
                         md:px-0
                         md:mb-6
-                      "
+                      '
                     >
                       &ldquo;{group.quote}&rdquo;
                     </p>
@@ -454,8 +495,8 @@ export default function HorizontalGallery() {
                     <img
                       src={group.src}
                       alt={group.alt}
-                      loading="lazy"
-                      className="
+                      loading='lazy'
+                      className='
                         image
                         is-horizontal-scroll
 
@@ -464,14 +505,14 @@ export default function HorizontalGallery() {
 
                         object-cover
                         scale-110
-                      "
+                      '
                     />
                   </div>
 
                   {/* BOTTOM QUOTE */}
                   {group.quotePosition === 'bottom' && (
                     <p
-                      className="
+                      className='
                         font-serif
                         italic
                         font-light
@@ -488,7 +529,7 @@ export default function HorizontalGallery() {
                         md:max-w-lg
                         md:px-0
                         md:mt-6
-                      "
+                      '
                     >
                       &ldquo;{group.quote}&rdquo;
                     </p>
@@ -497,7 +538,7 @@ export default function HorizontalGallery() {
               ) : (
                 /* PAIR */
                 <div
-                  className="
+                  className='
                     flex
                     flex-col
 
@@ -509,7 +550,7 @@ export default function HorizontalGallery() {
                     md:w-auto
 
                     md:items-center
-                  "
+                  '
                   style={{ gap: GRID_SPACER }}
                 >
                   {group.items.map((item, index) => (
@@ -536,8 +577,8 @@ export default function HorizontalGallery() {
                         <img
                           src={item.src}
                           alt={item.alt}
-                          loading="lazy"
-                          className="
+                          loading='lazy'
+                          className='
                             image
                             is-horizontal-scroll
 
@@ -546,7 +587,7 @@ export default function HorizontalGallery() {
 
                             object-cover
                             scale-110
-                          "
+                          '
                         />
                       </div>
                     </div>
@@ -560,77 +601,87 @@ export default function HorizontalGallery() {
         {/* =========================================
             MOBILE GALLERY (STATIC EDITORIAL ZIG-ZAG)
         ========================================= */}
-        <div className="relative z-10 flex flex-col w-full px-[5vw] pt-16 pb-16 space-y-16 md:hidden">
+        <div className='relative z-10 flex flex-col w-full px-[5vw] pt-16 pb-16 space-y-16 md:hidden'>
           {GALLERY_GROUPS.map((group, gIdx) => {
             if (group.type === 'featured') {
-              const isTopQuote = group.quotePosition === 'top';
+              const isTopQuote = group.quotePosition === 'top'
               const config = MOBILE_CONFIG[group.id] || {
                 align: 'justify-center',
                 width: 'w-[86vw]',
                 aspect: 'aspect-square',
-              };
+              }
 
               return (
                 <div
                   key={`m-g-${gIdx}`}
-                  className="flex flex-col items-center justify-center w-full py-8 space-y-8"
+                  className='flex flex-col items-center justify-center w-full py-8 space-y-8'
                 >
                   {/* TOP QUOTE */}
                   {isTopQuote && group.quote && (
-                    <p className="font-serif italic font-light text-neutral-200 text-center leading-relaxed text-base px-4 max-w-xs sm:max-w-sm">
+                    <p className='font-serif italic font-light text-neutral-200 text-center leading-relaxed text-base px-4 max-w-xs sm:max-w-sm'>
                       &ldquo;{group.quote}&rdquo;
                     </p>
                   )}
 
                   {/* FEATURED CENTERED IMAGE (03 or 08) */}
                   <div className={`flex w-full ${config.align}`}>
-                    <div className={`${IMG_BASE} ${config.width} ${config.aspect}`}>
+                    <div
+                      className={`${IMG_BASE} ${config.width} ${config.aspect}`}
+                    >
                       <img
                         src={group.src}
                         alt={group.alt}
-                        loading="lazy"
-                        className="h-full w-full object-cover"
+                        loading='lazy'
+                        className='h-full w-full object-cover'
                       />
                     </div>
                   </div>
 
                   {/* BOTTOM QUOTE */}
                   {!isTopQuote && group.quote && (
-                    <p className="font-serif italic font-light text-neutral-200 text-center leading-relaxed text-base px-4 max-w-xs sm:max-w-sm">
+                    <p className='font-serif italic font-light text-neutral-200 text-center leading-relaxed text-base px-4 max-w-xs sm:max-w-sm'>
                       &ldquo;{group.quote}&rdquo;
                     </p>
                   )}
                 </div>
-              );
+              )
             }
 
             return (
-              <div key={`m-g-${gIdx}`} className="flex flex-col w-full space-y-16">
+              <div
+                key={`m-g-${gIdx}`}
+                className='flex flex-col w-full space-y-16'
+              >
                 {group.items.map((item) => {
                   const config = MOBILE_CONFIG[item.id] || {
                     align: 'justify-start',
                     width: 'w-[56vw]',
                     aspect: 'aspect-square',
-                  };
+                  }
 
                   return (
-                    <div key={`m-item-${item.id}`} className={`flex w-full ${config.align}`}>
-                      <div className={`${IMG_BASE} ${config.width} ${config.aspect}`}>
+                    <div
+                      key={`m-item-${item.id}`}
+                      className={`flex w-full ${config.align}`}
+                    >
+                      <div
+                        className={`${IMG_BASE} ${config.width} ${config.aspect}`}
+                      >
                         <img
                           src={item.src}
                           alt={item.alt}
-                          loading="lazy"
-                          className="h-full w-full object-cover"
+                          loading='lazy'
+                          className='h-full w-full object-cover'
                         />
                       </div>
                     </div>
-                  );
+                  )
                 })}
               </div>
-            );
+            )
           })}
         </div>
       </section>
     </div>
-  );
+  )
 }

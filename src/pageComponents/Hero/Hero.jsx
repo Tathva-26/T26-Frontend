@@ -298,6 +298,27 @@ export const Hero = ({
     return undefined
   }, [isActive])
 
+  // Mobile only: iOS Low Power Mode and some Android browsers silently block or suspend
+  // <video> autoplay/decode, which shows the poster or a blank frame instead of the loop.
+  // Retry play() once on the first touch, and again whenever the tab regains visibility.
+  useEffect(() => {
+    if (!isMobile) return undefined
+    const retryPlayback = () => {
+      if (!isActive) return
+      videoRef.current?.play().catch(() => {})
+      portalVideoRef.current?.play().catch(() => {})
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') retryPlayback()
+    }
+    window.addEventListener('touchstart', retryPlayback, { once: true, passive: true })
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('touchstart', retryPlayback)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [isMobile, isActive])
+
   // Enter click: ripple at the click point, then animate the hero
   // scroll runway to its end (portal zoom), then let the page scroll
   // naturally to the Frame section below.
@@ -496,6 +517,9 @@ export const Hero = ({
 
     let lastKey = ''
     let refreshTimer = 0
+    // Mobile only (see the check below): last viewport size we actually acted on.
+    let lastMobileViewportW = 0
+    let lastMobileViewportH = 0
 
     const updateDesignScale = () => {
       const designWidth = scene.offsetWidth
@@ -507,6 +531,23 @@ export const Hero = ({
       }
 
       const mobileMode = window.matchMedia('(max-width: 768px)').matches
+
+      // Mobile only: the URL bar hiding/showing while scrolling fires ResizeObserver
+      // notifications that only change viewport HEIGHT by a small amount. Rebuilding every
+      // ScrollTrigger tween mid-gesture for that (invalidateOnRefresh below) is what makes the
+      // scene jump/flash, so ignore height-only changes under this threshold. A real rotation
+      // or breakpoint change still goes through (width changes, or a big enough height jump).
+      if (mobileMode) {
+        if (
+          lastMobileViewportW &&
+          viewportWidth === lastMobileViewportW &&
+          Math.abs(viewportHeight - lastMobileViewportH) < 140
+        ) {
+          return
+        }
+        lastMobileViewportW = viewportWidth
+        lastMobileViewportH = viewportHeight
+      }
 
       const key = `${designWidth}|${designHeight}|${viewportWidth}|${viewportHeight}|${mobileMode}`
       if (key === lastKey) return
@@ -783,6 +824,7 @@ export const Hero = ({
         let lastFrameImgOpacity = -1
         let lastWrapOpacity = -1
         let lastGirlHidden = false
+        let lastGirlOpacity = -1
         const syncPortalFrame = () => {
           const portalEl = portalRef.current
           if (!portalEl) return
@@ -821,7 +863,21 @@ export const Hero = ({
           // The girl layer is scaled up to 15.55x (desktop) / 60x (mobile) by the time the
           // portal is fully open, which keeps a huge decoded texture alive for nothing (it's
           // fully covered by the portal/Frame by then). Drop it once covered, restore on the way back.
-          if (girlRef.current) {
+          if (girlRef.current && isMobile) {
+            // Mobile only: 60x (vs. desktop's 15.55x) is well past typical mobile GPU
+            // compositing budgets, a likely contributor to the mobile-only flicker. Fade her
+            // out earlier and drop her a bit sooner than desktop's flat p>=0.9 cutoff.
+            const go = 1 - gsap.utils.clamp(0, 1, (p - 0.55) / 0.25) // 1 at p<=0.55, 0 at p>=0.8
+            if (go !== lastGirlOpacity) {
+              lastGirlOpacity = go
+              girlRef.current.style.opacity = go
+            }
+            const hideGirl = p >= 0.8
+            if (hideGirl !== lastGirlHidden) {
+              lastGirlHidden = hideGirl
+              girlRef.current.style.visibility = hideGirl ? 'hidden' : 'visible'
+            }
+          } else if (girlRef.current) {
             const hideGirl = p >= 0.9
             if (hideGirl !== lastGirlHidden) {
               lastGirlHidden = hideGirl
