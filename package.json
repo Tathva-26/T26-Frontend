@@ -9,7 +9,7 @@
     "lint": "eslint",
     "check:api": "node --no-warnings scripts/check-api-contract.mjs",
     "check:e2e": "node scripts/e2e/contact-form.mjs && node scripts/e2e/auth.mjs",
-    "check:e2e:stub": "node scripts/e2e/profile.mjs",
+    "check:e2e:stub": "node scripts/e2e/profile.mjs && node scripts/e2e/booking.mjs",
     "stub:backend": "node scripts/e2e/stub-backend.mjs"
   },
   "dependencies": {

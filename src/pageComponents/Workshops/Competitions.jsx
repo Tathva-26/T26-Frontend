@@ -10,6 +10,7 @@ import Navbar from "@/pageComponents/Navbar/Navbar";
 import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
 import { useEvents } from "@/hooks/useEvents";
 import { useEventDetails } from "@/hooks/useEventDetails";
+import Checkout from "@/components/Checkout/Checkout";
 
 const competitionsStyles = `
 @import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
@@ -1860,6 +1861,21 @@ export default function CompetitionsPage() {
                             onMouseEnter={(e) => handleCardEnter(competition.id, e, competition)}
                             onMouseMove={(e) => handleCardMove(competition.id, e)}
                             onMouseLeave={() => handleCardLeave(competition.id)}
+                            /*
+                             * The detail modal markup existed but nothing ever
+                             * opened it: setSelectedCompetition was only ever called with
+                             * null, so the cards were hover-animated and inert,
+                             * and there was no route to the register button.
+                             */
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`Competition details: ${competition.fullTitle}`}
+                            onClick={() => setSelectedCompetition(competition)}
+                            onKeyDown={(e) => {
+                              if (e.key !== "Enter" && e.key !== " ") return;
+                              e.preventDefault();
+                              setSelectedCompetition(competition);
+                            }}
                           >
                             <div
                               ref={(el) => {
@@ -2141,12 +2157,7 @@ export default function CompetitionsPage() {
                   </span>
                 </div>
 
-                <button
-                  type="button"
-                  className="mt-4 w-full rounded-[7px] bg-[rgba(78,40,74,0.72)] py-1.5 text-lg font-bold tracking-[0.16em] text-white transition-colors hover:bg-[rgba(104,52,96,0.9)] cursor-pointer"
-                >
-                  REGISTER
-                </button>
+                <Checkout event={selectedCompetition} />
               </div>
 
               <div className="pt-2 sm:pt-6">

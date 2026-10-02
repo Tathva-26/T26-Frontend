@@ -28,6 +28,9 @@ const receivedPuts = async () =>
   (await (await fetch(`${STUB}/__received`)).json()).filter((r) => r.method === 'PUT')
 
 await fetch(`${STUB}/__reset`)
+// A ten second debounce, so the refresh countdown is deterministic here
+// rather than depending on the stub's default.
+await fetch(`${STUB}/__config?refreshableInMs=10000`)
 
 const s = await session()
 const settle = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -129,6 +132,7 @@ check(
 
 /* a reformatted phone is not a change, so no request at all */
 await fetch(`${STUB}/__reset`)
+await fetch(`${STUB}/__config?refreshableInMs=10000`)
 await s.evaluate(openEditor)
 await waitFor(modalOpen)
 await s.evaluate(setField('phone', '+91 98765 43210'))

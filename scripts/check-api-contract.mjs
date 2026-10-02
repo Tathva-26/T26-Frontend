@@ -33,6 +33,12 @@ const { toDraft, cleanName, validateProfile, changedFields, buildProfileFormData
   await import(`${ROOT}profile.js`)
 const { bookingStatus, byTiqrId, normaliseBooking, joinBookings, latestForEvent } =
   await import(`${ROOT}bookings.js`)
+const { feeBreakdown, PLATFORM_FEE_RATE, GST_RATE } = await import(`${ROOT}fees.js`)
+const { referralFromSearch } = await import(`${ROOT}referral.js`)
+const {
+  classifyBookingFailure, bookingBlocker, buildBookingBody, paymentOutcome,
+  confirmationDelay, MAX_CONFIRMATION_ATTEMPTS, BOOKING_ACTION,
+} = await import(`${ROOT}booking.js`)
 
 let pass = 0
 const fails = []
@@ -387,6 +393,105 @@ check('latest for an event', latestForEvent(twoBookings, 900).id, 2)
 check('latest for an unknown event', latestForEvent(twoBookings, 999), null)
 check('latest needs an id', latestForEvent(twoBookings, null), null)
 check('join tolerates junk', joinBookings(null, SWAPPED), [])
+
+/* ---- checkout fee maths ---- */
+check('fee rates', [PLATFORM_FEE_RATE, GST_RATE], [0.025, 0.18])
+// A 499 rupee ticket: 1247 paise fee, 224 paise GST on the fee.
+check('fees on 49900 paise', feeBreakdown(49900), { quantity: 1, base: 49900, platformFee: 1248, gst: 225, total: 51373 })
+check('GST is on the fee, not the ticket', feeBreakdown(49900).gst, Math.round(Math.round(49900 * 0.025) * 0.18))
+check('a free event stays free', feeBreakdown(0), { quantity: 1, base: 0, platformFee: 0, gst: 0, total: 0 })
+check('no price means no total', feeBreakdown(null), null)
+check('quantity multiplies the base', feeBreakdown(49900, 2).base, 99800)
+check('bad quantity falls back to 1', feeBreakdown(49900, 0).quantity, 1)
+check('fees are whole paise', Number.isInteger(feeBreakdown(33333).total), true)
+
+/* ---- referral capture ---- */
+check('referral_code read', referralFromSearch('?referral_code=AB12CD'), 'AB12CD')
+check('legacy ref read', referralFromSearch('?ref=AB12CD'), 'AB12CD')
+check('referral_code wins over ref', referralFromSearch('?ref=OLD123&referral_code=NEW456'), 'NEW456')
+check('lowercase upcased', referralFromSearch('?ref=ab12cd'), 'AB12CD')
+check('junk rejected', referralFromSearch('?ref=<script>'), null)
+check('too short rejected', referralFromSearch('?ref=AB'), null)
+check('absent is null', referralFromSearch('?utm=x'), null)
+check('empty search', referralFromSearch(''), null)
+check('no leading question mark needed', referralFromSearch('ref=AB12CD'), 'AB12CD')
+
+/* ---- the booking failure table ---- */
+// Each status is a different thing to tell the buyer. Collapsing them loses
+// whether trying again could possibly work.
+const fail401 = classifyBookingFailure({ status: 401 })
+check('401 asks for sign-in', [fail401.action, fail401.retryable], [BOOKING_ACTION.SIGN_IN, false])
+
+const failPhone = classifyBookingFailure({ status: 400, message: 'Add a phone number to your profile before booking' })
+check('missing phone routes to the profile', failPhone.action, BOOKING_ACTION.COMPLETE_PROFILE)
+check('missing phone is not retryable as-is', failPhone.retryable, false)
+
+const failReferral = classifyBookingFailure({ status: 400, message: 'Booking rejected' })
+check('referral rejection clears the code', failReferral.clearReferral, true)
+check('referral rejection is retryable', failReferral.retryable, true)
+
+const failDuplicate = classifyBookingFailure({ status: 400, message: 'You have already registered for this event' })
+check('duplicate is not retryable', failDuplicate.retryable, false)
+check('duplicate does not clear the referral', failDuplicate.clearReferral, false)
+
+check('not open', classifyBookingFailure({ status: 400, message: 'Event is not open for booking' }).message, 'Booking is not open for this event.')
+
+const needPass = classifyBookingFailure({ status: 403, code: 'PASSCODE_REQUIRED', message: 'Passcode required' })
+check('passcode required reveals the field', [needPass.needsPasscode, needPass.action], [true, BOOKING_ACTION.PASSCODE])
+const badPass = classifyBookingFailure({ status: 403, code: 'PASSCODE_INVALID', message: 'Invalid passcode' })
+check('passcode invalid is retryable', [badPass.needsPasscode, badPass.retryable], [true, true])
+// The code is read before the status, so a passcode case is never mistaken
+// for a generic 403.
+check('code wins over status', classifyBookingFailure({ status: 403, code: 'PASSCODE_INVALID' }).action, BOOKING_ACTION.PASSCODE)
+
+check('404', classifyBookingFailure({ status: 404, message: 'Event not found' }).message, 'This event could not be found.')
+// OPEN but never synced to TIQR: no ticket exists, so retrying cannot help.
+check('409 is not retryable', classifyBookingFailure({ status: 409 }).retryable, false)
+check('502 is retryable', classifyBookingFailure({ status: 502 }).retryable, true)
+check('transport failure is retryable', classifyBookingFailure({ status: null }).retryable, true)
+// A cross-origin write from an unlisted origin arrives as exactly this.
+check('bare Forbidden is not shown raw', classifyBookingFailure({ status: 403, message: 'Forbidden' }).message, 'This booking was refused. Please try again later.')
+check('nothing known still says something', Boolean(classifyBookingFailure({}).message), true)
+
+/* ---- whether booking is even possible ---- */
+const OPEN_EVENT = { id: 12, status: 'OPEN', bookable: true, ticketId: 777 }
+const WITH_PHONE = { phone: '9876543210' }
+check('open event with a phone is bookable', bookingBlocker(OPEN_EVENT, WITH_PHONE).blocked, false)
+check('closed event blocked', bookingBlocker({ ...OPEN_EVENT, status: 'CLOSED', bookable: false }, WITH_PHONE).reason, 'closed')
+// OPEN locally but the TIQR push failed, so there is no ticket to sell.
+check('unsynced event blocked', bookingBlocker({ ...OPEN_EVENT, bookable: false }, WITH_PHONE).reason, 'unsynced')
+check('signed out blocked', bookingBlocker(OPEN_EVENT, null).reason, 'signIn')
+check('no phone blocked', bookingBlocker(OPEN_EVENT, { phone: null }).reason, 'phone')
+check('no event blocked', bookingBlocker(null, WITH_PHONE).reason, 'missing')
+
+/* ---- the request body ---- */
+check('our event id, quantity, nothing else', buildBookingBody({ eventId: 12 }), { eventId: 12, quantity: 1 })
+check('passcode included when given', buildBookingBody({ eventId: 12, passcode: ' s3cret ' }).passcode, 's3cret')
+check('blank passcode omitted', 'passcode' in buildBookingBody({ eventId: 12, passcode: '   ' }), false)
+check('referral included when held', buildBookingBody({ eventId: 12, referralCode: 'AB12CD' }).referralCode, 'AB12CD')
+check('no referral key when none', 'referralCode' in buildBookingBody({ eventId: 12, referralCode: null }), false)
+
+/* ---- coming back from payment ---- */
+check('attempt cap', MAX_CONFIRMATION_ATTEMPTS, 6)
+// The server debounces a live read to ten seconds and says how long is left;
+// polling faster only collects cache hits.
+check('waits out the debounce', confirmationDelay(10000), 10250)
+check('two second floor', confirmationDelay(0), 2000)
+check('floor when absent', confirmationDelay(undefined), 2000)
+check('floor when nonsense', confirmationDelay(-5), 2000)
+
+const CONFIRMED = { status: 'CONFIRMED' }
+check('confirmed booking', paymentOutcome({ booking: CONFIRMED, attemptsLeft: 5 }), 'confirmed')
+check('pending once attempts run out', paymentOutcome({ booking: { status: 'PENDING' }, attemptsLeft: 0 }), 'pending')
+check('still polling', paymentOutcome({ booking: null, attemptsLeft: 3 }), 'processing')
+// The query string says charged but nothing reached TIQR. Saying "failed"
+// here would be wrong: the money may well have left.
+check('charged but missing', paymentOutcome({ booking: null, chargeStatus: 'CHARGED', attemptsLeft: 0 }), 'charged')
+check('charged is case-insensitive', paymentOutcome({ booking: null, chargeStatus: 'charged', attemptsLeft: 0 }), 'charged')
+check('nothing at all', paymentOutcome({ booking: null, chargeStatus: null, attemptsLeft: 0 }), 'missing')
+// A charge claim can never outrank an actual confirmed booking, nor invent one.
+check('a booking outranks the query', paymentOutcome({ booking: CONFIRMED, chargeStatus: 'FAILED', attemptsLeft: 0 }), 'confirmed')
+check('no booking is never confirmed', paymentOutcome({ booking: null, chargeStatus: 'CHARGED', attemptsLeft: 0 }) === 'confirmed', false)
 
 console.log(`\n${pass} passed, ${fails.length} failed`)
 if (fails.length) {

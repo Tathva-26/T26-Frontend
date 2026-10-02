@@ -23,6 +23,22 @@ const ORIGIN = process.env.STUB_ALLOW_ORIGIN || 'http://localhost:3000'
 
 const received = []
 
+/**
+ * Driven by `GET /__config?...` so one running stub can produce every branch
+ * the booking UI has to handle, including the ones that are hard to reach for
+ * real: a 409 from an unsynced event, a 502 from the provider, and a charge
+ * that never reaches the provider at all.
+ */
+const config = {
+  createStatus: 201,
+  createMessage: null,
+  createCode: null,
+  withRedirect: true,
+  booking: 'CONFIRMED', // 'CONFIRMED' | 'PENDING' | 'none'
+  refreshableInMs: 0,
+  phone: '9876543210',
+}
+
 let user = {
   id: 'V1StGXR8_Z',
   email: 'ada@example.com',
@@ -45,6 +61,28 @@ const events = [
     heading: 'Deep Space Robotics', datetime: '2026-10-09T04:30:00.000Z',
     price: 49900, description: 'Autonomous rover guidance.',
     picture: null, committee: 'Workshop Committee', status: 'OPEN',
+    passcodeRequired: false, venue: { name: 'Lab 4' },
+  },
+  {
+    id: 13, tiqrEventId: 901, ticketId: 778, type: 'workshops',
+    heading: 'Gated Workshop', datetime: '2026-10-10T08:30:00.000Z',
+    price: 54900, description: 'Needs a passcode.',
+    picture: null, committee: 'Workshop Committee', status: 'OPEN',
+    passcodeRequired: true, venue: { name: 'Lab 4' },
+  },
+  {
+    // OPEN here, but the push to TIQR never finished: no ticket to sell.
+    id: 14, tiqrEventId: 902, ticketId: null, type: 'workshops',
+    heading: 'Unsynced Workshop', datetime: '2026-10-11T05:30:00.000Z',
+    price: 44900, description: 'Never reached the provider.',
+    picture: null, committee: '', status: 'OPEN',
+    passcodeRequired: false, venue: null,
+  },
+  {
+    id: 15, tiqrEventId: 903, ticketId: 779, type: 'workshops',
+    heading: 'Closed Workshop', datetime: '2026-10-09T04:30:00.000Z',
+    price: 0, description: 'Booking has ended.',
+    picture: null, committee: '', status: 'CLOSED',
     passcodeRequired: false, venue: { name: 'Lab 4' },
   },
 ]
@@ -120,9 +158,26 @@ createServer(async (req, res) => {
 
   if (url.pathname === '/__received') return json(res, 200, received)
 
+  if (url.pathname === '/__config') {
+    for (const [key, value] of url.searchParams) {
+      if (!(key in config)) continue
+      config[key] = /^\d+$/.test(value)
+        ? Number(value)
+        : value === 'true' ? true
+        : value === 'false' ? false
+        : value === 'null' ? null
+        : value
+    }
+    return json(res, 200, config)
+  }
+
   if (url.pathname === '/__reset') {
     received.length = 0
     user = { ...user, name: 'Ada Lovelace', semester: 5, year: 3, branch: 'CSE' }
+    Object.assign(config, {
+      createStatus: 201, createMessage: null, createCode: null, withRedirect: true,
+      booking: 'CONFIRMED', refreshableInMs: 0, phone: '9876543210',
+    })
     return json(res, 200, { ok: true })
   }
 
@@ -133,17 +188,70 @@ createServer(async (req, res) => {
     return json(res, 200, { events })
   }
 
+  if (url.pathname.startsWith('/api/events/details/') && req.method === 'GET') {
+    const raw = url.pathname.slice('/api/events/details/'.length)
+    if (!/^\d+$/.test(raw)) return json(res, 400, { error: 'Invalid event id' })
+    const found = events.find((e) => e.id === Number(raw))
+    if (!found) return json(res, 404, { error: 'Event not found' })
+    // The detail route adds the five fields the list route omits.
+    return json(res, 200, {
+      event: {
+        ...found,
+        startTime: found.datetime,
+        endTime: found.datetime,
+        extraInfo: null,
+        teamSize: null,
+        isTeamEvent: false,
+        venue: found.venue ? { id: 2, name: found.venue.name, location: 'Stub Block' } : null,
+      },
+    })
+  }
+
   if (url.pathname === '/api/booking/my' && req.method === 'GET') {
     const fresh = url.searchParams.get('refresh')
+    received.push({ method: 'GET', path: url.pathname, refresh: fresh })
+
+    const list =
+      config.booking === 'none'
+        ? []
+        : [{ ...bookings[0], status: config.booking }]
+
     return json(res, 200, {
-      bookings, count: bookings.length, cachedAt: Date.now(),
-      refreshed: Boolean(fresh), refreshableInMs: 10000,
+      bookings: list, count: list.length, cachedAt: Date.now(),
+      refreshed: Boolean(fresh), refreshableInMs: config.refreshableInMs,
+    })
+  }
+
+  if (url.pathname === '/api/booking/create' && req.method === 'POST') {
+    const raw = await readBody(req)
+    let body = null
+    try { body = JSON.parse(raw.toString() || '{}') } catch { body = null }
+
+    received.push({
+      method: 'POST', path: url.pathname, body,
+      contentType: req.headers['content-type'] || '',
+    })
+
+    if (config.createStatus !== 201) {
+      const payload = {}
+      if (config.createMessage) payload.message = config.createMessage
+      if (config.createCode) payload.code = config.createCode
+      return json(res, config.createStatus, payload)
+    }
+
+    // The provider's hosted payment page. The real one returns the buyer to
+    // FRONTEND_URL/events/{our id}, which is what this mimics.
+    return json(res, 201, {
+      message: 'Booking created',
+      ...(config.withRedirect
+        ? { redir_url: `http://localhost:3000/events/${body?.eventId}?status=CHARGED&signature=stub` }
+        : {}),
     })
   }
 
   if (url.pathname === '/api/user/' && req.method === 'GET') {
     // Flat, with no { user } wrapper.
-    return json(res, 200, user)
+    return json(res, 200, { ...user, phone: config.phone === 'none' ? null : config.phone })
   }
 
   if (url.pathname === '/api/user/' && req.method === 'PUT') {
