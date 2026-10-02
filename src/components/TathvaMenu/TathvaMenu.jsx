@@ -1,6 +1,6 @@
 'use client'
 
-import { useLayoutEffect, useRef, useState, useEffect } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { gsap } from 'gsap'
 import { Jockey_One } from 'next/font/google'
@@ -414,22 +414,32 @@ export default function TathvaMenu() {
         className='
           pointer-events-auto
           fixed
-          top-0
-          left-0
-          right-0
+          top-3
+          left-4
+          w-fit
           z-[10002]
           flex
-          h-14
+          h-12
           items-center
-          bg-[#2E2E2F]
-          px-3
-          shadow-lg
-          border-b
-          border-white/10
+          gap-2
+          rounded-full
+          border
+          border-white/15
+          bg-[#242526]/68
+          px-1.5
+          shadow-[0_12px_32px_rgba(0,0,0,0.28)]
+          backdrop-blur-2xl
           md:hidden
         '
       >
-        {/* Left: Hamburger Button */}
+        <span
+          className='ml-2 text-[11px] tracking-[0.2em] text-white/70 font-jockey'
+          aria-hidden='true'
+        >
+          TATHVA ’26
+        </span>
+
+        {/* Menu trigger */}
         <button
           type='button'
           onClick={() => setIsMobileOpen((prev) => !prev)}
@@ -437,16 +447,21 @@ export default function TathvaMenu() {
           aria-expanded={isMobileOpen}
           className='
             flex
-            h-10
-            w-10
+            h-9
+            w-9
             items-center
             justify-center
-            rounded-md
+            rounded-full
             p-2
             text-white
-            hover:bg-white/10
-            focus:outline-none
-            transition-colors
+            bg-white/8
+            hover:bg-white/15
+            focus-visible:outline
+            focus-visible:outline-2
+            focus-visible:outline-offset-2
+            focus-visible:outline-white
+            transition-[background-color,transform]
+            active:scale-95
           '
         >
           <span className='sr-only'>Toggle navigation menu</span>
@@ -505,7 +520,6 @@ export default function TathvaMenu() {
           pointer-events-auto
           fixed
           inset-0
-          top-14
           z-[10000]
           transition-opacity
           duration-[250ms]
@@ -517,29 +531,34 @@ export default function TathvaMenu() {
       />
 
       {/* =================================================
-          MOBILE MENU PANEL (Left side only)
+          MOBILE MENU POPOVER (opened from the top-left pill)
       ================================================= */}
       <aside
         className={`
           pointer-events-auto
           fixed
-          top-14
-          left-0
-          bottom-0
+          top-[4.5rem]
+          left-4
           z-[10001]
           flex
-          w-[75%]
-          max-w-[280px]
+          w-[min(18rem,calc(100vw-2rem))]
+          max-h-[calc(100dvh-5.5rem)]
           flex-col
-          bg-[#2E2E2F]
-          shadow-2xl
-          border-r
+          rounded-[1.5rem]
+          border
           border-white/10
-          transition-transform
-          duration-300
-          ease-in-out
+          bg-[#28292B]/98
+          shadow-2xl
+          origin-top-left
+          transition-[opacity,transform,visibility]
+          duration-200
+          ease-out
           md:hidden
-          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
+          ${
+            isMobileOpen
+              ? 'translate-y-0 scale-100 opacity-100 visible'
+              : '-translate-y-2 scale-95 opacity-0 invisible pointer-events-none'
+          }
         `}
       >
         <nav
@@ -589,9 +608,10 @@ export default function TathvaMenu() {
                 hover:bg-white/5
                 active:text-[#00E564]
                 font-jockey
-                ${isMobileOpen
-                  ? 'opacity-100 translate-y-0'
-                  : 'opacity-0 translate-y-[10px]'
+                ${
+                  isMobileOpen
+                    ? 'opacity-100 translate-y-0'
+                    : 'opacity-0 translate-y-[10px]'
                 }
               `}
             >
@@ -613,7 +633,7 @@ export default function TathvaMenu() {
                 '
               />
 
-              <span>{item.label}</span>
+              <PortalText text={item.label} />
 
               <img
                 src='/images/menu/rightwave.png'
@@ -867,7 +887,7 @@ export default function TathvaMenu() {
           left-1/2
           top-0
           z-20
-          flex
+          hidden
           h-auto
           w-[130px]
           aspect-[100/28]
@@ -879,6 +899,7 @@ export default function TathvaMenu() {
           bg-transparent
           p-0
           outline-none
+          md:flex
         '
       >
         <img

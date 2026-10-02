@@ -9,3 +9,91 @@
 :root {
   --font-akira: 'Akira Expanded', sans-serif;
 }
+
+/*
+ * The track is what takes up room on the page; the hero itself is a stage
+ * that sticks to the top of the screen while the track scrolls past, which
+ * is what "pins" it (the same tall-section + sticky pattern Wheels and
+ * Robowars use).
+ *
+ * On the home page (everything inside .main-scroll) the track is one screen
+ * plus --gpc-travel of scroll, during which the scroll sequence plays, and it
+ * overlaps its neighbours at both ends (the way Robowars sits under Wheels):
+ *   - it starts one screen plus --gpc-lead early, on top of the end of the
+ *     section above, so the sequence can open by pulling back from that page
+ *     and switching it off. Where that section is itself a stuck stage
+ *     (above 768px), the lead is the scroll those two beats take, so its
+ *     picture holds still for them. Where it is a plain scrolling list
+ *     (phones) there is no lead, and none of that list is covered;
+ *   - Wheels starts one screen plus --gpc-handoff early, underneath it. Wheels
+ *     is therefore already full-screen and stuck for the last --gpc-handoff of
+ *     GPC's scroll, which is when GPC fades away on top of it.
+ * On the standalone /gpc route, and for anyone who prefers reduced motion, it
+ * is exactly one screen, in normal flow, and nothing is scroll-driven.
+ *
+ * These sizes are plain CSS on purpose: they are right from the very first
+ * render, so the sections after GPC are never measured against wrong ones.
+ */
+.gpc-track {
+  /* More travel = the same scroll covers less of the sequence, so the
+     cinematic plays out slower under the cursor/wheel/swipe. */
+  --gpc-travel: 1000vh;
+  --gpc-handoff: 20vh;
+  --gpc-lead: 0px;
+  position: relative;
+  height: 100dvh;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .main-scroll .gpc-track {
+    height: calc(100dvh + var(--gpc-travel));
+    margin-top: calc(-100dvh - var(--gpc-lead));
+    margin-bottom: calc(-100dvh - var(--gpc-handoff));
+    /* Above both neighbours: the section above (its layers go up to 3) and Wheels (10). */
+    z-index: 11;
+  }
+
+  /* 18% of the travel: up to the end of SEQUENCE.entry.off in gpcConfig.js. */
+  @media (min-width: 769px) {
+    .main-scroll .gpc-track {
+      --gpc-lead: 72vh;
+      --gpc-travel: 1800vh;
+    }
+  }
+}
+
+/*
+ * The track and the stage are see-through and let clicks pass to whatever is
+ * showing underneath them; everything visible, and clickable, is the hero
+ * (.gpc-section) inside.
+ */
+.gpc-track,
+.gpc-stage {
+  pointer-events: none;
+}
+
+/*
+ * The site nav is fixed over the top of every section on the home page; the
+ * standalone /gpc route has none.
+ *   --gpc-solid-nav: the opaque mobile header. The hero is padded by this
+ *                    much, so nothing is laid out underneath it.
+ *   --gpc-float-nav: the see-through desktop navbar. Only the stacked layout
+ *                    keeps its content clear of it.
+ */
+.gpc-section {
+  --gpc-solid-nav: 0px;
+  --gpc-float-nav: 0px;
+  padding-top: var(--gpc-solid-nav);
+  pointer-events: auto;
+}
+
+.main-scroll .gpc-section {
+  --gpc-solid-nav: 56px;
+}
+
+@media (min-width: 768px) {
+  .main-scroll .gpc-section {
+    --gpc-solid-nav: 0px;
+    --gpc-float-nav: 88px;
+  }
+}

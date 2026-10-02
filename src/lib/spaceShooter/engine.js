@@ -1,164 +1,69 @@
-import { GAME, SHIP, ENEMY, DIFFICULTY, BULLET, RULES } from "./constants";
-import { createInput } from "./input";
-import { overlaps } from "./collision";
-import { loadSprites } from "./sprites";
-import { randomBetween } from "./random";
+import { GAME, RULES, SMALL_SCREEN } from "./constants";
 import { loadHighScore, saveHighScore } from "./highScore";
+import { createInput } from "./input";
+import { clamp } from "./math";
+import { createRenderer } from "./render";
+import { loadSprites } from "./sprites";
+import { createWorld } from "./world";
 
-const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
-
-/** How many enemies are on screen after `elapsed` seconds of play. */
-export const enemyCountAt = (elapsed) =>
-  Math.min(
-    DIFFICULTY.maxEnemies,
-    DIFFICULTY.startEnemies + Math.floor(elapsed / DIFFICULTY.secondsPerEnemy)
-  );
-
-/** How fast enemies fall (units per second) after `elapsed` seconds of play. */
-export const enemySpeedAt = (elapsed) =>
-  Math.min(DIFFICULTY.maxSpeed, DIFFICULTY.startSpeed + elapsed * DIFFICULTY.speedPerSecond);
-
-const spawnEnemy = () => ({
-  x: randomBetween(0, GAME.width - ENEMY.size),
-  y: -ENEMY.size - randomBetween(0, 150),
-  w: ENEMY.size,
-  h: ENEMY.size,
-});
-
-const createWorld = () => ({
-  phase: "ready", // Phase states
-  score: 0,
-  lives: RULES.lives,
-  elapsed: 0,
-  cooldown: 0,
-  invulnerable: 0,
-  ship: {
-    x: (GAME.width - SHIP.size) / 2,
-    y: GAME.height - SHIP.size - SHIP.margin,
-    w: SHIP.size,
-    h: SHIP.size,
-  },
-  enemies: Array.from({ length: DIFFICULTY.startEnemies }, spawnEnemy),
-  bullets: [],
-});
+// The play area for a screen `cssWidth` px wide: the full field where there
+// is room, a smaller one (same shape) on a small screen, where the same
+// sprites then show larger.
+function fieldFor(cssWidth) {
+  const width = clamp(Math.round(cssWidth * SMALL_SCREEN.unitsPerPixel), SMALL_SCREEN.minWidth, GAME.width);
+  return { width, height: Math.round((width * GAME.height) / GAME.width) };
+}
 
 /**
- * Creates a Space Shooter bound to a canvas.
- * `spritePaths` maps ship/enemy/bullet to image URLs. Returns { resize, start, setPaused, destroy }.
- * `onStats` fires only when phase, score, high score or lives change, so React never
- * re-renders per frame.
+ * The playable Space Shooter, bound to a canvas: the world (world.js) driven
+ * by the keyboard and the touch controls, and drawn by the renderer.
+ * `spritePaths` maps ship/enemy/bullet to image URLs. Returns
+ * { resize, start, setPaused, setJoystick, setFiring, destroy }.
+ * `onStats` fires only when the phase, score, high score, lives or wave
+ * change, so React never re-renders per frame. `onHit` fires when the ship
+ * loses a life. Text on the canvas uses the canvas element's CSS font-family.
  */
-export function createSpaceShooter(canvas, { onStats, spritePaths } = {}) {
+export function createSpaceShooter(canvas, { onStats, onHit, spritePaths } = {}) {
   const ctx = canvas.getContext("2d");
-  let world = createWorld();
+  const calm = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const renderer = createRenderer(loadSprites(spritePaths));
   let highScore = loadHighScore();
-  let sprites = null;
+  let newBest = false;
+  let cssWidth = 0;
+  let font = "";
   let frameId = 0;
   let lastTime = 0;
   let paused = false;
   let lastStats = "";
 
+  const world = createWorld({
+    onEvent(name) {
+      if (name === "hit") onHit?.();
+      if (name === "over") endRound();
+    },
+  });
+  const { state } = world;
+
   const input = createInput((code) => {
-    if ((code === "Space" || code === "Enter") && world.phase !== "playing") start();
+    if ((code === "Space" || code === "Enter") && state.phase !== "playing") start();
   });
 
-  const axis = (negative, positive) =>
-    Number(input.isDown(positive)) - Number(input.isDown(negative));
-
   function start() {
-    if (world.phase === "playing") return;
-    world = createWorld();
-    world.phase = "playing";
+    if (state.phase === "playing") return;
+    newBest = false;
+    if (cssWidth) world.setField(fieldFor(cssWidth));
+    world.start();
   }
 
   function endRound() {
-    world.phase = "over";
-    if (world.score > highScore) {
-      highScore = world.score;
-      saveHighScore(highScore);
-    }
-  }
-
-  function moveShip(dt) {
-    const { ship } = world;
-    ship.x = clamp(ship.x + axis("ArrowLeft", "ArrowRight") * SHIP.speed * dt, 0, GAME.width - ship.w);
-    ship.y = clamp(ship.y + axis("ArrowUp", "ArrowDown") * SHIP.speed * dt, 0, GAME.height - ship.h);
-  }
-
-  function fire(dt) {
-    world.cooldown = Math.max(0, world.cooldown - dt);
-    const canFire = world.cooldown === 0 && world.bullets.length < BULLET.max;
-    if (!input.isDown("Space") || !canFire) return;
-
-    const { ship } = world;
-    world.bullets.push({
-      x: ship.x + (ship.w - BULLET.width) / 2,
-      y: ship.y - BULLET.height,
-      w: BULLET.width,
-      h: BULLET.height,
-    });
-    world.cooldown = BULLET.cooldown;
-  }
-
-  function advance(dt) {
-    world.bullets.forEach((bullet) => {
-      bullet.y -= BULLET.speed * dt;
-    });
-    world.bullets = world.bullets.filter((bullet) => bullet.y + bullet.h > 0);
-
-    while (world.enemies.length < enemyCountAt(world.elapsed)) world.enemies.push(spawnEnemy());
-
-    const speed = enemySpeedAt(world.elapsed);
-    world.enemies.forEach((enemy) => {
-      enemy.y += speed * dt;
-      if (enemy.y > GAME.height) Object.assign(enemy, spawnEnemy());
-    });
-  }
-
-  function resolveCollisions(dt) {
-    world.bullets = world.bullets.filter((bullet) => {
-      const target = world.enemies.find((enemy) => overlaps(bullet, enemy));
-      if (!target) return true;
-      Object.assign(target, spawnEnemy());
-      world.score += RULES.killScore;
-      return false;
-    });
-
-    world.invulnerable = Math.max(0, world.invulnerable - dt);
-    if (world.invulnerable > 0) return;
-
-    const rammer = world.enemies.find((enemy) => overlaps(world.ship, enemy));
-    if (!rammer) return;
-    Object.assign(rammer, spawnEnemy());
-    world.lives = Math.max(0, world.lives - 1);
-    world.invulnerable = RULES.invulnerableSeconds;
-    if (world.lives === 0) endRound();
-  }
-
-  function update(dt) {
-    world.elapsed += dt;
-    moveShip(dt);
-    fire(dt);
-    advance(dt);
-    resolveCollisions(dt);
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, GAME.width, GAME.height);
-    if (!sprites) return;
-
-    world.enemies.forEach((e) => ctx.drawImage(sprites.enemy, e.x, e.y, e.w, e.h));
-    world.bullets.forEach((b) => ctx.drawImage(sprites.bullet, b.x, b.y, b.w, b.h));
-
-    const blinking = world.invulnerable > 0 && Math.floor(world.invulnerable * 10) % 2 === 0;
-    ctx.globalAlpha = blinking ? 0.35 : 1;
-    const { ship } = world;
-    ctx.drawImage(sprites.ship, ship.x, ship.y, ship.w, ship.h);
-    ctx.globalAlpha = 1;
+    if (state.score <= highScore) return;
+    highScore = state.score;
+    newBest = true;
+    saveHighScore(highScore);
   }
 
   function emitStats() {
-    const stats = { phase: world.phase, score: world.score, highScore, lives: world.lives };
+    const stats = { phase: state.phase, score: state.score, highScore, lives: state.lives, wave: state.wave, newBest };
     const key = JSON.stringify(stats);
     if (key === lastStats) return;
     lastStats = key;
@@ -170,25 +75,27 @@ export function createSpaceShooter(canvas, { onStats, spritePaths } = {}) {
     const dt = Math.min((time - lastTime) / 1000, RULES.maxDelta);
     lastTime = time;
 
-    if (!paused && !document.hidden && world.phase === "playing") update(dt);
-    draw();
+    if (!paused && !document.hidden) {
+      world.step(dt, { x: input.getAxis("x"), y: input.getAxis("y"), fire: input.isDown("Space") });
+    }
+
+    font ||= getComputedStyle(canvas).fontFamily || "monospace";
+    const { field } = state;
+    ctx.setTransform(canvas.width / field.width, 0, 0, canvas.height / field.height, 0, 0);
+    ctx.clearRect(0, 0, field.width, field.height);
+    renderer.draw(ctx, state, { font, calm });
     emitStats();
   }
 
-  /** Match the backing store to the displayed width; game logic stays in logical units. */
-  function resize(cssWidth) {
+  function resize(width) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(cssWidth * dpr);
+    cssWidth = width;
+    canvas.width = Math.round(width * dpr);
     canvas.height = Math.round((canvas.width * GAME.height) / GAME.width);
-    const scale = canvas.width / GAME.width;
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    // Before a round starts the field follows the screen; a round in
+    // progress keeps its own (see world.setField).
+    world.setField(fieldFor(width));
   }
-
-  loadSprites(spritePaths)
-    .then((loaded) => {
-      sprites = loaded;
-    })
-    .catch((error) => console.error("Space Shooter: failed to load sprites", error));
 
   frameId = requestAnimationFrame(frame);
 
@@ -198,6 +105,8 @@ export function createSpaceShooter(canvas, { onStats, spritePaths } = {}) {
     setPaused(value) {
       paused = value;
     },
+    setJoystick: (x, y) => input.setJoystick(x, y),
+    setFiring: (isDown) => input.setVirtualFire(isDown),
     destroy() {
       cancelAnimationFrame(frameId);
       input.dispose();

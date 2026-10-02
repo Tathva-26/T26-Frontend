@@ -38,8 +38,8 @@ const instrumentSerif = Instrument_Serif({
 });
 
 const NAV_LINKS = [
-  { label: "Workshops", href: "#work" },
-  { label: "Lectures", href: "#studio" },
+  { label: "Workshops", href: "/workshops" },
+  { label: "Lectures", href: "/lectures" },
   { label: "ProShow", href: "#journal" },
   { label: "Accomodation", href: "#contact" },
 ];

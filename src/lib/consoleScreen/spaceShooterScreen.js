@@ -1,60 +1,74 @@
-import { randomBetween } from "@/lib/spaceShooter/random";
+import { GAME, SPRITE_PATHS } from "@/lib/spaceShooter/constants";
+import { loadSprites } from "@/lib/spaceShooter/sprites";
+import { createAttractDemo } from "./attractDemo";
+import { createSpaceBackdrop } from "./spaceBackdrop";
 
-// Logical drawing resolution. Matches the console screen cutout's own aspect
-// ratio (~1.553), so it fills the box with a single uniform scale, no stretch.
-const W = 800;
-const H = 515;
+// Logical drawing resolution: the same box the real game draws in, so it
+// fills the screen cutout with a single uniform scale, no stretch.
+const W = GAME.width;
+const H = GAME.height;
 
-const SPRITE_PATHS = {
-  ship: "/images/GPC/space-shooter/spaceship.png",
-  enemy: "/images/GPC/space-shooter/enemy2.png",
-  bullet: "/images/GPC/space-shooter/bullet.png",
+const MAX_DELTA = 0.05; // clamp dt so a backgrounded tab doesn't jump on return
+const MAX_PIXEL_RATIO = 3;
+
+// Faint scanlines: one row of the canvas's own pixels in every this many.
+const SCANLINES = { every: 3, color: "rgba(0, 0, 0, 0.16)" };
+
+// Old-TV switch-on: for the first POWER_LINE of `power` a bright line grows
+// across the middle of a dark tube, then it opens vertically into the picture.
+// (Exported so the scroll sequence's switch-off can be its exact reverse.)
+export const POWER_LINE = 0.35;
+const TUBE_OFF = "#04030c";
+
+// Outro: the game's ships fade out over the first SHIPS_GONE of `outro`,
+// and only then does the screen announce the next section. Each line is
+// typed out between the two `outro` values given, then the loading bar fills.
+const SHIPS_GONE = 0.1;
+const OUTRO = {
+  clear: { text: "LEVEL COMPLETE", size: 40, y: 120, color: "#ffffff", typed: [0.1, 0.22] },
+  next: { text: "NEXT STAGE", size: 26, y: 218, color: "#c9a7ff", typed: [0.24, 0.33] },
+  name: { text: "WHEELS", size: 66, y: 290, color: "#ffffff", typed: [0.33, 0.44] },
+  bar: { y: 366, width: 560, height: 40, segments: 20, fills: [0.46, 0.94], statusSize: 22 },
+  speedUp: 5, // the stars fall this many times faster by the end
 };
 
-const STAR_COUNT = 90;
-const ENEMY_COUNT = 4;
-const SHIP = { size: 46, y: H - 70 };
-const ENEMY_SIZE = 38;
-const BULLET = { width: 4, height: 14, speed: 340 };
-const FIRE_INTERVAL = [0.5, 1.0]; // seconds between shots, randomized
-const MAX_DELTA = 0.05; // clamp dt so a backgrounded tab doesn't jump on return
-
-const loadSprite = (src) => Object.assign(new Image(), { src });
-
-const createStars = () =>
-  Array.from({ length: STAR_COUNT }, () => ({
-    x: randomBetween(0, W),
-    y: randomBetween(0, H),
-    size: randomBetween(0.6, 2),
-    speed: randomBetween(20, 65),
-    phase: randomBetween(0, Math.PI * 2),
-  }));
-
-const createEnemy = (startAboveScreen) => ({
-  x: randomBetween(50, W - 50),
-  y: startAboveScreen ? randomBetween(-420, -ENEMY_SIZE) : randomBetween(-160, -ENEMY_SIZE),
-  speed: randomBetween(55, 110),
-});
-
-const overlaps = (a, b, sizeA, sizeB) =>
-  Math.abs(a.x - b.x) < (sizeA + sizeB) / 2 && Math.abs(a.y - b.y) < (sizeA + sizeB) / 2;
+const clamp01 = (value) => Math.min(1, Math.max(0, value));
 
 /**
  * A decorative, autonomous space-shooter scene for the console's screen:
- * a starfield, drifting enemies, and a ship that fires on them - drawn with
- * the same sprites as the real game, so it reads as a preview of it. This
- * is ambient flavor only, not the playable game (no score, no input).
+ * the game playing itself (see attractDemo) in front of drifting space (see
+ * spaceBackdrop), drawn with the same sprites as the real game, so it reads
+ * as a preview of it. This is ambient flavor only, not the playable game.
  *
  * `options.spill`, if given, is kept as a small blurred copy of every frame,
  * meant to be shown blurred + screen-blended over the console's bezel so
  * the screen's own light bleeds onto the plastic around it.
  *
  * `options.isBackgroundOnly`, if given, is called once per frame. While it
- * returns true, the decorative ship/enemies/bullets stop drawing and only
- * the starfield keeps animating - used when this same canvas is showing
+ * returns true, the self-playing game stops and is not drawn, and only the
+ * space behind it keeps animating - used when this same canvas is showing
  * through underneath the real, player-controlled game (SpaceShooterCanvas,
  * drawn on top with a transparent clear) as its background, so the two
  * ships/enemy sets don't visually collide.
+ *
+ * `options.isPaused`, if given, is called once per frame. While it returns
+ * true nothing is updated or drawn, e.g. while the game overlay covers this.
+ *
+ * `options.getScale`, if given, returns how much an ancestor's CSS transform
+ * enlarges this canvas on screen (the hero Stage's fit scale), so the backing
+ * store is sized for what is actually displayed instead of the layout size.
+ *
+ * `options.getPower`, if given, returns 0-1: 0 is a switched-off tube, 1 is
+ * the normal picture, and the values between play an old TV switching on.
+ *
+ * `options.getOutro`, if given, returns 0-1: above 0 the ships fade out and
+ * the screen types out "LEVEL COMPLETE / NEXT STAGE: WHEELS" over a
+ * starfield that speeds up, then fills a loading bar as the value rises to 1.
+ * The text uses the canvas element's own CSS font-family.
+ *
+ * `options.getPicture`, if given, returns `{ image, alpha }` (or null): an
+ * image shown whole on the screen (letterboxed), on top of everything above,
+ * at that opacity. The scroll sequence uses it to play the next section's footage.
  *
  * Returns a cleanup function.
  */
@@ -63,160 +77,182 @@ export function mountConsoleScreen(canvas, options = {}) {
   const spill = options.spill ?? null;
   const sctx = spill?.getContext("2d") ?? null;
   const isBackgroundOnly = options.isBackgroundOnly ?? (() => false);
+  const isPaused = options.isPaused ?? (() => false);
+  const getScale = options.getScale ?? (() => 1);
+  const getPower = options.getPower ?? (() => 1);
+  const getOutro = options.getOutro ?? (() => 0);
+  const getPicture = options.getPicture ?? (() => null);
   const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-  const sprites = {
-    ship: loadSprite(SPRITE_PATHS.ship),
-    enemy: loadSprite(SPRITE_PATHS.enemy),
-    bullet: loadSprite(SPRITE_PATHS.bullet),
-  };
+  const sprites = loadSprites(SPRITE_PATHS);
 
-  const stars = createStars();
-  const enemies = Array.from({ length: ENEMY_COUNT }, () => createEnemy(true));
-  let bullets = [];
-  let particles = [];
-  let fireTimer = randomBetween(...FIRE_INTERVAL);
-  let t = 0;
+  const backdrop = createSpaceBackdrop();
+  // The CSS font-family of the canvas element (the pixel font), for canvas text.
+  let fontFamily = "";
+  const font = () => (fontFamily ||= getComputedStyle(canvas).fontFamily || "monospace");
+  const demo = createAttractDemo(sprites, font, { calm: reduceMotion });
+  let scanlines = null;
   let lastTime = 0;
   let frameId = 0;
   let running = false;
-  let dpr = 1;
+  let ratio = 0;
   let cw = 0;
   let ch = 0;
 
   function resize() {
-    dpr = Math.min(2, window.devicePixelRatio || 1);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
     // Use offsetWidth/offsetHeight to avoid CSS transform complications
     // from ancestor animations during measurement.
     const w = Math.max(1, canvas.offsetWidth);
     const h = Math.max(1, canvas.offsetHeight);
-    if (w === cw && h === ch) return;
+    const nextRatio = Math.min(MAX_PIXEL_RATIO, dpr * (getScale() || 1));
+    if (w === cw && h === ch && nextRatio === ratio) return;
     cw = w;
     ch = h;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    const scale = Math.min(canvas.width / W, canvas.height / H);
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ratio = nextRatio;
+    canvas.width = Math.round(w * ratio);
+    canvas.height = Math.round(h * ratio);
+    // The game's box is mapped onto the whole canvas. The canvas's size is
+    // rounded to whole pixels, so the two scales can differ by a fraction of
+    // a percent; one shared scale would leave its last row or column unpainted.
+    ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+    scanlines = createScanlines();
     if (spill) {
       spill.width = Math.max(1, Math.round(w / 6));
       spill.height = Math.max(1, Math.round(h / 6));
     }
   }
 
-  function drawBackground(dt) {
-    const gradient = ctx.createLinearGradient(0, 0, 0, H);
-    gradient.addColorStop(0, "#050414");
-    gradient.addColorStop(1, "#0a0b2e");
-    ctx.fillStyle = gradient;
+  function createScanlines() {
+    const tile = document.createElement("canvas");
+    tile.width = 1;
+    tile.height = SCANLINES.every;
+    const tileContext = tile.getContext("2d");
+    tileContext.fillStyle = SCANLINES.color;
+    tileContext.fillRect(0, SCANLINES.every - 1, 1, 1);
+    return ctx.createPattern(tile, "repeat");
+  }
+
+  // Drawn in the canvas's own pixels, not the game's box, so the lines stay
+  // crisp and evenly spaced at any size.
+  function drawScanlines() {
+    if (!scanlines) return;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = scanlines;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+
+  // One line of the outro, typed out left to right from a fixed position so
+  // the letters already shown don't shift as more appear.
+  function typeLine({ text, size, y, color, typed: [from, to] }, outro) {
+    const shown = Math.round(text.length * clamp01((outro - from) / (to - from)));
+    if (shown <= 0) return;
+    ctx.font = `${size}px ${font()}`;
+    ctx.fillStyle = color;
+    ctx.fillText(text.slice(0, shown), (W - ctx.measureText(text).width) / 2, y);
+  }
+
+  function drawOutro(outro) {
+    if (outro <= 0) return;
+
+    // Darken the starfield a little so the text reads.
+    ctx.globalAlpha = Math.min(0.5, outro * 5);
+    ctx.fillStyle = "#050414";
     ctx.fillRect(0, 0, W, H);
-
-    stars.forEach((star) => {
-      star.y += star.speed * dt;
-      if (star.y > H) {
-        star.y = 0;
-        star.x = randomBetween(0, W);
-      }
-      const twinkle = 0.5 + 0.5 * Math.sin(t * 2 + star.phase);
-      ctx.globalAlpha = 0.35 + twinkle * 0.55;
-      ctx.fillStyle = "#bcd6ff";
-      ctx.fillRect(star.x, star.y, star.size, star.size);
-    });
     ctx.globalAlpha = 1;
-  }
 
-  function updateShip() {
-    return { x: W / 2 + Math.sin(t * 0.9) * 150, y: SHIP.y };
-  }
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    typeLine(OUTRO.clear, outro);
+    typeLine(OUTRO.next, outro);
+    typeLine(OUTRO.name, outro);
 
-  function updateEnemies(dt) {
-    enemies.forEach((enemy) => {
-      enemy.y += enemy.speed * dt;
-      if (enemy.y > H + ENEMY_SIZE) Object.assign(enemy, createEnemy(false));
-    });
-  }
-
-  function fire(dt, shipPos) {
-    fireTimer -= dt;
-    if (fireTimer > 0) return;
-    fireTimer = randomBetween(...FIRE_INTERVAL);
-    bullets.push({ x: shipPos.x, y: shipPos.y - SHIP.size / 2 });
-  }
-
-  function spawnBurst(x, y) {
-    for (let i = 0; i < 10; i += 1) {
-      const angle = randomBetween(0, Math.PI * 2);
-      const speed = randomBetween(40, 140);
-      particles.push({
-        x,
-        y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        life: 1,
-      });
+    const { bar } = OUTRO;
+    if (outro < bar.fills[0] - 0.02) return;
+    const fill = clamp01((outro - bar.fills[0]) / (bar.fills[1] - bar.fills[0]));
+    const left = (W - bar.width) / 2;
+    ctx.strokeStyle = "#c9a7ff";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(left, bar.y, bar.width, bar.height);
+    const gap = 5;
+    const segment = (bar.width - gap) / bar.segments;
+    const lit = Math.round(fill * bar.segments);
+    for (let i = 0; i < lit; i += 1) {
+      ctx.fillStyle = i === lit - 1 && fill < 1 ? "#ffffff" : "#a56bff";
+      ctx.fillRect(left + gap + i * segment, bar.y + gap, segment - gap, bar.height - gap * 2);
     }
+    ctx.font = `${bar.statusSize}px ${font()}`;
+    ctx.fillStyle = "#c9a7ff";
+    const status = fill < 1 ? `LOADING ${Math.round(fill * 100)}%` : "READY";
+    ctx.fillText(status, (W - ctx.measureText(status).width) / 2, bar.y + bar.height + 44);
   }
 
-  function updateBullets(dt) {
-    bullets.forEach((bullet) => {
-      bullet.y -= BULLET.speed * dt;
-    });
-    bullets = bullets.filter((bullet) => {
-      const target = enemies.find((enemy) => overlaps(bullet, enemy, 4, ENEMY_SIZE));
-      if (!target) return bullet.y > -BULLET.height;
-      spawnBurst(target.x, target.y);
-      Object.assign(target, createEnemy(true));
-      return false;
-    });
-  }
-
-  function updateParticles(dt) {
-    particles.forEach((particle) => {
-      particle.x += particle.vx * dt;
-      particle.y += particle.vy * dt;
-      particle.life -= dt * 1.6;
-    });
-    particles = particles.filter((particle) => particle.life > 0);
-  }
-
-  function drawSprite(image, x, y, size) {
-    if (!image.complete) return;
-    ctx.drawImage(image, x - size / 2, y - size / 2, size, size);
-  }
-
-  function drawParticles() {
-    particles.forEach((particle) => {
-      ctx.globalAlpha = Math.max(0, particle.life);
-      ctx.fillStyle = "#ff8a5c";
-      ctx.fillRect(particle.x - 2, particle.y - 2, 4, 4);
-    });
+  // An image shown whole on the screen, the way a TV shows a picture that
+  // isn't its own shape: as large as fits, on dark bars.
+  function drawPicture(picture) {
+    const image = picture?.image;
+    if (!image || !image.complete || !image.naturalWidth || !(picture.alpha > 0)) return;
+    const fit = Math.min(W / image.naturalWidth, H / image.naturalHeight);
+    const w = image.naturalWidth * fit;
+    const h = image.naturalHeight * fit;
+    ctx.globalAlpha = Math.min(1, picture.alpha);
+    ctx.fillStyle = TUBE_OFF;
+    ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(image, (W - w) / 2, (H - h) / 2, w, h);
     ctx.globalAlpha = 1;
   }
 
-  function drawVignette() {
-    const gradient = ctx.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, H * 0.8);
-    gradient.addColorStop(0, "rgba(0,0,0,0)");
-    gradient.addColorStop(1, "rgba(0,0,0,0.45)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, W, H);
+  // Covers the finished frame with whatever of the tube is still dark.
+  function drawPower(power) {
+    if (power >= 1) return;
+    ctx.fillStyle = TUBE_OFF;
+
+    if (power <= POWER_LINE) {
+      ctx.fillRect(0, 0, W, H);
+      if (power <= 0) return;
+      const lineWidth = W * (power / POWER_LINE);
+      ctx.globalAlpha = 0.4;
+      ctx.fillStyle = "#c9a7ff";
+      ctx.fillRect((W - lineWidth) / 2, H / 2 - 7, lineWidth, 14);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect((W - lineWidth) / 2, H / 2 - 1.5, lineWidth, 3);
+      return;
+    }
+
+    const open = (power - POWER_LINE) / (1 - POWER_LINE);
+    const half = Math.max(2, (H / 2) * Math.pow(open, 1.3));
+    ctx.fillRect(0, 0, W, H / 2 - half);
+    ctx.fillRect(0, H / 2 + half, W, H / 2 - half);
+    // The picture burns white-violet while the tube warms up, brightest at
+    // the start, and the band's two edges stay lit until it is fully open.
+    ctx.globalAlpha = Math.pow(1 - open, 1.2) * 0.95;
+    ctx.fillStyle = "#d4b0ff";
+    ctx.fillRect(0, H / 2 - half, W, half * 2);
+    ctx.globalAlpha = (1 - open) * 0.9;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, H / 2 - half - 1.5, W, 3);
+    ctx.fillRect(0, H / 2 + half - 1.5, W, 3);
+    ctx.globalAlpha = 1;
   }
 
   function drawFrame(dt) {
-    drawBackground(dt);
+    const outro = clamp01(getOutro() || 0);
+    // During the outro the stars fall faster and stretch, as if picking up speed.
+    backdrop.draw(ctx, dt, 1 + outro * (OUTRO.speedUp - 1));
 
     if (!isBackgroundOnly()) {
-      const shipPos = updateShip();
-      updateEnemies(dt);
-      fire(dt, shipPos);
-      updateBullets(dt);
-      updateParticles(dt);
-
-      enemies.forEach((enemy) => drawSprite(sprites.enemy, enemy.x, enemy.y, ENEMY_SIZE));
-      drawParticles();
-      bullets.forEach((bullet) => drawSprite(sprites.bullet, bullet.x, bullet.y, BULLET.height));
-      drawSprite(sprites.ship, shipPos.x, shipPos.y, SHIP.size);
+      demo.update(dt);
+      // The game clears off the screen as the outro begins.
+      demo.draw(ctx, 1 - outro / SHIPS_GONE);
     }
 
-    drawVignette();
+    drawOutro(outro);
+    drawScanlines();
+    drawPicture(getPicture());
+    drawPower(getPower());
 
     if (sctx && spill) sctx.drawImage(canvas, 0, 0, spill.width, spill.height);
   }
@@ -225,7 +261,7 @@ export function mountConsoleScreen(canvas, options = {}) {
     frameId = requestAnimationFrame(frame);
     const dt = Math.min((time - lastTime) / 1000, MAX_DELTA);
     lastTime = time;
-    t += dt;
+    if (isPaused()) return;
     resize();
     drawFrame(dt);
   }
@@ -242,10 +278,15 @@ export function mountConsoleScreen(canvas, options = {}) {
     cancelAnimationFrame(frameId);
   }
 
+  // Reduced motion: a single still frame, redrawn as each sprite arrives.
   if (reduceMotion) {
-    resize();
-    drawFrame(0);
-    return () => {};
+    const still = () => {
+      resize();
+      drawFrame(0);
+    };
+    Object.values(sprites).forEach((sprite) => sprite.addEventListener("load", still));
+    still();
+    return () => Object.values(sprites).forEach((sprite) => sprite.removeEventListener("load", still));
   }
 
   const io = new IntersectionObserver(

@@ -4,10 +4,30 @@
 
 import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
-import styles from "./Workshops.module.css";
+import Navbar from "@/pageComponents/Navbar/Navbar";
+import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
+
+const workshopsStyles = `
+@import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
+
+@font-face {
+  font-family: 'Workshops Fragment Serif';
+  src: url('/fonts/PPFragment-SerifExtraBold.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+.workshops-page .workshops-fragment-serif {
+  font-family: 'Workshops Fragment Serif', serif;
+}
+
+.workshops-page .workshops-jaro {
+  font-family: 'Jaro', sans-serif;
+}
+`;
 
 // Mock Workshops Data
 const WORKSHOPS_DATA = [
@@ -533,7 +553,6 @@ export default function WorkshopsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [selectedWorkshop, setSelectedWorkshop] = useState(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewDetailsMode, setViewDetailsMode] = useState(false);
 
   const [mounted, setMounted] = useState(false);
@@ -2013,183 +2032,16 @@ export default function WorkshopsPage() {
   }, [searchQuery]);
 
   return (
-    <div className="min-h-screen bg-[#06070d] text-slate-100 font-sans relative overflow-x-clip selection:bg-indigo-600 selection:text-white pb-24">
+    <div className="workshops-page min-h-screen bg-[#06070d] text-slate-100 font-sans relative overflow-x-clip selection:bg-indigo-600 selection:text-white pb-24">
+      <Navbar />
+      <TathvaMenu/>
+      <style>{workshopsStyles}</style>
 
       {/* BACKGROUND AMBIENT STARS & GRADIENT */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:24px_24px] opacity-60" />
 
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-indigo-950/20 via-purple-950/10 to-transparent blur-3xl" />
-      </div>
-
-      {/* TOP NAVIGATION BAR */}
-      <header className="relative z-30 w-full border-t-2 border-[#0091ff] border-b border-white/5 bg-[#05060d]/90 backdrop-blur-xl">
-
-        <div className="w-full px-4 sm:px-6 lg:px-8 h-[39px] sm:h-14 lg:h-16 flex items-center justify-between">
-
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-
-            <div className="relative h-8 sm:h-9 w-9 sm:w-10 flex items-center justify-center">
-              <Image
-                src="/images/workshops/tathva-emblem.png"
-                alt="Tathva Logo"
-                width={40}
-                height={36}
-                priority
-                className="object-contain h-8 sm:h-9 w-auto group-hover:scale-105 transition-transform"
-              />
-            </div>
-
-            <span className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-1.5">
-              <span>Tathva</span>
-
-              <span className={`${styles.fragmentSerif} text-2xl sm:text-3xl font-extrabold text-white leading-none`}>
-                26
-              </span>
-            </span>
-
-          </Link>
-
-          {/* Desktop Right Actions */}
-          <div className="flex items-center gap-3">
-
-            <button
-              type="button"
-              className="px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-md bg-[#5B63E6] hover:bg-[#4E56D8] active:scale-95 text-white transition-all duration-200 shadow-sm cursor-pointer"
-            >
-              Sign In
-            </button>
-
-            {/* Hamburger Button */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1.5 text-white hover:text-slate-200 transition-colors focus:outline-none cursor-pointer flex items-center justify-center"
-              aria-label="Toggle navigation menu"
-            >
-              <svg
-                className="w-7 h-7"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                {mobileMenuOpen ? (
-                  <path
-                    d="M6 18L18 6M6 6l12 12"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                  />
-                ) : (
-                  <>
-                    <rect
-                      x="2"
-                      y="5.5"
-                      width="20"
-                      height="2.2"
-                      rx="1.1"
-                    />
-
-                    <rect
-                      x="2"
-                      y="11"
-                      width="13"
-                      height="2.2"
-                      rx="1.1"
-                    />
-
-                    <path
-                      d="M18.8 8.8C18.8 10.5 19.6 11.4 21.2 11.7C21.4 11.7 21.4 12.3 21.2 12.3C19.6 12.6 18.8 13.5 18.8 15.2C18.8 13.5 18 12.6 16.4 12.3C16.2 12.3 16.2 11.7 16.4 11.7C18 11.4 18.8 10.5 18.8 8.8Z"
-                    />
-
-                    <rect
-                      x="2"
-                      y="16.5"
-                      width="20"
-                      height="2.2"
-                      rx="1.1"
-                    />
-                  </>
-                )}
-              </svg>
-            </button>
-
-          </div>
-        </div>
-      </header>
-
-      {/* MOBILE SLIDE-IN MENU */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
-      <div
-        className={`fixed top-0 right-0 h-full w-48 sm:w-56 bg-[#090b16] border-l border-white/10 z-50 shadow-2xl transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"
-          }`}
-      >
-        <div className="flex items-center justify-end p-4">
-
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(false)}
-            className="p-1.5 text-white hover:text-slate-300 transition-colors cursor-pointer"
-            aria-label="Close menu"
-          >
-            <svg
-              className="w-6 h-6"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-            >
-              <path d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
-        </div>
-
-        <nav className="px-4 space-y-1 text-sm font-medium">
-
-          <Link
-            href="/"
-            className="block px-3 py-3 rounded-md hover:bg-white/5 text-slate-300 hover:text-white transition-colors"
-          >
-            Home
-          </Link>
-
-          <Link
-            href="/events"
-            className="block px-3 py-3 rounded-md hover:bg-white/5 text-slate-300 hover:text-white transition-colors"
-          >
-            Events
-          </Link>
-
-          <Link
-            href="/workshops"
-            className="block px-3 py-3 rounded-md bg-indigo-600/20 text-indigo-400 font-semibold"
-          >
-            Workshops
-          </Link>
-
-          <Link
-            href="/lectures"
-            className="block px-3 py-3 rounded-md hover:bg-white/5 text-slate-300 hover:text-white transition-colors"
-          >
-            Lectures
-          </Link>
-
-          <Link
-            href="/contact"
-            className="block px-3 py-3 rounded-md hover:bg-white/5 text-slate-300 hover:text-white transition-colors"
-          >
-            Contact Us
-          </Link>
-
-        </nav>
       </div>
 
       {/* MAIN CONTAINER */}
@@ -2476,10 +2328,10 @@ export default function WorkshopsPage() {
 
                                   {/* FIGMA CARD LABELS */}
                                   <div className="absolute inset-x-0 bottom-0 z-20 h-[13.5%]">
-                                    <p className="absolute bottom-[9%] left-[29.73%] right-[26.82%] text-right text-[6.55cqw] font-bold leading-[normal] text-white">
+                                    <p className="absolute bottom-[9%] left-[29.73%] right-[26.82%] text-right text-[5.5cqw] font-bold leading-[normal] text-white">
                                       Workshop
                                     </p>
-                                    <div className="absolute bottom-[8%] right-[1.1%] flex flex-col items-end leading-none">
+                                    <div className="absolute bottom-[80%] right-[1.1%] flex flex-col items-end leading-none">
                                       <span className="mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#fbebec]">
                                         {workshop.dateMonth}
                                       </span>
@@ -2653,7 +2505,7 @@ export default function WorkshopsPage() {
                 <div className="mt-2 flex items-end justify-between px-1">
                   <span className="flex items-baseline leading-none text-white">
                     <span className="font-sans text-3xl font-bold">₹</span>
-                    <span className={`${styles.jaro} text-3xl`}>
+                    <span className={`workshops-jaro text-3xl`}>
                       {selectedWorkshop.fee.replace(/^₹/, "")}
                     </span>
                   </span>
@@ -2671,7 +2523,7 @@ export default function WorkshopsPage() {
               </div>
 
               <div className="pt-2 sm:pt-6">
-                <h2 className={`${styles.fragmentSerif} max-w-full overflow-hidden whitespace-nowrap text-[clamp(1.75rem,7cqw,3rem)] leading-none text-white`}>
+                <h2 className={`workshops-fragment-serif max-w-full overflow-hidden whitespace-nowrap text-[clamp(1.75rem,7cqw,3rem)] leading-none text-white`}>
                   WORKSHOPS
                 </h2>
 
