@@ -1,0 +1,133 @@
+/**
+ * The boundary between the backend's `Event` and the shape the cards render.
+ *
+ * Everything the UI used to hardcode is derived here, once, so the view files
+ * never touch a raw API field. Three traps this exists to close:
+ *
+ *   - `Event.id` (ours) and `tiqrEventId` (TIQR's) are not interchangeable.
+ *     Booking takes ours; joining a booking to an event takes theirs.
+ *   - `venue` is an object, so interpolating it renders "[object Object]".
+ *   - `price` is integer paise, so a 250 rupee workshop arrives as 25000.
+ */
+
+import {
+  eventDateParts,
+  formatDuration,
+  formatPrice,
+  formatTimeRange,
+  venueLabel,
+  venueName,
+} from './format.js'
+
+/**
+ * Bookability is two conditions, not one. An event can be `OPEN` locally
+ * while its push to TIQR never finished, which leaves `ticketId` null — and
+ * booking it answers 409. Disabling it up front is kinder than letting the
+ * user pick an event and then be refused at checkout.
+ */
+export function isBookable(event) {
+  return event?.status === 'OPEN' && Boolean(event?.ticketId)
+}
+
+/** Lower sorts earlier: ready to book, then open-but-unsynced, then closed. */
+function rank(event) {
+  if (isBookable(event)) return 0
+  if (event?.status === 'OPEN') return 1
+  return 2
+}
+
+function timeValue(iso) {
+  if (!iso) return Number.POSITIVE_INFINITY
+  const ms = new Date(iso).getTime()
+  return Number.isNaN(ms) ? Number.POSITIVE_INFINITY : ms
+}
+
+/**
+ * `/api/events/all` has no `orderBy`, so row order is whatever Postgres
+ * returns and can change between two identical calls. Nothing is renderable
+ * until this has run.
+ *
+ * Takes raw events or normalised ones — both carry `status` and `ticketId`.
+ */
+export function sortEvents(events) {
+  if (!Array.isArray(events)) return []
+
+  return [...events].sort((a, b) => {
+    const byRank = rank(a) - rank(b)
+    if (byRank !== 0) return byRank
+
+    return timeValue(a?.datetime) - timeValue(b?.datetime)
+  })
+}
+
+/**
+ * One raw event to the card/modal shape.
+ *
+ * `label` is the static kind shown on the card ("Workshop"), which is a view
+ * decision rather than data. `fallbackImage` covers a null `picture`, since
+ * `next/image` requires a `src`.
+ *
+ * Deliberately absent, because the backend has no field for them:
+ * badge, instructor, activityPoints, prerequisites, and spotsLeft.
+ * `ticketsRemaining` is a capacity seed that is never refreshed from TIQR,
+ * so it must not be rendered as seats left.
+ */
+export function normaliseEvent(raw, { label = '', fallbackImage = null } = {}) {
+  if (!raw || typeof raw !== 'object') return null
+
+  const date = eventDateParts(raw.datetime)
+  const bookable = isBookable(raw)
+
+  return {
+    // identity
+    id: raw.id,
+    tiqrEventId: raw.tiqrEventId ?? null,
+    ticketId: raw.ticketId ?? null,
+
+    // state
+    status: raw.status ?? null,
+    bookable,
+    bookingClosed: raw.status === 'CLOSED',
+    passcodeRequired: Boolean(raw.passcodeRequired),
+
+    // text
+    title: label,
+    fullTitle: typeof raw.heading === 'string' ? raw.heading : '',
+    type: raw.type ?? null,
+    category: raw.committee ?? null,
+    description: typeof raw.description === 'string' ? raw.description : '',
+    extraInfo: raw.extraInfo ?? null,
+
+    // when
+    datetime: raw.datetime ?? null,
+    dateDay: date?.day ?? null,
+    dateMonth: date?.month ?? null,
+    dateFull: date?.full ?? null,
+    time: formatTimeRange(raw.startTime, raw.endTime, raw.datetime),
+    duration: formatDuration(raw.startTime, raw.endTime),
+
+    // where
+    venue: venueName(raw.venue),
+    venueFull: venueLabel(raw.venue),
+
+    // money
+    fee: formatPrice(raw.price),
+    priceInPaise: typeof raw.price === 'number' ? raw.price : null,
+
+    // media
+    image: raw.picture || fallbackImage,
+
+    // teams
+    isTeamEvent: Boolean(raw.isTeamEvent),
+    teamSize: raw.teamSize ?? null,
+  }
+}
+
+/** Fetch-to-render in one step: normalise everything, then sort. */
+export function normaliseEvents(events, options) {
+  if (!Array.isArray(events)) return []
+
+  return sortEvents(
+    events.map((event) => normaliseEvent(event, options)).filter(Boolean),
+  )
+}
