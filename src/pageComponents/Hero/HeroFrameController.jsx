@@ -30,6 +30,11 @@ export default function HeroFrameController({ children }) {
   const [heroVisible, setHeroVisible] = useState(true);
   // latest progress of Hero's portal animation (0..1)
   const heroProgressRef = useRef(0);
+  // After Frame -> Hero, Hero is parked at the END of its runway (progress ~1) and its scrubbed
+  // timeline lags the scroll, so for a moment after the user starts scrolling back it still reports
+  // ~1. Without this guard that reads as "portal full" and bounces straight back into Frame.
+  // Cleared once the portal has genuinely moved back; Wheeling/swiping down at the end still works.
+  const needsRearmRef = useRef(false);
 
   // Once Frame is showing and the user keeps scrolling down, stop intercepting the wheel and
   // let normal page scroll reach `children`. Scrolling back up to the very top re-locks.
@@ -71,11 +76,18 @@ export default function HeroFrameController({ children }) {
 
   // Frame -> Hero. Hero is still parked at the end of its runway (portal fully open, which
   // looks exactly like Frame), so scrolling up just plays the portal back.
-  const returnToHero = useCallback(() => swapTo("hero"), [swapTo]);
+  const returnToHero = useCallback(() => {
+    needsRearmRef.current = true;
+    swapTo("hero");
+  }, [swapTo]);
 
   const handleHeroProgress = useCallback(
     (progress) => {
       heroProgressRef.current = progress;
+      if (needsRearmRef.current) {
+        if (progress < AUTO_ENTER_PROGRESS - 0.03) needsRearmRef.current = false;
+        return;
+      }
       if (sectionRef.current === "hero" && progress >= AUTO_ENTER_PROGRESS) enterFrame();
     },
     [enterFrame]
