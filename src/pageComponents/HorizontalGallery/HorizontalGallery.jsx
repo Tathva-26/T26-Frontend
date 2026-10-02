@@ -13,6 +13,10 @@ if (typeof window !== 'undefined') {
 
 const GRID_SPACER = 'clamp(2rem, 6vw, 6rem)'
 
+// Extra empty space after the last image (desktop). Increase for a longer
+// horizontal scroll. The 95vw lead-in on the track is unchanged.
+const EXTRA_END_SPACE = '40vw'
+
 const IMG_BASE =
   'relative shrink-0 flex items-center justify-center overflow-hidden rounded-xl border border-white/12 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.7)] bg-[#121212]'
 
@@ -240,7 +244,14 @@ export default function HorizontalGallery() {
 
         /* DESKTOP */
         const vh = window.innerHeight
-        const scrollAmount = Math.max(track.scrollWidth - vw, 0)
+
+        // Full width of the track (lead-in + images + gaps + end spacer),
+        // minus one screen. Translation doesn't affect width, so this is
+        // correct even if the track is currently moved.
+        const scrollAmount = Math.max(
+          track.getBoundingClientRect().width - vw,
+          0,
+        )
 
         /*
           CONTINUOUS DIAGONAL EXIT (no stop-then-go)
@@ -292,6 +303,15 @@ export default function HorizontalGallery() {
 
       build()
 
+      /* Rebuild once fonts / images / layout have settled, in case the first
+         measurement ran too early (this differs between machines). */
+      const onLoad = () => {
+        build()
+        ScrollTrigger.refresh()
+      }
+      window.addEventListener('load', onLoad, { once: true })
+      document.fonts?.ready.then(onLoad)
+
       let resizeTimer
 
       const handleResize = () => {
@@ -307,6 +327,7 @@ export default function HorizontalGallery() {
       return () => {
         clearTimeout(resizeTimer)
         window.removeEventListener('resize', handleResize)
+        window.removeEventListener('load', onLoad)
       }
     }, container)
 
@@ -413,7 +434,6 @@ export default function HorizontalGallery() {
 
             will-change-transform
           '
-          // style={{ paddingRight: GRID_SPACER }}
         >
           {GALLERY_GROUPS.map((group, gIdx) => (
             <div
@@ -596,6 +616,15 @@ export default function HorizontalGallery() {
               )}
             </div>
           ))}
+
+          {/* END SPACER: extra scroll length after the last image.
+              A real element, so the track width never depends on
+              padding behaviour that can differ between browsers. */}
+          <div
+            aria-hidden='true'
+            className='flex-none hidden md:block'
+            style={{ width: `calc(${GRID_SPACER} + ${EXTRA_END_SPACE})` }}
+          />
         </div>
 
         {/* =========================================
