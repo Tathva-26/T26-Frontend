@@ -78,6 +78,23 @@ export function normaliseEvent(raw, { label = '', fallbackImage = null } = {}) {
   const date = eventDateParts(raw.datetime)
   const bookable = isBookable(raw)
 
+  const heading = typeof raw.heading === 'string' ? raw.heading : ''
+  const description = typeof raw.description === 'string' ? raw.description : ''
+
+  // Committee values are free text typed by admins, and production currently
+  // holds five spellings of "Workshop Committee" plus two empty strings.
+  // Trim here so the UI is not comparing or displaying whitespace.
+  const committee =
+    typeof raw.committee === 'string' ? raw.committee.trim() : ''
+
+  // `time` is a pre-formatted display string in the temp frontend's contract,
+  // but the live API does not send it on either route. Prefer it when it is
+  // there, derive it otherwise — so this works whichever is true.
+  const time =
+    typeof raw.time === 'string' && raw.time.trim()
+      ? raw.time.trim()
+      : formatTimeRange(raw.startTime, raw.endTime, raw.datetime)
+
   return {
     // identity
     id: raw.id,
@@ -92,10 +109,10 @@ export function normaliseEvent(raw, { label = '', fallbackImage = null } = {}) {
 
     // text
     title: label,
-    fullTitle: typeof raw.heading === 'string' ? raw.heading : '',
+    fullTitle: heading,
     type: raw.type ?? null,
-    category: raw.committee ?? null,
-    description: typeof raw.description === 'string' ? raw.description : '',
+    category: committee || null,
+    description,
     extraInfo: raw.extraInfo ?? null,
 
     // when
@@ -103,7 +120,7 @@ export function normaliseEvent(raw, { label = '', fallbackImage = null } = {}) {
     dateDay: date?.day ?? null,
     dateMonth: date?.month ?? null,
     dateFull: date?.full ?? null,
-    time: formatTimeRange(raw.startTime, raw.endTime, raw.datetime),
+    time,
     duration: formatDuration(raw.startTime, raw.endTime),
 
     // where
@@ -120,6 +137,17 @@ export function normaliseEvent(raw, { label = '', fallbackImage = null } = {}) {
     // teams
     isTeamEvent: Boolean(raw.isTeamEvent),
     teamSize: raw.teamSize ?? null,
+
+    /**
+     * Lowercased haystack for the search box. Views filter on this rather
+     * than reaching for individual fields: the old UI searched
+     * `item.instructor`, which the API has no field for, and calling
+     * `.toLowerCase()` on the resulting undefined throws.
+     */
+    searchText: [heading, label, committee, description, venueName(raw.venue)]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase(),
   }
 }
 

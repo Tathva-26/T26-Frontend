@@ -8,6 +8,8 @@ import { createPortal } from "react-dom";
 import gsap from "gsap";
 import Navbar from "@/pageComponents/Navbar/Navbar";
 import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
+import { useEvents } from "@/hooks/useEvents";
+import { useEventDetails } from "@/hooks/useEventDetails";
 
 const lecturesStyles = `
 @import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
@@ -29,410 +31,14 @@ const lecturesStyles = `
 }
 `;
 
-// Mock Lectures Data
-const LECTURES_DATA = [
-  {
-    id: "ws-1",
-    title: "Lecture",
-    fullTitle: "Deep Space Robotics & Autonomous Navigation",
-    category: "Aerospace",
-    badge: "NASA",
-    dateMonth: "OCT",
-    dateDay: "09",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Dr. Mark Thorne (Ames Research)",
-    duration: "6 Hours (2 Days)",
-    time: "10:00 AM - 1:00 PM IST",
-    venue: "Lab 4, Tech Block & Online",
-    activityPoints: "40 KTU Activity Points",
-    fee: "₹499",
-    spotsLeft: 14,
-    description:
-      "Explore the frontier of autonomous rover guidance, spatial sensor fusion, and zero-gravity control systems. Build and test a simulated lunar rover trajectory from scratch.",
-    prerequisites:
-      "Basic Python knowledge & enthusiastic curiosity in aerospace systems.",
-  },
-  {
-    id: "ws-2",
-    title: "Lecture",
-    fullTitle: "Next-Gen Humanoid & Cybernetic Systems",
-    category: "Robotics",
-    badge: "NASA",
-    dateMonth: "OCT",
-    dateDay: "09",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Elena Rostova (CyberTech Labs)",
-    duration: "5 Hours",
-    time: "02:00 PM - 07:00 PM IST",
-    venue: "Robotics Arena & Mechatronics Lab",
-    activityPoints: "35 KTU Activity Points",
-    fee: "₹549",
-    spotsLeft: 8,
-    description:
-      "Hands-on lecture covering ROS2, kinematic simulation, and computer vision integration for bipedal robotic manipulation and real-time posture adjustments.",
-    prerequisites: "Fundamentals of C++ or Python, basic mechanics.",
-  },
-  {
-    id: "ws-3",
-    title: "Lecture",
-    fullTitle: "Quantum Algorithms & Quantum Machine Learning",
-    category: "AI & ML",
-    badge: "NASA",
-    dateMonth: "OCT",
-    dateDay: "09",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Vikram Sen (Q-Core Institute)",
-    duration: "4 Hours",
-    time: "11:00 AM - 03:00 PM IST",
-    venue: "Seminar Complex & Hybrid",
-    activityPoints: "30 KTU Activity Points",
-    fee: "₹449",
-    spotsLeft: 22,
-    description:
-      "Demystify quantum superposition and entanglement. Write quantum circuits on Qiskit and run hybrid quantum-classical neural networks on real quantum emulators.",
-    prerequisites: "Linear algebra basics and basic Python.",
-  },
-  {
-    id: "ws-4",
-    title: "Lecture",
-    fullTitle: "Orbital Mechanics & Satellite Telemetry",
-    category: "Aerospace",
-    badge: "NASA",
-    dateMonth: "OCT",
-    dateDay: "09",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Dr. Sarah Lin (Orbital Sciences)",
-    duration: "6 Hours",
-    time: "09:30 AM - 03:30 PM IST",
-    venue: "Avionics Hall",
-    activityPoints: "40 KTU Activity Points",
-    fee: "₹599",
-    spotsLeft: 5,
-    description:
-      "Deep dive into CubeSat hardware architectures, telemetry ground stations, Doppler tracking, and orbital path calculations using real satellite downlink packets.",
-    prerequisites: "Introductory physics and signal concepts.",
-  },
-  {
-    id: "ws-5",
-    title: "Lecture",
-    fullTitle: "Generative AI Agents & Multi-Modal LLMs",
-    category: "AI & ML",
-    badge: "NASA",
-    dateMonth: "OCT",
-    dateDay: "09",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Arjun Nambiar (AI Research Group)",
-    duration: "5 Hours",
-    time: "01:00 PM - 06:00 PM IST",
-    venue: "Computing Hall Alpha",
-    activityPoints: "35 KTU Activity Points",
-    fee: "₹499",
-    spotsLeft: 19,
-    description:
-      "Construct autonomous agent swarms, vector retrieval pipelines (RAG), and multimodal reasoning tools that connect directly to APIs and real-world workflows.",
-    prerequisites: "Python programming.",
-  },
-  {
-    id: "ws-6",
-    title: "Lecture",
-    fullTitle: "Zero-Trust Cybersecurity & Threat Simulation",
-    category: "Cybersecurity",
-    badge: "NASA",
-    dateMonth: "OCT",
-    dateDay: "09",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Kavya Menon (DefSec Global)",
-    duration: "6 Hours",
-    time: "10:00 AM - 04:00 PM IST",
-    venue: "Cyber Defense Lab",
-    activityPoints: "40 KTU Activity Points",
-    fee: "₹499",
-    spotsLeft: 12,
-    description:
-      "Simulate red-team attacks and blue-team mitigation in an enterprise sandboxed cyber range. Learn real-time incident forensics and hardware cryptographic tokens.",
-    prerequisites: "Basic networking & Linux command line.",
-  },
-  {
-    id: "ws-7",
-    title: "Lecture",
-    fullTitle: "Advanced Drone Engineering & Swarm Intelligence",
-    category: "Aerospace",
-    badge: "NASA",
-    dateMonth: "OCT",
-    dateDay: "10",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Capt. Neil Iyer (AeroDynamics Lab)",
-    duration: "6 Hours (2 Days)",
-    time: "09:00 AM - 12:00 PM IST",
-    venue: "Open Arena & Drone Bay",
-    activityPoints: "40 KTU Activity Points",
-    fee: "₹599",
-    spotsLeft: 7,
-    description:
-      "Design autonomous drone flight paths, implement swarm coordination algorithms, and test multi-UAV formations using PX4 and ROS-based simulation environments.",
-    prerequisites: "Basic Python and introductory robotics concepts.",
-  },
-  {
-    id: "ws-8",
-    title: "Lecture",
-    fullTitle: "Rocket Propulsion & Hypersonic Aerodynamics",
-    category: "Aerospace",
-    badge: "ISRO",
-    dateMonth: "OCT",
-    dateDay: "10",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Dr. K. S. Namboodiri (VSSC / ISRO)",
-    duration: "6 Hours",
-    time: "10:00 AM - 04:00 PM IST",
-    venue: "Aerospace Simulation Lab",
-    activityPoints: "40 KTU Activity Points",
-    fee: "₹549",
-    spotsLeft: 10,
-    description:
-      "Study cryogenic engine mechanics, solid propellant grain designs, and compressible aerodynamic shockwaves using computational fluid dynamics (CFD).",
-    prerequisites: "Thermodynamics and basic fluid mechanics.",
-  },
-  {
-    id: "ws-9",
-    title: "Lecture",
-    fullTitle: "Spacecraft Avionics & Interplanetary Comms",
-    category: "Aerospace",
-    badge: "ESA",
-    dateMonth: "OCT",
-    dateDay: "11",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Jean-Luc Dubois (Space Systems Europe)",
-    duration: "5 Hours",
-    time: "01:00 PM - 06:00 PM IST",
-    venue: "Avionics Hall Alpha",
-    activityPoints: "35 KTU Activity Points",
-    fee: "₹499",
-    spotsLeft: 15,
-    description:
-      "Understand radiation-hardened flight computers, deep-space network protocols, telemetry compression, and fault-tolerant attitude control.",
-    prerequisites: "Basic digital electronics and signal processing.",
-  },
-  {
-    id: "ws-10",
-    title: "Lecture",
-    fullTitle: "ROS2 & Autonomous Mobile Robot Navigation",
-    category: "Robotics",
-    badge: "IEEE",
-    dateMonth: "OCT",
-    dateDay: "10",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Dr. Ananya Rao (Vision AI Institute)",
-    duration: "6 Hours",
-    time: "09:30 AM - 03:30 PM IST",
-    venue: "Robotics Arena & Mechatronics Lab",
-    activityPoints: "40 KTU Activity Points",
-    fee: "₹549",
-    spotsLeft: 9,
-    description:
-      "Build map-based navigation pipelines with Nav2, SLAM algorithms, LiDAR integration, and real-time obstacle avoidance on differential-drive rovers.",
-    prerequisites: "Python or C++ with Linux familiarity.",
-  },
-  {
-    id: "ws-11",
-    title: "Lecture",
-    fullTitle: "Bipedal Locomotion & Dynamic Balance Control",
-    category: "Robotics",
-    badge: "NASA",
-    dateMonth: "OCT",
-    dateDay: "11",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Prof. Kenneth Meyer (Dynamic Robotics)",
-    duration: "5 Hours",
-    time: "10:00 AM - 03:00 PM IST",
-    venue: "Mechatronics Research Center",
-    activityPoints: "35 KTU Activity Points",
-    fee: "₹599",
-    spotsLeft: 6,
-    description:
-      "Learn inverted pendulum models, Zero Moment Point (ZMP) calculations, and reinforcement learning-driven gait stabilization for biped humanoid robots.",
-    prerequisites: "Classical mechanics and linear algebra.",
-  },
-  {
-    id: "ws-12",
-    title: "Lecture",
-    fullTitle: "Underwater Robotics & Oceanic ROV Systems",
-    category: "Robotics",
-    badge: "IEEE",
-    dateMonth: "OCT",
-    dateDay: "11",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Tarun Chawla (OceanTech Innovations)",
-    duration: "5 Hours",
-    time: "02:00 PM - 07:00 PM IST",
-    venue: "Hydrodynamics & Marine Lab",
-    activityPoints: "35 KTU Activity Points",
-    fee: "₹499",
-    spotsLeft: 16,
-    description:
-      "Explore waterproof thruster systems, acoustic positioning, ballast control, and tethered underwater video transmission for marine exploration ROVs.",
-    prerequisites: "Introductory electronics and mechanics.",
-  },
-  {
-    id: "ws-13",
-    title: "Lecture",
-    fullTitle: "Micro-Robotics & Surgical Robotic Manipulators",
-    category: "Robotics",
-    badge: "ASME",
-    dateMonth: "OCT",
-    dateDay: "12",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Dr. Maya Swaminathan (BioRobotics Lab)",
-    duration: "4 Hours",
-    time: "11:00 AM - 03:00 PM IST",
-    venue: "Advanced Robotics Center",
-    activityPoints: "30 KTU Activity Points",
-    fee: "₹449",
-    spotsLeft: 18,
-    description:
-      "Understand multi-degree-of-freedom surgical end-effectors, haptic force feedback teleoperation, and sub-millimeter precision servo actuation.",
-    prerequisites: "Basics of microcontrollers and kinematic linkages.",
-  },
-  {
-    id: "ws-14",
-    title: "Lecture",
-    fullTitle: "Computer Vision & Edge AI Object Detection",
-    category: "AI & ML",
-    badge: "IEEE",
-    dateMonth: "OCT",
-    dateDay: "10",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Arjun Nambiar (AI Research Group)",
-    duration: "5 Hours",
-    time: "11:00 AM - 04:00 PM IST",
-    venue: "AI Research Wing",
-    activityPoints: "35 KTU Activity Points",
-    fee: "₹449",
-    spotsLeft: 20,
-    description:
-      "Train YOLOv8 models, implement real-time video detection pipelines, and deploy edge-optimised vision models on Jetson Nano and mobile devices.",
-    prerequisites: "Python and basic machine learning knowledge.",
-  },
-  {
-    id: "ws-15",
-    title: "Lecture",
-    fullTitle: "Reinforcement Learning for Autonomous Driving",
-    category: "AI & ML",
-    badge: "NASA",
-    dateMonth: "OCT",
-    dateDay: "11",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Dr. David Sterling (AutoAI Labs)",
-    duration: "6 Hours",
-    time: "10:00 AM - 04:00 PM IST",
-    venue: "Computing Hall Alpha",
-    activityPoints: "40 KTU Activity Points",
-    fee: "₹549",
-    spotsLeft: 11,
-    description:
-      "Train deep Q-networks (DQN) and PPO agents in simulated CARLA environments to handle lane keeping, high-speed merging, and obstacle avoidance.",
-    prerequisites: "Python, PyTorch or TensorFlow, and calculus.",
-  },
-  {
-    id: "ws-16",
-    title: "Lecture",
-    fullTitle: "Diffusion Models & Neural Rendering (NeRFs)",
-    category: "AI & ML",
-    badge: "ACM",
-    dateMonth: "OCT",
-    dateDay: "12",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Siddharth Verma (Visual AI Labs)",
-    duration: "5 Hours",
-    time: "01:00 PM - 06:00 PM IST",
-    venue: "Seminar Complex & Hybrid",
-    activityPoints: "35 KTU Activity Points",
-    fee: "₹499",
-    spotsLeft: 14,
-    description:
-      "Understand denoising diffusion probabilistic models (DDPM), latent diffusion, and neural radiance fields to synthesize 3D volumetric scenes from 2D images.",
-    prerequisites: "Deep learning fundamentals and linear algebra.",
-  },
-  {
-    id: "ws-17",
-    title: "Lecture",
-    fullTitle: "Ethical Hacking & Advanced Penetration Testing",
-    category: "Cybersecurity",
-    badge: "CEH",
-    dateMonth: "OCT",
-    dateDay: "10",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Aditya Kulkarni (HackSecure Labs)",
-    duration: "6 Hours (2 Days)",
-    time: "09:30 AM - 12:30 PM IST",
-    venue: "Cyber Defense Lab",
-    activityPoints: "40 KTU Activity Points",
-    fee: "₹549",
-    spotsLeft: 10,
-    description:
-      "Perform structured penetration tests on vulnerable web apps and networks. Master tools like Burp Suite, Nmap, and Metasploit in a controlled ethical hacking sandbox.",
-    prerequisites: "Networking basics, Linux CLI, and HTTP fundamentals.",
-  },
-  {
-    id: "ws-18",
-    title: "Lecture",
-    fullTitle: "Cloud Security Architecture & DevSecOps",
-    category: "Cybersecurity",
-    badge: "CNCF",
-    dateMonth: "OCT",
-    dateDay: "11",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Karthik Mohan (CloudScale Solutions)",
-    duration: "5 Hours",
-    time: "10:00 AM - 03:00 PM IST",
-    venue: "Innovation Hub & Online",
-    activityPoints: "35 KTU Activity Points",
-    fee: "₹499",
-    spotsLeft: 17,
-    description:
-      "Implement infrastructure-as-code security scanning, container image vulnerability detection, automated IAM auditing, and runtime security monitoring.",
-    prerequisites: "Basic Docker and cloud concepts.",
-  },
-  {
-    id: "ws-19",
-    title: "Lecture",
-    fullTitle: "Hardware Security, Side-Channel & Firmware Hacking",
-    category: "Cybersecurity",
-    badge: "DEFCON",
-    dateMonth: "OCT",
-    dateDay: "12",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Naveen Raj (HardSec Research)",
-    duration: "5 Hours",
-    time: "09:00 AM - 02:00 PM IST",
-    venue: "Hardware Security Suite",
-    activityPoints: "35 KTU Activity Points",
-    fee: "₹549",
-    spotsLeft: 8,
-    description:
-      "Extract firmware from flash chips, analyze UART/JTAG debug ports, and perform power-analysis differential side-channel attacks on cryptographic chips.",
-    prerequisites: "Basic electronics and C/assembly understanding.",
-  },
-  {
-    id: "ws-20",
-    title: "Lecture",
-    fullTitle: "Cryptography & Quantum-Resistant Security",
-    category: "Cybersecurity",
-    badge: "IEEE",
-    dateMonth: "OCT",
-    dateDay: "12",
-    image: "/images/lectures/lecture-astronaut.jpg",
-    instructor: "Dr. Radhika Iyer (CryptoResearch Group)",
-    duration: "5 Hours",
-    time: "02:00 PM - 07:00 PM IST",
-    venue: "Computing Hall Beta",
-    activityPoints: "35 KTU Activity Points",
-    fee: "₹499",
-    spotsLeft: 13,
-    description:
-      "Explore lattice-based cryptography, post-quantum key exchange algorithms (Kyber, Dilithium), and modern zero-knowledge proof systems (zk-SNARKs).",
-    prerequisites: "Discrete mathematics and basic cryptography.",
-  },
-];
+// Lectures come from GET /api/events/all?type=lectures. The type is
+// matched exactly and lowercased on write, so it must not be capitalised.
+const EVENT_TYPE = "lectures";
+const CARD_LABEL = "Lecture";
+
+// `picture` is non-null on every event in production today, but the field is
+// nullable and next/image requires a src.
+const FALLBACK_IMAGE = "/images/lectures/lecture-astronaut.jpg";
 
 
 
@@ -568,6 +174,24 @@ export default function LecturesPage() {
   const transitionOverlayRef = useRef(null);
   const transitionImgRef = useRef(null);
   const transitionTlRef = useRef(null);
+  const { events, loading, error, reload } = useEvents(EVENT_TYPE, {
+    label: CARD_LABEL,
+    fallbackImage: FALLBACK_IMAGE,
+  });
+
+  // The full record for whatever the modal has open. The list route returns a
+  // trimmed field set, so `extraInfo` is only available from here.
+  const selectedDetails = useEventDetails(selectedLecture?.id ?? null, {
+    label: CARD_LABEL,
+    fallbackImage: FALLBACK_IMAGE,
+  });
+
+  // Searching a precomputed haystack rather than individual fields: the old
+  // UI searched `item.instructor`, which the API has no field for.
+  const filteredLectures = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return query ? events.filter((item) => item.searchText.includes(query)) : events;
+  }, [events, searchQuery]);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -2015,21 +1639,9 @@ export default function LecturesPage() {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleScroll);
     };
-  }, []);
-  // Filtered lectures
-  const filteredLectures = useMemo(() => {
-    return LECTURES_DATA.filter((item) => {
-      const query = searchQuery.trim().toLowerCase();
-
-      return (
-        !query ||
-        item.title.toLowerCase().includes(query) ||
-        item.fullTitle.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query) ||
-        item.instructor.toLowerCase().includes(query)
-      );
-    });
-  }, [searchQuery]);
+    // Re-measures when the card count changes: the grid is empty on mount
+    // because events are fetched, and a one-shot measurement found no card.
+  }, [filteredLectures.length]);
 
   return (
     <div className="lectures-page min-h-screen bg-[#06070d] text-slate-100 font-sans relative overflow-x-clip selection:bg-indigo-600 selection:text-white pb-24">
@@ -2152,25 +1764,36 @@ export default function LecturesPage() {
         {/* LECTURE CARDS GRID */}
         <section className="relative w-full">
 
-          {filteredLectures.length === 0 ? (
-
+          {loading ? (
             <div className="py-20 text-center text-slate-400">
-
-              <p className="text-lg">
-                No lectures found matching your search.
-              </p>
-
+              <p className="text-lg">Loading lectures…</p>
+            </div>
+          ) : error ? (
+            <div className="py-20 text-center text-slate-400">
+              <p className="text-lg">{error}</p>
               <button
-                onClick={() => {
-                  setSearchQuery("");
-                }}
+                onClick={reload}
                 className="mt-3 text-sm text-indigo-400 hover:underline cursor-pointer"
               >
-                Clear filters
+                Try again
               </button>
-
             </div>
-
+          ) : filteredLectures.length === 0 ? (
+            <div className="py-20 text-center text-slate-400">
+              <p className="text-lg">
+                {searchQuery.trim()
+                  ? "No lectures found matching your search."
+                  : "No lectures have been announced yet."}
+              </p>
+              {searchQuery.trim() && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="mt-3 text-sm text-indigo-400 hover:underline cursor-pointer"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
           ) : (
 
             (() => {
@@ -2504,9 +2127,13 @@ export default function LecturesPage() {
 
                 <div className="mt-2 flex items-end justify-between px-1">
                   <span className="flex items-baseline leading-none text-white">
-                    <span className="font-sans text-3xl font-bold">₹</span>
+                    {selectedLecture.priceInPaise > 0 && (
+                      <span className="font-sans text-3xl font-bold">₹</span>
+                    )}
                     <span className={`lectures-jaro text-3xl`}>
-                      {selectedLecture.fee.replace(/^₹/, "")}
+                      {selectedLecture.priceInPaise > 0
+                        ? selectedLecture.fee.replace(/^₹/, "")
+                        : selectedLecture.fee}
                     </span>
                   </span>
                   <span className="font-bold text-base leading-none text-white">
@@ -2536,15 +2163,34 @@ export default function LecturesPage() {
                   </p>
                 </div>
 
-                <div className="mt-5">
-                  <h3 className="text-[11px] font-bold uppercase text-white">
-                    Contacts :
-                  </h3>
-                  <div className="mt-2 grid grid-cols-2 gap-3 text-[9px] uppercase leading-tight text-white">
-                    <span>JOHN DOE<br />1234567890</span>
-                    <span>JANE DOE<br />9087654321</span>
+                {/*
+                  * The backend has no field for event contacts, so the two
+                  * placeholder names that used to sit here would have shipped
+                  * beside real event data. `extraInfo` is the long write-up
+                  * the API does hold, and it only comes back from the detail
+                  * route — the list route omits it.
+                  */}
+                {selectedDetails.event?.extraInfo && (
+                  <div className="mt-5">
+                    <h3 className="text-[11px] font-bold uppercase text-white">
+                      Details :
+                    </h3>
+                    <p className="mt-2 whitespace-pre-line text-[9px] leading-[1.35] text-[#8d8d8d]">
+                      {selectedDetails.event.extraInfo}
+                    </p>
                   </div>
-                </div>
+                )}
+
+                {(selectedDetails.event?.venueFull || selectedDetails.event?.time) && (
+                  <div className="mt-4 space-y-1 text-[9px] uppercase leading-tight text-white">
+                    {selectedDetails.event.time && (
+                      <p>{selectedDetails.event.time}</p>
+                    )}
+                    {selectedDetails.event.venueFull && (
+                      <p className="text-[#8d8d8d]">{selectedDetails.event.venueFull}</p>
+                    )}
+                  </div>
+                )}
 
                 <button
                   type="button"

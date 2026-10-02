@@ -89,7 +89,32 @@ check('order: unsynced after bookable', cards.map((c) => c.bookable), [true, tru
 check('bookable ids in date order', cards.filter((c) => c.bookable).map((c) => c.id), [12, 13])
 check('fallback image used', cards.find((c) => c.id === 13).image, '/images/fallback.jpg')
 check('heading not name', cards.find((c) => c.id === 12).fullTitle, 'Deep Space Robotics & Autonomous Navigation')
-check('committee to category', cards.find((c) => c.id === 12).category, 'Aerospace')
+check('committee to category', cards.find((c) => c.id === 12).category, 'Workshop Committee')
+// Production holds five spellings of one committee, some with trailing space.
+check('committee trimmed', cards.find((c) => c.id === 13).category, 'Workshop committee')
+check('empty committee becomes null', cards.find((c) => c.id === 15).category, null)
+// The API serialises in UTC; 04:30Z must render as the 9th in IST, not the 8th.
+check('utc datetime renders in IST', cards.find((c) => c.id === 12).dateDay, '09')
+check('utc datetime IST time', cards.find((c) => c.id === 12).time, '10:00 AM IST')
+// `time` is in the temp frontend's contract but absent from the live API:
+// prefer it when sent, derive it when not.
+check(
+  'api-sent time wins',
+  normaliseEvent({ id: 1, heading: 'x', time: ' 10:00 AM - 1:00 PM IST ', datetime: '2026-10-09T04:30:00.000Z' }).time,
+  '10:00 AM - 1:00 PM IST',
+)
+check(
+  'time derived when absent',
+  normaliseEvent({ id: 1, heading: 'x', datetime: '2026-10-09T04:30:00.000Z' }).time,
+  '10:00 AM IST',
+)
+// The old UI searched item.instructor, which has no backend field, so
+// .toLowerCase() on undefined threw. Views filter on this instead.
+check('searchText is a string', typeof cards[0].searchText, 'string')
+check('searchText has no undefined', cards.some((c) => c.searchText.includes('undefined')), false)
+check('searchText matches heading', cards.find((c) => c.id === 12).searchText.includes('deep space'), true)
+check('searchText matches venue', cards.find((c) => c.id === 12).searchText.includes('lab 4'), true)
+check('searchText survives empty committee', typeof cards.find((c) => c.id === 15).searchText, 'string')
 check('fee formatted', cards.find((c) => c.id === 12).fee, '₹499')
 check('free event fee', cards.find((c) => c.id === 15).fee, 'Free')
 check('venue flattened', cards.find((c) => c.id === 12).venue, 'Lab 4, Tech Block')
