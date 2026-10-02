@@ -93,16 +93,17 @@ function ExpoTransitionContent() {
     }
     const render = (progress) => {
       if (disposed || !crystal.current) return
-      // Timeline units: entry 0–1, readable Expo hold 1–1.45, exit 1.45–2.15.
-      const phase = details.progress.current.state !== 'closed' && details.progress.current.frozenPhase != null ? details.progress.current.frozenPhase : progress * 2.15
+      // Keep entry speed; shorten the hold and compress departure proportionally.
+      // Desktop hold = .48 viewport heights, departure = 1.08.
+      const phase = details.progress.current.state !== 'closed' && details.progress.current.frozenPhase != null ? details.progress.current.frozenPhase : progress * 1.65
       const state = crystal.current.querySelector('[data-crystal-state]')?.dataset.crystalState
       // Pick one representation before emergence. Never swap a late model into
       // a visible tumble; a reverse to the concealed start can upgrade it safely.
       if (phase <= .08) delete crystal.current.dataset.expoRenderer
       else if (!crystal.current.dataset.expoRenderer) crystal.current.dataset.expoRenderer = state === 'ready' ? 'model' : 'fallback'
-      const exit = Math.min(1, Math.max(0, (phase - 1.45) / .70))
+      const exit = Math.min(1, Math.max(0, (phase - 1.2) / .45))
       const entry = Math.min(1, phase)
-      const pose = phase > 1.45 ? expoExit(exit) : expoJourney(entry)
+      const pose = phase > 1.2 ? expoExit(exit) : expoJourney(entry)
       const box = geometry.current
       if (!box) return
       pose.layout = box
@@ -146,7 +147,7 @@ function ExpoTransitionContent() {
         scrollTrigger: {
           id: 'techconclave-expo', trigger: element, pin: element,
           scroller: scroller || undefined,
-          start: 'bottom bottom', end: () => `+=${plane.clientHeight * (plane.clientWidth < 768 ? 1.5 : 2.4) * 2.15}`,
+          start: 'bottom bottom', end: () => `+=${plane.clientHeight * (plane.clientWidth < 768 ? 1.5 : 2.4) * 1.65}`,
           // Lenis already smooths input. Additional scrub lag can leave the
           // exit clouds onscreen while the gallery has advanced underneath.
           scrub: true, invalidateOnRefresh: true, anticipatePin: 1,
@@ -161,14 +162,14 @@ function ExpoTransitionContent() {
         },
       })
       trigger = timeline.scrollTrigger
-      timeline.to({}, { duration: 2.15, onUpdate: () => render(timeline.progress()) }, 0)
+      timeline.to({}, { duration: 1.65, onUpdate: () => render(timeline.progress()) }, 0)
         .fromTo(page, { autoAlpha: 0 }, { autoAlpha: 1, duration: .32, ease: 'none' }, .22)
         .fromTo(tc, { autoAlpha: 1 }, { autoAlpha: 0, duration: .16, ease: 'none' }, .40)
         .fromTo(copy, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, stagger: .025, duration: .12 }, .78)
         .fromTo(lines, { opacity: 0 }, { opacity: .8, duration: .12 }, .83)
-        .to(copy, { autoAlpha: 0, y: -12, duration: .14, stagger: .015 }, 1.45)
-        .to(lines, { opacity: 0, duration: .16 }, 1.45)
-        .to(page, { autoAlpha: 0, duration: .44, ease: 'none' }, 1.58)
+        .to(copy, { autoAlpha: 0, y: -12, duration: .14 * .45 / .70, stagger: .015 * .45 / .70 }, 1.2)
+        .to(lines, { opacity: 0, duration: .16 * .45 / .70 }, 1.2)
+        .to(page, { autoAlpha: 0, duration: .44 * .45 / .70, ease: 'none' }, 1.2 + .13 * .45 / .70)
       render(0)
     }, element)
     const resize = new ResizeObserver(() => {

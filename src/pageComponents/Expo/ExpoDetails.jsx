@@ -48,8 +48,8 @@ export function ExpoDetailsProvider({ children }) {
     const open = (element) => {
       if (progress.current.state !== 'closed') return false
       const bridge = root.current.querySelector('[data-expo-progress]')
-      const phase = Number(bridge?.dataset.expoProgress) * 2.15
-      if (bridge && (phase < 1 || phase >= 1.45)) return false
+      const phase = Number(bridge?.dataset.expoProgress) * 1.65
+      if (bridge && (phase < 1 || phase >= 1.2)) return false
       opener.current = element instanceof HTMLElement ? element : document.activeElement
       const scroller = document.querySelector('.main-scroll') || document.scrollingElement
       const lenis = window.__lenis
@@ -77,7 +77,7 @@ export function ExpoDetailsProvider({ children }) {
         scroller.style.scrollBehavior = behavior
       }
       progress.current.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      progress.current.frozenPhase = bridge ? savedProgress * 2.15 : null
+      progress.current.frozenPhase = bridge ? savedProgress * 1.65 : null
       progress.current.state = 'opening'
       dialog.current.showModal()
       dialog.current.scrollTop = 0
