@@ -6,6 +6,8 @@ import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from "re
 import Image from "next/image";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
+import Navbar from "@/pageComponents/Navbar/Navbar";
+import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
 
 const lecturesStyles = `
 @import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
@@ -2031,6 +2033,8 @@ export default function LecturesPage() {
 
   return (
     <div className="lectures-page min-h-screen bg-[#06070d] text-slate-100 font-sans relative overflow-x-clip selection:bg-indigo-600 selection:text-white pb-24">
+      <Navbar/>
+      <TathvaMenu/>
       <style>{lecturesStyles}</style>
 
       {/* BACKGROUND AMBIENT STARS & GRADIENT */}
