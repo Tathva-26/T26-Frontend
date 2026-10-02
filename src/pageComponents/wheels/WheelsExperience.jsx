@@ -399,7 +399,8 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       // spot (both screens the same size/position), then snap in quickly —
       // rather than track curEase 1:1 the whole way, which risked a visible
       // second screen any frame the two weren't pixel-matched yet.
-      const robowarsTvOpacity = Math.min(1, Math.max(0, (curEase - 0.9) / 0.1)) * 0.9
+      const robowarsTvOpacity =
+        Math.min(1, Math.max(0, (curEase - 0.96) / 0.1)) * 6
       robowarsTvScreens.forEach((el) => {
         el.style.opacity = robowarsTvOpacity.toFixed(3)
       })
