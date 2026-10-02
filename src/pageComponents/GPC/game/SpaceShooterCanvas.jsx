@@ -63,6 +63,8 @@ const SpaceShooterCanvas = forwardRef(function SpaceShooterCanvas({ active, onSt
         ref={canvasRef}
         aria-label="Space shooter game"
         className="block h-auto w-full"
+        // The font is for the text the game draws on the canvas itself.
+        style={{ fontFamily: "var(--font-pixel)" }}
       />
     </div>
   );

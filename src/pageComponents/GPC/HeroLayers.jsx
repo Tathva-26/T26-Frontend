@@ -2,7 +2,15 @@ import AuroraOverlay from "./AuroraOverlay";
 import DragonLoop from "./DragonLoop";
 import HeroConsole from "./HeroConsole";
 import Stage from "./Stage";
-import { ASSETS, BANNER, DRAGON_STATIC, STAGE } from "@/pageComponents/GPC/gpcConfig";
+import { ASSETS, BANNER, DRAGON_SIZE, DRAGON_STATIC, STAGE } from "@/pageComponents/GPC/gpcConfig";
+
+// The dragon keeps its own proportions, centred in the slot the design gives it.
+const dragonHeight = (DRAGON_STATIC.width * DRAGON_SIZE.height) / DRAGON_SIZE.width;
+const dragonStyle = {
+  left: DRAGON_STATIC.x,
+  top: DRAGON_STATIC.y + (DRAGON_STATIC.height - dragonHeight) / 2,
+  width: DRAGON_STATIC.width,
+};
 
 /**
  * Landscape hero: the Figma layout in a Stage scaled by `scale` to fit, with
@@ -11,8 +19,10 @@ import { ASSETS, BANNER, DRAGON_STATIC, STAGE } from "@/pageComponents/GPC/gpcCo
  * The banner band is not part of the Stage: it sits behind it at the same
  * height the design gives it but runs the full width of the section, so it
  * reaches both edges on screens wider than the Stage's own aspect ratio.
+ *
+ * The data-gpc attributes are the handles the scroll sequence animates.
  */
-export default function HeroLayers({ scale, consoleRef, onPlay, consoleHidden, paused, touch }) {
+export default function HeroLayers({ scale, consoleRef, onPlay, consoleHidden, paused, touch, sequence }) {
   const bandStyle = {
     top: `calc(50% - ${(STAGE.height / 2 - BANNER.top) * scale}px)`,
     height: BANNER.height * scale,
@@ -27,21 +37,18 @@ export default function HeroLayers({ scale, consoleRef, onPlay, consoleHidden, p
       </div>
 
       <Stage {...STAGE} scale={scale}>
-        <DragonLoop
-          className="absolute object-contain"
-          style={{
-            left: DRAGON_STATIC.x,
-            top: DRAGON_STATIC.y,
-            width: DRAGON_STATIC.width,
-            height: DRAGON_STATIC.height,
-          }}
-        />
+        <DragonLoop className="absolute" style={dragonStyle} />
 
         <h2
+          aria-label="GPC"
           className="absolute left-[707px] top-[464px] text-[107px] leading-[1.2] text-white"
           style={{ fontFamily: "var(--font-akira)" }}
         >
-          GPC
+          {[..."GPC"].map((letter) => (
+            <span key={letter} data-gpc="letter" aria-hidden="true" className="inline-block">
+              {letter}
+            </span>
+          ))}
         </h2>
 
         <HeroConsole
@@ -50,11 +57,13 @@ export default function HeroLayers({ scale, consoleRef, onPlay, consoleHidden, p
           hidden={consoleHidden}
           paused={paused}
           touch={touch}
+          sequence={sequence}
           scale={scale}
           className="absolute left-[364px] top-[304px] h-[281px] w-[322px]"
         />
 
         <p
+          data-gpc="tagline"
           className="absolute left-[320px] top-[623px] w-[796px] text-[50px] uppercase leading-[1.2] text-white"
           style={{ fontFamily: "var(--font-bebas)" }}
         >
