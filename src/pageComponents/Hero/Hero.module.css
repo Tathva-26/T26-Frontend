@@ -32,6 +32,12 @@
   animation-play-state: paused !important;
 }
 
+/* Hero is no longer hidden by the controller while Frame is up (only pointer-events are
+   blocked), so its fixed logo must not sit visibly on top of Frame's content. */
+.scroller[data-paused] .fixedLogo {
+  visibility: hidden;
+}
+
 .runway {
   position: relative;
   width: 100%;
@@ -124,6 +130,14 @@
   white-space: nowrap;
 }
 
+/* Everything behind the portal (see syncPortalFrame in Hero.jsx). */
+.backLayers {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
 /* ===============================
    BACKGROUND ENVIRONMENT
    =============================== */
@@ -137,6 +151,7 @@
   background-repeat: no-repeat;
   pointer-events: none;
   will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* ===============================
@@ -148,6 +163,7 @@
   z-index: 2;
   pointer-events: none;
   will-change: transform;
+  backface-visibility: hidden;
   width: max(88.3125rem, calc(100vw / var(--design-scale, 1))) !important;
 }
 
@@ -180,6 +196,7 @@
   object-position: bottom;
   pointer-events: none;
   will-change: transform;
+  backface-visibility: hidden;
   /* TODO(perf): bake this into bgrocks.png (multiply RGB by 0.55), then delete the filter. */
   filter: brightness(0.55);
   width: max(88.3125rem, calc(100vw / var(--design-scale, 1))) !important;
@@ -193,6 +210,7 @@
   z-index: 4;
   pointer-events: none;
   will-change: transform;
+  backface-visibility: hidden;
   overflow: visible;
 }
 
@@ -309,6 +327,7 @@
   z-index: 5;
   pointer-events: none;
   will-change: transform;
+  backface-visibility: hidden;
 }
 
 .girl {
@@ -372,6 +391,7 @@
 
   /* animation: portalFlicker 6.5s ease-in-out infinite;  UNNECESSARY: 4% opacity wobble, invisible */
   will-change: transform;
+  backface-visibility: hidden;
   transform-origin: center center;
 }
 
@@ -568,6 +588,7 @@
   height: 100%;
   pointer-events: none;
   will-change: transform, opacity;
+  backface-visibility: hidden;
   transform-origin: center center;
 }
 

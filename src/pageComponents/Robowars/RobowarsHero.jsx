@@ -105,6 +105,7 @@ function DesktopFrame({ className, scale = "desktop", containerRef }) {
           the Wheels TV, which docks exactly on top of it before fading out. */}
       <div
         aria-hidden="true"
+        data-robowars-tv-screen
         className="pointer-events-none absolute opacity-90"
         style={frameStyle(ROBOWARS_TV_SCREEN)}
       >
@@ -127,10 +128,10 @@ function DesktopFrame({ className, scale = "desktop", containerRef }) {
       <Art
         src="arena-right-robot.svg"
         alt=""
-        x={1072}
-        y={121}
-        width={342}
-        height={573}
+        x={1047}
+        y={isTablet ? 59 : 60}
+        width={394}
+        height={661}
         priority={!isTablet}
         className="robowars-motion robowars-robot robowars-right-robot pointer-events-none"
       />
@@ -532,9 +533,16 @@ export default function RobowarsHero({ leadInVh = 0 }) {
         {/* Zoomed in by default; WheelsExperience scales this back down to 1
             as the docking TV's backdrop fades, so the arena zooms out in sync
             with the TV shrinking instead of popping in at full size early. */}
-        <DesktopFrame className="hidden w-screen xl:block" containerRef={desktopXlRef} />
+        {/* Width grows past 100vw/112vw whenever the viewport is taller/narrower
+            than the 1413:697 arena art — aspect-ratio then derives the height
+            from that wider box, so arena-bg (object-cover) always fills the
+            full viewport instead of letterboxing top and bottom. */}
         <DesktopFrame
-          className="hidden w-[112vw] md:block xl:hidden"
+          className="hidden w-[max(100vw,202.726dvh)] xl:block"
+          containerRef={desktopXlRef}
+        />
+        <DesktopFrame
+          className="hidden w-[max(112vw,227.053dvh)] md:block xl:hidden"
           scale="tablet"
           containerRef={desktopTabletRef}
         />
