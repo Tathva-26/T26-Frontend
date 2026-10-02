@@ -39,6 +39,20 @@ export default function HeroFrameController({ children }) {
   // wrapper around `children`, observed so ScrollTrigger can re-measure when content settles
   const contentRef = useRef(null);
 
+  // By default ScrollTrigger does a FULL refresh (revert every pin/animation, re-measure, re-apply)
+  // when the tab becomes visible again. With this many sections that takes long enough to see, and it
+  // lands right as Chrome repaints its dropped tiles, so pinned content flashes over Hero. Keep the
+  // load/resize refreshes, drop only the tab-visibility one (the lighter re-sync lives below).
+  // Must run in an effect: at module level it executes during SSR / before the plugin is registered,
+  // which is what threw "Cannot read properties of undefined (reading 'length')".
+  useEffect(() => {
+    try {
+      ScrollTrigger.config({ autoRefreshEvents: "DOMContentLoaded,load,resize" });
+    } catch (e) {
+      /* older GSAP without this option: keep the default behaviour */
+    }
+  }, []);
+
   useEffect(() => {
     sectionRef.current = section;
   }, [section]);
