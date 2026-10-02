@@ -112,6 +112,19 @@ export default function HeroFrameController({ children }) {
     };
   }, [hasReachedContent]);
 
+  // Coming back to the tab (or window) after Chrome has dropped its GPU tiles: pins from the
+  // sections below can still be in their "fixed" state until the next scroll event, so they paint
+  // over Hero for a few frames. Re-sync every trigger as soon as the tab is visible again.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      window.__lenis?.resize();
+      requestAnimationFrame(() => ScrollTrigger.update());
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
+
   // Re-lock when the user scrolls up past the very top of the page while unlocked.
   useEffect(() => {
     if (!unlocked) return undefined;
