@@ -1,90 +1,70 @@
 'use client';
 
-import { startTransition, useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './ProfilePage.module.css';
 import Galaxy from '../../components/Galaxy/Galaxy';
+import { PATHS, api, apiErrorMessage, apiErrorStatus, apiFieldErrors } from '@/lib/api';
+import { formatDateTime } from '@/lib/format';
+import { joinBookings } from '@/lib/bookings';
+import {
+  LABELS,
+  avatarProblem,
+  buildProfileFormData,
+  changedFields,
+  hasChanges,
+  toDraft,
+  validateProfile,
+} from '@/lib/profile';
+import { useUser } from '@/context/UserContext';
+import { useBookings } from '@/hooks/useBookings';
+import { useEvents } from '@/hooks/useEvents';
 
 const tathvaWhiteLogo = 'https://www.figma.com/api/mcp/asset/c4b1e068-12d7-4e70-bc34-c2dad84d5388.png';
 
-const profileStorageKey = 'tathva-profile';
+const range = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => String(from + i));
 
-const initialProfile = {
-  username: 'Username',
-  email: 'adoc...@gmail.com',
-  phoneNumber: '123456789',
-  college: 'NIT Calicut',
-  branch: 'CSE',
-  yearOfStudy: '2',
-  district: 'Kozhikode',
-  state: 'Kerala',
-};
-
-const yearOfStudyOptions = ['1', '2', '3', '4'];
-
-const fieldRows = [
-  { label: 'Phone Number', key: 'phoneNumber', type: 'tel', inputMode: 'numeric', pattern: '[0-9]{10}', maxLength: 10, required: true },
-  { label: 'College', key: 'college', type: 'text', required: true },
-  { label: 'Branch', key: 'branch', type: 'text' },
-  { label: 'Year of Study', key: 'yearOfStudy', options: yearOfStudyOptions },
-  { label: 'State', key: 'state', type: 'text' },
-  { label: 'District', key: 'district', type: 'text' },
+/**
+ * Semester goes to 10 and year to 5, which is what the backend accepts. The
+ * old form offered years 1-4 only, so a fifth-year could not describe
+ * themselves, and had no semester field at all — one of the seven fields the
+ * backend requires before it treats a profile as complete.
+ */
+const FIELD_ROWS = [
+  { key: 'phone', type: 'tel', inputMode: 'tel', required: true },
+  { key: 'college', type: 'text', required: true },
+  { key: 'branch', type: 'text' },
+  { key: 'semester', options: range(1, 10) },
+  { key: 'year', options: range(1, 5) },
+  { key: 'state', type: 'text' },
+  { key: 'district', type: 'text' },
 ];
 
-const modalRows = [
-  { label: 'Username', key: 'username', type: 'text', required: true },
-  ...fieldRows,
-];
-
-function getFieldError(key, value) {
-  if (key === 'username' && !value.trim()) {
-    return 'Enter name';
-  }
-
-  if (key === 'college' && !value.trim()) {
-    return 'Enter college';
-  }
-
-  if (key === 'phoneNumber' && !/^[0-9]{10}$/.test(value)) {
-    return 'Enter valid phone number';
-  }
-
-  return '';
-}
-
-function getProfileErrors(values) {
-  return Object.fromEntries(
-    ['username', 'phoneNumber', 'college']
-      .map((key) => [key, getFieldError(key, values[key])])
-      .filter(([, error]) => error),
-  );
-}
+const MODAL_ROWS = [{ key: 'name', type: 'text', required: true }, ...FIELD_ROWS];
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState(initialProfile);
-  const [draftProfile, setDraftProfile] = useState(initialProfile);
+  const { user, isLoading, isSignedIn, hasPhone, message, avatar, refresh, signIn, signOut } = useUser();
+
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [validationErrors, setValidationErrors] = useState({});
-  const [showSubmitError, setShowSubmitError] = useState(false);
-  const profileModalRef = useRef(null);
+  const [draft, setDraft] = useState({});
+  const [imageFile, setImageFile] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [saveError, setSaveError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const modalRef = useRef(null);
 
-  useEffect(() => {
-    const savedProfile = window.localStorage.getItem(profileStorageKey);
-    if (!savedProfile) return;
+  /* Events are only needed to put a title on each booking, and that join is
+     on tiqrEventId. Not fetched at all when nobody is signed in. */
+  const { events } = useEvents(null, { enabled: isSignedIn });
+  const {
+    bookings: rawBookings,
+    loading: bookingsLoading,
+    error: bookingsError,
+    refresh: refreshBookings,
+    cooldownSeconds,
+    canRefresh,
+  } = useBookings({ enabled: isSignedIn });
 
-    try {
-      const parsedProfile = JSON.parse(savedProfile);
-      if (parsedProfile && typeof parsedProfile === 'object' && !Array.isArray(parsedProfile)) {
-        const loadedProfile = { ...initialProfile, ...parsedProfile };
-        delete loadedProfile.semester;
-        startTransition(() => {
-          setProfile(loadedProfile);
-          setDraftProfile(loadedProfile);
-        });
-      }
-    } catch {
-      window.localStorage.removeItem(profileStorageKey);
-    }
-  }, []);
+  const bookings = useMemo(() => joinBookings(rawBookings, events), [rawBookings, events]);
 
   useEffect(() => {
     if (!isEditorOpen) return undefined;
@@ -98,7 +78,7 @@ export default function ProfilePage() {
 
       if (event.key !== 'Tab') return;
 
-      const focusableElements = profileModalRef.current?.querySelectorAll(
+      const focusableElements = modalRef.current?.querySelectorAll(
         'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
       );
       if (!focusableElements?.length) return;
@@ -119,65 +99,123 @@ export default function ProfilePage() {
     return () => document.removeEventListener('keydown', handleDialogKeyDown, true);
   }, [isEditorOpen]);
 
-  function openProfileEditor() {
-    setDraftProfile(profile);
-    setValidationErrors({});
-    setShowSubmitError(false);
+  function openEditor() {
+    setDraft(toDraft(user));
+    setImageFile(null);
+    setFieldErrors({});
+    setSaveError(null);
     setIsEditorOpen(true);
   }
 
-  function saveProfile(event) {
+  function updateField(key, value) {
+    setDraft((previous) => ({ ...previous, [key]: value }));
+    setFieldErrors((previous) => {
+      if (!previous[key]) return previous;
+      const next = { ...previous };
+      delete next[key];
+      return next;
+    });
+  }
+
+  function chooseImage(file) {
+    const problem = avatarProblem(file);
+    setFieldErrors((previous) => {
+      const next = { ...previous };
+      if (problem) next.image = problem;
+      else delete next.image;
+      return next;
+    });
+    setImageFile(problem ? null : file);
+  }
+
+  async function saveProfile(event) {
     event.preventDefault();
-    const errors = getProfileErrors(draftProfile);
-    setValidationErrors(errors);
-    if (Object.keys(errors).length > 0) {
-      setShowSubmitError(true);
+    if (saving) return;
+
+    const errors = validateProfile(draft, user);
+    if (Object.keys(errors).length > 0 || fieldErrors.image) {
+      setFieldErrors((previous) => ({ ...previous, ...errors }));
+      setSaveError('Check the highlighted fields.');
       return;
     }
 
-    const savedProfile = {
-      ...draftProfile,
-      username: draftProfile.username.trim() || profile.username,
-    };
-    window.localStorage.setItem(profileStorageKey, JSON.stringify(savedProfile));
-    setProfile(savedProfile);
-    setDraftProfile(savedProfile);
-    setShowSubmitError(false);
-    setIsEditorOpen(false);
-  }
+    const changed = changedFields(user, draft);
 
-  function updateDraftField(key, value) {
-    const nextProfile = { ...draftProfile, [key]: value };
-    setDraftProfile(nextProfile);
+    // The endpoint 400s on a body with no recognised fields, so a save with
+    // nothing to save is simply closed rather than sent.
+    if (!hasChanges(changed, imageFile)) {
+      setIsEditorOpen(false);
+      return;
+    }
 
-    if (Object.keys(validationErrors).length > 0) {
-      const errors = getProfileErrors(nextProfile);
-      setValidationErrors(errors);
-      setShowSubmitError(Object.keys(errors).length > 0);
+    setSaving(true);
+    setSaveError(null);
+
+    try {
+      // Multipart always, so an optional avatar travels with the text fields
+      // in one request. Content-Type is left unset on purpose: the browser
+      // has to pick the multipart boundary itself.
+      await api.put(PATHS.user, buildProfileFormData(changed, imageFile), {
+        headers: { 'Content-Type': undefined },
+      });
+      refresh();
+      setIsEditorOpen(false);
+    } catch (error) {
+      const status = apiErrorStatus(error);
+      const deadline = error?.response?.data?.deadline;
+
+      if (status === 403 && deadline) {
+        setSaveError(`Profile edits closed on ${formatDateTime(deadline) || deadline}.`);
+      } else {
+        setFieldErrors((previous) => ({ ...previous, ...apiFieldErrors(error) }));
+        setSaveError(apiErrorMessage(error, 'Could not save your profile.'));
+      }
+    } finally {
+      setSaving(false);
     }
   }
 
-  function validateFieldOnBlur(key, value) {
-    const error = getFieldError(key, value);
-    setValidationErrors((currentErrors) => {
-      if (error) return { ...currentErrors, [key]: error };
+  const background = (
+    <Galaxy
+      mouseInteraction={false}
+      hueShift={205}
+      density={0.9}
+      glowIntensity={0.35}
+      saturation={0.55}
+      twinkleIntensity={0.4}
+      rotationSpeed={0.05}
+    />
+  );
 
-      const { [key]: _removedError, ...remainingErrors } = currentErrors;
-      return remainingErrors;
-    });
+  if (isLoading) {
+    return (
+      <div className={styles.pageShell}>
+        {background}
+        <div className={styles.signInPrompt}>
+          <p>Loading your profile…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className={styles.pageShell}>
+        {background}
+        <div className={styles.signInPrompt}>
+          {message && <p className={styles.noticeBanner}>{message}</p>}
+          <p>Sign in to see your profile and bookings.</p>
+          <button type="button" className={styles.signInButton} onClick={() => signIn()}>
+            Sign in with Google
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className={styles.pageShell}>
-      <Galaxy
-        mouseInteraction={false}
-        hueShift={205}
-        density={0.9}
-        glowIntensity={0.35}
-        saturation={0.55}
-        twinkleIntensity={0.4}
-        rotationSpeed={0.05}
-      />
+      {background}
 
       <header className={styles.topbar}>
         <div className={styles.leftHeader}>
@@ -188,9 +226,9 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <button type="button" className={styles.signOutButton}>
+        <button type="button" className={styles.signOutButton} onClick={() => signOut('/')}>
           <span className={styles.signOutIcon} aria-hidden="true">
-            <img src="/images/profile-avatar.png" alt="" />
+            <img src={avatar || '/images/profile-avatar.png'} alt="" />
           </span>
           Sign out
         </button>
@@ -199,13 +237,15 @@ export default function ProfilePage() {
       <main className={styles.contentWrap}>
         <div className={styles.avatarGroup}>
           <div className={styles.avatar} aria-label="User avatar">
-            <img src="/images/profile-main-avatar.png" alt="" />
+            {/* `picture` is null until an upload, and the Google avatar on the
+                session stands in before the bundled placeholder. */}
+            <img src={avatar || '/images/profile-main-avatar.png'} alt="" />
           </div>
           <button
             type="button"
             className={styles.avatarEditButton}
             aria-label="Edit profile"
-            onClick={openProfileEditor}
+            onClick={openEditor}
           >
             <svg
               className={styles.avatarEditIcon}
@@ -219,7 +259,7 @@ export default function ProfilePage() {
             </svg>
           </button>
         </div>
-        <h1 className={styles.username}>{profile.username}</h1>
+        <h1 className={styles.username}>{user?.name || 'Your profile'}</h1>
 
         <label className={styles.emailField}>
           <span className={styles.inputIcon} aria-hidden="true">
@@ -228,29 +268,39 @@ export default function ProfilePage() {
               <path d="M4.5 6.5L12 12.5L19.5 6.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </span>
-          <span className={styles.emailText}>{profile.email}</span>
+          <span className={styles.emailText}>{user?.email}</span>
         </label>
 
-        <p className={styles.infoNote}>
-          <span>Add a phone number below before you book anything</span>
-          <span className={styles.highlight}> — registrations are rejected without one.</span>
-        </p>
+        {message && <p className={`${styles.noticeBanner} ${styles.noticeBannerInfo}`}>{message}</p>}
+
+        {/* Booking is refused outright without a phone number, so this warns
+            up front rather than letting the refusal arrive after an event has
+            been chosen. */}
+        {!hasPhone && (
+          <p className={styles.infoNote}>
+            <span>Add a phone number below before you book anything</span>
+            <span className={styles.highlight}> — registrations are rejected without one.</span>
+          </p>
+        )}
 
         <section className={styles.detailsSection}>
           <h2 className={styles.sectionTitle}>Your details</h2>
 
           <div className={styles.detailsGrid}>
-            {fieldRows.map(({ label, key }, index) => {
-              const isLast = index === fieldRows.length - 1;
-              const isState = label === 'State';
+            {FIELD_ROWS.map(({ key }, index) => {
+              const isLast = index === FIELD_ROWS.length - 1;
+              const isState = key === 'state';
+              const value = user?.[key];
 
               return (
                 <div
-                  key={label}
+                  key={key}
                   className={`${styles.fieldBlock} ${isState ? styles.stateField : ''}`.trim()}
                 >
-                  <label className={styles.fieldLabel}>{label}</label>
-                  <div className={styles.fieldValue}>{profile[key]}</div>
+                  <label className={styles.fieldLabel}>{LABELS[key]}</label>
+                  <div className={styles.fieldValue}>
+                    {value === null || value === undefined || value === '' ? '—' : value}
+                  </div>
                   {isLast && !isState && <div className={styles.fieldSpacer} aria-hidden="true" />}
                 </div>
               );
@@ -261,14 +311,58 @@ export default function ProfilePage() {
         <section className={styles.bookingsSection}>
           <div className={styles.bookingsHeader}>
             <h2 className={styles.sectionTitle}>Your Bookings</h2>
-            <button type="button" className={styles.refreshButton}>
-              REFRESH
+            <button
+              type="button"
+              className={styles.refreshButton}
+              onClick={refreshBookings}
+              disabled={!canRefresh}
+            >
+              {/* A live read is debounced to ten seconds server-side, so the
+                  button counts that down instead of firing into the debounce. */}
+              {cooldownSeconds > 0 ? `REFRESH (${cooldownSeconds}s)` : 'REFRESH'}
             </button>
           </div>
 
-          <div className={styles.bookingCard}>
-            Nothing booked yet. A new booking can take a moment to appear here after payment — hit refresh if you have just paid.
-          </div>
+          {bookingsLoading ? (
+            <div className={styles.bookingCard}>Checking your bookings…</div>
+          ) : bookingsError ? (
+            <div className={styles.bookingCard}>{bookingsError}</div>
+          ) : bookings.length === 0 ? (
+            <div className={styles.bookingCard}>
+              Nothing booked yet. A new booking can take a moment to appear here after payment — hit refresh if you have just paid.
+            </div>
+          ) : (
+            <div className={styles.bookingList}>
+              {bookings.map((booking) => (
+                <div className={styles.bookingRow} key={booking.id}>
+                  <div>
+                    <div className={styles.bookingTitle}>{booking.title}</div>
+                    <div className={styles.bookingMeta}>
+                      {[
+                        booking.reference && `Ref ${booking.reference}`,
+                        booking.quantity > 1 && `${booking.quantity} tickets`,
+                        booking.amount,
+                        booking.createdLabel,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </div>
+                  </div>
+                  <span
+                    className={`${styles.statusPill} ${
+                      booking.status === 'CONFIRMED'
+                        ? styles.statusConfirmed
+                        : booking.status === 'PENDING'
+                          ? styles.statusPending
+                          : ''
+                    }`.trim()}
+                  >
+                    {booking.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </main>
 
@@ -283,34 +377,42 @@ export default function ProfilePage() {
           }}
           tabIndex={-1}
         >
-          <form ref={profileModalRef} className={styles.profileModal} onSubmit={saveProfile} noValidate>
+          <form ref={modalRef} className={styles.profileModal} onSubmit={saveProfile} noValidate>
             <h2 id="profile-editor-title" className={styles.modalTitle}>Edit Profile</h2>
+
             <div className={styles.modalRows}>
-              {modalRows.map(({ label, key, type, inputMode, pattern, maxLength, required, options, readOnly }, index) => (
+              <div className={styles.avatarRow}>
+                <span className={styles.modalLabel}>Profile picture</span>
+                <input
+                  className={styles.avatarInput}
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => chooseImage(event.target.files?.[0] ?? null)}
+                />
+                <span className={styles.avatarHint}>
+                  Up to 400 KB. Stored as webp; SVG is not accepted.
+                </span>
+                {fieldErrors.image && (
+                  <span className={styles.modalFieldError} role="alert">{fieldErrors.image}</span>
+                )}
+              </div>
+
+              {MODAL_ROWS.map(({ key, type, inputMode, required, options }, index) => (
                 <label className={styles.modalRow} htmlFor={`profile-edit-${key}`} key={key}>
                   <span className={styles.modalLabel}>
-                    {label}
+                    {LABELS[key]}
                     {required && <span className={styles.requiredMarker} aria-hidden="true">*</span>}
                   </span>
-                  {readOnly ? (
-                    <output
-                      id={`profile-edit-${key}`}
-                      className={`${styles.modalInput} ${styles.modalDerived}`}
-                      aria-live="polite"
-                    >
-                      {draftProfile[key]}
-                    </output>
-                  ) : options ? (
+                  {options ? (
                     <select
                       id={`profile-edit-${key}`}
-                      className={`${styles.modalInput} ${styles.modalSelect} ${validationErrors[key] ? styles.modalInputError : ''}`.trim()}
-                      value={draftProfile[key]}
-                      aria-invalid={Boolean(validationErrors[key])}
-                      aria-describedby={validationErrors[key] ? `profile-error-${key}` : undefined}
-                      autoFocus={index === 0}
-                      onChange={(event) => updateDraftField(key, event.target.value)}
-                      onBlur={(event) => validateFieldOnBlur(key, event.currentTarget.value)}
+                      className={`${styles.modalInput} ${styles.modalSelect} ${fieldErrors[key] ? styles.modalInputError : ''}`.trim()}
+                      value={draft[key] ?? ''}
+                      aria-invalid={Boolean(fieldErrors[key])}
+                      aria-describedby={fieldErrors[key] ? `profile-error-${key}` : undefined}
+                      onChange={(event) => updateField(key, event.target.value)}
                     >
+                      <option value="">Not set</option>
                       {options.map((option) => (
                         <option value={option} key={option}>{option}</option>
                       ))}
@@ -318,41 +420,38 @@ export default function ProfilePage() {
                   ) : (
                     <input
                       id={`profile-edit-${key}`}
-                      className={`${styles.modalInput} ${validationErrors[key] ? styles.modalInputError : ''}`.trim()}
+                      className={`${styles.modalInput} ${fieldErrors[key] ? styles.modalInputError : ''}`.trim()}
                       type={type}
                       inputMode={inputMode}
-                      pattern={pattern}
-                      maxLength={maxLength}
-                      required={required}
-                      value={draftProfile[key]}
-                      aria-invalid={Boolean(validationErrors[key])}
-                      aria-describedby={validationErrors[key] ? `profile-error-${key}` : undefined}
+                      value={draft[key] ?? ''}
+                      aria-invalid={Boolean(fieldErrors[key])}
+                      aria-describedby={fieldErrors[key] ? `profile-error-${key}` : undefined}
                       autoFocus={index === 0}
-                      onChange={(event) => updateDraftField(key, event.target.value)}
-                      onBlur={(event) => validateFieldOnBlur(key, event.currentTarget.value)}
+                      onChange={(event) => updateField(key, event.target.value)}
                     />
                   )}
-                  {validationErrors[key] && (
+                  {fieldErrors[key] && (
                     <span className={styles.modalFieldError} id={`profile-error-${key}`} role="alert">
-                      {validationErrors[key]}
+                      {fieldErrors[key]}
                     </span>
                   )}
                 </label>
               ))}
             </div>
-            {showSubmitError && (
-              <p className={styles.modalSubmitError} role="alert">Enter required details</p>
-            )}
+
+            {saveError && <p className={styles.modalSubmitError} role="alert">{saveError}</p>}
+
             <div className={styles.modalActions}>
               <button
                 className={styles.cancelButton}
                 type="button"
                 onClick={() => setIsEditorOpen(false)}
+                disabled={saving}
               >
                 Cancel
               </button>
-              <button className={styles.saveButton} type="submit">
-                Save Changes
+              <button className={styles.saveButton} type="submit" disabled={saving}>
+                {saving ? 'Saving…' : 'Save Changes'}
               </button>
             </div>
           </form>

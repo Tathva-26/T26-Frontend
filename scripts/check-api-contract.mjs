@@ -29,6 +29,10 @@ const { validateContact, normalisePhone, toStoredPhone, isValidEmail, isValidPho
 const { applyUnauthorized, applySignedOut, isProfileComplete, SIGNED_OUT, LOADING, SESSION_EXPIRED } =
   await import(`${ROOT}session.js`)
 const { USER } = await import(`${ROOT}mock/fixtures.js`)
+const { toDraft, cleanName, validateProfile, changedFields, buildProfileFormData, hasChanges, avatarProblem } =
+  await import(`${ROOT}profile.js`)
+const { bookingStatus, byTiqrId, normaliseBooking, joinBookings, latestForEvent } =
+  await import(`${ROOT}bookings.js`)
 
 let pass = 0
 const fails = []
@@ -300,6 +304,89 @@ for (const field of ['phone', 'college', 'district', 'state', 'branch', 'semeste
 // semester/year are numbers, and 0 is not a valid value but is falsy — the
 // check must look at presence, not truthiness.
 check('semester 0 counts as present', isProfileComplete({ ...USER, semester: 0 }), true)
+
+/* ---- profile editing ---- */
+check('toDraft stringifies', toDraft(USER).semester, '5')
+check('toDraft nulls become empty', toDraft({ ...USER, college: null }).college, '')
+check('toDraft of nothing', toDraft(null).name, '')
+
+check('cleanName collapses whitespace', cleanName('  Ada   Lovelace  '), 'Ada Lovelace')
+check('cleanName strips angle brackets', cleanName('Ada <script>'), 'Ada script')
+check('cleanName strips zero-width', cleanName('Ada​Lovelace'), 'AdaLovelace')
+check('cleanName normalises to NFC', cleanName('Áda') === 'Áda', true)
+
+const DRAFT = toDraft(USER)
+check('a clean draft validates', validateProfile(DRAFT, USER), {})
+check('name is required', validateProfile({ ...DRAFT, name: '  ' }, USER).name, 'Enter your name')
+check('phone is required', validateProfile({ ...DRAFT, phone: '' }, USER).phone, 'Enter your phone number')
+check('college is required', validateProfile({ ...DRAFT, college: '' }, USER).college, 'Enter your college')
+check('name over 50 rejected', Boolean(validateProfile({ ...DRAFT, name: 'a'.repeat(51) }, USER).name), true)
+check('name of exactly 50 ok', validateProfile({ ...DRAFT, name: 'a'.repeat(50) }, USER).name, undefined)
+check('bad phone rejected', validateProfile({ ...DRAFT, phone: '123' }, USER).phone, 'Enter a valid phone number')
+check('semester 11 rejected', Boolean(validateProfile({ ...DRAFT, semester: '11' }, USER).semester), true)
+check('semester 10 ok', validateProfile({ ...DRAFT, semester: '10' }, USER).semester, undefined)
+check('year 6 rejected', Boolean(validateProfile({ ...DRAFT, year: '6' }, USER).year), true)
+check('year 5 ok', validateProfile({ ...DRAFT, year: '5' }, USER).year, undefined)
+// The endpoint 400s on an empty string and omitting the field keeps the old
+// value, so clearing a set field has to be refused rather than look saved.
+check('clearing a set field refused', validateProfile({ ...DRAFT, branch: '' }, USER).branch, 'Branch cannot be cleared once set')
+// A field that was never set can stay empty.
+check('empty stays fine when never set', validateProfile({ ...toDraft({ ...USER, branch: null }), branch: '' }, { ...USER, branch: null }).branch, undefined)
+
+check('no changes means nothing to send', changedFields(USER, toDraft(USER)), {})
+check('a changed name is sent', changedFields(USER, { ...DRAFT, name: 'Ada L' }), { name: 'Ada L' })
+// The backend stores digits only and strips a leading 91 or 0, so the value
+// read back differs from the value sent. That is not a change.
+check('reformatted phone is not a change', changedFields(USER, { ...DRAFT, phone: '+91 98765 43210' }), {})
+check('leading zero is not a change', changedFields(USER, { ...DRAFT, phone: '09876543210' }), {})
+check('a real phone change is sent', changedFields(USER, { ...DRAFT, phone: '9000000000' }), { phone: '9000000000' })
+check('semester is sent as a number', changedFields(USER, { ...DRAFT, semester: '7' }), { semester: 7 })
+check('year is sent as a number', changedFields(USER, { ...DRAFT, year: '4' }), { year: 4 })
+check('empty is never sent', changedFields(USER, { ...DRAFT, branch: '' }), {})
+check('name is cleaned before comparing', changedFields(USER, { ...DRAFT, name: '  Ada   Lovelace ' }), {})
+check('role is never sendable', 'role' in changedFields({ ...USER, role: 'USER' }, { ...DRAFT, role: 'ADMIN' }), false)
+
+const fd = buildProfileFormData({ name: 'Ada L', semester: 7 })
+check('form data carries the fields', [fd.get('name'), fd.get('semester')], ['Ada L', '7'])
+check('form data has no image without one', fd.get('image'), null)
+check('hasChanges with fields', hasChanges({ name: 'x' }, null), true)
+check('hasChanges with only an image', hasChanges({}, { size: 10, type: 'image/png' }), true)
+check('hasChanges with nothing', hasChanges({}, null), false)
+
+check('oversized avatar refused', Boolean(avatarProblem({ size: 500 * 1024, type: 'image/png' })), true)
+check('400KB avatar accepted', avatarProblem({ size: 400 * 1024, type: 'image/png' }), null)
+check('non-image refused', avatarProblem({ size: 10, type: 'application/pdf' }), 'Choose an image file.')
+check('no file is not a problem', avatarProblem(null), null)
+
+/* ---- bookings ---- */
+check('status is case-insensitive', [bookingStatus({ status: 'confirmed' }), bookingStatus({ status: 'Pending' })], ['CONFIRMED', 'PENDING'])
+check('unknown status passes through', bookingStatus({ status: 'refunded' }), 'REFUNDED')
+check('missing status', bookingStatus({}), 'UNKNOWN')
+check('unsynced events are not indexed', byTiqrId([{ id: 1, tiqrEventId: null }]).size, 0)
+
+// The trap: ids from the two systems overlap. Joining on Event.id instead of
+// tiqrEventId does not error, it attaches a plausible wrong title.
+const SWAPPED = [
+  { id: 900, tiqrEventId: 12, fullTitle: 'WRONG EVENT' },
+  { id: 12, tiqrEventId: 900, fullTitle: 'RIGHT EVENT', venue: 'Audi', dateFull: '9 October 2026' },
+]
+const joined = normaliseBooking({ id: 1, status: 'CONFIRMED', quantity: 1, ticket: { event: 900, type: 'General', amount: 49900 }, created_at: '2026-09-19T12:00:00Z' }, byTiqrId(SWAPPED))
+check('joins on tiqrEventId, not id', joined.title, 'RIGHT EVENT')
+check('exposes our event id for linking', joined.eventId, 12)
+check('amount formatted from paise', joined.amount, '₹499')
+check('falls back to the ticket type', normaliseBooking({ id: 2, ticket: { event: 55, type: 'General' } }, byTiqrId(SWAPPED)).title, 'General')
+check('no reference when absent', joined.reference, null)
+check('reference used when present', normaliseBooking({ id: 3, booking_id: 'TQ-123', ticket: { event: 900 } }, byTiqrId(SWAPPED)).reference, 'TQ-123')
+
+const twoBookings = [
+  { id: 1, status: 'CONFIRMED', ticket: { event: 900 }, created_at: '2026-09-19T12:00:00Z' },
+  { id: 2, status: 'PENDING', ticket: { event: 900 }, created_at: '2026-09-28T07:30:00Z' },
+]
+check('newest first', joinBookings(twoBookings, SWAPPED).map((b) => b.id), [2, 1])
+check('latest for an event', latestForEvent(twoBookings, 900).id, 2)
+check('latest for an unknown event', latestForEvent(twoBookings, 999), null)
+check('latest needs an id', latestForEvent(twoBookings, null), null)
+check('join tolerates junk', joinBookings(null, SWAPPED), [])
 
 console.log(`\n${pass} passed, ${fails.length} failed`)
 if (fails.length) {

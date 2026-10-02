@@ -24,12 +24,12 @@ import { normaliseEvents } from "@/lib/events";
  * Returns `{ events, loading, error, reload, backendDisabled }`. `events` is
  * always an array, so a view can map over it without guarding.
  */
-export function useEvents(type, { label = "", fallbackImage = null } = {}) {
+export function useEvents(type, { label = "", fallbackImage = null, enabled = true } = {}) {
   const [reloadToken, setReloadToken] = useState(0);
   const [settled, setSettled] = useState({ key: null, events: [], error: null });
 
   // null means "there is nothing to fetch", which is its own resting state.
-  const requestKey = BACKEND_ENABLED ? `${type ?? ""}|${reloadToken}` : null;
+  const requestKey = BACKEND_ENABLED && enabled ? `${type ?? ""}|${reloadToken}` : null;
 
   useEffect(() => {
     if (requestKey === null) return undefined;
