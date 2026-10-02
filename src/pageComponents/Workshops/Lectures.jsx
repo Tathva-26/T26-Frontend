@@ -7,37 +7,37 @@ import Image from "next/image";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
 
-const workshopsStyles = `
+const lecturesStyles = `
 @import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
 
 @font-face {
-  font-family: 'Workshops Fragment Serif';
+  font-family: 'Lectures Fragment Serif';
   src: url('/fonts/PPFragment-SerifExtraBold.otf') format('opentype');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
 }
 
-.workshops-page .workshops-fragment-serif {
-  font-family: 'Workshops Fragment Serif', serif;
+.lectures-page .lectures-fragment-serif {
+  font-family: 'Lectures Fragment Serif', serif;
 }
 
-.workshops-page .workshops-jaro {
+.lectures-page .lectures-jaro {
   font-family: 'Jaro', sans-serif;
 }
 `;
 
-// Mock Workshops Data
-const WORKSHOPS_DATA = [
+// Mock Lectures Data
+const LECTURES_DATA = [
   {
     id: "ws-1",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Deep Space Robotics & Autonomous Navigation",
     category: "Aerospace",
     badge: "NASA",
     dateMonth: "OCT",
     dateDay: "09",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Dr. Mark Thorne (Ames Research)",
     duration: "6 Hours (2 Days)",
     time: "10:00 AM - 1:00 PM IST",
@@ -52,13 +52,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-2",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Next-Gen Humanoid & Cybernetic Systems",
     category: "Robotics",
     badge: "NASA",
     dateMonth: "OCT",
     dateDay: "09",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Elena Rostova (CyberTech Labs)",
     duration: "5 Hours",
     time: "02:00 PM - 07:00 PM IST",
@@ -67,18 +67,18 @@ const WORKSHOPS_DATA = [
     fee: "₹549",
     spotsLeft: 8,
     description:
-      "Hands-on workshop covering ROS2, kinematic simulation, and computer vision integration for bipedal robotic manipulation and real-time posture adjustments.",
+      "Hands-on lecture covering ROS2, kinematic simulation, and computer vision integration for bipedal robotic manipulation and real-time posture adjustments.",
     prerequisites: "Fundamentals of C++ or Python, basic mechanics.",
   },
   {
     id: "ws-3",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Quantum Algorithms & Quantum Machine Learning",
     category: "AI & ML",
     badge: "NASA",
     dateMonth: "OCT",
     dateDay: "09",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Vikram Sen (Q-Core Institute)",
     duration: "4 Hours",
     time: "11:00 AM - 03:00 PM IST",
@@ -92,13 +92,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-4",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Orbital Mechanics & Satellite Telemetry",
     category: "Aerospace",
     badge: "NASA",
     dateMonth: "OCT",
     dateDay: "09",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Dr. Sarah Lin (Orbital Sciences)",
     duration: "6 Hours",
     time: "09:30 AM - 03:30 PM IST",
@@ -112,13 +112,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-5",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Generative AI Agents & Multi-Modal LLMs",
     category: "AI & ML",
     badge: "NASA",
     dateMonth: "OCT",
     dateDay: "09",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Arjun Nambiar (AI Research Group)",
     duration: "5 Hours",
     time: "01:00 PM - 06:00 PM IST",
@@ -132,13 +132,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-6",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Zero-Trust Cybersecurity & Threat Simulation",
     category: "Cybersecurity",
     badge: "NASA",
     dateMonth: "OCT",
     dateDay: "09",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Kavya Menon (DefSec Global)",
     duration: "6 Hours",
     time: "10:00 AM - 04:00 PM IST",
@@ -152,13 +152,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-7",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Advanced Drone Engineering & Swarm Intelligence",
     category: "Aerospace",
     badge: "NASA",
     dateMonth: "OCT",
     dateDay: "10",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Capt. Neil Iyer (AeroDynamics Lab)",
     duration: "6 Hours (2 Days)",
     time: "09:00 AM - 12:00 PM IST",
@@ -172,13 +172,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-8",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Rocket Propulsion & Hypersonic Aerodynamics",
     category: "Aerospace",
     badge: "ISRO",
     dateMonth: "OCT",
     dateDay: "10",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Dr. K. S. Namboodiri (VSSC / ISRO)",
     duration: "6 Hours",
     time: "10:00 AM - 04:00 PM IST",
@@ -192,13 +192,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-9",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Spacecraft Avionics & Interplanetary Comms",
     category: "Aerospace",
     badge: "ESA",
     dateMonth: "OCT",
     dateDay: "11",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Jean-Luc Dubois (Space Systems Europe)",
     duration: "5 Hours",
     time: "01:00 PM - 06:00 PM IST",
@@ -212,13 +212,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-10",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "ROS2 & Autonomous Mobile Robot Navigation",
     category: "Robotics",
     badge: "IEEE",
     dateMonth: "OCT",
     dateDay: "10",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Dr. Ananya Rao (Vision AI Institute)",
     duration: "6 Hours",
     time: "09:30 AM - 03:30 PM IST",
@@ -232,13 +232,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-11",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Bipedal Locomotion & Dynamic Balance Control",
     category: "Robotics",
     badge: "NASA",
     dateMonth: "OCT",
     dateDay: "11",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Prof. Kenneth Meyer (Dynamic Robotics)",
     duration: "5 Hours",
     time: "10:00 AM - 03:00 PM IST",
@@ -252,13 +252,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-12",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Underwater Robotics & Oceanic ROV Systems",
     category: "Robotics",
     badge: "IEEE",
     dateMonth: "OCT",
     dateDay: "11",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Tarun Chawla (OceanTech Innovations)",
     duration: "5 Hours",
     time: "02:00 PM - 07:00 PM IST",
@@ -272,13 +272,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-13",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Micro-Robotics & Surgical Robotic Manipulators",
     category: "Robotics",
     badge: "ASME",
     dateMonth: "OCT",
     dateDay: "12",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Dr. Maya Swaminathan (BioRobotics Lab)",
     duration: "4 Hours",
     time: "11:00 AM - 03:00 PM IST",
@@ -292,13 +292,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-14",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Computer Vision & Edge AI Object Detection",
     category: "AI & ML",
     badge: "IEEE",
     dateMonth: "OCT",
     dateDay: "10",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Arjun Nambiar (AI Research Group)",
     duration: "5 Hours",
     time: "11:00 AM - 04:00 PM IST",
@@ -312,13 +312,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-15",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Reinforcement Learning for Autonomous Driving",
     category: "AI & ML",
     badge: "NASA",
     dateMonth: "OCT",
     dateDay: "11",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Dr. David Sterling (AutoAI Labs)",
     duration: "6 Hours",
     time: "10:00 AM - 04:00 PM IST",
@@ -332,13 +332,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-16",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Diffusion Models & Neural Rendering (NeRFs)",
     category: "AI & ML",
     badge: "ACM",
     dateMonth: "OCT",
     dateDay: "12",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Siddharth Verma (Visual AI Labs)",
     duration: "5 Hours",
     time: "01:00 PM - 06:00 PM IST",
@@ -352,13 +352,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-17",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Ethical Hacking & Advanced Penetration Testing",
     category: "Cybersecurity",
     badge: "CEH",
     dateMonth: "OCT",
     dateDay: "10",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Aditya Kulkarni (HackSecure Labs)",
     duration: "6 Hours (2 Days)",
     time: "09:30 AM - 12:30 PM IST",
@@ -372,13 +372,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-18",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Cloud Security Architecture & DevSecOps",
     category: "Cybersecurity",
     badge: "CNCF",
     dateMonth: "OCT",
     dateDay: "11",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Karthik Mohan (CloudScale Solutions)",
     duration: "5 Hours",
     time: "10:00 AM - 03:00 PM IST",
@@ -392,13 +392,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-19",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Hardware Security, Side-Channel & Firmware Hacking",
     category: "Cybersecurity",
     badge: "DEFCON",
     dateMonth: "OCT",
     dateDay: "12",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Naveen Raj (HardSec Research)",
     duration: "5 Hours",
     time: "09:00 AM - 02:00 PM IST",
@@ -412,13 +412,13 @@ const WORKSHOPS_DATA = [
   },
   {
     id: "ws-20",
-    title: "Workshop",
+    title: "Lecture",
     fullTitle: "Cryptography & Quantum-Resistant Security",
     category: "Cybersecurity",
     badge: "IEEE",
     dateMonth: "OCT",
     dateDay: "12",
-    image: "/images/workshops/workshop-astronaut.jpg",
+    image: "/images/lectures/lecture-astronaut.jpg",
     instructor: "Dr. Radhika Iyer (CryptoResearch Group)",
     duration: "5 Hours",
     time: "02:00 PM - 07:00 PM IST",
@@ -547,16 +547,16 @@ const IDLE_FLOAT_TILT_MAX = 0.40;
 const IDLE_YIELD_DURATION = 0.5;
 const IDLE_RESTORE_DURATION = 0.85;
 
-export default function WorkshopsPage() {
+export default function LecturesPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [selectedWorkshop, setSelectedWorkshop] = useState(null);
+  const [selectedLecture, setSelectedLecture] = useState(null);
   const [viewDetailsMode, setViewDetailsMode] = useState(false);
 
   const [mounted, setMounted] = useState(false);
 
   // Step 6 — annotation callout render state
-  const [calloutWorkshop, setCalloutWorkshop] = useState(null);
+  const [calloutLecture, setCalloutLecture] = useState(null);
   const [calloutSide, setCalloutSide] = useState("right");
 
   // Click Zoom Transition state & locks
@@ -1375,10 +1375,10 @@ export default function WorkshopsPage() {
         duration: CALLOUT_EXIT_DURATION,
         ease: EASE,
         overwrite: "auto",
-        onComplete: () => setCalloutWorkshop(null),
+        onComplete: () => setCalloutLecture(null),
       });
     } else {
-      setCalloutWorkshop(null);
+      setCalloutLecture(null);
     }
 
     if (pathEl) {
@@ -1392,7 +1392,7 @@ export default function WorkshopsPage() {
     }
   };
 
-  const startCallout = (id, slotEl, workshop) => {
+  const startCallout = (id, slotEl, lecture) => {
     hardResetCallout();
 
     const labelEl = calloutLabelRef.current;
@@ -1402,13 +1402,13 @@ export default function WorkshopsPage() {
     const side = computeCalloutSide(slotEl);
     calloutSideRef.current = side;
     setCalloutSide(side);
-    setCalloutWorkshop(workshop);
+    setCalloutLecture(lecture);
 
-    const titleText = String(workshop.fullTitle ?? workshop.title ?? "Untitled").toUpperCase();
-    const venueName = getVenueName(workshop.venue);
-    const metaText = `${workshop.dateMonth} ${workshop.dateDay}${workshop.time ? ` · ${workshop.time}` : ""}${venueName ? ` · ${venueName}` : ""}`;
-    const descText = String(workshop.description ?? "No description available");
-    const priceText = `${workshop.fee != null ? workshop.fee : "N/A"}`;
+    const titleText = String(lecture.fullTitle ?? lecture.title ?? "Untitled").toUpperCase();
+    const venueName = getVenueName(lecture.venue);
+    const metaText = `${lecture.dateMonth} ${lecture.dateDay}${lecture.time ? ` · ${lecture.time}` : ""}${venueName ? ` · ${venueName}` : ""}`;
+    const descText = String(lecture.description ?? "No description available");
+    const priceText = `${lecture.fee != null ? lecture.fee : "N/A"}`;
 
     calloutDecodeRef.current = {
       title: { text: titleText, thresholds: buildResolveThresholds(titleText.length) },
@@ -1616,7 +1616,7 @@ export default function WorkshopsPage() {
     gsap.ticker.remove(tickRef.current);
   };
 
-  const handleCardEnter = (id, e, workshop) => {
+  const handleCardEnter = (id, e, lecture) => {
     if (isNavigatingRef.current) return;
     if (!isFinePointer.current || prefersReducedMotion.current) return;
 
@@ -1685,7 +1685,7 @@ export default function WorkshopsPage() {
       startCardPulse(id, pulseOrigin.x, pulseOrigin.y);
     }
 
-    startCallout(id, slotEl, workshop);
+    startCallout(id, slotEl, lecture);
   };
 
   const handleCardMove = (id, e) => {
@@ -1877,7 +1877,7 @@ export default function WorkshopsPage() {
     });
 
     hardResetCallout();
-    setCalloutWorkshop(null);
+    setCalloutLecture(null);
     resetAllCardActivations();
     stopAllCardPulses();
     hardResetFocusOverlay();
@@ -1943,7 +1943,7 @@ export default function WorkshopsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Scroll progress for the staggered workshop columns
+  // Scroll progress for the staggered lecture columns
   const [scrollProgress, setScrollProgress] = useState(0);
   const [columnCount, setColumnCount] = useState(4);
   const gridRef = React.useRef(null);
@@ -2014,9 +2014,9 @@ export default function WorkshopsPage() {
       window.removeEventListener("resize", handleScroll);
     };
   }, []);
-  // Filtered workshops
-  const filteredWorkshops = useMemo(() => {
-    return WORKSHOPS_DATA.filter((item) => {
+  // Filtered lectures
+  const filteredLectures = useMemo(() => {
+    return LECTURES_DATA.filter((item) => {
       const query = searchQuery.trim().toLowerCase();
 
       return (
@@ -2030,8 +2030,8 @@ export default function WorkshopsPage() {
   }, [searchQuery]);
 
   return (
-    <div className="workshops-page min-h-screen bg-[#06070d] text-slate-100 font-sans relative overflow-x-clip selection:bg-indigo-600 selection:text-white pb-24">
-      <style>{workshopsStyles}</style>
+    <div className="lectures-page min-h-screen bg-[#06070d] text-slate-100 font-sans relative overflow-x-clip selection:bg-indigo-600 selection:text-white pb-24">
+      <style>{lecturesStyles}</style>
 
       {/* BACKGROUND AMBIENT STARS & GRADIENT */}
       <div className="fixed inset-0 pointer-events-none z-0">
@@ -2049,8 +2049,8 @@ export default function WorkshopsPage() {
           <div className="relative aspect-[677/197] w-full">
 
             <Image
-              src="/images/workshops/cosmic-banner.png"
-              alt="Tathva '26 Workshops Cosmic Supernova Banner"
+              src="/images/lectures/cosmic-banner.png"
+              alt="Tathva '26 Lectures Cosmic Supernova Banner"
               fill
               priority
               sizes="(max-width: 768px) 100vw, 1280px"
@@ -2080,7 +2080,7 @@ export default function WorkshopsPage() {
                 }}
                 className="text-white leading-none m-0"
               >
-                WORKSHOPS
+                LECTURES
               </h1>
 
             </div>
@@ -2092,7 +2092,7 @@ export default function WorkshopsPage() {
                 <span className="font-semibold">Get ready to innovate and create</span>
                 {`. The `}
                 <span className="font-semibold">TATHVA&apos;26</span>
-                {` Workshops bring you face-to-face with cutting-edge technologies and industry experts. Dive into interactive, practical sessions, build functional projects from scratch, and earn `}
+                {` Lectures bring you face-to-face with cutting-edge technologies and industry experts. Dive into interactive, practical sessions, build functional projects from scratch, and earn `}
                 <span className="font-semibold">Activity Points</span>
                 {` along with an `}
                 <span className="font-semibold">official Certificate</span>
@@ -2145,15 +2145,15 @@ export default function WorkshopsPage() {
 
         </section>
 
-        {/* WORKSHOP CARDS GRID */}
+        {/* LECTURE CARDS GRID */}
         <section className="relative w-full">
 
-          {filteredWorkshops.length === 0 ? (
+          {filteredLectures.length === 0 ? (
 
             <div className="py-20 text-center text-slate-400">
 
               <p className="text-lg">
-                No workshops found matching your search.
+                No lectures found matching your search.
               </p>
 
               <button
@@ -2172,7 +2172,7 @@ export default function WorkshopsPage() {
             (() => {
 
               /*
-               * Split the workshops into four columns.
+               * Split the lectures into four columns.
                *
                * Column 1 → starts at 0px
                * Column 2 → starts at 60px
@@ -2184,14 +2184,14 @@ export default function WorkshopsPage() {
                */
 
               const columns = Array.from({ length: columnCount }, (_, columnIndex) =>
-                filteredWorkshops.filter((_, i) => i % columnCount === columnIndex)
+                filteredLectures.filter((_, i) => i % columnCount === columnIndex)
               );
 
               return (
 
                 <div
                   ref={gridRef}
-                  id="workshop-grid"
+                  id="lecture-grid"
                   className="mx-auto grid w-full grid-cols-2 gap-x-[30px] gap-y-[18px] md:grid-cols-3 lg:grid-cols-4"
                   onMouseLeave={handleGridLeave}
                 >
@@ -2213,14 +2213,14 @@ export default function WorkshopsPage() {
                         }}
                       >
 
-                        {column.map((workshop, rowIndex) => (
+                        {column.map((lecture, rowIndex) => (
 
                           <div
-                            key={workshop.id}
+                            key={lecture.id}
                             className="relative"
                             ref={(el) => {
-                              if (el) slotRefs.current[workshop.id] = el;
-                              else delete slotRefs.current[workshop.id];
+                              if (el) slotRefs.current[lecture.id] = el;
+                              else delete slotRefs.current[lecture.id];
                               if (columnIndex === 0 && rowIndex === column.length - 1 && lastRowRef) {
                                 lastRowRef.current = el;
                               }
@@ -2230,14 +2230,14 @@ export default function WorkshopsPage() {
                               transformOrigin: "center center",
                               willChange: "transform",
                             }}
-                            onMouseEnter={(e) => handleCardEnter(workshop.id, e, workshop)}
-                            onMouseMove={(e) => handleCardMove(workshop.id, e)}
-                            onMouseLeave={() => handleCardLeave(workshop.id)}
+                            onMouseEnter={(e) => handleCardEnter(lecture.id, e, lecture)}
+                            onMouseMove={(e) => handleCardMove(lecture.id, e)}
+                            onMouseLeave={() => handleCardLeave(lecture.id)}
                           >
                             <div
                               ref={(el) => {
-                                if (el) floatRefs.current[workshop.id] = el;
-                                else delete floatRefs.current[workshop.id];
+                                if (el) floatRefs.current[lecture.id] = el;
+                                else delete floatRefs.current[lecture.id];
                               }}
                               style={{
                                 transformStyle: "preserve-3d",
@@ -2246,8 +2246,8 @@ export default function WorkshopsPage() {
                             >
                               <div
                                 ref={(el) => {
-                                  if (el) cardRefs.current[workshop.id] = el;
-                                  else delete cardRefs.current[workshop.id];
+                                  if (el) cardRefs.current[lecture.id] = el;
+                                  else delete cardRefs.current[lecture.id];
                                 }}
                                 className="group relative aspect-[0.9825] w-full overflow-hidden bg-[#0d101c]"
                                 style={{
@@ -2261,8 +2261,8 @@ export default function WorkshopsPage() {
                               >
                                 <div
                                   ref={(el) => {
-                                    if (el) frontFaceRefs.current[workshop.id] = el;
-                                    else delete frontFaceRefs.current[workshop.id];
+                                    if (el) frontFaceRefs.current[lecture.id] = el;
+                                    else delete frontFaceRefs.current[lecture.id];
                                   }}
                                   className="relative flex flex-col justify-between w-full h-full"
                                   style={{
@@ -2275,27 +2275,27 @@ export default function WorkshopsPage() {
                                   {/* Step 9 — digital activation pixelated overlay */}
                                   <div
                                     ref={(el) => {
-                                      if (el) activationOverlayRefs.current[workshop.id] = el;
-                                      else delete activationOverlayRefs.current[workshop.id];
+                                      if (el) activationOverlayRefs.current[lecture.id] = el;
+                                      else delete activationOverlayRefs.current[lecture.id];
                                     }}
-                                    className="workshop-activation-overlay pointer-events-none absolute inset-0 z-10"
+                                    className="lecture-activation-overlay pointer-events-none absolute inset-0 z-10"
                                   />
 
                                   {/* Step 10 — continuous digital pulse overlay */}
                                   <div
                                     ref={(el) => {
-                                      if (el) pulseOverlayRefs.current[workshop.id] = el;
-                                      else delete pulseOverlayRefs.current[workshop.id];
+                                      if (el) pulseOverlayRefs.current[lecture.id] = el;
+                                      else delete pulseOverlayRefs.current[lecture.id];
                                     }}
-                                    className="workshop-pulse-overlay pointer-events-none absolute inset-0 z-10"
+                                    className="lecture-pulse-overlay pointer-events-none absolute inset-0 z-10"
                                   />
 
                                   {/* CARD VISUAL ARTWORK */}
                                   <div
                                     className="absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-slate-900"
                                     style={{
-                                      maskImage: "url('/images/workshops/workshop-card-image.png')",
-                                      WebkitMaskImage: "url('/images/workshops/workshop-card-image.png')",
+                                      maskImage: "url('/images/lectures/lecture-card-image.png')",
+                                      WebkitMaskImage: "url('/images/lectures/lecture-card-image.png')",
                                       maskPosition: "center",
                                       WebkitMaskPosition: "center",
                                       maskRepeat: "no-repeat",
@@ -2305,8 +2305,8 @@ export default function WorkshopsPage() {
                                     }}
                                   >
                                     <Image
-                                      src={workshop.image}
-                                      alt={workshop.fullTitle}
+                                      src={lecture.image}
+                                      alt={lecture.fullTitle}
                                       fill
                                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                                       className="object-cover object-center transition-transform duration-500 ease-out"
@@ -2325,21 +2325,21 @@ export default function WorkshopsPage() {
                                   {/* FIGMA CARD LABELS */}
                                   <div className="absolute inset-x-0 bottom-0 z-20 h-[13.5%]">
                                     <p className="absolute bottom-[9%] left-[29.73%] right-[26.82%] text-right text-[5.5cqw] font-bold leading-[normal] text-white">
-                                      Workshop
+                                      Lecture
                                     </p>
-                                    <div className="absolute bottom-[80%] right-[1.1%] flex flex-col items-end leading-none">
+                                    <div className="absolute bottom-[81%] right-[1.1%] flex flex-col items-end leading-none">
                                       <span className="mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#fbebec]">
-                                        {workshop.dateMonth}
+                                        {lecture.dateMonth}
                                       </span>
                                       <span className="text-[8.07cqw] font-bold text-white">
-                                        {workshop.dateDay}
+                                        {lecture.dateDay}
                                       </span>
                                     </div>
                                   </div>
 
                                   <div className="pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30">
                                     <img
-                                      src="/images/workshops/workshop-card-border.svg"
+                                      src="/images/lectures/lecture-card-border.svg"
                                       alt=""
                                       className="absolute inset-[-0.38%] h-full w-full"
                                     />
@@ -2373,7 +2373,7 @@ export default function WorkshopsPage() {
               {/* Step 11 — global dark focus overlay */}
               <div
                 ref={focusOverlayRef}
-                className="workshop-focus-overlay pointer-events-none fixed inset-0 z-10"
+                className="lecture-focus-overlay pointer-events-none fixed inset-0 z-10"
                 style={{
                   opacity: 0,
                   backgroundColor: FOCUS_OVERLAY_COLOR,
@@ -2402,7 +2402,7 @@ export default function WorkshopsPage() {
 
       {/* GSAP SPECIFIC CSS */}
       <style jsx global>{`
-        .workshop-pulse-overlay {
+        .lecture-pulse-overlay {
           background: radial-gradient(
             circle calc(var(--pulse-radius) * 1px) at calc(var(--pulse-x) * 1%) calc(var(--pulse-y) * 1%),
             rgba(255, 255, 255, var(--pulse-alpha)) 0%,
@@ -2411,7 +2411,7 @@ export default function WorkshopsPage() {
           mix-blend-mode: overlay;
         }
 
-        .workshop-activation-overlay {
+        .lecture-activation-overlay {
           background: 
             radial-gradient(
               circle ${ACTIVATION_RING_SPREAD}px at calc(var(--activation-x)) calc(var(--activation-y)),
@@ -2445,13 +2445,13 @@ export default function WorkshopsPage() {
         }
       `}</style>
 
-      {/* WORKSHOP DETAILS MODAL */}
-      {selectedWorkshop && (
+      {/* LECTURE DETAILS MODAL */}
+      {selectedLecture && (
 
         <div
           className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#06050b] bg-cover bg-center p-4 text-white animate-in fade-in duration-200"
-          style={{ backgroundImage: "url('/images/workshop-detail-bg.png')" }}
-          onClick={() => setSelectedWorkshop(null)}
+          style={{ backgroundImage: "url('/images/lecture-detail-bg.png')" }}
+          onClick={() => setSelectedLecture(null)}
         >
 
           <div
@@ -2463,9 +2463,9 @@ export default function WorkshopsPage() {
             {/* CLOSE BUTTON */}
             <button
               type="button"
-              onClick={() => setSelectedWorkshop(null)}
+              onClick={() => setSelectedLecture(null)}
               className="absolute right-4 top-4 z-10 rounded-md p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
-              aria-label="Close workshop details"
+              aria-label="Close lecture details"
             >
 
               <svg
@@ -2490,8 +2490,8 @@ export default function WorkshopsPage() {
               <div>
                 <div className="relative aspect-square overflow-hidden rounded-[7px] border border-[#737373]">
                   <Image
-                    src={selectedWorkshop.image}
-                    alt={selectedWorkshop.fullTitle}
+                    src={selectedLecture.image}
+                    alt={selectedLecture.fullTitle}
                     fill
                     sizes="216px"
                     className="object-cover object-center"
@@ -2501,12 +2501,12 @@ export default function WorkshopsPage() {
                 <div className="mt-2 flex items-end justify-between px-1">
                   <span className="flex items-baseline leading-none text-white">
                     <span className="font-sans text-3xl font-bold">₹</span>
-                    <span className={`workshops-jaro text-3xl`}>
-                      {selectedWorkshop.fee.replace(/^₹/, "")}
+                    <span className={`lectures-jaro text-3xl`}>
+                      {selectedLecture.fee.replace(/^₹/, "")}
                     </span>
                   </span>
                   <span className="font-bold text-base leading-none text-white">
-                    {selectedWorkshop.dateDay} {selectedWorkshop.dateMonth}
+                    {selectedLecture.dateDay} {selectedLecture.dateMonth}
                   </span>
                 </div>
 
@@ -2519,16 +2519,16 @@ export default function WorkshopsPage() {
               </div>
 
               <div className="pt-2 sm:pt-6">
-                <h2 className={`workshops-fragment-serif max-w-full overflow-hidden whitespace-nowrap text-[clamp(1.75rem,7cqw,3rem)] leading-none text-white`}>
-                  WORKSHOPS
+                <h2 className={`lectures-fragment-serif max-w-full overflow-hidden whitespace-nowrap text-[clamp(1.75rem,7cqw,3rem)] leading-none text-white`}>
+                  LECTURES
                 </h2>
 
                 <div className="mt-7 space-y-2">
                   <h3 className="text-base font-semibold text-[#e2e2e2]">
-                    About the workshop
+                    About the lecture
                   </h3>
                   <p className="text-[9px] leading-[1.25] text-[#8d8d8d]">
-                    {selectedWorkshop.description}
+                    {selectedLecture.description}
                   </p>
                 </div>
 
