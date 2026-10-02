@@ -2,6 +2,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
 import { useGSAP } from '@gsap/react'
 import { animateBird, TRAIL_START, BRIDGE, TRAIL_END, FLIGHT_PATH } from './birdFlight'
 import styles from './Hero.module.css'

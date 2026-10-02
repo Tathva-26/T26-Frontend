@@ -147,19 +147,7 @@ export default function Preloader({ onComplete }) {
   }, [])
 
   // -------------------------------------------------------------
-  // 2. LOADING SEQUENCE — waits for every image/video on the page to
-  //    finish loading, not just Hero's. `window.load` isn't enough here:
-  //    some sections (e.g. TechConclave) only mount their real content
-  //    after their own hydration-guard effect fires, so their <img>/
-  //    <video> tags don't exist yet at the moment `load` would fire, and
-  //    native `loading="lazy"` images (ProshowCarousel, HorizontalGallery)
-  //    don't start fetching until they're near the viewport. So instead
-  //    we scan the live DOM directly, force lazy images to fetch now, and
-  //    use a MutationObserver to keep catching media that mounts late —
-  //    only finishing once nothing new has appeared for a short quiet
-  //    period and nothing tracked is still pending.
-  //    MIN keeps the preloader from flashing on a cached reload; MAX is a
-  //    safety net so one stalled asset can't hang it forever.
+  // 2. LOADING SEQUENCE
   // -------------------------------------------------------------
   useEffect(() => {
     const MIN_VISIBLE_MS = 1200
@@ -193,13 +181,11 @@ export default function Preloader({ onComplete }) {
       const isVideo = el.tagName === 'VIDEO'
       if (!isImage && !isVideo) return
 
-      // Native lazy-loading defers the fetch until near the viewport —
-      // force it now so the preloader can actually wait on it.
       if (isImage && el.loading === 'lazy') el.loading = 'eager'
 
       const isReady = isImage
         ? el.complete && el.naturalWidth > 0
-        : el.readyState >= 3 // HAVE_FUTURE_DATA
+        : el.readyState >= 3 
 
       if (isReady) return
 
@@ -247,8 +233,7 @@ export default function Preloader({ onComplete }) {
   }, [])
 
   // -------------------------------------------------------------
-  // 3. RADIAL REVEAL — punch a hole from the center outward,
-  //    uncovering the hero underneath, then unmount.
+  // 3. RADIAL REVEAL
   // -------------------------------------------------------------
   useEffect(() => {
     if (!revealing) return
@@ -290,69 +275,30 @@ export default function Preloader({ onComplete }) {
 
   return (
     <>
-      {/* Dynamic Keyframes for 3D Gimbal Animations */}
       <style jsx global>{`
         @keyframes gimbalOuter {
-          0% {
-            transform: rotateZ(0deg) rotateX(0deg) rotateY(0deg);
-          }
-          30% {
-            transform: rotateZ(360deg) rotateX(0deg) rotateY(0deg);
-          }
-          70% {
-            transform: rotateZ(540deg) rotateX(65deg) rotateY(160deg);
-          }
-          100% {
-            transform: rotateZ(720deg) rotateX(90deg) rotateY(0deg);
-          }
+          0% { transform: rotateZ(0deg) rotateX(0deg) rotateY(0deg); }
+          30% { transform: rotateZ(360deg) rotateX(0deg) rotateY(0deg); }
+          70% { transform: rotateZ(540deg) rotateX(65deg) rotateY(160deg); }
+          100% { transform: rotateZ(720deg) rotateX(90deg) rotateY(0deg); }
         }
         @keyframes gimbalMiddle {
-          0% {
-            transform: rotateZ(0deg) rotateX(0deg) rotateY(0deg);
-          }
-          30% {
-            transform: rotateZ(-540deg) rotateX(0deg) rotateY(0deg);
-          }
-          70% {
-            transform: rotateZ(-360deg) rotateX(-75deg) rotateY(-130deg);
-          }
-          100% {
-            transform: rotateZ(-180deg) rotateX(90deg) rotateY(0deg);
-          }
+          0% { transform: rotateZ(0deg) rotateX(0deg) rotateY(0deg); }
+          30% { transform: rotateZ(-540deg) rotateX(0deg) rotateY(0deg); }
+          70% { transform: rotateZ(-360deg) rotateX(-75deg) rotateY(-130deg); }
+          100% { transform: rotateZ(-180deg) rotateX(90deg) rotateY(0deg); }
         }
         @keyframes gimbalInner {
-          0% {
-            transform: rotateZ(0deg) rotateX(0deg) rotateY(0deg);
-          }
-          30% {
-            transform: rotateZ(720deg) rotateX(0deg) rotateY(0deg);
-          }
-          70% {
-            transform: rotateZ(1080deg) rotateX(110deg) rotateY(320deg);
-          }
-          100% {
-            transform: rotateZ(1440deg) rotateX(90deg) rotateY(0deg);
-          }
+          0% { transform: rotateZ(0deg) rotateX(0deg) rotateY(0deg); }
+          30% { transform: rotateZ(720deg) rotateX(0deg) rotateY(0deg); }
+          70% { transform: rotateZ(1080deg) rotateX(110deg) rotateY(320deg); }
+          100% { transform: rotateZ(1440deg) rotateX(90deg) rotateY(0deg); }
         }
-        /* Core: tracks the inner ring through 70%, then settles
-           face-forward (rotateX 0) so the SVG is readable at the end. */
         @keyframes gimbalCore {
-          0% {
-            transform: translateZ(20px) rotateZ(0deg) rotateX(0deg)
-              rotateY(0deg);
-          }
-          30% {
-            transform: translateZ(20px) rotateZ(720deg) rotateX(0deg)
-              rotateY(0deg);
-          }
-          70% {
-            transform: translateZ(20px) rotateZ(1080deg) rotateX(110deg)
-              rotateY(320deg);
-          }
-          100% {
-            transform: translateZ(20px) rotateZ(1440deg) rotateX(0deg)
-              rotateY(0deg);
-          }
+          0% { transform: translateZ(20px) rotateZ(0deg) rotateX(0deg) rotateY(0deg); }
+          30% { transform: translateZ(20px) rotateZ(720deg) rotateX(0deg) rotateY(0deg); }
+          70% { transform: translateZ(20px) rotateZ(1080deg) rotateX(110deg) rotateY(320deg); }
+          100% { transform: translateZ(20px) rotateZ(1440deg) rotateX(0deg) rotateY(0deg); }
         }
         .animate-gimbal-outer {
           animation: gimbalOuter 4.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
@@ -368,11 +314,11 @@ export default function Preloader({ onComplete }) {
         }
       `}</style>
 
-      {/* PRELOADER WRAPPER */}
+      {/* PRELOADER WRAPPER: Added overflow-hidden */}
       <div
         ref={overlayRef}
         data-preloader=''
-        className={`fixed inset-0 z-[10050] flex items-center justify-center bg-[#030303] ${
+        className={`fixed inset-0 z-[10050] flex items-center justify-center bg-[#030303] overflow-hidden ${
           revealing ? 'pointer-events-none' : ''
         }`}
       >
@@ -382,8 +328,8 @@ export default function Preloader({ onComplete }) {
           className='absolute inset-0 z-[1] pointer-events-none w-full h-full'
         />
 
-        {/* HUD CONTENT */}
-        <div className='relative z-[2] flex items-center justify-center [perspective:1200px]'>
+        {/* HUD CONTENT: Added responsive scale classes to shrink the entire 3D structure on mobile */}
+        <div className='relative z-[2] flex items-center justify-center [perspective:1200px] scale-[0.55] sm:scale-75 md:scale-100'>
           <div className='relative w-[600px] h-[600px] flex items-center justify-center [transform-style:preserve-3d]'>
             {/* OUTER RING */}
             <div
@@ -595,7 +541,7 @@ export default function Preloader({ onComplete }) {
               </svg>
             </div>
 
-            {/* CORE LOGO — follows the inner ring, settles face-forward */}
+            {/* CORE LOGO */}
             <div className='absolute w-[120px] h-[120px] flex items-center justify-center [transform-style:preserve-3d] will-change-transform animate-gimbal-core'>
               <img
                 src='/images/hero/tathvalogo.png'
