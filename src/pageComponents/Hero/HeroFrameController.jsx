@@ -36,6 +36,8 @@ export default function HeroFrameController({ children }) {
   const [unlocked, setUnlocked] = useState(false);
   // `children` are heavy, so they only mount once the user first unlocks past Frame.
   const [hasReachedContent, setHasReachedContent] = useState(false);
+  // wrapper around `children`, observed so ScrollTrigger can re-measure when content settles
+  const contentRef = useRef(null);
 
   useEffect(() => {
     sectionRef.current = section;
@@ -88,6 +90,41 @@ export default function HeroFrameController({ children }) {
     if (hasReachedContent) ScrollTrigger.refresh();
   }, [unlocked, hasReachedContent]);
 
+  // `children` mount AFTER the page's load event, so ScrollTrigger's own auto-refresh has already
+  // run. Images / videos / fonts inside them keep changing the layout after that, leaving every
+  // pin and scrub measured against stale positions (worst when scrolling back UP through them:
+  // clipped / glitching sections). Re-measure (debounced) whenever the content's size changes.
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!hasReachedContent || !el) return undefined;
+    let timer = 0;
+    const ro = new ResizeObserver(() => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        window.__lenis?.resize();
+        ScrollTrigger.refresh();
+      }, 200);
+    });
+    ro.observe(el);
+    return () => {
+      window.clearTimeout(timer);
+      ro.disconnect();
+    };
+  }, [hasReachedContent]);
+
+  // Coming back to the tab (or window) after Chrome has dropped its GPU tiles: pins from the
+  // sections below can still be in their "fixed" state until the next scroll event, so they paint
+  // over Hero for a few frames. Re-sync every trigger as soon as the tab is visible again.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      window.__lenis?.resize();
+      requestAnimationFrame(() => ScrollTrigger.update());
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
+
   // Re-lock when the user scrolls up past the very top of the page while unlocked.
   useEffect(() => {
     if (!unlocked) return undefined;
@@ -97,6 +134,8 @@ export default function HeroFrameController({ children }) {
     const handleWheel = (e) => {
       if (e.deltaY >= 0 || mainScroll.scrollTop > 0) return;
       e.preventDefault();
+      // stop Lenis carrying leftover momentum into the locked state
+      window.__lenis?.scrollTo(0, { immediate: true });
       setUnlocked(false);
     };
 
@@ -150,7 +189,14 @@ export default function HeroFrameController({ children }) {
 
       {!isMobile && <TathvaMenu />}
 
-      {hasReachedContent && children}
+      {/* While locked, `children` stay mounted but hidden. `visibility: hidden` also hides
+          position: fixed descendants (pinned sections, underlays), which overflow: hidden on the
+          wrapper above does NOT clip, so nothing can paint over Hero / Frame. */}
+      {hasReachedContent && (
+        <div ref={contentRef} style={{ visibility: unlocked ? "visible" : "hidden" }}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }
