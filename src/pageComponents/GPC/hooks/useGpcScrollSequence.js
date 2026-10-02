@@ -190,6 +190,11 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence }) {
       // the timeline, so it already holds at the very top of the scroll.
       gsap.set(consoleBox, { pointerEvents: "none" });
 
+      const gameStop = SEQUENCE.tagline[1] / 100;
+      let gameStopReached = false;
+      let pendingSnapPoint = null;
+      let snappingWithLenis = false;
+
       // Positions are % of the pinned scroll.
       const tl = gsap.timeline({
         defaults: { ease: "none" },
@@ -201,6 +206,57 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence }) {
           end: "bottom bottom",
           // Lenis already smooths the scroll; a numeric scrub would add a second lag.
           scrub: true,
+          // Route the snap through Lenis when it is available: a native
+          // ScrollTrigger scroll tween is overwritten by Lenis' next RAF.
+          snap: {
+            snapTo: (value, trigger) => {
+              if (snappingWithLenis) return value;
+
+              if (trigger.direction > 0) {
+                pendingSnapPoint = gameStopReached ? null : gameStop;
+              } else if (trigger.direction < 0) {
+                pendingSnapPoint = value > gameStop ? gameStop : 0;
+              } else {
+                pendingSnapPoint = Math.abs(value - gameStop) < Math.abs(value) ? gameStop : 0;
+              }
+              if (pendingSnapPoint === null) return value;
+
+              const lenis = window.__lenis;
+              if (lenis) {
+                const targetProgress = pendingSnapPoint;
+                const target = trigger.start + (trigger.end - trigger.start) * targetProgress;
+                snappingWithLenis = true;
+                lenis.scrollTo(target, {
+                  duration: 0.9,
+                  lock: true,
+                  easing: (progress) => 1 - Math.pow(1 - progress, 3),
+                  onComplete: () => {
+                    gameStopReached = targetProgress === gameStop;
+                    pendingSnapPoint = null;
+                    snappingWithLenis = false;
+                  },
+                });
+                // Keep GSAP from moving native scrollTop behind Lenis.
+                return value;
+              }
+
+              return pendingSnapPoint;
+            },
+            delay: 0.08,
+            duration: { min: 0.7, max: 1.1 },
+            ease: "power2.out",
+            inertia: false,
+            onComplete: () => {
+              if (!snappingWithLenis) {
+                if (pendingSnapPoint === gameStop) gameStopReached = true;
+                else if (pendingSnapPoint === 0) gameStopReached = false;
+              }
+              pendingSnapPoint = null;
+            },
+            onInterrupt: () => {
+              pendingSnapPoint = null;
+            },
+          },
         },
       });
 

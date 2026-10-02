@@ -573,6 +573,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
     }
     window.addEventListener('resize', handleResize)
 
+    let handoffSnapStarted = false
     const trigger = ScrollTrigger.create({
       scroller,
       trigger: containerRef.current,
@@ -591,6 +592,36 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       scrub: 0,
       invalidateOnRefresh: true,
       onUpdate: (self) => {
+        const lenis = window.__lenis
+        if (self.direction < 0 && self.progress < FRAME_PROGRESS_END) {
+          handoffSnapStarted = false
+        } else if (
+          revealUnderlay &&
+          lenis &&
+          !handoffSnapStarted &&
+          self.direction > 0 &&
+          self.progress >= FRAME_PROGRESS_END
+        ) {
+          // When the frame sequence reaches its final frame, land at the later
+          // of Wheels' fade completion and Robowars' timeline end. This is the
+          // exact fully revealed Robowars frame, rather than merely the point
+          // where its underlay first appears.
+          handoffSnapStarted = true
+          const robowarsTimeline = document.querySelector('[data-robowars-timeline]')
+          const scrollerRect = scroller === window ? null : scroller.getBoundingClientRect()
+          const scrollerBottom = scrollerRect ? scrollerRect.bottom : window.innerHeight
+          const robowarsEnd = robowarsTimeline
+            ? lenis.scroll + robowarsTimeline.getBoundingClientRect().bottom - scrollerBottom
+            : self.end
+          const target = Math.min(lenis.limit, Math.max(self.end, robowarsEnd))
+
+          lenis.scrollTo(target, {
+            duration: 0.9,
+            lock: true,
+            easing: (progress) => 1 - Math.pow(1 - progress, 3),
+          })
+        }
+
         if (self.progress <= FRAME_PROGRESS_END) {
           targetFrameRef.current =
             (self.progress / FRAME_PROGRESS_END) * (FRAME_COUNT - 1)

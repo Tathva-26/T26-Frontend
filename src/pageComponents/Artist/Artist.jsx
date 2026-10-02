@@ -103,11 +103,12 @@ function gpcOverlapPx() {
 
 function useScrubCrossfade(
   ref,
-  { bgRefs, portraitRefs, boardRefs, onIndexChange, snap = false },
+  { bgRefs, portraitRefs, boardRefs, onIndexChange, snap = true },
 ) {
   // Set while the timeline is alive: maps an artist index to the scroll
   // position where that artist is shown whole (see scrollToIndex below).
   const scrollForIndex = useRef(null)
+  const settledArtistIndex = useRef(0)
 
   useLayoutEffect(() => {
     const section = ref.current
@@ -145,6 +146,11 @@ function useScrubCrossfade(
         gsap.set(boards.slice(1), { yPercent: 100, autoAlpha: 0 })
 
       const total = timelineTotal(count)
+      const artistStops = Array.from(
+        { length: count },
+        (_, index) => (HOLD / 2 + index * STEP) / total,
+      )
+      let pendingArtistIndex = null
 
       const tl = gsap.timeline({
         defaults: { duration: 1 },
@@ -156,7 +162,54 @@ function useScrubCrossfade(
           // last artist is already held still when GPC starts pulling back
           // out of it. (A function so it is re-read on every refresh.)
           end: () => `bottom bottom+=${gpcOverlapPx()}`,
-          scrub: 0.8,
+          // Let the snap tween itself carry the crossfade; a second scrub lag
+          // made the visible artist continue changing after the scroll settled.
+          scrub: true,
+          ...(snap && {
+            // Settle on the fully visible hold for each artist. Leave the
+            // ranges beyond the first/last artist free so adjacent sections
+            // (especially GPC) can take over without being pulled back here.
+            snap: {
+              snapTo: (value, trigger) => {
+                const direction = trigger.direction
+                if (direction > 0) {
+                  pendingArtistIndex = settledArtistIndex.current + 1
+                } else if (direction < 0) {
+                  pendingArtistIndex = settledArtistIndex.current - 1
+                } else {
+                  pendingArtistIndex = artistStops.reduce(
+                    (nearest, point, index) =>
+                      Math.abs(point - value) < Math.abs(artistStops[nearest] - value)
+                        ? index
+                        : nearest,
+                    0,
+                  )
+                  return artistStops[pendingArtistIndex]
+                }
+
+                // Advance exactly one artist per completed scroll gesture.
+                // At either edge, let the page continue into the neighboring
+                // section instead of snapping back to an artist.
+                if (pendingArtistIndex < 0 || pendingArtistIndex >= count) {
+                  pendingArtistIndex = null
+                  return value
+                }
+                return artistStops[pendingArtistIndex]
+              },
+              delay: 0.1,
+              duration: { min: 0.45, max: 0.85 },
+              ease: 'power2.out',
+              onComplete: () => {
+                if (pendingArtistIndex !== null) {
+                  settledArtistIndex.current = pendingArtistIndex
+                  pendingArtistIndex = null
+                }
+              },
+              onInterrupt: () => {
+                pendingArtistIndex = null
+              },
+            },
+          }),
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             if (onIndexChange) {
@@ -239,7 +292,9 @@ function useScrubCrossfade(
   // a plain smooth scroll.
   return useCallback(
     (idx) => {
-      const target = scrollForIndex.current?.(idx)
+      const targetIndex = Math.trunc(idx)
+      settledArtistIndex.current = targetIndex
+      const target = scrollForIndex.current?.(targetIndex)
       if (target == null) return
       const scroller = ref.current?.closest('.main-scroll')
       if (window.__lenis) window.__lenis.scrollTo(target)
