@@ -256,6 +256,26 @@ export default function Preloader({ onComplete }) {
             transform: rotateZ(1440deg) rotateX(90deg) rotateY(0deg);
           }
         }
+        /* Core: tracks the inner ring through 70%, then settles
+           face-forward (rotateX 0) so the SVG is readable at the end. */
+        @keyframes gimbalCore {
+          0% {
+            transform: translateZ(20px) rotateZ(0deg) rotateX(0deg)
+              rotateY(0deg);
+          }
+          30% {
+            transform: translateZ(20px) rotateZ(720deg) rotateX(0deg)
+              rotateY(0deg);
+          }
+          70% {
+            transform: translateZ(20px) rotateZ(1080deg) rotateX(110deg)
+              rotateY(320deg);
+          }
+          100% {
+            transform: translateZ(20px) rotateZ(1440deg) rotateX(0deg)
+              rotateY(0deg);
+          }
+        }
         .animate-gimbal-outer {
           animation: gimbalOuter 4.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
@@ -264,6 +284,9 @@ export default function Preloader({ onComplete }) {
         }
         .animate-gimbal-inner {
           animation: gimbalInner 4.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        .animate-gimbal-core {
+          animation: gimbalCore 4.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
       `}</style>
 
@@ -493,6 +516,15 @@ export default function Preloader({ onComplete }) {
               </svg>
             </div>
 
+            {/* CORE LOGO — follows the inner ring, settles face-forward */}
+            <div className='absolute w-[120px] h-[120px] flex items-center justify-center [transform-style:preserve-3d] will-change-transform animate-gimbal-core'>
+              <img
+                src='/images/hero/tathvalogo.png'
+                alt=''
+                draggable={false}
+                className='w-full h-full object-contain select-none'
+              />
+            </div>
           </div>
         </div>
       </div>
