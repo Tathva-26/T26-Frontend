@@ -50,14 +50,22 @@ export const TV_ART_STYLE = {
   maxWidth: "none",
 };
 
+const ROBOWARS_FRAME_ASPECT = ROBOWARS_FRAME_WIDTH / ROBOWARS_FRAME_HEIGHT;
+
 // Where the Robowars TV prop's screen sits on screen, in px, while Robowars is
-// pinned. Mirrors DesktopFrame's sizing (100vw from xl, 112vw from md, centered
-// in a min-h-[560px] stage). Returns null below md, where there's no TV prop.
+// pinned. Mirrors DesktopFrame's own "cover" sizing (RobowarsHero.jsx): the
+// frame is 100vw/112vw (xl/md) UNLESS the viewport is taller/narrower than
+// the arena art's aspect ratio, in which case it grows past that so arena-bg
+// still fully covers the viewport height instead of letterboxing. Getting
+// this out of sync with DesktopFrame is what makes the Wheels TV dock at the
+// wrong spot/size — visibly a second screen instead of landing exactly on
+// this prop. Returns null below md, where there's no TV prop.
 export function getRobowarsTvScreenRect(stageWidth, stageHeight) {
   if (!window.matchMedia("(min-width: 768px)").matches) return null;
 
   const isXl = window.matchMedia("(min-width: 1280px)").matches;
-  const frameWidth = window.innerWidth * (isXl ? 1 : 1.12);
+  const baseScale = isXl ? 1 : 1.12;
+  const frameWidth = baseScale * Math.max(stageWidth, stageHeight * ROBOWARS_FRAME_ASPECT);
   const unit = frameWidth / ROBOWARS_FRAME_WIDTH;
   const frameLeft = (stageWidth - frameWidth) / 2;
   const frameTop = (Math.max(stageHeight, 560) - ROBOWARS_FRAME_HEIGHT * unit) / 2;

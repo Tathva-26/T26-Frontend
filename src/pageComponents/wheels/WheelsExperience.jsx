@@ -87,6 +87,14 @@ export default function WheelsExperience({ revealUnderlay = false }) {
     const robowarsStage = revealUnderlay
       ? document.querySelector('[data-robowars-stage]')
       : null
+    // The static Robowars TV prop (xl + tablet variants, only one ever
+    // rendered/visible) that this section's own TV docks onto. Kept hidden
+    // until the shrink animation has actually converged on that exact spot —
+    // see the opacity ramp in updateTvShrinkAnimation — so it never shows
+    // through as a second, not-yet-matching screen while still mid-shrink.
+    const robowarsTvScreens = robowarsStage
+      ? robowarsStage.querySelectorAll('[data-robowars-tv-screen]')
+      : []
 
     const coverRef = { x: 0, y: 0, w: 0, h: 0, dpr: 1, isMobile: false }
     const timeoutIds = []
@@ -339,6 +347,9 @@ export default function WheelsExperience({ revealUnderlay = false }) {
           wheelsText.style.opacity = '0'
           wheelsText.style.transform = 'scale(0.85)'
         }
+        robowarsTvScreens.forEach((el) => {
+          el.style.opacity = '0'
+        })
         return
       }
 
@@ -383,6 +394,15 @@ export default function WheelsExperience({ revealUnderlay = false }) {
           robowarsZoomStart + (1 - robowarsZoomStart) * curEase
         robowarsStage.style.transform = `scale(${robowarsScale.toFixed(4)})`
       }
+
+      // Stay invisible until the shrink has all but converged on the dock
+      // spot (both screens the same size/position), then snap in quickly —
+      // rather than track curEase 1:1 the whole way, which risked a visible
+      // second screen any frame the two weren't pixel-matched yet.
+      const robowarsTvOpacity = Math.min(1, Math.max(0, (curEase - 0.9) / 0.1)) * 0.9
+      robowarsTvScreens.forEach((el) => {
+        el.style.opacity = robowarsTvOpacity.toFixed(3)
+      })
 
       // Wheels text fades in near the very end
       if (wheelsText) {
