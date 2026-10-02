@@ -11,6 +11,7 @@ import {
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { EasePack } from 'gsap/EasePack'
+import TopoBackground from '@/components/TopoBackground'
 
 gsap.registerPlugin(ScrollTrigger, EasePack)
 
@@ -38,7 +39,7 @@ const artists = [
 ]
 
 function ScheduleCard({ artist, activeIndex = 0, onSelectDay }) {
-  const days = ['DAY 1', 'DAY 2', 'DAY 3']
+  const days = ['DAY 2', 'DAY 3']
 
   return (
     <div className='schedule-card'>
@@ -84,10 +85,22 @@ function useScrubCrossfade(
       const bgs = (bgRefs?.current || []).filter(Boolean)
       const ports = (portraitRefs?.current || []).filter(Boolean)
       const boards = (boardRefs?.current || []).filter(Boolean)
-      const count = bgs.length
+      const count = Math.max(bgs.length, boards.length, ports.length)
       if (count < 2) return
 
-      gsap.set(bgs.slice(1), { autoAlpha: 0 })
+      // Hide sticky/promoted layers whenever this section is off-screen so
+      // they can never paint over neighbouring pages.
+      const syncVisibility = (self) =>
+        section.classList.toggle('is-offscreen', !self.isActive)
+      ScrollTrigger.create({
+        trigger: section,
+        ...(scroller ? { scroller } : {}),
+        start: 'top bottom',
+        end: 'bottom top',
+        onToggle: syncVisibility,
+        onRefresh: syncVisibility,
+      })
+      if (bgs.length > 1) gsap.set(bgs.slice(1), { autoAlpha: 0 })
       if (ports.length > 1)
         gsap.set(ports.slice(1), { yPercent: 100, autoAlpha: 0 })
       if (boards.length > 1)
@@ -117,11 +130,13 @@ function useScrubCrossfade(
       for (let i = 0; i < count - 1; i++) {
         const t = i
 
-        tl.to(bgs[i], { autoAlpha: 0, ease: 'none' }, t).to(
-          bgs[i + 1],
-          { autoAlpha: 1, ease: 'none' },
-          t,
-        )
+        if (bgs[i] && bgs[i + 1]) {
+          tl.to(bgs[i], { autoAlpha: 0, ease: 'none' }, t).to(
+            bgs[i + 1],
+            { autoAlpha: 1, ease: 'none' },
+            t,
+          )
+        }
 
         if (ports[i] && ports[i + 1]) {
           tl.to(
@@ -135,7 +150,7 @@ function useScrubCrossfade(
           )
         }
 
-        // Moves the artist board synchronized at the identical scroll rate and curve as the portraits
+        // Synchronized vertical sliding animation matching the left side portraits
         if (boards[i] && boards[i + 1]) {
           tl.to(
             boards[i],
@@ -150,18 +165,32 @@ function useScrubCrossfade(
       }
     }, section)
 
-    return () => context.revert()
+    return () => {
+      context.revert()
+      section.classList.remove('is-offscreen')
+    }
   }, [ref, bgRefs, portraitRefs, boardRefs, onIndexChange, snap])
 }
 
+// Point where the line from the rect's center in direction (dx, dy) leaves the
+// shape. Circular/elliptical shapes (rect.round) use the real ellipse edge so
+// arrows touch the circle instead of stopping at the bounding-box corner.
 function edgePoint(rect, dx, dy) {
   const cx = rect.left + rect.width / 2
   const cy = rect.top + rect.height / 2
   if (dx === 0 && dy === 0) return { x: cx, y: cy }
-  const scale = Math.min(
-    rect.width / 2 / Math.abs(dx || Infinity),
-    rect.height / 2 / Math.abs(dy || Infinity),
-  )
+
+  let scale
+  if (rect.round) {
+    const a = rect.width / 2
+    const b = rect.height / 2
+    scale = 1 / Math.sqrt((dx / a) ** 2 + (dy / b) ** 2)
+  } else {
+    scale = Math.min(
+      rect.width / 2 / Math.abs(dx || Infinity),
+      rect.height / 2 / Math.abs(dy || Infinity),
+    )
+  }
   return { x: cx + dx * scale, y: cy + dy * scale }
 }
 
@@ -215,11 +244,6 @@ function placeArrowheadAt(path, arrowhead, length, distance) {
   )
 }
 
-/**
- * One connector arrow. It stores its own `progress` (0 = hidden, 1 = fully
- * drawn) and re-applies it whenever it re-measures, so a drawn arrow STAYS
- * drawn. The coordinator in ArtistBoard drives progress.
- */
 const ConnectorArrow = forwardRef(function ConnectorArrow(
   { getFrom, getTo, slideRef, bend = 1 },
   ref,
@@ -230,8 +254,6 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
   const progressRef = useRef(0)
   const segmentKeyRef = useRef('')
 
-  // Keep latest getters in refs so the measuring effect doesn't re-run
-  // (and re-render) every time the parent re-renders.
   const getFromRef = useRef(getFrom)
   const getToRef = useRef(getTo)
   useLayoutEffect(() => {
@@ -248,21 +270,35 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
         segmentKeyRef.current = ''
         return setSegment(null)
       }
+
+      // Measure with getBoundingClientRect relative to the slide instead of
+      // offsetLeft/offsetTop. offset* values are rounded to whole pixels and
+      // depend on the offsetParent chain, which made arrows start/end short
+      // of the images. Both elements sit inside the same translated track, so
+      // the difference between their rects is unaffected by the marquee.
       const slideBox = slide.getBoundingClientRect()
+      if (slideBox.width === 0) {
+        segmentKeyRef.current = ''
+        return setSegment(null)
+      }
       const rectOf = (el) => {
-        const b = el.getBoundingClientRect()
+        if (!(el instanceof Element)) return el
+        const r = el.getBoundingClientRect()
+        const radius = window.getComputedStyle(el).borderTopLeftRadius || ''
+        const round = radius.includes('%') && parseFloat(radius) >= 50
         return {
-          left: b.left - slideBox.left,
-          top: b.top - slideBox.top,
-          width: b.width,
-          height: b.height,
+          left: r.left - slideBox.left,
+          top: r.top - slideBox.top,
+          width: r.width,
+          height: r.height,
+          round,
         }
       }
       const seg = segmentBetween(rectOf(fromEl), rectOf(toEl))
       const key = [seg.start.x, seg.start.y, seg.end.x, seg.end.y]
         .map((n) => n.toFixed(1))
         .join(',')
-      if (key === segmentKeyRef.current) return // nothing changed, don't reset anything
+      if (key === segmentKeyRef.current) return
       segmentKeyRef.current = key
       setSegment(seg)
     }
@@ -294,7 +330,6 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
     }
   }
 
-  // Whenever the path is (re)created, restore its current progress.
   useLayoutEffect(() => {
     applyProgress(progressRef.current)
   }, [segment])
@@ -304,14 +339,18 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
     () => ({
       setProgress: (p) => applyProgress(p),
       getProgress: () => progressRef.current,
-      // True once the target image has entered the visible board.
       canStart() {
+        const slide = slideRef.current
         const to = getToRef.current()
-        const board = slideRef.current?.closest('.artist-board')
-        if (!board || !to || !pathRef.current) return false
+        const board = slide?.closest('.artist-board')
+        if (!board || !slide || !to || !pathRef.current) return false
         const b = board.getBoundingClientRect()
         if (b.width === 0) return false
-        return to.getBoundingClientRect().left < b.right - 4
+        const left =
+          to instanceof Element
+            ? to.getBoundingClientRect().left
+            : slide.getBoundingClientRect().left + to.left
+        return left < b.right - 4
       },
     }),
     [],
@@ -331,28 +370,32 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
   )
 })
 
-function ArtistContent({ artist, connectorRefs, connectorBaseIndex = 0 }) {
+function ArtistContent({
+  artist,
+  onRegisterConnector,
+  connectorBaseIndex = 0,
+}) {
   const slideRef = useRef(null)
   const avatarRef = useRef(null)
   const secondaryRef = useRef(null)
   const primaryRef = useRef(null)
 
-  // Target of the 3rd arrow: the next slide's avatar. The last slide has no
-  // next sibling, so use a virtual rect one slide-width to the right; that
-  // is exactly where the next (looped) slide's avatar will arrive.
   const getNextAvatar = () => {
-    const next =
-      slideRef.current?.nextElementSibling?.querySelector('.slide__avatar')
-    if (next) return next
-    const avatar = avatarRef.current
     const slide = slideRef.current
-    if (!avatar || !slide) return null
+    const avatar = avatarRef.current
+    if (!slide || !avatar) return null
+    const next = slide.nextElementSibling?.querySelector('.slide__avatar')
+    if (next) return next
+    // Last slide in the track: fake the next avatar one slide-width to the
+    // right, in coordinates relative to this slide.
+    const slideBox = slide.getBoundingClientRect()
+    const avatarBox = avatar.getBoundingClientRect()
     return {
-      getBoundingClientRect: () => {
-        const r = avatar.getBoundingClientRect()
-        const w = slide.getBoundingClientRect().width
-        return new DOMRect(r.left + w, r.top, r.width, r.height)
-      },
+      left: avatarBox.left - slideBox.left + slideBox.width,
+      top: avatarBox.top - slideBox.top,
+      width: avatarBox.width,
+      height: avatarBox.height,
+      round: true,
     }
   }
 
@@ -367,35 +410,21 @@ function ArtistContent({ artist, connectorRefs, connectorBaseIndex = 0 }) {
 
       <svg className='connector-overlay' aria-hidden='true'>
         <ConnectorArrow
-          ref={(el) => {
-            // connectorRefs is a parent-owned imperative-handle collection,
-            // not render state; writing into it here is the intended pattern.
-            if (connectorRefs)
-              // eslint-disable-next-line react-hooks/immutability
-              connectorRefs.current[connectorBaseIndex + 0] = el
-          }}
+          ref={(el) => onRegisterConnector?.(connectorBaseIndex + 0, el)}
           slideRef={slideRef}
           bend={1}
           getFrom={() => avatarRef.current}
           getTo={() => secondaryRef.current}
         />
         <ConnectorArrow
-          ref={(el) => {
-            if (connectorRefs)
-              // eslint-disable-next-line react-hooks/immutability
-              connectorRefs.current[connectorBaseIndex + 1] = el
-          }}
+          ref={(el) => onRegisterConnector?.(connectorBaseIndex + 1, el)}
           slideRef={slideRef}
           bend={-1}
           getFrom={() => secondaryRef.current}
           getTo={() => primaryRef.current}
         />
         <ConnectorArrow
-          ref={(el) => {
-            if (connectorRefs)
-              // eslint-disable-next-line react-hooks/immutability
-              connectorRefs.current[connectorBaseIndex + 2] = el
-          }}
+          ref={(el) => onRegisterConnector?.(connectorBaseIndex + 2, el)}
           slideRef={slideRef}
           bend={1}
           getFrom={() => primaryRef.current}
@@ -422,36 +451,61 @@ function ArtistContent({ artist, connectorRefs, connectorBaseIndex = 0 }) {
 }
 
 const ArtistBoard = memo(function ArtistBoard({ artist }) {
-  const dupes = [artist, artist]
-  // 6 arrows: [slide0: a0 a1 a2, slide1: a0 a1 a2]
+  const dupes = [artist, artist, artist]
   const connectorRefs = useRef([])
-  // Number of marquee loops completed so far.
   const loopsRef = useRef(0)
+  const trackRef = useRef(null)
 
-  // The marquee is seamless because slide 1 becomes slide 0 on every loop.
-  // Mirror that for the arrows: slide 1's drawn state moves to slide 0 and
-  // slide 1 starts fresh (its images are the brand-new ones arriving).
-  const handleIteration = (e) => {
-    if (e.target !== e.currentTarget) return
-    loopsRef.current += 1
-    const arrows = connectorRefs.current
-    for (let i = 0; i < 3; i++) {
-      const from = arrows[i + 3]
-      const to = arrows[i]
-      if (from && to) {
-        to.setProgress(from.getProgress())
-        // Let the marquee finish its loop reset before recycling the outgoing arrow.
-        requestAnimationFrame(() => from.setProgress(0))
+  const registerConnector = (index, el) => {
+    connectorRefs.current[index] = el
+  }
+
+  useLayoutEffect(() => {
+    const track = trackRef.current
+    if (!track) return
+    const START = -100 / 3
+    const END = -200 / 3
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      gsap.set(track, { xPercent: START })
+      return
+    }
+
+    const swapConnectors = () => {
+      loopsRef.current += 1
+      const arrows = connectorRefs.current
+      const total = arrows.length
+      for (let i = 0; i < total - 3; i++) {
+        const from = arrows[i + 3]
+        const to = arrows[i]
+        if (from && to) to.setProgress(from.getProgress())
+      }
+      for (let i = Math.max(0, total - 3); i < total; i++) {
+        arrows[i]?.setProgress(0)
       }
     }
-  }
+
+    const tween = gsap.fromTo(
+      track,
+      { xPercent: START },
+      {
+        xPercent: END,
+        duration: 7,
+        ease: 'none',
+        repeat: -1,
+        onRepeat: swapConnectors,
+      },
+    )
+    return () => tween.kill()
+  }, [])
 
   useLayoutEffect(() => {
     if (
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
-      // No motion: show every arrow fully drawn.
       connectorRefs.current.forEach((a) => a?.setProgress(1))
       return
     }
@@ -459,9 +513,8 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
     let cancelled = false
     let timer = null
     let tween = null
-    // Logical arrow number: 0,1,2 = first slide, 3,4,5 = next slide, ...
-    // Its DOM arrow is (L - 3 * loops), because each loop drops one slide.
-    let L = 0
+    let L = 3
+    for (let i = 0; i < 3; i++) connectorRefs.current[i]?.setProgress(1)
 
     const wait = () => {
       timer = setTimeout(step, 60)
@@ -470,14 +523,13 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
     const step = () => {
       if (cancelled) return
       const loops = loopsRef.current
-      if (L < 3 * loops) L = 3 * loops // that slide already scrolled away
+      if (L < 3 * loops) L = 3 * loops
       const arrow = connectorRefs.current[L - 3 * loops]
       if (!arrow) return wait()
       if (arrow.getProgress() >= 1) {
-        L += 1 // already drawn, it stays; move on
+        L += 1
         return step()
       }
-      // Start only when the image this arrow points to has reached the board.
       if (!arrow.canStart()) return wait()
 
       const current = L
@@ -494,7 +546,7 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
         onComplete: () => {
           connectorRefs.current[current - 3 * loopsRef.current]?.setProgress(1)
           L = current + 1
-          step() // next arrow starts from the image this one just reached
+          step()
         },
       })
     }
@@ -516,15 +568,12 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
         alt=''
       />
       <div className='board-marquee'>
-        <div
-          className='board-marquee-track'
-          onAnimationIteration={handleIteration}
-        >
+        <div className='board-marquee-track' ref={trackRef}>
           {dupes.map((a, i) => (
             <ArtistContent
               artist={a}
               key={`${a.name}-${i}`}
-              connectorRefs={connectorRefs}
+              onRegisterConnector={registerConnector}
               connectorBaseIndex={i * 3}
             />
           ))}
@@ -535,40 +584,36 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
 })
 
 function ArtistMobile() {
-  const days = ['DAY 1', 'DAY 2', 'DAY 3']
+  const days = ['DAY 1', 'DAY 2']
   const sectionRef = useRef(null)
-  const pageRefs = useRef([])
   const mobileBgRefs = useRef([])
+  const mobileBoardRefs = useRef([])
   const [activeDay, setActiveDay] = useState(0)
 
   useScrubCrossfade(sectionRef, {
     bgRefs: mobileBgRefs,
     portraitRefs: null,
-    boardRefs: null,
+    boardRefs: mobileBoardRefs,
+    onIndexChange: setActiveDay,
   })
-
-  useLayoutEffect(() => {
-    const pages = pageRefs.current.filter(Boolean)
-    if (!pages.length) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting)
-            setActiveDay(Number(entry.target.dataset.index))
-        })
-      },
-      { threshold: 0.5 },
-    )
-    pages.forEach((page) => observer.observe(page))
-    return () => observer.disconnect()
-  }, [])
 
   const goToDay = (index) => {
     setActiveDay(index)
     const targetIdx = index % artists.length
-    pageRefs.current[targetIdx]?.scrollIntoView({
+    const section = sectionRef.current
+    if (!section) return
+
+    const rect = section.getBoundingClientRect()
+    const scroller = section.closest('.main-scroll') || window
+    const scrollStart =
+      (scroller === window ? window.scrollY : scroller.scrollTop) + rect.top
+    const totalScroll = rect.height - window.innerHeight
+    const targetProgress = targetIdx / (artists.length - 1)
+    const targetScroll = scrollStart + totalScroll * targetProgress
+
+    scroller.scrollTo({
+      top: targetScroll,
       behavior: 'smooth',
-      block: 'start',
     })
   }
 
@@ -578,56 +623,63 @@ function ArtistMobile() {
       className='proshow-mobile'
       aria-label='Proshow artists mobile'
     >
-      <div className='mobile-sticky' aria-hidden='true'>
-        {artists.map((artist, index) => (
-          <div
-            className='mobile-bg-layer'
-            key={`m-bg-${artist.name}`}
-            ref={(el) => {
-              mobileBgRefs.current[index] = el
-            }}
-          >
-            <img src={artist.background} alt='' />
-          </div>
-        ))}
-      </div>
+      <div className='mobile-sticky-container'>
+        <div className='mobile-bg-stack' aria-hidden='true'>
+          {artists.map((artist, index) => (
+            <div
+              className='mobile-bg-layer'
+              key={`m-bg-${artist.name}`}
+              ref={(el) => {
+                mobileBgRefs.current[index] = el
+              }}
+            >
+              <TopoBackground
+                fixed={false}
+                background='#1c1c1c'
+                lineColor='220, 220, 220'
+                lineOpacity={0.16}
+                seed={index + 7}
+                style={{ zIndex: 0 }}
+              />
+            </div>
+          ))}
+        </div>
 
-      <div className='mobile-pages'>
-        {artists.map((artist, index) => (
-          <div
-            key={artist.name}
-            data-index={index}
-            ref={(el) => {
-              pageRefs.current[index] = el
-            }}
-            className='mobile-page'
-          >
-            <div className='mobile-body'>
-              <nav className='mobile-days' aria-label='Performance days'>
-                {days.map((label, i) => (
-                  <button
-                    key={label}
-                    type='button'
-                    aria-selected={activeDay === i}
-                    className={activeDay === i ? 'is-active' : ''}
-                    onClick={() => goToDay(i)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </nav>
+        <nav className='mobile-days' aria-label='Performance days'>
+          {days.map((label, i) => (
+            <button
+              key={label}
+              type='button'
+              aria-selected={activeDay === i}
+              className={activeDay === i ? 'is-active' : ''}
+              onClick={() => goToDay(i)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        <div className='mobile-pages-stack'>
+          {artists.map((artist, index) => (
+            <div
+              key={artist.name}
+              ref={(el) => {
+                mobileBoardRefs.current[index] = el
+              }}
+              className='mobile-page-layer'
+            >
               <div className='mobile-stage'>
                 <ArtistBoard artist={artist} />
               </div>
+              <h2 className='mobile-name'>{artist.name}</h2>
+              <p className='mobile-desc'>
+                Brace yourselves for a magical night as the legendary{' '}
+                {artist.name} takes the stage. Get ready to sing, sway, and make
+                memories!
+              </p>
             </div>
-            <h2 className='mobile-name'>{artist.name}</h2>
-            <p className='mobile-desc'>
-              Brace yourselves for a magical night as the legendary{' '}
-              {artist.name} takes the stage. Get ready to sing, sway, and make
-              memories!
-            </p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   )
@@ -654,7 +706,6 @@ export default function App() {
     const rect = section.getBoundingClientRect()
     const scroller = section.closest('.main-scroll') || window
 
-    // Calculates position based on GSAP scroll progress formula
     const scrollStart =
       (scroller === window ? window.scrollY : scroller.scrollTop) + rect.top
     const totalScroll = rect.height - window.innerHeight
@@ -692,6 +743,12 @@ export default function App() {
           font-weight: 100 900;
           font-style: normal;
           font-display: swap;
+        }
+
+        html,
+        body,
+        .main-scroll {
+          overscroll-behavior: none;
         }
 
         .artist-root {
@@ -760,9 +817,11 @@ export default function App() {
 
         .proshow-section {
           display: grid;
-          grid-template-columns: minmax(0, 47.2%) minmax(0, 52.8%);
+          grid-template-columns: minmax(0, 38%) minmax(0, 62%);
           background: #1c1c1c;
           position: relative;
+          overflow: clip;
+          isolation: isolate;
         }
 
         .global-bg-container {
@@ -787,7 +846,7 @@ export default function App() {
           position: sticky;
           top: 0;
           height: 100dvh;
-          overflow: hidden;
+          overflow: visible;
         }
 
         .featured-bg-layer {
@@ -800,7 +859,7 @@ export default function App() {
         .featured-portrait-layer {
           position: absolute;
           inset: 0;
-          overflow: hidden;
+          overflow: visible;
           will-change: transform, opacity;
           z-index: 1;
         }
@@ -846,11 +905,15 @@ export default function App() {
         }
 
         .artist-portrait--arijit {
-          top: 50%;
-          left: 50px;
-          transform: translateY(-50%);
-          width: 100%;
-          height: 90%;
+          position: absolute;
+          top: 7.32vh;
+          left: -27.29%;
+          width: 263.16%;
+          height: 92.68vh;
+          max-width: none;
+          object-fit: contain;
+          object-position: left top;
+          transform: none;
         }
 
         .artist-portrait--shreya {
@@ -860,37 +923,53 @@ export default function App() {
           height: 76%;
         }
 
+        /* -------------------------------------------------------------
+           DESKTOP/LAPTOP SCHEDULE CARD: Shifted Higher & Proportionally Sized
+           ------------------------------------------------------------- */
         .schedule-card {
           position: absolute;
           z-index: 3;
-          top: 11%;
-          right: 17%;
-          width: min(330px, 48%);
+          top: 25%;
+          right: -5%;
+          width: min(320px, 50%);
           min-width: 260px;
           overflow: hidden;
           border: 1px solid #323231;
-          border-radius: 9px;
+          border-radius: 14px;
           background: #202020;
-          transition: border-color 0.3s ease;
+          transition: border-color 0.3s ease, transform 0.3s ease;
+        }
+
+        /* Laptop View: proportionally scaled down without affecting inner layout */
+        @media (max-width: 1440px) and (min-width: 769px) {
+          .schedule-card {
+            transform: scale(0.85);
+            transform-origin: top right;
+          }
         }
 
         .schedule-days {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           align-items: center;
-          height: 44px;
-          padding: 6px 16px;
-          border-bottom: 1px solid #d63d5e;
+          justify-items: center;
+          height: 56px;
+          padding: 0 14px;
+          border-bottom: 1px solid #858585;
           font-family: 'Arial Black', sans-serif;
+          font-size: 12px;
+          font-weight: 900;
         }
 
         .schedule-days button {
-          height: 28px;
+          width: 100%;
+          max-width: 110px;
+          height: 36px;
           padding: 0;
           border: 0;
           border-radius: 8px;
           background: transparent;
-          font-size: 13px;
+          font-size: 16px;
           font-weight: 900;
           text-transform: uppercase;
           transition:
@@ -907,9 +986,9 @@ export default function App() {
 
         .schedule-card p {
           margin: 0;
-          padding: 12px 24px 22px;
-          font-size: 13px;
-          line-height: 1.28;
+          padding: 20px 28px 20px;
+          font-size: 15px;
+          line-height: 1.2;
           font-variation-settings: 'wdth' 100;
           transition: opacity 0.25s ease;
         }
@@ -918,7 +997,7 @@ export default function App() {
           grid-column: 2 / 3;
           grid-row: 1 / -1;
           position: relative;
-          z-index: 1;
+          z-index: 2;
           min-width: 0;
         }
 
@@ -929,8 +1008,8 @@ export default function App() {
           overflow: hidden;
           display: flex;
           align-items: center;
-          justify-content: center;
-          padding: 2vw;
+          justify-content: flex-start;
+          padding: 0;
         }
 
         .artist-board-layer {
@@ -938,10 +1017,10 @@ export default function App() {
           inset: 0;
           display: flex;
           align-items: center;
-          justify-content: center;
+          justify-content: flex-start;
           overflow: hidden;
           will-change: transform, opacity;
-          padding: 2vw;
+          padding: 0;
         }
 
         .artist-board-layer:not(:first-child) {
@@ -951,12 +1030,17 @@ export default function App() {
 
         .artist-board {
           position: relative;
-          width: 100%;
-          max-width: 700px;
+          height: 88dvh;
+          width: auto;
+          max-width: none;
           aspect-ratio: 831 / 743;
           overflow: hidden;
           border-radius: 24px;
+          outline: 1px solid #85858463;
           container-type: inline-size;
+          margin-left: 5vw;
+          margin-right: -2vw;
+          transform: translate(2vh, 2.5vh);
         }
 
         .artist-board__texture {
@@ -979,16 +1063,10 @@ export default function App() {
           display: flex;
           width: max-content;
           height: 100%;
-          animation: board-scroll 7s linear infinite;
-        }
-
-        @keyframes board-scroll {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
+          will-change: transform;
+          transform: translate3d(0, 0, 0);
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
         }
 
         .artist-content-slide {
@@ -996,6 +1074,9 @@ export default function App() {
           width: 100cqi;
           aspect-ratio: 831 / 743;
           flex-shrink: 0;
+          transform: translateZ(0);
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
         }
 
         .slide__avatar {
@@ -1065,9 +1146,6 @@ export default function App() {
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .board-marquee-track {
-            animation: none;
-          }
           .featured-bg-layer,
           .featured-portrait-layer,
           .artist-board-layer {
@@ -1075,11 +1153,39 @@ export default function App() {
           }
         }
 
+        .proshow-section.is-offscreen .global-bg-container,
+        .proshow-section.is-offscreen .featured-viewport,
+        .proshow-section.is-offscreen .artist-list-viewport,
+        .proshow-mobile.is-offscreen .mobile-sticky-container {
+          visibility: hidden;
+        }
+
         .proshow-mobile {
           display: none;
         }
 
+        /* -----------------------------------------------------------------
+           MOBILE VIEW MODIFICATIONS
+           ----------------------------------------------------------------- */
         @media (max-width: 768px) {
+          html,
+          body,
+          .artist-root,
+          .proshow-mobile,
+          .main-scroll {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+          }
+          html::-webkit-scrollbar,
+          body::-webkit-scrollbar,
+          .artist-root::-webkit-scrollbar,
+          .proshow-mobile::-webkit-scrollbar,
+          .main-scroll::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+          }
+
           .proshow-section {
             display: block;
             min-height: 0 !important;
@@ -1092,16 +1198,24 @@ export default function App() {
           }
 
           .proshow-mobile {
-            position: relative;
             display: block;
+            position: relative;
             background: #1c1c1c;
+            height: 250dvh;
           }
 
-          .mobile-sticky {
+          .mobile-sticky-container {
             position: sticky;
             top: 0;
             height: 100dvh;
+            width: 100%;
             overflow: hidden;
+          }
+
+          .mobile-bg-stack {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
           }
 
           .mobile-bg-layer {
@@ -1117,77 +1231,78 @@ export default function App() {
             opacity: 0.5;
           }
 
-          .mobile-pages {
-            position: relative;
-            z-index: 1;
-            margin-top: -100dvh;
-          }
-
-          .mobile-page {
-            min-height: 100dvh;
+          .mobile-days {
+            position: absolute;
+            left: 6px;
+            top: calc(65% - 35dvh - 48px);
+            z-index: 10;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 12px 12px 24px;
-          }
-
-          .mobile-body {
-            display: flex;
-            gap: 10px;
-          }
-
-          .mobile-days {
-            display: flex;
-            flex-direction: column;
-            gap: 26px;
             align-items: center;
-            padding: 26px 8px;
+            gap: 16px;
+            width: 58px;
+            padding: 19px 18px;
             border: 1px solid #323231;
-            border-radius: 9px;
+            border-radius: 12px;
             background: #202020;
-            margin-top: 50px;
           }
 
           .mobile-days button {
-            padding: 4px 8px;
+            padding: 18px 8px;
             border: 0;
             border-radius: 7px;
             background: transparent;
             color: #fff;
             font-family: 'Bebas Neue', 'Bebas Neue:Regular', sans-serif;
-            font-size: 19px;
+            font-size: 20px;
             letter-spacing: 0.04em;
             writing-mode: vertical-rl;
             transform: rotate(180deg);
             cursor: pointer;
+            transition: background 0.3s ease, color 0.3s ease;
           }
 
           .mobile-days .is-active {
             background: #7786ff;
+            color: #fff;
+          }
+
+          .mobile-pages-stack {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+          }
+
+          .mobile-page-layer {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 12px 14px 24px 73px;
+            will-change: opacity;
+          }
+
+          .mobile-page-layer:not(:first-child) {
+            opacity: 0;
+            visibility: hidden;
           }
 
           .mobile-stage {
-            flex: 1;
-            min-width: 0;
-          }
-
-          .mobile-stage .artist-page {
-            height: auto;
-            min-height: 0;
-            padding: 0;
-          }
-
-          .mobile-stage .artist-board-sticky {
-            position: relative;
-            height: auto;
-            padding: 0;
+            width: 100%;
+            max-width: calc(100vw - 76px);
+            margin: 0;
           }
 
           .mobile-stage .artist-board {
             border-radius: 18px;
-            height: 75dvh;
+            height: 54dvh;
+            max-height: 460px;
             aspect-ratio: auto;
-            margin-top: 50px;
+            margin-left: 0;
+            margin-right: 0;
+            transform: translate(-2px, 21px);
           }
 
           .mobile-stage .artist-content-slide {
@@ -1197,22 +1312,22 @@ export default function App() {
 
           .mobile-name {
             position: relative;
-            z-index: 1;
-            margin: 18px 0 0;
+            top: 34px;
+            margin: 22px 0 0;
             color: #fff;
             font-family: 'Bebas Neue', 'Bebas Neue:Regular', sans-serif;
-            font-size: 72px;
+            font-size: clamp(6px, 12vw, 66px);
             line-height: 0.95;
+            text-transform: uppercase;
           }
 
           .mobile-desc {
             position: relative;
-            z-index: 1;
-            margin: 10px 0 0;
-            max-width: 34ch;
-            font-size: 12px;
-            line-height: 1.4;
-            opacity: 0.9;
+            top: 24px;
+            margin: 12px 0 0;
+            font-size: 20.5px;
+            line-height: 1.25;
+            opacity: 0.92;
           }
         }
       `}</style>
@@ -1220,9 +1335,8 @@ export default function App() {
         ref={sectionRef}
         className='proshow-section'
         id='proshow'
-        style={{ minHeight: `${artists.length * 300}dvh` }}
+        style={{ minHeight: `${artists.length * 100}dvh` }}
       >
-        {/* Global Backgrounds - Spans entire width, sticky */}
         <div className='global-bg-container'>
           {artists.map((artist, index) => (
             <div
@@ -1232,10 +1346,13 @@ export default function App() {
                 bgRefs.current[index] = el
               }}
             >
-              <img
-                className='featured-background'
-                src={artist.background}
-                alt=''
+              <TopoBackground
+                fixed={false}
+                background='#1c1c1c'
+                lineColor='220, 220, 220'
+                lineOpacity={0.16}
+                seed={index + 7}
+                style={{ zIndex: 0 }}
               />
             </div>
           ))}
@@ -1243,7 +1360,6 @@ export default function App() {
 
         <section className='featured-column' aria-label='Featured artist'>
           <div className='featured-viewport'>
-            {/* Portraits - separate layer, these slide */}
             {artists.map((artist, index) => (
               <div
                 className='featured-portrait-layer'
@@ -1259,7 +1375,6 @@ export default function App() {
                 />
               </div>
             ))}
-            {/* Static Schedule Card positioned at the top; active tab switches with scroll */}
             <div className='schedule-layer'>
               <ScheduleCard
                 artist={artists[activeArtistIndex]}
