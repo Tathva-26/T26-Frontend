@@ -34,18 +34,51 @@ const MOCK_PASSCODE = 'tathva26'
 /* ---- mutable session state ------------------------------------------ */
 
 let currentUser = { ...USER }
-let signedIn = true
 let lastBookingRefreshAt = 0
+
+/**
+ * Mock sign-in state is kept in sessionStorage, not a module variable, so it
+ * survives the full page navigation that signing in and out performs. Without
+ * that, signing out would appear to work and then be forgotten on the next
+ * page load.
+ *
+ * Defaults to signed in, which is what the node contract check expects; a
+ * browser that has signed out explicitly sees that choice honoured.
+ */
+const SESSION_KEY = 'tathva-mock-signed-in'
+let signedInMemory = true
+
+function signedIn() {
+  if (typeof window === 'undefined') return signedInMemory
+  try {
+    const stored = window.sessionStorage.getItem(SESSION_KEY)
+    return stored === null ? signedInMemory : stored === 'true'
+  } catch {
+    return signedInMemory
+  }
+}
 
 /** Test the signed-out paths without clearing a real cookie. */
 export function setMockSignedIn(value) {
-  signedIn = Boolean(value)
+  signedInMemory = Boolean(value)
+  if (typeof window === 'undefined') return
+  try {
+    window.sessionStorage.setItem(SESSION_KEY, String(signedInMemory))
+  } catch {
+    // Private mode or blocked storage: the module variable still applies.
+  }
 }
 
 export function resetMockState() {
   currentUser = { ...USER }
-  signedIn = true
+  signedInMemory = true
   lastBookingRefreshAt = 0
+  if (typeof window === 'undefined') return
+  try {
+    window.sessionStorage.removeItem(SESSION_KEY)
+  } catch {
+    // Nothing to clear.
+  }
 }
 
 /* ---- response plumbing ---------------------------------------------- */
@@ -242,7 +275,7 @@ function applyProfileUpdate(config, body) {
 /* ---- booking --------------------------------------------------------- */
 
 function createBooking(config, body) {
-  if (!signedIn) return notSignedIn(config)
+  if (!signedIn()) return notSignedIn(config)
 
   const event = EVENTS.find((item) => item.id === Number(body.eventId))
 
@@ -286,7 +319,7 @@ function createBooking(config, body) {
 }
 
 function myBookings(config, wantsRefresh) {
-  if (!signedIn) return notSignedIn(config)
+  if (!signedIn()) return notSignedIn(config)
 
   const now = Date.now()
   const sinceLast = now - lastBookingRefreshAt
@@ -378,7 +411,7 @@ export async function mockAdapter(config) {
   /* session reads and writes */
 
   if (path === '/api/user/') {
-    if (!signedIn) return notSignedIn(config)
+    if (!signedIn()) return notSignedIn(config)
     if (method === 'get') return respond(config, 200, { ...currentUser })
     if (method === 'put') return applyProfileUpdate(config, body)
   }
@@ -393,7 +426,7 @@ export async function mockAdapter(config) {
   }
 
   if (method === 'get' && path === '/api/referrals') {
-    if (!signedIn) return notSignedIn(config)
+    if (!signedIn()) return notSignedIn(config)
     if (currentUser.role !== 'CA') {
       return fail(config, 403, { error: 'Forbidden' })
     }
@@ -401,7 +434,7 @@ export async function mockAdapter(config) {
   }
 
   if (method === 'get' && path === '/api/referrals/code') {
-    if (!signedIn) return notSignedIn(config)
+    if (!signedIn()) return notSignedIn(config)
     if (currentUser.role !== 'CA') {
       return fail(config, 403, { error: 'Forbidden' })
     }
@@ -412,6 +445,24 @@ export async function mockAdapter(config) {
 
   if (path === '/api/announcements' || path.startsWith('/api/tiqr-events')) {
     return notFound(config)
+  }
+
+  /* better-auth's own routes. The real client talks to these with its own
+     fetch, not through axios, so mock mode bypasses it entirely — these exist
+     only so a session probe through `api` answers consistently. */
+
+  if (path === '/api/auth/ok') {
+    return respond(config, 200, { ok: true })
+  }
+
+  if (path === '/api/auth/get-session') {
+    // better-auth answers 200 with a null body when there is no session.
+    return respond(config, 200, signedIn() ? { user: { ...currentUser } } : null)
+  }
+
+  if (path === '/api/auth/sign-out') {
+    setMockSignedIn(false)
+    return respond(config, 200, { success: true })
   }
 
   return notFound(config)

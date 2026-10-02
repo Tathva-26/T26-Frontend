@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import { Hammersmith_One, Instrument_Serif } from "next/font/google";
+import { useUser } from "@/context/UserContext";
 
 /**
  * Navbar
@@ -300,6 +301,25 @@ export default function Navbar() {
   const navRef = useRef(null);
   const menuButtonRef = useRef(null);
   const registerFlipRef = useRef(null);
+
+  /*
+   * The call to action is the only sign-in entry point. It always points at
+   * /profile, so it still goes somewhere sensible without JS; when nobody is
+   * signed in, clicking it starts Google sign-in instead.
+   *
+   * The label can only settle after the session is known, because the session
+   * is an httpOnly cookie the server render cannot see.
+   */
+  const { isSignedIn, user, signIn } = useUser();
+  const ctaLabel = isSignedIn
+    ? (user?.name || "").trim().split(/\s+/)[0] || "Profile"
+    : "Register";
+
+  const handleCtaClick = (event) => {
+    if (isSignedIn) return;
+    event.preventDefault();
+    signIn();
+  };
   const rafId = useRef(null);
   const current = useRef(0);
   const target = useRef(0);
@@ -399,12 +419,13 @@ export default function Navbar() {
 
         <div className="nb__right">
           <a
-            href="#register"
+            href="/profile"
             className="nb__cta"
             onPointerEnter={(event) => registerFlipRef.current?.trigger(event)}
+            onClick={handleCtaClick}
           >
             <span className="nb__cta-line" aria-hidden="true" />
-            <FlipText ref={registerFlipRef} text="Register" />
+            <FlipText ref={registerFlipRef} text={ctaLabel} />
             <img
               src="/images/hero/regarrow.svg"
               alt=""
@@ -447,12 +468,15 @@ export default function Navbar() {
             ))}
           </ul>
           <a
-            href="#register"
+            href="/profile"
             className="nb-mobile__cta"
-            onClick={closeMenu}
+            onClick={(event) => {
+              closeMenu();
+              handleCtaClick(event);
+            }}
             tabIndex={menuOpen ? 0 : -1}
           >
-            Register
+            {ctaLabel}
           </a>
         </nav>
       </div>

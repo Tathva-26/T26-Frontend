@@ -86,5 +86,5 @@ export async function session() {
           .map((e) => e.params.exceptionDetails.exception?.description || 'exception'),
       )
 
-  return { send, evaluate, goto, pageErrors, close: () => ws.close() }
+  return { send, evaluate, goto, pageErrors, events, close: () => ws.close() }
 }

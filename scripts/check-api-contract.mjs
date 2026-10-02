@@ -26,6 +26,9 @@ const { formatPrice, toRupees, eventDateParts, formatTimeRange, formatDuration, 
 const { normaliseEvents, normaliseEvent, isBookable } = await import(`${ROOT}events.js`)
 const { validateContact, normalisePhone, toStoredPhone, isValidEmail, isValidPhone } =
   await import(`${ROOT}validation.js`)
+const { applyUnauthorized, applySignedOut, isProfileComplete, SIGNED_OUT, LOADING, SESSION_EXPIRED } =
+  await import(`${ROOT}session.js`)
+const { USER } = await import(`${ROOT}mock/fixtures.js`)
 
 let pass = 0
 const fails = []
@@ -270,6 +273,33 @@ check('toStoredPhone strips leading 0', toStoredPhone('09876543210'), '987654321
 check('toStoredPhone leaves plain', toStoredPhone('9876543210'), '9876543210')
 check('isValidEmail', [isValidEmail('a@b.co'), isValidEmail('a b@c.co'), isValidEmail('')], [true, false, false])
 check('isValidPhone', [isValidPhone('9876543210'), isValidPhone('123'), isValidPhone(null)], [true, false, false])
+
+/* ---- session state machine ---- */
+const SIGNED_IN = { status: 'signedIn', user: { ...USER }, message: null }
+
+// A 401 while holding a profile is a real expiry and worth telling them about.
+check('401 while signed in expires', applyUnauthorized(SIGNED_IN), {
+  status: 'signedOut', user: null, message: SESSION_EXPIRED,
+})
+// A signed-out visitor's first GET /api/user/ also 401s. Telling them their
+// session expired would be untrue, so this stays silent.
+check('401 during initial load is silent', applyUnauthorized(LOADING), SIGNED_OUT)
+check('401 while already signed out is a no-op', applyUnauthorized(SIGNED_OUT), SIGNED_OUT)
+// A message already on screen must not be wiped by a later 401.
+const withMessage = { ...SIGNED_OUT, message: SESSION_EXPIRED }
+check('401 keeps an existing message', applyUnauthorized(withMessage), withMessage)
+check('signed-out load keeps the expiry message', applySignedOut(withMessage), withMessage)
+check('signed-out load from clean state', applySignedOut(LOADING), SIGNED_OUT)
+
+check('complete profile', isProfileComplete(USER), true)
+check('no user is not complete', isProfileComplete(null), false)
+for (const field of ['phone', 'college', 'district', 'state', 'branch', 'semester', 'year']) {
+  check(`missing ${field} is incomplete`, isProfileComplete({ ...USER, [field]: null }), false)
+  check(`empty ${field} is incomplete`, isProfileComplete({ ...USER, [field]: '' }), false)
+}
+// semester/year are numbers, and 0 is not a valid value but is falsy — the
+// check must look at presence, not truthiness.
+check('semester 0 counts as present', isProfileComplete({ ...USER, semester: 0 }), true)
 
 console.log(`\n${pass} passed, ${fails.length} failed`)
 if (fails.length) {
