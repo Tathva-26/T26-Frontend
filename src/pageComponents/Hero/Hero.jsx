@@ -11,6 +11,14 @@ import styles from './Hero.module.css'
 // Register once at module level so ScrollTrigger.refresh() is safe to
 // call from any effect, regardless of effect order.
 gsap.registerPlugin(ScrollTrigger, useGSAP, MotionPathPlugin)
+gsap.config({ force3D: true })
+
+// The animated clip-path hole (see syncPortalFrame) repaints the whole scene on software/
+// low-VRAM raster. Default to a plain cross-fade of the back layers instead; append ?clip=1
+// to the URL to force the old hole-cut path for comparison/debugging.
+const USE_CLIP_HOLE =
+  typeof window !== 'undefined' &&
+  new URLSearchParams(window.location.search).get('clip') === '1'
 
 const assetBase = '/images/hero/'
 
@@ -230,7 +238,6 @@ export const Hero = ({
   const backLayersRef = useRef(null)
   const portalVideoRef = useRef(null)
   const portalFrameImgRef = useRef(null)
-  const portalVideoVisibleRef = useRef(true)
   const islandRef = useRef(null)
   const trailPathRef = useRef(null)
   const birdLayerRef = useRef(null)
@@ -246,6 +253,9 @@ export const Hero = ({
 
   // Cover scale applied to the fixed-size design canvas.
   const designScaleRef = useRef(1)
+  // Set inside useGSAP once syncPortalFrame exists; forces a full resync (bypassing the
+  // lastClip/lastVideoOpacity/... guards) the frame after Hero becomes active again.
+  const forceSyncRef = useRef(null)
 
   const onProgressRef = useRef(onProgress)
   const onScrollBeyondEndRef = useRef(onScrollBeyondEnd)
@@ -274,10 +284,18 @@ export const Hero = ({
     }
     const pv = portalVideoRef.current
     if (pv) {
-      if (isActive && portalVideoVisibleRef.current) pv.play().catch(() => {})
+      if (isActive) pv.play().catch(() => {})
       else pv.pause()
     }
     scrollerRef.current?.toggleAttribute('data-paused', !isActive)
+
+    // Coming back active: the scene was frozen (no scroll ticks) while hidden, so force one
+    // resync past the lastClip/lastVideoOpacity/... guards to repaint it for the current frame.
+    if (isActive) {
+      const id = requestAnimationFrame(() => forceSyncRef.current?.())
+      return () => cancelAnimationFrame(id)
+    }
+    return undefined
   }, [isActive])
 
   // Enter click: ripple at the click point, then animate the hero
@@ -763,6 +781,8 @@ export const Hero = ({
         let wasOpen = false
         let lastVideoOpacity = -1
         let lastFrameImgOpacity = -1
+        let lastWrapOpacity = -1
+        let lastGirlHidden = false
         const syncPortalFrame = () => {
           const portalEl = portalRef.current
           if (!portalEl) return
@@ -777,13 +797,6 @@ export const Hero = ({
             if (o !== lastVideoOpacity) {
               lastVideoOpacity = o
               pv.style.opacity = o
-            }
-            // fully faded: stop decoding; resume as soon as it becomes visible again
-            const visible = o > 0.01
-            if (visible !== portalVideoVisibleRef.current) {
-              portalVideoVisibleRef.current = visible
-              if (visible) pv.play().catch(() => {})
-              else pv.pause()
             }
           }
 
@@ -805,8 +818,33 @@ export const Hero = ({
             }
           }
 
+          // The girl layer is scaled up to 15.55x (desktop) / 60x (mobile) by the time the
+          // portal is fully open, which keeps a huge decoded texture alive for nothing (it's
+          // fully covered by the portal/Frame by then). Drop it once covered, restore on the way back.
+          if (girlRef.current) {
+            const hideGirl = p >= 0.9
+            if (hideGirl !== lastGirlHidden) {
+              lastGirlHidden = hideGirl
+              girlRef.current.style.visibility = hideGirl ? 'hidden' : 'visible'
+            }
+          }
+
           const wrap = backLayersRef.current
           if (!wrap) return
+
+          // Default: cross-fade the whole back-layers wrapper out instead of cutting an
+          // animated clip-path hole in it (the hole is expensive to rasterise on software/
+          // low-VRAM GPUs and is what causes the half-painted-scene flicker). ?clip=1 forces
+          // the legacy hole-cut path below for comparison.
+          if (!USE_CLIP_HOLE) {
+            const wo = 1 - gsap.utils.clamp(0, 1, (p - 0.5) / 0.4)
+            if (wo !== lastWrapOpacity) {
+              lastWrapOpacity = wo
+              wrap.style.opacity = wo
+            }
+            return
+          }
+
           // hole = portal's current rect in scene-local px
           const cx = m.left + m.w / 2 + tx
           const cy = m.top + m.h / 2 + ty
@@ -825,15 +863,8 @@ export const Hero = ({
             m.ox + d * x1 >= m.vw &&
             m.oy + d * y1 >= m.vh
           if (open) {
-            if (!wasOpen) {
-              wasOpen = true
-              wrap.style.visibility = 'hidden' // nothing left to paint behind the portal
-            }
+            wasOpen = true // nothing left to paint behind the portal; keep the last clip
             return
-          }
-          if (wasOpen) {
-            wasOpen = false
-            wrap.style.visibility = 'visible'
           }
 
           // Outer rect (just past the scene) + inner rect (the hole), even-odd = a rectangular hole.
@@ -847,7 +878,7 @@ export const Hero = ({
           const X1 = clampX(x1)
           const Y0 = clampY(y0)
           const Y1 = clampY(y1)
-          const f = (n) => n.toFixed(1)
+          const f = (n) => Math.round(n)
           const clip = `path(evenodd, "M${-P} ${-P}H${m.sw + P}V${m.sh + P}H${-P}Z M${f(X0)} ${f(Y0)}H${f(X1)}V${f(Y1)}H${f(X0)}Z")`
           if (clip !== lastClip) {
             lastClip = clip
@@ -899,6 +930,17 @@ export const Hero = ({
             0,
           )
         syncPortalFrame()
+
+        // Lets the isActive effect force a full repaint (bypassing the lastClip/
+        // lastVideoOpacity/... guards) the frame Hero becomes active again, since no scroll
+        // tick runs while it's hidden and those guards would otherwise skip a no-op-looking write.
+        forceSyncRef.current = () => {
+          lastClip = ''
+          lastVideoOpacity = -1
+          lastFrameImgOpacity = -1
+          lastWrapOpacity = -1
+          syncPortalFrame()
+        }
       }
 
       // Bird flight — flies along the combined trail (both segments merged
@@ -1174,12 +1216,7 @@ export const Hero = ({
                 of it too (outer clip rect is 50px past the scene), so the portal still shows the Frame. */}
             <div
               ref={backLayersRef}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 1,
-                pointerEvents: 'none',
-              }}
+              className={styles.backLayers}
             >
             <div
               aria-hidden='true'

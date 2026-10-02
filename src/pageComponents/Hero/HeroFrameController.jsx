@@ -169,6 +169,12 @@ export default function HeroFrameController({ children }) {
     return () => mainScroll.removeEventListener("wheel", handleWheel);
   }, [unlocked]);
 
+  // Hero is visually empty (portal fully open, matching Frame) once it's not the front panel,
+  // so there's nothing to gain by hiding it for the hero<->frame swap — only block its input.
+  // `unlocked` is the one case that really hides it: the user has scrolled past Frame into the
+  // real page content underneath.
+  const heroInteractive = heroVisible && !unlocked;
+
   return (
     <div
       style={{
@@ -182,15 +188,12 @@ export default function HeroFrameController({ children }) {
         style={{
           position: "absolute",
           inset: 0,
-          visibility: heroVisible && !unlocked ? "visible" : "hidden",
-          // While the user is scrolling through the page below Frame, Hero can't be seen. `visibility:
-          // hidden` alone still leaves its dozens of will-change layers, blend-mode/filter surfaces and
-          // the 15x girl layer alive; `content-visibility: hidden` makes the browser skip rendering the
-          // whole subtree (releasing those GPU layers). Layout/size are untouched (it's absolutely
-          // positioned), and it renders normally again as soon as the page re-locks at the top.
-          contentVisibility: unlocked ? "hidden" : "visible",
+          visibility: unlocked ? "hidden" : "visible",
+          pointerEvents: heroInteractive ? "auto" : "none",
           zIndex: 3, // always above Frame, so the outgoing panel stays on top during a swap
         }}
+        aria-hidden={!heroInteractive}
+        inert={!heroInteractive}
       >
         <Hero
           onProgress={handleHeroProgress}

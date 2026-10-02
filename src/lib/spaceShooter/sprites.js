@@ -1,19 +1,9 @@
-export async function loadSprites(paths) {
-  const entries = await Promise.all(
-    Object.entries(paths).map(
-      async ([key, src]) => {
-        const image = new Image();
-
-        image.src = src;
-
-        await image.decode();
-
-        return [key, image];
-      }
-    )
-  );
-
+/**
+ * Starts loading each image in `paths` ({ name: url }) and returns
+ * { name: Image } straight away; whoever draws them checks they have arrived.
+ */
+export function loadSprites(paths) {
   return Object.fromEntries(
-    entries
+    Object.entries(paths).map(([name, src]) => [name, Object.assign(new Image(), { src })])
   );
 }
