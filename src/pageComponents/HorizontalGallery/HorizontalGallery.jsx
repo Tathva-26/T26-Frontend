@@ -9,6 +9,8 @@ import './HorizontalGallery.css'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
+  // FIX 1: mobile address bar show/hide no longer triggers a ScrollTrigger refresh
+  ScrollTrigger.config({ ignoreMobileResize: true })
 }
 
 const GRID_SPACER = 'clamp(2rem, 6vw, 6rem)'
@@ -313,8 +315,14 @@ export default function HorizontalGallery() {
       document.fonts?.ready.then(onLoad)
 
       let resizeTimer
+      let lastWidth = window.innerWidth
 
       const handleResize = () => {
+        // FIX 2: mobile address bar show/hide only changes height, so there
+        // is nothing to rebuild. Skip it to avoid the scroll jump.
+        if (window.innerWidth < 768 && window.innerWidth === lastWidth) return
+        lastWidth = window.innerWidth
+
         clearTimeout(resizeTimer)
         resizeTimer = setTimeout(() => {
           build()
