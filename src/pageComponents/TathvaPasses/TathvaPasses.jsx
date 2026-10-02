@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import TopoBackground from '@/components/TopoBackground';
 
 const TICKETS = [
   {
@@ -46,11 +47,22 @@ export default function TathvaPasses() {
   };
 
   return (
-    <main className="relative flex min-h-screen w-full flex-col items-center justify-between overflow-hidden bg-black select-none font-sans text-white">
+    <main className="relative isolate flex min-h-screen w-full flex-col items-center justify-between overflow-hidden select-none font-sans text-white">
+      <TopoBackground
+        fixed={false}
+        background="#1d1725"
+        lineColor="138,111,174"
+        lineOpacity={0.22}
+        lineWidth={1}
+        levels={7}
+        scale={0.0016}
+        speed={0.06}
+        cell={16}
+      />
       {/* -------------------------------------------------------------
           BACKGROUND IMAGE (OBJECT-TOP ON MOBILE FOR SHIFTED SKYLINE)
       ------------------------------------------------------------- */}
-      <div className="pointer-events-none absolute inset-0 z-0">
+      {/* <div className="pointer-events-none absolute inset-0 z-0">
         <Image
           src="/images/tickets/bg-city.png"
           alt="Tathva Background"
@@ -58,7 +70,7 @@ export default function TathvaPasses() {
           priority
           className="object-cover object-top sm:object-center"
         />
-      </div>
+      </div> */}
 
       {/* -------------------------------------------------------------
           CYBERPUNK SIDE GLOW RODS (MIDDLE-ALIGNED ON MOBILE & DESKTOP)

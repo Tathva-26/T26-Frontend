@@ -6,6 +6,7 @@ import localFont from "next/font/local";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import TopoBackground from "@/components/TopoBackground";
 import {
   ROBOWARS_FRAME_HEIGHT,
   ROBOWARS_FRAME_WIDTH,
@@ -90,15 +91,6 @@ function DesktopFrame({ className, scale = "desktop", containerRef }) {
       ref={containerRef}
       className={`absolute left-1/2 top-1/2 aspect-[1413/697] -translate-x-1/2 -translate-y-1/2 [container-type:size] ${className}`}
     >
-      <Image
-        src={`${ASSET_ROOT}/arena-bg.png`}
-        alt=""
-        fill
-        priority={!isTablet}
-        sizes={isTablet ? "112vw" : "100vw"}
-        draggable={false}
-        className="object-cover"
-      />
 
       {/* The docked Wheels TV, now dark, carried over as a background prop to
           bridge the two sections. Same geometry as
@@ -194,15 +186,6 @@ function MobileFrame({ containerRef }) {
       ref={containerRef}
       className="absolute left-1/2 top-1/2 aspect-[412/594] w-screen -translate-x-1/2 -translate-y-1/2 [container-type:size] md:hidden"
     >
-      <Image
-        src={`${ASSET_ROOT}/mobile-background.png`}
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        draggable={false}
-        className="object-cover"
-      />
 
       <Art
         src="arena-left-robot.svg"
@@ -512,9 +495,20 @@ export default function RobowarsHero({ leadInVh = 0 }) {
     <section
       ref={sectionRef}
       aria-labelledby="robowars-title"
-      className={`${calmSerif.variable} ${alata.variable} ${bowlbyOneSC.variable} relative w-full shrink-0 bg-black text-white [--robowars-h:max(180dvh,900px)] md:[--robowars-h:max(180dvh,1100px)] xl:[--robowars-h:max(180dvh,940px)] motion-reduce:[--robowars-h:100dvh]`}
+      className={`${calmSerif.variable} ${alata.variable} ${bowlbyOneSC.variable} relative isolate w-full shrink-0 text-white [--robowars-h:max(180dvh,900px)] md:[--robowars-h:max(180dvh,1100px)] xl:[--robowars-h:max(180dvh,940px)] motion-reduce:[--robowars-h:100dvh]`}
       style={{ height: `calc(${leadInVh}vh + var(--robowars-h))` }}
     >
+      <TopoBackground
+        fixed={false}
+        background="#1d1725"
+        lineColor="138,111,174"
+        lineOpacity={0.22}
+        lineWidth={1}
+        levels={7}
+        scale={0.0016}
+        speed={0.06}
+        cell={16}
+      />
       {/* Scroll range of the robots/title animation: the section minus the lead-in */}
       <div
         ref={timelineRef}

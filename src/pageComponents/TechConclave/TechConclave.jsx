@@ -3,10 +3,11 @@ import React from 'react'
 import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import TopoBackground from '@/components/TopoBackground'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const background = '/images/techconclave/background.png'
+
 const person1 = '/images/techconclave/person2.png'
 const person2 = '/images/techconclave/person1.png'
 const robot = '/images/techconclave/robot.png'
@@ -908,9 +909,7 @@ function DesktopPoster() {
     <main
       ref={driftRef}
       className='tc-page tc-desktop-only'
-      style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})`,
-      }}
+     
     >
       <section className='tc-stage' aria-label='Tech Conclave, October 10-11'>
         {/* colour blocks behind the robot */}
@@ -1061,9 +1060,6 @@ function MobilePoster() {
     <main
       ref={driftRef}
       className='tc-page tc-mobile-only'
-      style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})`,
-      }}
     >
       <section className='tc-m-stage' aria-label='Tech Conclave, October 10-11'>
         {/* ── visual group: title + illustration + eyebrow ── */}
@@ -1172,9 +1168,6 @@ function TabletPoster() {
     <main
       ref={driftRef}
       className='tc-t-page'
-      style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})`,
-      }}
     >
       <section className='tc-t-stage' aria-label='Tech Conclave, October 10-11'>
         <div className='tc-t-visual'>
@@ -1257,9 +1250,24 @@ export default function TechConclave() {
   return (
     <SpeakerCalloutProvider>
       <style>{css}</style>
-      <DesktopPoster />
-      <MobilePoster />
-      <TabletPoster />
+      <div className='relative isolate min-h-screen w-full'>
+        <TopoBackground
+          fixed={false}
+          background='#1d1725'
+          lineColor='138,111,174'
+          lineOpacity={0.22}
+          lineWidth={1}
+          levels={7}
+          scale={0.0016}
+          speed={0.06}
+          cell={16}
+        />
+        <div className='relative z-10'>
+          <DesktopPoster />
+          <MobilePoster />
+          <TabletPoster />
+        </div>
+      </div>
     </SpeakerCalloutProvider>
   )
 }
@@ -1277,10 +1285,7 @@ html, body { margin: 0; padding: 0; }
   display: grid;
   place-items: center;
   margin: 0;
-  background-color: #101014;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background-color: transparent;
   overflow-x: clip; /* Clips horizontal artwork without creating a nested y scroller */
 }
 
@@ -1600,10 +1605,7 @@ text-align: center;
   min-height: 0;
   width: 100%;
   overflow-x: clip;
-  background-color: #101014;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background-color: transparent;
   color: #f2f0ff;
   font-family: "Space Grotesk", sans-serif;
 }

@@ -1,10 +1,12 @@
 .page {
+  position: relative;
+  isolation: isolate;
   min-height: 100dvh;
   overflow-x: clip;
-  background: #0b1429;
+  background: transparent;
   color: #f4f4fa;
   scrollbar-width: thin;
-  scrollbar-color: #606e95 #0b1429;
+  scrollbar-color: #606e95 transparent;
 }
 
 .stage {
@@ -14,39 +16,6 @@
   min-height: 600px;
   height: max(100dvh, 49.3vw);
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at 4% 90%, #26385866, transparent 58%),
-    radial-gradient(ellipse at 96% 88%, #49476d55, transparent 65%),
-    linear-gradient(124deg, #080f23 0%, #111e38 40%, #28304f 100%);
-}
-
-.stage::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  opacity: 0.8;
-  filter: brightness(1.35);
-  background-image:
-    url('/images/expo/stars.svg'),
-    radial-gradient(ellipse at 20% 20%, #6484c011, transparent 60%);
-  background-size:
-    cover,
-    100% 100%;
-  background-position: center;
-  pointer-events: none;
-}
-
-.stage::after {
-  content: '';
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 14vh;
-  min-height: 90px;
-  max-height: 170px;
-  background: linear-gradient(to bottom, transparent, #0a0a0a 92%);
-  pointer-events: none;
-  z-index: 4;
 }
 
 .title {
@@ -260,17 +229,6 @@
   .stage {
     height: max(100svh, 222.5vw);
     min-height: 790px;
-    background:
-      radial-gradient(ellipse at 0% 93%, #55537c44, transparent 66%),
-      radial-gradient(ellipse at 4% 19%, #394f8233, transparent 48%),
-      linear-gradient(155deg, #0b142b, #101c34 39%, #2c3154);
-  }
-  .stage::before {
-    background-size:
-      auto 100%,
-      100% 100%;
-    background-position: center;
-    opacity: 0.75;
   }
   .title {
     left: 7%;

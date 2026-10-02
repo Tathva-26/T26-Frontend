@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useRef } from 'react'
 import Crystal3D from './Crystal3D'
+import TopoBackground from '@/components/TopoBackground'
 import styles from './Expo.module.css'
 
 export default function Expo() {
@@ -10,6 +11,17 @@ export default function Expo() {
 
   return (
     <main className={styles.page}>
+      <TopoBackground
+        fixed={false}
+        background='#1d1725'
+        lineColor='138,111,174'
+        lineOpacity={0.22}
+        lineWidth={1}
+        levels={7}
+        scale={0.0016}
+        speed={0.06}
+        cell={16}
+      />
       <section className={styles.stage} aria-labelledby='expo-title'>
         <h1 id='expo-title' className={styles.title}>
           <span className={styles.desktopTitle}>EXPO</span>
