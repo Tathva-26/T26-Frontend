@@ -11,7 +11,7 @@ import { useZoomTransition } from "@/pageComponents/GPC/hooks/useZoomTransition"
 import { ASSETS, CONSOLE_SCREEN_INSET, GAME_BOX } from "@/pageComponents/GPC/gpcConfig";
 import { pressStart2P } from "@/pageComponents/GPC/gpcFonts";
 
-const INITIAL_STATS = { phase: "ready", score: 0, highScore: 0, lives: 3 };
+const INITIAL_STATS = { phase: "ready", score: 0, highScore: 0, lives: 3, wave: 0, newBest: false };
 
 const screenRectStyle = {
   left: `${CONSOLE_SCREEN_INSET.left}%`,

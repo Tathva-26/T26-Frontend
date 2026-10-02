@@ -22,16 +22,21 @@ const CONTROLS = {
 // Sizes below use container units: `cqw` is 1% of the nearest container's
 // width - the screen for the HUD, the whole console for the controls - so
 // everything scales with the console and is clamped to stay readable.
-const HUD_TEXT = "text-[clamp(8px,1.5cqw,18px)]";
+const HUD_TEXT = "text-[clamp(9px,1.5cqw,18px)]";
 
-function Message({ phase, touchControls }) {
-  const isOver = phase === "over";
+function Message({ stats, touchControls }) {
+  const isOver = stats.phase === "over";
   return (
     <div
       className="absolute inset-x-0 top-1/2 -translate-y-1/2 px-[3cqw] text-center"
       style={{ fontFamily: "var(--font-pixel)" }}
     >
       {isOver && <p className="text-[clamp(13px,2.9cqw,34px)] leading-relaxed tracking-widest">GAME OVER</p>}
+      {isOver && (
+        <p className={`${HUD_TEXT} mb-[1.5cqw] leading-relaxed tracking-wider text-[#ffe066]`}>
+          {stats.newBest ? "NEW HIGH SCORE" : `REACHED WAVE ${stats.wave}`}
+        </p>
+      )}
       <p className={`${HUD_TEXT} leading-relaxed tracking-wider text-white/80`}>
         {touchControls
           ? isOver
@@ -42,18 +47,22 @@ function Message({ phase, touchControls }) {
             : "PRESS SPACE TO START"}
       </p>
       {!isOver && (
-        <p className="mt-[2cqw] text-[clamp(7px,1.2cqw,15px)] leading-loose tracking-wider text-white/60">
+        <p className="mt-[2cqw] text-[clamp(8px,1.2cqw,15px)] leading-loose tracking-wider text-white/60">
           {touchControls ? (
             <>
               STICK TO MOVE
               <br />
               HOLD FIRE TO SHOOT
+              <br />
+              GRAB THE POWER-UPS
             </>
           ) : (
             <>
               ARROWS OR WASD TO MOVE
               <br />
-              SPACE TO SHOOT
+              HOLD SPACE TO SHOOT
+              <br />
+              GRAB THE POWER-UPS
             </>
           )}
         </p>
@@ -72,7 +81,7 @@ function Hud({ stats, touchControls }) {
         <span className="text-white/50">HI {String(stats.highScore).padStart(5, "0")}</span>{" "}
         {String(stats.score).padStart(5, "0")}
       </p>
-      {stats.phase !== "playing" && <Message phase={stats.phase} touchControls={touchControls} />}
+      {stats.phase !== "playing" && <Message stats={stats} touchControls={touchControls} />}
     </div>
   );
 }

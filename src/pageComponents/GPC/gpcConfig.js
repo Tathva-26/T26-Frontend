@@ -45,3 +45,45 @@ export const DRAGON_FPS = 12;
 
 // Desktop dragon placement (Stage design units), sitting above the console.
 export const DRAGON_STATIC = { x: 460, y: 8, width: 480, height: 290 };
+
+// The dragon image's own size; its box keeps these proportions.
+export const DRAGON_SIZE = { width: 637, height: 361 };
+
+// Home page scroll sequence. The hero sticks for a few screens of scroll
+// (the distance itself is --gpc-travel in gpc.css), starting on top of the
+// section above and ending on top of the first screen of Wheels. Each beat
+// below is [start, end] as a percentage of that pinned scroll.
+export const SEQUENCE = {
+  // The entry, where the section above is stuck in place while it plays
+  // (wide screens: see --gpc-lead in gpc.css, which is where `off` ends).
+  entry: {
+    // The camera pulls back out of the console's screen: what looked like
+    // the page above turns out to be showing on it.
+    pullback: [0, 13],
+    // That picture switches off like an old TV: it closes to a bright line,
+    // and the line shrinks to nothing.
+    off: [13, 18],
+  },
+  // The entry where the section above is a list that keeps scrolling
+  // (phones). It can't be held still on the console, so there the page
+  // itself switches off first, full-screen, and the camera then pulls back
+  // from the dark screen.
+  entryScrolling: {
+    off: [0, 5],
+    pullback: [4, 18],
+  },
+  power: [19, 33], // the switch-off in reverse: the screen switches on to the game
+  title: [32, 45], // "GPC" flickers on, letter by letter
+  tagline: [42, 51],
+  // 51-58: nothing moves (but for the "click to play" prompt fading out at
+  // the end). This is the hero at rest, where the game is played.
+  outro: [58, 69], // the console announces Wheels and "loads" it
+  film: [68, 71], // the Wheels footage comes up on the screen
+  // From here the camera pushes into the screen until the footage sits
+  // exactly where Wheels shows it. It ends where the handoff begins, which
+  // the sequence works out from where Wheels actually is (see --gpc-handoff).
+  diveStart: 71,
+};
+
+// How far the pull-back starts beyond "the screen just fills the view".
+export const PULLBACK_OVERSHOOT = 1.06;
