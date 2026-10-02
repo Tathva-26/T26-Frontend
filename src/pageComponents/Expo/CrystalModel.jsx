@@ -21,7 +21,7 @@ import { createCrystalVeins } from './crystalGeometry.mjs'
 import { journeyScreenPoint } from './expoJourney.mjs'
 import { detailMotion } from './expoDetailMotion.mjs'
 import { useExpoDetails } from './ExpoDetails'
-import { springStep, fractureSector } from './crystalInteraction.mjs'
+import { springStep, fractureSector, animationDelta, pulseStrength } from './crystalInteraction.mjs'
 import CrystalShards from './CrystalShards'
 
 const geometryLoader = new DRACOLoader()
@@ -118,6 +118,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const details = useExpoDetails()
   const detailGroup = useRef()
   const idleClock = useRef(0)
+  const interactionClock = useRef(0)
   const savedPose = useRef(null)
   const group = useRef()
   const travel = useRef()
@@ -197,8 +198,11 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     },
     [geometry, veins, glow, energy, robot, dust],
   )
-  useFrame(({ clock, camera, size }, delta) => {
-    const dt = Math.min(delta, 0.05)
+  useFrame(({ camera, size }, delta) => {
+    const dt = animationDelta(delta)
+    // R3F resets clock.elapsedTime when frameloop resumes. All interaction
+    // timestamps must share a clock that survives visibility/tab pauses.
+    interactionClock.current += dt
     const body = group.current
     const pose = journey?.current
     const detail = details?.progress.current
@@ -210,7 +214,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     detailGroup.current.rotation.set(motion.pitch, 0, motion.roll)
     const inDetails = detail && detail.state !== 'closed'
     if (!inDetails) idleClock.current += dt
-    const time = clock.elapsedTime
+    const time = interactionClock.current
     const idleTime = idleClock.current
     if (inDetails && !savedPose.current) {
       savedPose.current = { x: body.rotation.x, y: body.rotation.y, cameraX: camera.position.x, cameraY: camera.position.y }
@@ -265,8 +269,8 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     }
     const awake = time < life.current.awakeUntil && influence > .8
     if (awake !== life.current.awake) { life.current.awake = awake; onMood?.(awake) }
-    const age = time - life.current.pulseAt
-    const pulse = Math.exp(-age * 3.8) * influence
+    const age = Math.max(0, time - life.current.pulseAt)
+    const pulse = pulseStrength(time, life.current.pulseAt) * influence
     const bits = life.current.sectors
     const traceLevel = ((bits & 1) + ((bits >> 1) & 1) + ((bits >> 2) & 1) + ((bits >> 3) & 1)) * .32
     const chargeLevel = Math.max(life.current.charge, traceLevel)

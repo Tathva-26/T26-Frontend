@@ -1,5 +1,22 @@
 import assert from 'node:assert/strict'
-import { springStep, fractureSector } from '../src/pageComponents/Expo/crystalInteraction.mjs'
+import { springStep, fractureSector, animationDelta, pulseStrength } from '../src/pageComponents/Expo/crystalInteraction.mjs'
+
+// A canvas resume resets R3F elapsedTime; stale pulse timestamps previously
+// produced Infinity scale and NaN robot rotations after a long-running visit.
+assert.equal(pulseStrength(.2, 384), 0)
+assert.equal(pulseStrength(12, 12), 1)
+assert.ok(pulseStrength(13, 12) < .03)
+for (const delta of [-1, 0, 1 / 60, 300, NaN, Infinity]) {
+  const dt = animationDelta(delta)
+  assert.ok(Number.isFinite(dt) && dt >= 0 && dt <= .05)
+}
+let time = 384
+const startedAt = time
+for (const delta of [1 / 60, 300, 0, 1 / 60]) {
+  time += animationDelta(delta)
+  assert.ok(time >= startedAt)
+  assert.ok(pulseStrength(time, startedAt) >= 0 && pulseStrength(time, startedAt) <= 1)
+}
 
 for (const fps of [20, 30, 60, 120]) {
   let position = .22, velocity = 0, crossed = false

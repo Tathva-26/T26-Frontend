@@ -1,3 +1,12 @@
+export function animationDelta(delta) {
+  return Number.isFinite(delta) ? Math.max(0, Math.min(delta, .05)) : 0
+}
+
+export function pulseStrength(time, startedAt) {
+  const age = time - startedAt
+  return Number.isFinite(age) && age >= 0 ? Math.exp(-age * 3.8) : 0
+}
+
 // Substeps keep the soft return stable on both fast and slower render loops.
 export function springStep(position, velocity, target, delta) {
   const steps = Math.max(1, Math.ceil(Math.min(delta, .05) * 120))
