@@ -38,10 +38,12 @@ export const CONSOLE_BUTTON = { left: 47.5, top: 82.6, size: 5 };
 // and font size (% of console width, so it scales with the console).
 export const CLICK_TO_PLAY = { top: 25, fontSize: 3.1 };
 
-// Dragon animation: list every frame here, in order. One entry = static image.
-// e.g. ["/images/GPC/hero/dragon/1.png", "/images/GPC/hero/dragon/2.png", ...]
-export const DRAGON_FRAMES = [ASSETS.dragon];
-export const DRAGON_FPS = 12;
+// Dragon animation frames, in playback order.
+export const DRAGON_FRAMES = Array.from(
+  { length: 60 },
+  (_, index) => `/images/GPC/frames/ezgif-frame-${String(index + 1).padStart(3, "0")}.webp`,
+);
+export const DRAGON_FPS = 60;
 
 // Desktop dragon placement (Stage design units), sitting above the console.
 export const DRAGON_STATIC = { x: 460, y: 8, width: 480, height: 290 };
