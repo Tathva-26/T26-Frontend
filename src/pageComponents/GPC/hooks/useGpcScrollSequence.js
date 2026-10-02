@@ -57,8 +57,9 @@ function holeClip(width, height, { x, y, w, h }) {
  *   off   - that picture switches off like an old TV: the hole closes from
  *           top and bottom to a bright line, and the line shrinks to nothing.
  *           (Where the page above keeps scrolling instead of holding still,
- *           these two swap: it switches off first, then the camera pulls
- *           back from the dark screen. See SEQUENCE in gpcConfig.)
+ *           the order changes: it switches off first, the screen switches
+ *           on to the game, and the camera pulls back from that. See
+ *           SEQUENCE in gpcConfig.)
  *   on    - the reverse, drawn by the screen itself: it switches on to the
  *           game. The title flickers on.
  *   rest  - today's hero, where the game is played.
@@ -239,16 +240,21 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence }) {
         }
       }
 
-      // In: quick at first, easing as the hero comes to rest.
-      tl.fromTo(hero, pulledIn, { x: 0, y: 0, scale: 1, duration: span(entry.pullback), ease: "power3.out" }, at(entry.pullback));
+      // In: an even zoom out that settles gently. (Zoom is felt as a ratio,
+      // so easing the scale itself this much is what keeps it even; anything
+      // stronger does nearly all of the pull-back in its first few steps.)
+      tl.fromTo(hero, pulledIn, { x: 0, y: 0, scale: 1, duration: span(entry.pullback), ease: "power1.out" }, at(entry.pullback));
 
       // Off: fast at first, like the picture snapping shut.
       tl.fromTo(tube, { on: 1 }, { on: 0, duration: span(entry.off), ease: "power1.out" }, at(entry.off));
 
-      // On: the screen switches on, then it can be played.
-      tl.fromTo(live, { power: 0 }, { power: 1, duration: span(SEQUENCE.power), ease: "power1.in" }, at(SEQUENCE.power))
-        .fromTo(label, { opacity: 0 }, { opacity: 1, duration: 3 }, SEQUENCE.power[1])
-        .fromTo(consoleBox, { pointerEvents: "none" }, { pointerEvents: "auto", duration: 0.01 }, SEQUENCE.power[1]);
+      // On: the screen switches on. It can be played once it is on and the
+      // camera has pulled all the way back, whichever comes last.
+      const power = entry.power ?? SEQUENCE.power;
+      const ready = Math.max(power[1], entry.pullback[1]);
+      tl.fromTo(live, { power: 0 }, { power: 1, duration: span(power), ease: "power1.in" }, at(power))
+        .fromTo(label, { opacity: 0 }, { opacity: 1, duration: 3 }, ready)
+        .fromTo(consoleBox, { pointerEvents: "none" }, { pointerEvents: "auto", duration: 0.01 }, ready);
 
       // The title: each letter flickers on like a neon tube, hot then white.
       const letterTime = span(SEQUENCE.title) / (letters.length + 1);

@@ -59,24 +59,30 @@ export const SEQUENCE = {
   entry: {
     // The camera pulls back out of the console's screen: what looked like
     // the page above turns out to be showing on it.
-    pullback: [0, 13],
+    pullback: [0, 12.5],
     // That picture switches off like an old TV: it closes to a bright line,
     // and the line shrinks to nothing.
-    off: [13, 18],
+    off: [12.5, 18],
   },
   // The entry where the section above is a list that keeps scrolling
   // (phones). It can't be held still on the console, so there the page
-  // itself switches off first, full-screen, and the camera then pulls back
-  // from the dark screen.
+  // itself switches off first, full-screen; the screen switches straight
+  // back on to the game, like a channel changing; and the camera pulls back
+  // from that, so the console is never seen with a dead screen.
   entryScrolling: {
-    off: [0, 5],
-    pullback: [4, 18],
+    off: [0, 4.5],
+    power: [4.5, 12],
+    pullback: [6, 18],
   },
-  power: [19, 33], // the switch-off in reverse: the screen switches on to the game
-  title: [32, 45], // "GPC" flickers on, letter by letter
-  tagline: [42, 51],
-  // 51-58: nothing moves (but for the "click to play" prompt fading out at
-  // the end). This is the hero at rest, where the game is played.
+  // The switch-off in reverse: the screen switches on to the game. (An
+  // entry with a `power` of its own, above, uses that instead.)
+  power: [19, 28],
+  title: [27, 35], // "GPC" flickers on, letter by letter
+  tagline: [33, 38.5],
+  // 38.5-58: nothing moves (but for the "click to play" prompt fading out at
+  // the end). This is the hero at rest, where the game is played. It is the
+  // longest beat on purpose: more than a screen of scroll, so that a hard
+  // flick of the wheel lands on the hero instead of flying past it.
   outro: [58, 69], // the console announces Wheels and "loads" it
   film: [68, 71], // the Wheels footage comes up on the screen
   // From here the camera pushes into the screen until the footage sits

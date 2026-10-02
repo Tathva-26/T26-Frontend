@@ -35,7 +35,7 @@
  * render, so the sections after GPC are never measured against wrong ones.
  */
 .gpc-track {
-  --gpc-travel: 400vh;
+  --gpc-travel: 650vh;
   --gpc-handoff: 20vh;
   --gpc-lead: 0px;
   position: relative;
@@ -54,7 +54,7 @@
   /* 18% of the travel: up to the end of SEQUENCE.entry.off in gpcConfig.js. */
   @media (min-width: 769px) {
     .main-scroll .gpc-track {
-      --gpc-lead: 72vh;
+      --gpc-lead: 117vh;
     }
   }
 }
