@@ -3,6 +3,8 @@
 import { startTransition, useEffect, useRef, useState } from 'react';
 import styles from './ProfilePage.module.css';
 import Galaxy from '../../components/Galaxy/Galaxy';
+import Navbar from "@/pageComponents/Navbar/Navbar";
+import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
 
 const tathvaWhiteLogo = 'https://www.figma.com/api/mcp/asset/c4b1e068-12d7-4e70-bc34-c2dad84d5388.png';
 
@@ -182,9 +184,6 @@ export default function ProfilePage() {
       <header className={styles.topbar}>
         <div className={styles.leftHeader}>
           <div className={styles.brandWrap}>
-            <div className={styles.logoMark} aria-hidden="true">
-              <img src={tathvaWhiteLogo} alt="Tathva logo" className={styles.logoImage} />
-            </div>
           </div>
         </div>
 
@@ -197,6 +196,10 @@ export default function ProfilePage() {
       </header>
 
       <main className={styles.contentWrap}>
+        <div className="hidden lg:block">
+  <Navbar />
+</div>
+        <TathvaMenu/>
         <div className={styles.avatarGroup}>
           <div className={styles.avatar} aria-label="User avatar">
             <img src="/images/profile-main-avatar.png" alt="" />

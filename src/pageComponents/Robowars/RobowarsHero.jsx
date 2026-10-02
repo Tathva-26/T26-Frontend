@@ -13,6 +13,8 @@ import {
   TV_ART_STYLE,
 } from "../wheels/robowarsHandoff";
 import "./robowars.css";
+import Navbar from "@/pageComponents/Navbar/Navbar";
+import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 

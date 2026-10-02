@@ -12,12 +12,12 @@ const jockeyOne = Jockey_One({
 })
 
 const leftMenu = [
-  { label: 'HOME', href: '/' },
+  { label: 'HOME', href: '/hero' },
   { label: 'ANNOUNCEMENTS', href: '/announcements' },
-  { label: 'ACCOMMODATIONS', href: '/accommodations' },
+  { label: 'ACCOMMODATIONS', href: '/accommodation' },
   { label: 'LECTURES', href: '/lectures' },
   { label: 'CREDITS', href: '/credits' },
-  { label: 'ROBOWARS', href: '/robowars' },
+  { label: 'PROSHOW', href: '/proshow' },
 ]
 
 const rightMenu = [
@@ -232,7 +232,7 @@ function PortalText({ text }) {
   )
 }
 
-const allMenuItems = [...leftMenu, ...rightMenu]
+const allMenuItems = [...leftMenu, ...rightMenu];
 
 export default function TathvaMenu() {
   const [isOpen, setIsOpen] = useState(false)
@@ -251,17 +251,17 @@ export default function TathvaMenu() {
   // Close menus on Escape key
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        if (isMobileOpen) setIsMobileOpen(false)
+      if (e.key === "Escape") {
+        if (isMobileOpen) setIsMobileOpen(false);
         if (isOpen && timelineRef.current) {
-          timelineRef.current.reverse()
-          setIsOpen(false)
+          timelineRef.current.reverse();
+          setIsOpen(false);
         }
       }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isMobileOpen, isOpen])
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMobileOpen, isOpen]);
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
@@ -408,101 +408,96 @@ export default function TathvaMenu() {
       '
     >
       {/* =================================================
-          MOBILE NAVIGATION HEADER & HAMBURGER (Mobile only)
+          MOBILE NAVIGATION HEADER & HAMBURGER (Below lg)
       ================================================= */}
       <header
-        className='
+        className="
           pointer-events-auto
           fixed
-          top-3
-          left-4
-          w-fit
+          inset-x-0
+          top-0
           z-[10002]
           flex
-          h-12
+          h-16
           items-center
-          gap-2
-          rounded-full
-          border
-          border-white/15
-          bg-[#242526]/68
-          px-1.5
-          shadow-[0_12px_32px_rgba(0,0,0,0.28)]
-          backdrop-blur-2xl
-          md:hidden
-        '
+          justify-between
+          px-5
+          sm:px-8
+          lg:hidden
+        "
       >
-        <span
-          className='ml-2 text-[11px] tracking-[0.2em] text-white/70 font-jockey'
-          aria-hidden='true'
+        <Link
+          href="/hero"
+          aria-label="Tathva home"
+          className="pointer-events-auto inline-flex items-center"
         >
-          TATHVA ’26
-        </span>
+          <img
+            src="/images/hero/tathvalogo.png"
+            alt="Tathva"
+            className="h-8 w-auto object-contain"
+          />
+        </Link>
 
         {/* Menu trigger */}
         <button
-          type='button'
+          type="button"
           onClick={() => setIsMobileOpen((prev) => !prev)}
-          aria-label={isMobileOpen ? 'Close menu' : 'Open menu'}
+          aria-label={isMobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={isMobileOpen}
-          className='
+          className="
+            pointer-events-auto
             flex
-            h-9
-            w-9
+            h-11
+            w-11
             items-center
             justify-center
-            rounded-full
             p-2
             text-white
-            bg-white/8
-            hover:bg-white/15
             focus-visible:outline
             focus-visible:outline-2
             focus-visible:outline-offset-2
             focus-visible:outline-white
-            transition-[background-color,transform]
+            transition-transform
             active:scale-95
-          '
+          "
         >
-          <span className='sr-only'>Toggle navigation menu</span>
-          <div className='relative flex h-4 w-5 flex-col justify-between'>
-            <span
-              className={`
-                h-0.5
-                w-full
-                rounded-full
-                bg-white
-                transition-all
-                duration-300
-                ease-in-out
-                ${isMobileOpen ? 'translate-y-[7px] rotate-45' : ''}
-              `}
+          <span className="sr-only">Toggle navigation menu</span>
+          <svg
+            width="27"
+            height="18"
+            viewBox="0 0 27 18"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <line
+              x1="6.5"
+              y1="3.5"
+              x2="20.5"
+              y2="3.5"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
             />
-            <span
-              className={`
-                h-0.5
-                w-full
-                rounded-full
-                bg-white
-                transition-all
-                duration-200
-                ease-in-out
-                ${isMobileOpen ? 'opacity-0 scale-x-0' : 'opacity-100'}
-              `}
+            <line
+              x1="1.5"
+              y1="9.5"
+              x2="25.5"
+              y2="9.5"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
             />
-            <span
-              className={`
-                h-0.5
-                w-full
-                rounded-full
-                bg-white
-                transition-all
-                duration-300
-                ease-in-out
-                ${isMobileOpen ? '-translate-y-[7px] -rotate-45' : ''}
-              `}
+            <line
+              x1="6.5"
+              y1="16.5"
+              x2="20.5"
+              y2="16.5"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
             />
-          </div>
+          </svg>
         </button>
       </header>
 
@@ -512,9 +507,9 @@ export default function TathvaMenu() {
       <div
         onClick={() => setIsMobileOpen(false)}
         style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.35)',
-          backdropFilter: 'blur(3px)',
-          WebkitBackdropFilter: 'blur(3px)',
+          backgroundColor: "rgba(0, 0, 0, 0.35)",
+          backdropFilter: "blur(3px)",
+          WebkitBackdropFilter: "blur(3px)",
         }}
         className={`
           pointer-events-auto
@@ -524,21 +519,22 @@ export default function TathvaMenu() {
           transition-opacity
           duration-[250ms]
           ease
-          md:hidden
-          ${isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+          lg:hidden
+          ${isMobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
         `}
-        aria-hidden='true'
+        aria-hidden="true"
       />
 
       {/* =================================================
-          MOBILE MENU POPOVER (opened from the top-left pill)
+          MOBILE MENU POPOVER (opened from the top-right menu button)
       ================================================= */}
       <aside
         className={`
           pointer-events-auto
           fixed
           top-[4.5rem]
-          left-4
+          left-auto
+          right-4
           z-[10001]
           flex
           w-[min(18rem,calc(100vw-2rem))]
@@ -549,20 +545,20 @@ export default function TathvaMenu() {
           border-white/10
           bg-[#28292B]/98
           shadow-2xl
-          origin-top-left
+          origin-top-right
           transition-[opacity,transform,visibility]
           duration-200
           ease-out
-          md:hidden
+          lg:hidden
           ${
             isMobileOpen
-              ? 'translate-y-0 scale-100 opacity-100 visible'
-              : '-translate-y-2 scale-95 opacity-0 invisible pointer-events-none'
+              ? "translate-y-0 scale-100 opacity-100 visible"
+              : "-translate-y-2 scale-95 opacity-0 invisible pointer-events-none"
           }
         `}
       >
         <nav
-          className='
+          className="
             flex-1
             overflow-y-auto
             px-4
@@ -572,7 +568,7 @@ export default function TathvaMenu() {
             flex-col
             items-start
             gap-[14px]
-          '
+          "
         >
           {allMenuItems.map((item, idx) => (
             <Link
@@ -582,7 +578,7 @@ export default function TathvaMenu() {
               style={{
                 transitionDelay: isMobileOpen
                   ? `${(0.05 + idx * 0.06).toFixed(2)}s`
-                  : '0s',
+                  : "0s",
               }}
               className={`
                 group
@@ -610,16 +606,16 @@ export default function TathvaMenu() {
                 font-jockey
                 ${
                   isMobileOpen
-                    ? 'opacity-100 translate-y-0'
-                    : 'opacity-0 translate-y-[10px]'
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-[10px]"
                 }
               `}
             >
               <img
-                src='/images/menu/leftwave.png'
-                alt=''
+                src="/images/menu/leftwave.png"
+                alt=""
                 draggable={false}
-                className='
+                className="
                   pointer-events-none
                   h-[12px]
                   w-auto
@@ -630,16 +626,16 @@ export default function TathvaMenu() {
                   group-hover:opacity-100
                   group-hover:translate-x-0
                   -translate-x-1
-                '
+                "
               />
 
               <PortalText text={item.label} />
 
               <img
-                src='/images/menu/rightwave.png'
-                alt=''
+                src="/images/menu/rightwave.png"
+                alt=""
                 draggable={false}
-                className='
+                className="
                   pointer-events-none
                   h-[12px]
                   w-auto
@@ -650,7 +646,7 @@ export default function TathvaMenu() {
                   group-hover:opacity-100
                   group-hover:translate-x-0
                   translate-x-1
-                '
+                "
               />
             </Link>
           ))}
@@ -669,7 +665,7 @@ export default function TathvaMenu() {
           left-1/2
           top-0
           hidden
-          md:flex
+          lg:flex
           -translate-x-1/2
           justify-center
           overflow-hidden
@@ -704,7 +700,7 @@ export default function TathvaMenu() {
               onClick={() => {
                 if (isOpen) toggleMenu()
               }}
-              className='
+              className="
                 group
                 relative
                 flex
@@ -723,7 +719,7 @@ export default function TathvaMenu() {
                 duration-200
                 hover:text-white
                 font-jockey
-              '
+              "
             >
               <img
                 src='/images/menu/leftwave.png'
@@ -808,7 +804,7 @@ export default function TathvaMenu() {
               onClick={() => {
                 if (isOpen) toggleMenu()
               }}
-              className='
+              className="
                 group
                 relative
                 flex
@@ -827,7 +823,7 @@ export default function TathvaMenu() {
                 duration-200
                 hover:text-white
                 font-jockey
-              '
+              "
             >
               <img
                 src='/images/menu/leftwave.png'
@@ -899,7 +895,7 @@ export default function TathvaMenu() {
           bg-transparent
           p-0
           outline-none
-          md:flex
+          lg:flex
         '
       >
         <img

@@ -12,6 +12,8 @@ import React, {
 import { proshowArtists } from "@/lib/proshowArtists";
 import useHoldToPlay from "@/hooks/useHoldToPlay";
 import { haptics } from "@/lib/haptics";
+import Navbar from "@/pageComponents/Navbar/Navbar";
+import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
 
 const HOLD_MS = 1100;
 const RING_COUNT = 7;
@@ -428,10 +430,10 @@ const AmbientDust = memo(function AmbientDust() {
 const HeaderBadges = memo(function HeaderBadges() {
   return (
     <>
-      <span className="absolute top-[clamp(14px,3dvh,30px)] left-[clamp(16px,2.4vw,32px)] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em]">
+      <span className="absolute top-[clamp(70px,3dvh,30px)] left-[clamp(16px,2.4vw,32px)] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em]">
         TATHVA ‘26
       </span>
-      <span className="absolute top-[clamp(14px,3dvh,30px)] right-[clamp(8px,2.4vw,32px)] -mr-[0.45em] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em]">
+      <span className="absolute top-[clamp(70px,3dvh,30px)] right-[clamp(8px,2.4vw,32px)] -mr-[0.45em] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em]">
         PRO-SHOW
       </span>
     </>
@@ -1033,6 +1035,10 @@ function ProshowCarousel() {
       ref={pageRef}
       className="proshow-carousel relative grid h-dvh w-full touch-pan-y select-none grid-rows-[auto_minmax(0,1fr)_auto_auto_auto] items-center justify-items-center overflow-hidden bg-[radial-gradient(ellipse_at_50%_45%,#100e18_0%,#0a0912_55%,#050408_100%)] px-4 pt-[clamp(14px,3dvh,32px)] pb-[clamp(28px,7dvh,64px)] text-white [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [--c:clamp(180px,min(38dvh,36vw),470px)] [--o1:0.6] [--o2:0.4] [--x1:0.8] [--x2:1.32] [--x3:1.7] max-lg:[--c:clamp(170px,min(40dvh,52vw),420px)] max-lg:[--x1:0.84] max-lg:[--x2:1.38] max-sm:pb-[92px] max-sm:[--c:min(58vw,40dvh)] max-sm:[--o1:0.78] max-sm:[--o2:0] max-sm:[--x1:0.65] max-sm:[--x2:1.4]"
     >
+     <div className="hidden lg:block">
+  <Navbar />
+</div>
+      <TathvaMenu/>
       <style>{carouselStyles}</style>
       <BackgroundLayers />
       <HeaderBadges />

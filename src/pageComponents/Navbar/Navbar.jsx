@@ -9,7 +9,6 @@ import React, {
 } from "react";
 import { Hammersmith_One, Instrument_Serif } from "next/font/google";
 import Link from "next/link";
-
 /**
  * Navbar
  * ------
@@ -41,11 +40,11 @@ const instrumentSerif = Instrument_Serif({
 const NAV_LINKS = [
   { label: "Workshops", href: "/workshops" },
   { label: "Lectures", href: "/lectures" },
-  { label: "ProShow", href: "#journal" },
-  { label: "Accomodation", href: "#contact" },
-];
+  { label: "ProShow", href: "/proshow" },
+  { label: "Accommodation", href: "/accommodation" },
+  { label: "Map", href: "/map" },
 
-const LOGIN_HREF = "/login";
+];
 
 const SCROLL_RANGE = 140; // px of scroll over which the bar fully compacts
 const EASE = 0.12; // per-frame lerp factor — gives the resize physical weight
@@ -387,9 +386,9 @@ export default function Navbar() {
         <div className="nb__glow" aria-hidden="true" />
 
         <div className="nb__left">
-          <a href="#top" className="nb__mark" aria-label="Home">
+          <Link href="/hero" className="nb__mark" aria-label="Home">
             <img src="/images/hero/tathvalogo.png" alt="Tathva" />
-          </a>
+          </Link>
 
           <ul className="nb__links">
             {NAV_LINKS.map((link) => (
@@ -401,11 +400,11 @@ export default function Navbar() {
         </div>
 
         <div className="nb__right">
-          <Link
-  href={LOGIN_HREF}
-  className="nb__cta"
-  onPointerEnter={(event) => registerFlipRef.current?.trigger(event)}
->
+          <a
+            href="#register"
+            className="nb__cta"
+            onPointerEnter={(event) => registerFlipRef.current?.trigger(event)}
+          >
             <span className="nb__cta-line" aria-hidden="true" />
             <FlipText ref={registerFlipRef} text="Register" />
             <img
@@ -413,7 +412,7 @@ export default function Navbar() {
               alt=""
               className="nb__cta-arrow"
             />
-          </Link>
+          </a>
 
           <button
             ref={menuButtonRef}
@@ -437,7 +436,6 @@ export default function Navbar() {
         <nav aria-label="Mobile">
           <ul className="nb-mobile__links">
             {NAV_LINKS.map((link) => (
-              
               <li key={link.href}>
                 <a
                   href={link.href}
@@ -450,14 +448,14 @@ export default function Navbar() {
               </li>
             ))}
           </ul>
-        <Link
-  href={LOGIN_HREF}
-  className="nb-mobile__cta"
-  onClick={closeMenu}
-  tabIndex={menuOpen ? 0 : -1}
->
-  Register
-</Link>
+          <a
+            href="#register"
+            className="nb-mobile__cta"
+            onClick={closeMenu}
+            tabIndex={menuOpen ? 0 : -1}
+          >
+            Register
+          </a>
         </nav>
       </div>
 
@@ -756,6 +754,12 @@ padding-inline: calc(24px - var(--scroll-progress, 0) * 8px);
   .nb__right { display: flex; gap: 0; }
   .nb__menu { display: flex; }
   .nb-mobile { display: flex; }
+}
+  @media (max-width: 1023px), (hover: none) {
+  .nb,
+  .nb-mobile {
+    display: none !important;
+  }
 }
 
         @media (prefers-reduced-motion: reduce) {

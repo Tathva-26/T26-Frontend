@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Navbar from "@/pageComponents/Navbar/Navbar";
+import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
+
 
 const TICKETS = [
   {
@@ -47,6 +50,10 @@ export default function TathvaPasses() {
 
   return (
     <main className="relative flex min-h-screen w-full flex-col items-center justify-between overflow-hidden bg-black select-none font-sans text-white">
+      <div className="hidden lg:block">
+  <Navbar />
+</div>
+      <TathvaMenu/>
       {/* -------------------------------------------------------------
           BACKGROUND IMAGE (OBJECT-TOP ON MOBILE FOR SHIFTED SKYLINE)
       ------------------------------------------------------------- */}
@@ -82,7 +89,7 @@ export default function TathvaPasses() {
       {/* -------------------------------------------------------------
           HERO TITLE & SUBTITLE (AKIRA EXPANDED FONT)
       ------------------------------------------------------------- */}
-      <div className="relative z-10 my-0 sm:my-auto flex w-full flex-col items-center justify-center px-4 pt-8 sm:pt-16 md:pt-20 text-center">
+      <div className="relative z-10 my-0 sm:my-auto flex w-full flex-col items-center justify-center px-4 pt-24 sm:pt-24 md:pt-20 text-center">
         <h1
           className="text-4xl font-black tracking-[0.12em] text-white sm:text-5xl md:text-6xl lg:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]"
           style={{ fontFamily: "'Akira Expanded', 'Orbitron', sans-serif" }}

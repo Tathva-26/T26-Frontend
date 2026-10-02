@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import "./w1.css";
+import Navbar from "@/pageComponents/Navbar/Navbar";
+import TathvaMenu from "@/components/TathvaMenu/TathvaMenu"; 
 
 // Desktop Constants
 const desktopAssetBase = "https://c.animaapp.com/Dp7bguVy/img";
@@ -204,6 +206,7 @@ function MobileView() {
   return (
     <main
       className="block min-[1285px]:hidden bg-[url(https://c.animaapp.com/UqxAlqQL/img/android-compact---16.png)] bg-cover bg-[50%_50%] w-full relative overflow-hidden"
+
       style={{ minHeight: `${Math.max(917 * scale, viewportHeight)}px` }}
       onClick={() => setSelectedCard(null)}
     >
@@ -250,6 +253,10 @@ function DesktopView() {
       className="hidden min-[1285px]:flex events-container bg-[url(https://c.animaapp.com/Dp7bguVy/img/frame-48.png)] bg-cover bg-[50%_50%] w-full h-[max(697px,100svh)] relative items-center justify-center overflow-hidden"
       data-model-id="998:1701"
     >
+      <div className="hidden lg:block">
+        <Navbar />
+      </div>
+            <TathvaMenu/>
       <div className="absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-500 pointer-events-none z-10 page-overlay" />
       <img src="/images/menu/border_left.png" alt="" className="absolute left-[30px] top-1/2 -translate-y-1/2 h-[50%] max-h-[350px] w-auto pointer-events-none z-50" />
       <img src="/images/menu/border_right.png" alt="" className="absolute right-[30px] top-1/2 -translate-y-1/2 h-[50%] max-h-[350px] w-auto pointer-events-none z-50" />

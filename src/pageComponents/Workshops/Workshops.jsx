@@ -2033,7 +2033,9 @@ export default function WorkshopsPage() {
 
   return (
     <div className="workshops-page min-h-screen bg-[#06070d] text-slate-100 font-sans relative overflow-x-clip selection:bg-indigo-600 selection:text-white pb-24">
-      <Navbar />
+      <div className="hidden lg:block">
+  <Navbar />
+</div>
       <TathvaMenu/>
       <style>{workshopsStyles}</style>
 

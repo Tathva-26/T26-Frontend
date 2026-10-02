@@ -4,6 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import styles from './ContactUs.module.css';
+import Navbar from "@/pageComponents/Navbar/Navbar";
+import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
 
 export default function ContactUs() {
   const [submissionReady, setSubmissionReady] = useState(false);
@@ -15,11 +17,15 @@ export default function ContactUs() {
 
   return (
     <div className={styles.page}>
-      <Link className={styles.brand} href="/" aria-label="Tathva home">
+      {/* <Link className={styles.brand} href="/" aria-label="Tathva home">
         <Image src="/images/contact-us/tathva-logo.png" alt="Tathva" fill priority sizes="55px" />
-      </Link>
+      </Link> */}
 
       <main className={styles.main}>
+       <div className="hidden lg:block">
+  <Navbar />
+</div>
+        <TathvaMenu/>
         <h1 className={styles.title}>CONTACT US</h1>
 
         <section className={styles.panel} aria-label="Contact form">

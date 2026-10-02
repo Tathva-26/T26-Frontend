@@ -550,7 +550,7 @@ export const Hero = ({
           // visible regardless of orientation (landscape/portrait).
           // Measure the actual navbar height; fall back to 68px.
           const navEl = document.querySelector('.nb')
-          const navH = navEl ? navEl.getBoundingClientRect().bottom : 68
+         const navH = navEl?.getBoundingClientRect().bottom || 68
           const PAD = 20
 
           // Theme — top-left, flush below navbar

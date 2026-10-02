@@ -120,6 +120,7 @@
   font-family: var(--font-space), sans-serif;
   white-space: nowrap;
   cursor: pointer;
+  transform: translateY(50px);
 }
 
 .signOutIcon {

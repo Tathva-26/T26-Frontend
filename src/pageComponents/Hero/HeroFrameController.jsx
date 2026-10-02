@@ -21,8 +21,65 @@ const getIsMobile = () => window.matchMedia(MOBILE_QUERY).matches;
 // on mobile React re-renders right after hydration and drops TathvaMenu.
 const getIsMobileServer = () => false;
 
+// --- Ready gate: keep a black cover up until the first-view hero images are decoded ---
+const HERO_BASE = "/images/hero/";
+const READY_TIMEOUT_MS = 1500; // never leave the user on black longer than this
+
+const preloadImage = (src) =>
+  new Promise((resolve) => {
+    const img = new window.Image();
+    img.src = src;
+    (img.decode ? img.decode() : Promise.reject()).then(resolve, resolve);
+  });
+
 export default function HeroFrameController({ children }) {
   const isMobile = useSyncExternalStore(subscribeMobile, getIsMobile, getIsMobileServer);
+
+  // false until the critical hero images are ready; drives the black cover below
+  const [ready, setReady] = useState(false);
+
+  // Page background black while this route is mounted, so nothing white can show at the edges.
+  useEffect(() => {
+    const prev = document.body.style.backgroundColor;
+    document.body.style.backgroundColor = "#000";
+    return () => {
+      document.body.style.backgroundColor = prev;
+    };
+  }, []);
+
+  // Wait only for the images that make up the first view (not videos / fonts), then re-measure
+  // once and reveal.
+  useEffect(() => {
+    if (ready) return undefined;
+    let cancelled = false;
+
+    const CRITICAL = [
+      "bg.png",
+      "islandv2.png",
+      "rockyground.png",
+      "girl4.webp",
+      isMobile ? "tathva_mobile.svg" : "tathva_text.svg",
+    ];
+
+    const images = CRITICAL.map((f) => preloadImage(HERO_BASE + f));
+    const timeout = new Promise((r) => setTimeout(r, READY_TIMEOUT_MS));
+
+    Promise.race([Promise.all(images), timeout]).then(() => {
+      if (cancelled) return;
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          window.__lenis?.resize();
+          ScrollTrigger.refresh();
+          setReady(true);
+        })
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isMobile, ready]);
+
   const [section, setSection] = useState("hero"); // "hero" | "frame"
   const sectionRef = useRef("hero");
   // Only Hero is ever hidden. Frame is the real, always-painted background: Hero cuts a hole
@@ -187,7 +244,7 @@ export default function HeroFrameController({ children }) {
         <Frame onScroll={handleFrameScroll} isActive={section === "frame" && !unlocked} />
       </div>
 
-      {!isMobile && <TathvaMenu />}
+      {<TathvaMenu />}
 
       {/* While locked, `children` stay mounted but hidden. `visibility: hidden` also hides
           position: fixed descendants (pinned sections, underlays), which overflow: hidden on the
@@ -197,6 +254,22 @@ export default function HeroFrameController({ children }) {
           {children}
         </div>
       )}
+
+      {/* Black cover until the critical hero images are ready. Fixed + 2px bleed so no sliver
+          of the page behind it shows; below the Navbar (z-index 1000). Fully hidden after the fade. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: "-2px",
+          zIndex: 20000,
+          background: "#000",
+          opacity: ready ? 0 : 1,
+          visibility: ready ? "hidden" : "visible",
+          transition: ready ? "opacity 0.4s ease, visibility 0s linear 0.4s" : "none",
+          pointerEvents: "none",
+        }}
+      />
     </div>
   );
 }
