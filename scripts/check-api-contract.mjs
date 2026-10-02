@@ -24,6 +24,8 @@ const { api, apiErrorMessage, apiErrorCode, apiFieldErrors, apiErrorStatus, PATH
 const { formatPrice, toRupees, eventDateParts, formatTimeRange, formatDuration, venueName, venueLabel } =
   await import(`${ROOT}format.js`)
 const { normaliseEvents, normaliseEvent, isBookable } = await import(`${ROOT}events.js`)
+const { validateContact, normalisePhone, toStoredPhone, isValidEmail, isValidPhone } =
+  await import(`${ROOT}validation.js`)
 
 let pass = 0
 const fails = []
@@ -235,10 +237,39 @@ for (const [label, path] of [['announcements', PATHS.announcements], ['tiqr-even
 
 /* ---- error helper edge cases ---- */
 check('bare string body', apiErrorMessage({ response: { data: 'boom' } }), 'boom')
-check('network error', apiErrorMessage({ message: 'Network Error' }), 'Network Error')
+// A transport failure has no body, so the caller's human sentence wins over
+// axios's internal "Network Error" / "timeout of 0ms exceeded".
+check('transport error uses fallback', apiErrorMessage({ message: 'Network Error' }, 'Could not reach the server.'), 'Could not reach the server.')
+check('transport error default fallback', apiErrorMessage({ message: 'Network Error' }), 'Something went wrong. Please try again.')
+check('server message still wins', apiErrorMessage({ response: { data: { error: 'Booking rejected' } } }, 'nope'), 'Booking rejected')
 check('empty body fallback', apiErrorMessage({ response: { data: {} } }), 'Something went wrong. Please try again.')
 check('no code', apiErrorCode({ response: { data: {} } }), null)
 check('no field errors', apiFieldErrors({ response: { data: { error: 'x' } } }), {})
+
+/* ---- contact form validation ---- */
+const GOOD = { topic: 'Sponsorship', name: 'Ada', email: 'a@b.com', phone: '9876543210', query: 'Hello' }
+check('valid contact passes', validateContact(GOOD), {})
+check('all fields required', Object.keys(validateContact({})).sort(), ['email', 'name', 'phone', 'query', 'topic'])
+check('whitespace is not a value', validateContact({ ...GOOD, name: '   ' }).name, 'Enter your name')
+check('bad email caught', validateContact({ ...GOOD, email: 'a@b' }).email, 'Enter a valid email address')
+check('bad email no at', validateContact({ ...GOOD, email: 'ab.com' }).email, 'Enter a valid email address')
+check('short phone caught', validateContact({ ...GOOD, phone: '12345' }).phone, 'Enter a valid phone number')
+check('lettered phone caught', validateContact({ ...GOOD, phone: '98765abcde' }).phone, 'Enter a valid phone number')
+// Separators are cosmetic, and the backend ignores them too.
+check('spaced phone accepted', validateContact({ ...GOOD, phone: '98765 43210' }), {})
+check('dashed phone accepted', validateContact({ ...GOOD, phone: '98765-43210' }), {})
+check('+91 phone accepted', validateContact({ ...GOOD, phone: '+919876543210' }), {})
+check('15 digits accepted', validateContact({ ...GOOD, phone: '123456789012345' }), {})
+check('16 digits rejected', Boolean(validateContact({ ...GOOD, phone: '1234567890123456' }).phone), true)
+// A required-field message must win over a format message for the same field.
+check('empty phone message', validateContact({ ...GOOD, phone: '' }).phone, 'Enter your phone number')
+check('empty email message', validateContact({ ...GOOD, email: '' }).email, 'Enter your email')
+check('normalisePhone', normalisePhone(' (98765) 43-210 '), '9876543210')
+check('toStoredPhone strips 91', toStoredPhone('+91 98765 43210'), '9876543210')
+check('toStoredPhone strips leading 0', toStoredPhone('09876543210'), '9876543210')
+check('toStoredPhone leaves plain', toStoredPhone('9876543210'), '9876543210')
+check('isValidEmail', [isValidEmail('a@b.co'), isValidEmail('a b@c.co'), isValidEmail('')], [true, false, false])
+check('isValidPhone', [isValidPhone('9876543210'), isValidPhone('123'), isValidPhone(null)], [true, false, false])
 
 console.log(`\n${pass} passed, ${fails.length} failed`)
 if (fails.length) {

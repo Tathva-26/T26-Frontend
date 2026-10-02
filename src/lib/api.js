@@ -123,9 +123,11 @@ export function apiErrorMessage(error, fallback = FALLBACK_MESSAGE) {
     if (typeof body.message === 'string' && body.message.trim()) return body.message
   }
 
-  // A request that never reached the server (offline, DNS, CORS preflight).
-  if (!error?.response && error?.message) return error.message
-
+  // A request that never reached the server at all — offline, DNS failure, a
+  // refused connection, a timeout, or an origin the backend does not allow.
+  // axios describes these as "Network Error" or "timeout of 0ms exceeded",
+  // which say nothing useful to a user, so the caller's sentence is better.
+  // The original error is still on hand for the console.
   return fallback
 }
 

@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "check:api": "node --no-warnings scripts/check-api-contract.mjs"
+    "check:api": "node --no-warnings scripts/check-api-contract.mjs",
+    "check:e2e": "node scripts/e2e/contact-form.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
