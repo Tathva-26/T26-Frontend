@@ -16,26 +16,9 @@ export default function SignupPage({
   homeHref = "/",
   loading = false,
 }) {
-  const pageRef = React.useRef(null);
-
-  React.useEffect(() => {
-    const page = pageRef.current;
-    const scrollRoot = page?.closest(".main-scroll");
-    if (!page || !scrollRoot) return undefined;
-
-    const observer = new IntersectionObserver(([entry]) => {
-      page.dataset.signupVisible = String(entry.isIntersecting);
-    }, { root: scrollRoot, threshold: 0.15 });
-
-    observer.observe(page);
-    return () => {
-      observer.disconnect();
-      delete page.dataset.signupVisible;
-    };
-  }, []);
 
   return (
-    <main ref={pageRef} className="tv-page">
+   <main className="tv-page">
       <style>{css}</style>
 
       {/* CHANGE 1: topo background, scoped to this page (fixed={false}) */}
