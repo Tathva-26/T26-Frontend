@@ -6,7 +6,7 @@ import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
 import { useGSAP } from '@gsap/react'
 import { animateBird, TRAIL_START, BRIDGE, TRAIL_END, FLIGHT_PATH } from './birdFlight'
 import styles from './Hero.module.css'
-import { MotionPathPlugin } from "gsap/MotionPathPlugin"
+// import { MotionPathPlugin } from "gsap/MotionPathPlugin"
 
 // Register once at module level so ScrollTrigger.refresh() is safe to
 // call from any effect, regardless of effect order.
