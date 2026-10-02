@@ -15,6 +15,15 @@
 .explore::before { content: ''; position: absolute; inset: 4px auto 4px 7px; width: 1px; background: #fff; }
 .explore:hover { background: #64cbd14d; }
 .explore:focus-visible { outline: 2px solid #a6e9ff; outline-offset: 6px; }
+.explore:active { background: #64cbd166; transform: translateY(1px); }
+:global([data-expo-ready='true'][data-expo-detail-state='closed']) .explore { animation: exploreReady 1.2s ease-out both; }
+@keyframes exploreReady {
+  0%, 100% { box-shadow: inset 0 0 0 1px transparent; }
+  45% { box-shadow: inset 0 0 0 1px #a6e9ff; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :global([data-expo-ready='true']) .explore { animation: none; box-shadow: inset 0 0 0 1px #a6e9ff55; }
+}
 .crystal {
   position: relative;
   width: 100%;

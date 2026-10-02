@@ -44,12 +44,9 @@ export default function Crystal3D({ journey, onProject, preload = false }) {
     };
   }, []);
 
-  // A stalled GPU/texture load also leaves the illustration visible.
-  useEffect(() => {
-    if (!requested || ready || failed || reduced) return;
-    const timeout = window.setTimeout(onFailure, 20000);
-    return () => window.clearTimeout(timeout);
-  }, [requested, ready, failed, reduced, onFailure]);
+  // Keep the illustration visible while loading, without treating a slow
+  // download/background tab as a fatal error. Actual loader/context failures
+  // still select the fallback through SceneBoundary and ContextEvents.
 
   return (
     <div ref={wrapper} className={`${styles.crystal} ${ready && !failed && !reduced ? styles.ready : ""}`} data-crystal-state={failed ? "fallback" : reduced ? "reduced-motion" : ready ? "ready" : "loading"}>

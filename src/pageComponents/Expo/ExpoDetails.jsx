@@ -103,7 +103,7 @@ export function ExpoDetailsProvider({ children }) {
   }, [])
 
   return <DetailsContext.Provider value={controller}>
-    <div ref={root} className={styles.root} data-expo-detail-state='closed'>
+    <div ref={root} className={styles.root} data-expo-detail-state='closed' data-expo-ready='true'>
       {children}
       <dialog ref={dialog} className={styles.dialog} aria-labelledby='expo-detail-title' data-lenis-prevent
         onCancel={event => { event.preventDefault(); controller.close() }}>

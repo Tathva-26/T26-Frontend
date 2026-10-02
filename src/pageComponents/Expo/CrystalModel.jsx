@@ -119,6 +119,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const detailGroup = useRef()
   const idleClock = useRef(0)
   const interactionClock = useRef(0)
+  const readiness = useRef({ available: false, at: -10 })
   const savedPose = useRef(null)
   const group = useRef()
   const travel = useRef()
@@ -215,6 +216,13 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const inDetails = detail && detail.state !== 'closed'
     if (!inDetails) idleClock.current += dt
     const time = interactionClock.current
+    const available = !inDetails && (pose?.progress ?? 1) >= 1 && !(pose?.exit > 0)
+    if (available && !readiness.current.available) readiness.current.at = time
+    readiness.current.available = available
+    const readyAge = time - readiness.current.at
+    const readyPulse = available && readyAge < 1.2 ? Math.sin(Math.PI * Math.max(0, readyAge) / 1.2) ** 2 : 0
+    const detailRoot = gl.domElement.closest('[data-expo-detail-state]')
+    if (detailRoot && detailRoot.dataset.expoReady !== String(available)) detailRoot.dataset.expoReady = String(available)
     const idleTime = idleClock.current
     if (inDetails && !savedPose.current) {
       savedPose.current = { x: body.rotation.x, y: body.rotation.y, cameraX: camera.position.x, cameraY: camera.position.y }
@@ -253,7 +261,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     }
     if (activationPending) {
       life.current.activation = target.current.activation
-      if (influence > .8 && (life.current.hitStrength || target.current.keyboard)) {
+      if (available && (life.current.hitStrength || target.current.keyboard)) {
         life.current.lastHit = time
         life.current.pulseAt = time
         details?.open(target.current.opener)
@@ -276,7 +284,8 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const chargeLevel = Math.max(life.current.charge, traceLevel)
     life.current.hover = MathUtils.damp(life.current.hover, life.current.hitStrength * influence, 5.2, dt)
     const hover = life.current.hover
-    const interactive = !inDetails && (pose?.interaction ?? 1) > .99 && !(pose?.exit > 0) && life.current.hitStrength > 0
+    const press = available && target.current.pressed && life.current.hitStrength ? .45 : 0
+    const interactive = available && life.current.hitStrength > 0
     const control = gl.domElement.closest('[data-crystal-control]')
     if (control) control.style.cursor = interactive ? 'pointer' : 'auto'
     cursorLight.current.position.set(lightPoint.x, lightPoint.y, 1.2)
@@ -290,10 +299,10 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const breath = Math.sin(time * 1.15) * .065 + Math.sin(time * .47) * .025
     glowMaterial.current.opacity = .8 + (breath + hover * .12 + chargeLevel * .15 + (awake ? .25 : 0)) * influence + breath * detailAmount * .18 + Math.sin((pose?.exit ?? 0) * Math.PI) * .2
     // Press feedback lives on the inner shell and its fractures, never a screen-space halo.
-    energyMaterial.current.uniforms.brightness.value = 1.6 + (breath + hover * .18 + chargeLevel * .25) * influence + pulse * 1.2 + surge * 1.6 + breath * detailAmount * .18
+    energyMaterial.current.uniforms.brightness.value = 1.6 + (breath + hover * .18 + chargeLevel * .25) * influence + pulse * 1.2 + readyPulse * .65 + press + surge * 1.6 + breath * detailAmount * .18
     fractures.current.uniforms.time.value = time
     fractures.current.uniforms.hover.value = hover
-    fractures.current.uniforms.pulse.value = pulse + surge * .65
+    fractures.current.uniforms.pulse.value = pulse + readyPulse * .25 + press * .4 + surge * .65
     fractures.current.uniforms.pointer.value.copy(lightPoint)
     const sx = springStep(body.rotation.x, life.current.vx, target.current.tiltX * influence * (1 + hover * .55), dt)
     const sy = springStep(body.rotation.y, life.current.vy, target.current.tiltY * influence * (1 + hover * .55), dt)

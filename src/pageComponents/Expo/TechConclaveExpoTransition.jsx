@@ -57,6 +57,8 @@ function ExpoTransitionContent() {
     const mist = element.querySelector('[data-expo-mist]')
     const lines = element.querySelector('[data-expo-connectors]')
     const copy = page.querySelectorAll(`.${expoStyles.title}, .${expoStyles.intro}, .${expoStyles.description}, .${expoStyles.explore}`)
+    const explore = page.querySelector('[data-expo-explore]')
+    const entryCopy = [...copy].filter(node => node !== explore)
     const scroller = document.querySelector('.main-scroll')
     let trigger
     let disposed = false
@@ -97,12 +99,14 @@ function ExpoTransitionContent() {
       // Desktop hold = .48 viewport heights, departure = 1.08.
       const phase = details.progress.current.state !== 'closed' && details.progress.current.frozenPhase != null ? details.progress.current.frozenPhase : progress * 1.65
       const state = crystal.current.querySelector('[data-crystal-state]')?.dataset.crystalState
-      // Pick one representation before emergence. Never swap a late model into
-      // a visible tumble; a reverse to the concealed start can upgrade it safely.
-      if (phase <= .08) delete crystal.current.dataset.expoRenderer
-      else if (!crystal.current.dataset.expoRenderer) crystal.current.dataset.expoRenderer = state === 'ready' ? 'model' : 'fallback'
+      // Readiness, not the timing of the first scroll, owns renderer selection.
+      // Both representations consume this same pose; a late model must join
+      // the current frame rather than remain hidden or restart the entrance.
+      crystal.current.dataset.expoRenderer = state === 'ready' ? 'model' : 'fallback'
       const exit = Math.min(1, Math.max(0, (phase - 1.2) / .45))
       const entry = Math.min(1, phase)
+      const detailRoot = element.closest('[data-expo-detail-state]')
+      if (detailRoot) detailRoot.dataset.expoReady = String(phase >= 1 && phase <= 1.2 && details.progress.current.state === 'closed')
       const pose = phase > 1.2 ? expoExit(exit) : expoJourney(entry)
       const box = geometry.current
       if (!box) return
@@ -165,7 +169,8 @@ function ExpoTransitionContent() {
       timeline.to({}, { duration: 1.65, onUpdate: () => render(timeline.progress()) }, 0)
         .fromTo(page, { autoAlpha: 0 }, { autoAlpha: 1, duration: .32, ease: 'none' }, .22)
         .fromTo(tc, { autoAlpha: 1 }, { autoAlpha: 0, duration: .16, ease: 'none' }, .40)
-        .fromTo(copy, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, stagger: .025, duration: .12 }, .78)
+        .fromTo(entryCopy, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, stagger: .025, duration: .12 }, .78)
+        .fromTo(explore, { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: .06 }, 1)
         .fromTo(lines, { opacity: 0 }, { opacity: .8, duration: .12 }, .83)
         .to(copy, { autoAlpha: 0, y: -12, duration: .14 * .45 / .70, stagger: .015 * .45 / .70 }, 1.2)
         .to(lines, { opacity: 0, duration: .16 * .45 / .70 }, 1.2)
@@ -177,6 +182,10 @@ function ExpoTransitionContent() {
       render(trigger?.animation?.progress() ?? 0)
     })
     resize.observe(plane)
+    // Asset completion updates the current pose even while scrolling is idle.
+    const readiness = new MutationObserver(() => render(trigger?.animation?.progress() ?? 0))
+    const renderer = crystal.current.querySelector('[data-crystal-state]')
+    if (renderer) readiness.observe(renderer, { attributes: true, attributeFilter: ['data-crystal-state'] })
     document.fonts.ready.then(() => { if (!disposed) { measure(); render(trigger?.animation?.progress() ?? 0) } })
     // HeroFrameController can change the page's available height after mount.
     const refresh = requestAnimationFrame(() => { ScrollTrigger.refresh(); window.__lenis?.resize() })
@@ -184,6 +193,7 @@ function ExpoTransitionContent() {
       disposed = true
       cancelAnimationFrame(refresh)
       resize.disconnect()
+      readiness.disconnect()
       context.revert()
       tc.style.removeProperty('mask-image')
       tc.style.removeProperty('mask-size')

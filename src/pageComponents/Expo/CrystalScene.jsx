@@ -57,7 +57,7 @@ function RenderBudget({ compact }) {
 }
 
 export default function CrystalScene({ active, onReady, onFailure, journey, onProject }) {
-  const target = useRef({ tiltX: 0, tiltY: 0, x: 0, y: 0, active: false, activation: 0, keyboard: false });
+  const target = useRef({ tiltX: 0, tiltY: 0, x: 0, y: 0, active: false, pressed: false, activation: 0, keyboard: false });
   const feedback = useRef(null);
   const reportMood = (awake) => { if (feedback.current) feedback.current.textContent = awake ? 'The robot awakens.' : ''; };
   const pointer = useRef(null);
@@ -67,7 +67,7 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
 
   const reset = () => {
     pointer.current = null;
-    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: false, keyboard: false });
+    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: false, pressed: false, keyboard: false });
   };
   const update = (event) => {
     const touch = event.pointerType !== "mouse";
@@ -78,6 +78,7 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
     const start = pointer.current?.start;
     const drag = start ? { x: local.x - start.x, y: local.y - start.y } : { x: 0, y: 0 };
     if (pointer.current && Math.hypot(event.clientX - pointer.current.clientX, event.clientY - pointer.current.clientY) > 8) pointer.current.moved = true;
+    target.current.pressed = Boolean(pointer.current && !pointer.current.moved);
     const { tiltX, tiltY } = interactionTargets(local, drag, touch);
     Object.assign(target.current, { tiltX, tiltY, x: point.x, y: point.y, active: true, keyboard: false });
   };
@@ -107,7 +108,7 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
     }
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     pointer.current = null;
-    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: event.type === 'pointerup', keyboard: false });
+    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: event.type === 'pointerup', pressed: false, keyboard: false });
   };
 
   useEffect(() => {
