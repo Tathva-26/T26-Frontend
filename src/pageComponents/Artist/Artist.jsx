@@ -108,7 +108,8 @@ function useScrubCrossfade(
   // Set while the timeline is alive: maps an artist index to the scroll
   // position where that artist is shown whole (see scrollToIndex below).
   const scrollForIndex = useRef(null)
-  const settledArtistIndex = useRef(0)
+  // null means the user has not landed on an artist yet (e.g. entering from W1).
+  const settledArtistIndex = useRef(null)
 
   useLayoutEffect(() => {
     const section = ref.current
@@ -151,6 +152,7 @@ function useScrubCrossfade(
         (_, index) => (HOLD / 2 + index * STEP) / total,
       )
       let pendingArtistIndex = null
+      let snappingWithLenis = false
 
       const tl = gsap.timeline({
         defaults: { duration: 1 },
@@ -171,20 +173,43 @@ function useScrubCrossfade(
             // (especially GPC) can take over without being pulled back here.
             snap: {
               snapTo: (value, trigger) => {
+                if (snappingWithLenis) {
+                  return gsap.utils.clamp(
+                    0,
+                    1,
+                    (trigger.scroll() - trigger.start) / (trigger.end - trigger.start),
+                  )
+                }
+
                 const direction = trigger.direction
                 if (direction > 0) {
-                  pendingArtistIndex = settledArtistIndex.current + 1
+                  pendingArtistIndex =
+                    settledArtistIndex.current === null
+                      ? 0
+                      : settledArtistIndex.current + 1
                 } else if (direction < 0) {
-                  pendingArtistIndex = settledArtistIndex.current - 1
+                  pendingArtistIndex =
+                    settledArtistIndex.current === null
+                      ? count - 1
+                      : settledArtistIndex.current - 1
                 } else {
-                  pendingArtistIndex = artistStops.reduce(
-                    (nearest, point, index) =>
-                      Math.abs(point - value) < Math.abs(artistStops[nearest] - value)
-                        ? index
-                        : nearest,
-                    0,
-                  )
-                  return artistStops[pendingArtistIndex]
+                  // On the homepage the Artists trigger can first become
+                  // active in the same frame that content is unlocked from
+                  // W1. ScrollTrigger may report direction 0 for that first
+                  // snap; choosing the nearest stop then can land on artist 1
+                  // after a large unlock delta. The first unresolved snap is
+                  // always Arijit, independent of the sampled progress.
+                  pendingArtistIndex =
+                    settledArtistIndex.current === null
+                      ? 0
+                      : artistStops.reduce(
+                          (nearest, point, index) =>
+                            Math.abs(point - value) <
+                            Math.abs(artistStops[nearest] - value)
+                              ? index
+                              : nearest,
+                          0,
+                        )
                 }
 
                 // Advance exactly one artist per completed scroll gesture.
@@ -194,6 +219,33 @@ function useScrubCrossfade(
                   pendingArtistIndex = null
                   return value
                 }
+
+                const lenis = window.__lenis
+                if (lenis) {
+                  const targetIndex = pendingArtistIndex
+                  const target =
+                    trigger.start +
+                    (trigger.end - trigger.start) * artistStops[targetIndex]
+                  snappingWithLenis = true
+                  lenis.scrollTo(target, {
+                    duration: 0.7,
+                    lock: true,
+                    easing: (progress) => 1 - Math.pow(1 - progress, 3),
+                    onComplete: () => {
+                      settledArtistIndex.current = targetIndex
+                      pendingArtistIndex = null
+                      snappingWithLenis = false
+                    },
+                  })
+                  // Lenis owns the home scroller; avoid a competing native
+                  // ScrollTrigger scroll tween.
+                  return gsap.utils.clamp(
+                    0,
+                    1,
+                    (trigger.scroll() - trigger.start) / (trigger.end - trigger.start),
+                  )
+                }
+
                 return artistStops[pendingArtistIndex]
               },
               delay: 0.1,
