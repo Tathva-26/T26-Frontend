@@ -35,7 +35,9 @@
  * render, so the sections after GPC are never measured against wrong ones.
  */
 .gpc-track {
-  --gpc-travel: 400vh;
+  /* More travel = the same scroll covers less of the sequence, so the
+     cinematic plays out slower under the cursor/wheel/swipe. */
+  --gpc-travel: 1000vh;
   --gpc-handoff: 20vh;
   --gpc-lead: 0px;
   position: relative;
@@ -55,6 +57,7 @@
   @media (min-width: 769px) {
     .main-scroll .gpc-track {
       --gpc-lead: 72vh;
+      --gpc-travel: 1800vh;
     }
   }
 }
