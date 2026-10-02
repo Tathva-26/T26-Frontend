@@ -60,6 +60,12 @@ function ExpoTransitionContent() {
     const explore = page.querySelector('[data-expo-explore]')
     const entryCopy = [...copy].filter(node => node !== explore)
     const scroller = document.querySelector('.main-scroll')
+    const mobile = plane.clientWidth < 768
+    const exitStart = mobile ? 1.4 : 1.2
+    const duration = exitStart + .45
+    const scrollUnit = mobile ? 1.5 : 2.4
+    element.dataset.expoDuration = duration
+    element.dataset.expoExitStart = exitStart
     let trigger
     let disposed = false
 
@@ -95,19 +101,22 @@ function ExpoTransitionContent() {
     }
     const render = (progress) => {
       if (disposed || !crystal.current) return
-      // Keep entry speed; shorten the hold and compress departure proportionally.
-      // Desktop hold = .48 viewport heights, departure = 1.08.
-      const phase = details.progress.current.state !== 'closed' && details.progress.current.frozenPhase != null ? details.progress.current.frozenPhase : progress * 1.65
+      // Preserve entry/exit speed and give phones a .6-viewport reading hold;
+      // desktop retains its .48-viewport hold and 1.08-viewport departure.
+      const phase = details.progress.current.state !== 'closed' && details.progress.current.frozenPhase != null ? details.progress.current.frozenPhase : progress * duration
       const state = crystal.current.querySelector('[data-crystal-state]')?.dataset.crystalState
       // Readiness, not the timing of the first scroll, owns renderer selection.
       // Both representations consume this same pose; a late model must join
       // the current frame rather than remain hidden or restart the entrance.
       crystal.current.dataset.expoRenderer = state === 'ready' ? 'model' : 'fallback'
-      const exit = Math.min(1, Math.max(0, (phase - 1.2) / .45))
+      const exit = Math.min(1, Math.max(0, (phase - exitStart) / .45))
       const entry = Math.min(1, phase)
       const detailRoot = element.closest('[data-expo-detail-state]')
-      if (detailRoot) detailRoot.dataset.expoReady = String(phase >= 1 && phase <= 1.2 && details.progress.current.state === 'closed')
-      const pose = phase > 1.2 ? expoExit(exit) : expoJourney(entry)
+      const available = phase >= 1 && phase < exitStart && details.progress.current.state === 'closed'
+      if (detailRoot) detailRoot.dataset.expoReady = String(available)
+      explore.disabled = !available
+      page.querySelector('[data-expo-slot] button').disabled = !available
+      const pose = phase > exitStart ? expoExit(exit) : expoJourney(entry)
       const box = geometry.current
       if (!box) return
       pose.layout = box
@@ -131,7 +140,7 @@ function ExpoTransitionContent() {
       const cloudMask = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640"><filter id="cloud"><feTurbulence type="fractalNoise" baseFrequency=".012 .018" numOctaves="3" seed="7"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 4 4 4 0 ${2 - dissolve * 14}"/></filter><rect width="100%" height="100%" filter="url(#cloud)"/></svg>`
       tc.style.maskImage = dissolve === 0 ? 'none' : `url("data:image/svg+xml,${encodeURIComponent(cloudMask)}")`
       tc.style.maskSize = '100% 100%'
-      page.style.pointerEvents = entry > .80 && exit === 0 ? 'auto' : 'none'
+      page.style.pointerEvents = available ? 'auto' : 'none'
       gsap.set(lines, { scale: 1 - exit * .65, transformOrigin: `${box.endX}px ${box.endY}px` })
       if (state !== 'ready' || crystal.current.dataset.expoRenderer === 'fallback') {
         const effectiveScale = pose.scale * 8 / (8 - pose.depth)
@@ -151,7 +160,7 @@ function ExpoTransitionContent() {
         scrollTrigger: {
           id: 'techconclave-expo', trigger: element, pin: element,
           scroller: scroller || undefined,
-          start: 'bottom bottom', end: () => `+=${plane.clientHeight * (plane.clientWidth < 768 ? 1.5 : 2.4) * 1.65}`,
+          start: 'bottom bottom', end: () => `+=${plane.clientHeight * scrollUnit * duration}`,
           // Lenis already smooths input. Additional scrub lag can leave the
           // exit clouds onscreen while the gallery has advanced underneath.
           scrub: true, invalidateOnRefresh: true, anticipatePin: 1,
@@ -166,15 +175,15 @@ function ExpoTransitionContent() {
         },
       })
       trigger = timeline.scrollTrigger
-      timeline.to({}, { duration: 1.65, onUpdate: () => render(timeline.progress()) }, 0)
+      timeline.to({}, { duration, onUpdate: () => render(timeline.progress()) }, 0)
         .fromTo(page, { autoAlpha: 0 }, { autoAlpha: 1, duration: .32, ease: 'none' }, .22)
         .fromTo(tc, { autoAlpha: 1 }, { autoAlpha: 0, duration: .16, ease: 'none' }, .40)
         .fromTo(entryCopy, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, stagger: .025, duration: .12 }, .78)
         .fromTo(explore, { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: .06 }, 1)
         .fromTo(lines, { opacity: 0 }, { opacity: .8, duration: .12 }, .83)
-        .to(copy, { autoAlpha: 0, y: -12, duration: .14 * .45 / .70, stagger: .015 * .45 / .70 }, 1.2)
-        .to(lines, { opacity: 0, duration: .16 * .45 / .70 }, 1.2)
-        .to(page, { autoAlpha: 0, duration: .44 * .45 / .70, ease: 'none' }, 1.2 + .13 * .45 / .70)
+        .to(copy, { autoAlpha: 0, y: -12, duration: .14 * .45 / .70, stagger: .015 * .45 / .70 }, exitStart)
+        .to(lines, { opacity: 0, duration: .16 * .45 / .70 }, exitStart)
+        .to(page, { autoAlpha: 0, duration: .44 * .45 / .70, ease: 'none' }, exitStart + .13 * .45 / .70)
       render(0)
     }, element)
     const resize = new ResizeObserver(() => {
@@ -202,6 +211,10 @@ function ExpoTransitionContent() {
       delete element.dataset.expoStart
       delete element.dataset.expoEnd
       delete element.dataset.expoExit
+      delete element.dataset.expoDuration
+      delete element.dataset.expoExitStart
+      explore.disabled = false
+      page.querySelector('[data-expo-slot] button').disabled = false
       window.__lenis?.resize()
     }
   }, [animated, project, details])

@@ -17,6 +17,7 @@ export function ExpoDetailsProvider({ children }) {
   const dialog = useRef(null)
   const progress = useRef({ value: 0, reduced: false, state: 'closed' })
   const animation = useRef(null)
+  const closeDeadline = useRef(null)
   const release = useRef(null)
   const opener = useRef(null)
   const controller = useMemo(() => {
@@ -31,6 +32,10 @@ export function ExpoDetailsProvider({ children }) {
       root.current.dataset.expoDetailState = progress.current.state
     }
     const finish = () => {
+      window.clearTimeout(closeDeadline.current)
+      closeDeadline.current = null
+      animation.current?.kill()
+      progress.current.value = 0
       progress.current.state = 'closed'
       dialog.current?.close()
       release.current?.()
@@ -43,13 +48,19 @@ export function ExpoDetailsProvider({ children }) {
       progress.current.state = 'closing'
       animation.current?.kill()
       paint()
-      animation.current = gsap.to(progress.current, { value: 0, duration: detailDuration(progress.current.reduced) * progress.current.value, ease: 'none', onUpdate: paint, onComplete: finish })
+      const duration = (progress.current.reduced ? .15 : .65) * progress.current.value
+      animation.current = gsap.to(progress.current, { value: 0, duration, ease: 'none', onUpdate: paint, onComplete: finish })
+      // A throttled renderer must not keep the modal/scroll lock alive while
+      // GSAP catches up. Finish at the intended wall-clock return duration.
+      closeDeadline.current = window.setTimeout(finish, duration * 1000 + 50)
     }
     const open = (element) => {
       if (progress.current.state !== 'closed') return false
       const bridge = root.current.querySelector('[data-expo-progress]')
-      const phase = Number(bridge?.dataset.expoProgress) * 1.65
-      if (bridge && (phase < 1 || phase >= 1.2)) return false
+      const duration = Number(bridge?.dataset.expoDuration) || 1.65
+      const exitStart = Number(bridge?.dataset.expoExitStart) || 1.2
+      const phase = Number(bridge?.dataset.expoProgress) * duration
+      if (bridge && (phase < 1 || phase >= exitStart)) return false
       opener.current = element instanceof HTMLElement ? element : document.activeElement
       const scroller = document.querySelector('.main-scroll') || document.scrollingElement
       const lenis = window.__lenis
@@ -77,7 +88,7 @@ export function ExpoDetailsProvider({ children }) {
         scroller.style.scrollBehavior = behavior
       }
       progress.current.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      progress.current.frozenPhase = bridge ? savedProgress * 1.65 : null
+      progress.current.frozenPhase = bridge ? savedProgress * duration : null
       progress.current.state = 'opening'
       dialog.current.showModal()
       dialog.current.scrollTop = 0
@@ -98,6 +109,7 @@ export function ExpoDetailsProvider({ children }) {
       document.removeEventListener('visibilitychange', visibility)
       preference.removeEventListener('change', motion)
       animation.current?.kill()
+      window.clearTimeout(closeDeadline.current)
       release.current?.()
     }
   }, [])
