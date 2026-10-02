@@ -1,7 +1,8 @@
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { CONSOLE_SCREEN_INSET, SEQUENCE } from "@/pageComponents/GPC/gpcConfig";
+import { POWER_LINE } from "@/lib/consoleScreen/spaceShooterScreen";
+import { CONSOLE_SCREEN_INSET, PULLBACK_OVERSHOOT, SEQUENCE } from "@/pageComponents/GPC/gpcConfig";
 import { createWheelsPreview } from "@/pageComponents/GPC/wheelsPreview";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -40,10 +41,12 @@ function holeClip(width, height, { x, y, w, h }) {
 }
 
 /**
- * The home page GPC sequence. The intro animations (TV power-on, title
- * flicker, tagline) play automatically as a time-based timeline when the
- * section enters the viewport — no scroll gesture needed. The outro
- * (Wheels transition, dive, handoff) remains scroll-driven.
+ * The home page GPC sequence. Scrolling down from the last artist glides the
+ * page to the spot where GPC fills the screen and holds it there while the
+ * entry plays as a time-based timeline: the camera pulls back out of the TV
+ * (which was showing the Artist page), the picture switches off, the screen
+ * switches on to the game, the title flickers on and the tagline slides in.
+ * The outro (Wheels transition, dive, handoff) remains scroll-driven.
  *
  * `sequence` is a ref holding the values the console's screen canvas reads
  * every frame: { power, outro, film, picture }.
@@ -84,20 +87,29 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence }) {
       const centerX = hole.x + hole.w / 2;
       const centerY = hole.y + hole.h / 2;
 
-      // The push-in zoom scales the hero about the middle of the console's screen.
+      // Both zooms scale the hero about the middle of the console's screen.
       gsap.set(hero, { transformOrigin: `${centerX}px ${centerY}px` });
 
-      // The tube is not used for entry/intro — screen starts dark.
-      const tube = { on: 0 };
+      // In: the screen, as a hole, covers the whole view and sits in its middle,
+      // so all that shows is the Artist page, seen through the console's screen.
+      const pulledIn = {
+        x: width / 2 - centerX,
+        y: height / 2 - centerY,
+        scale: Math.max(width / hole.w, height / hole.h) * PULLBACK_OVERSHOOT,
+      };
+
+      // Off: how much of that picture is left, 1 (all of it) to 0. It closes
+      // from top and bottom to a bright line, then the line shrinks to
+      // nothing: the exact reverse of the screen's own switch-on.
+      const tube = { on: 1 };
       const lineHeight = Math.max(2, hole.h * 0.012);
       function tubeBand(scale) {
         if (tube.on <= 0) return null;
-        const POWER_LINE_VAL = 0.08;
-        if (tube.on <= POWER_LINE_VAL) {
-          const w = Math.min(hole.w, width / scale) * (tube.on / POWER_LINE_VAL);
+        if (tube.on <= POWER_LINE) {
+          const w = Math.min(hole.w, width / scale) * (tube.on / POWER_LINE);
           return { x: centerX - w / 2, y: centerY - lineHeight / 2, w, h: lineHeight, line: true };
         }
-        const open = (tube.on - POWER_LINE_VAL) / (1 - POWER_LINE_VAL);
+        const open = (tube.on - POWER_LINE) / (1 - POWER_LINE);
         const h = Math.max(lineHeight, hole.h * Math.pow(open, 1.3));
         return { x: hole.x, y: centerY - h / 2, w: hole.w, h, wash: Math.pow(1 - open, 1.2) * 0.95, edge: (1 - open) * 0.9 };
       }
@@ -134,29 +146,52 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence }) {
       const handoff = [gsap.utils.clamp(SEQUENCE.diveStart + 10, 99, 100 * (1 - lead / travel)), 100];
       const dive = [SEQUENCE.diveStart, handoff[0]];
 
-      // ── Initial state: screen off, hero at natural position ──
+      // ── Entry state: the camera is inside the console's screen, which still shows the Artist page ──
+      gsap.set(hero, pulledIn);
       live.power = 0;
       gsap.set(consoleBox, { pointerEvents: "none" });
       gsap.set(label, { opacity: 0 });
       gsap.set(tagline, { opacity: 0, clipPath: "inset(0% 100% 0% 0%)" });
       letters.forEach((letter) => gsap.set(letter, { opacity: 0 }));
 
-      // ── AUTO-PLAY INTRO (time-based) ──
-      // Plays automatically when the section enters the viewport.
-      // TV powers on → GPC title flickers in → tagline slides in.
-      const introTl = gsap.timeline({ paused: true });
+      // ── ENTRY (time-based keyframes) ──
+      // Plays once GPC has landed (see `land` below): the camera pulls back out of the console's
+      // screen, which was showing the Artist page; that picture switches off like an old TV; the
+      // screen switches on to the game; the title flickers on and the tagline slides in.
+      let phase = "idle"; // idle -> landing -> playing -> done
+      const entryTl = gsap.timeline({
+        paused: true,
+        onUpdate: sync,
+        onComplete: () => {
+          phase = "done";
+          window.__lenis?.start();
+        },
+      });
 
-      // Power on the screen
-      introTl.to(live, { power: 1, duration: 0.8, ease: "power1.in" });
+      // Pull back. Quick at first, easing as the hero comes to rest.
+      entryTl.fromTo(hero, pulledIn, { x: 0, y: 0, scale: 1, duration: 1.6, ease: "power3.out" }, 0);
 
-      // Show the "click to play" label and enable console interaction
-      introTl.to(label, { opacity: 1, duration: 0.4 }, "-=0.1");
-      introTl.set(consoleBox, { pointerEvents: "auto" }, "<");
+      // Switch off: the picture closes to a bright line (the first beat), then the line shrinks
+      // to nothing (the second), with a held breath on the line in between.
+      entryTl.fromTo(
+        tube,
+        { on: 1 },
+        {
+          keyframes: { "65%": { on: POWER_LINE }, "100%": { on: 0 }, easeEach: "power1.inOut" },
+          duration: 0.75,
+        },
+        ">0.2"
+      );
+
+      // Switch on to the game, then the prompt, and the console can be played.
+      entryTl.fromTo(live, { power: 0 }, { power: 1, duration: 0.9, ease: "power1.in" }, ">0.15");
+      entryTl.fromTo(label, { opacity: 0 }, { opacity: 1, duration: 0.4 }, ">-0.1");
+      entryTl.fromTo(consoleBox, { pointerEvents: "none" }, { pointerEvents: "auto", duration: 0.01 }, "<");
 
       // Title: each letter flickers on like a neon tube, hot then white.
       const letterDur = 0.15;
       letters.forEach((letter, i) => {
-        introTl.fromTo(
+        entryTl.fromTo(
           letter,
           { opacity: 0, color: TITLE_HOT, textShadow: TITLE_GLOW },
           {
@@ -173,28 +208,64 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence }) {
         );
       });
 
-      // Tagline slides in from the right
-      introTl.fromTo(
+      // Tagline slides in from the right.
+      entryTl.fromTo(
         tagline,
         { opacity: 0, clipPath: "inset(0% 100% 0% 0%)" },
         { opacity: 1, clipPath: "inset(0% 0% 0% 0%)", duration: 0.6, ease: "power2.out" },
         "-=0.3"
       );
 
-      // ── VIEWPORT DETECTION ──
-      // Fire the intro as soon as the GPC hero is visible.
-      let hasAutoPlayed = false;
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting && !hasAutoPlayed) {
-            hasAutoPlayed = true;
-            introTl.play();
-            observer.disconnect();
-          }
-        },
-        { threshold: 0.3, root: scroller }
-      );
-      observer.observe(hero);
+      // ── LANDING SNAP ──
+      // However hard the page was scrolled, it can't carry past GPC: as soon as GPC starts sliding
+      // over the last artist, the scroll glides to the exact spot where its stage is fully in
+      // view, then is held still (Lenis stopped) while the entry plays out, so the whole
+      // transition is seen. Scrolling back above GPC re-arms it for the next time.
+      const landing = ScrollTrigger.create({
+        scroller,
+        trigger: track,
+        start: "top bottom",
+        end: "top top",
+        onEnter: land,
+        onLeaveBack: reset,
+      });
+
+      function play() {
+        phase = "playing";
+        window.__lenis?.stop();
+        entryTl.restart();
+      }
+
+      function land() {
+        if (phase !== "idle") return;
+        phase = "landing";
+        const lenis = window.__lenis;
+        if (!lenis) {
+          play();
+          return;
+        }
+        lenis.scrollTo(landing.end, {
+          duration: 0.9,
+          lock: true,
+          force: true,
+          easing: (progress) => 1 - Math.pow(1 - progress, 3),
+          onComplete: play,
+        });
+      }
+
+      function reset() {
+        if (phase === "idle") return;
+        phase = "idle";
+        entryTl.pause(0);
+        sync();
+        window.__lenis?.start();
+      }
+
+      // Already at or past the landing spot (reloaded or re-measured mid-page): show it finished.
+      if (landing.scroll() >= landing.end) {
+        phase = "done";
+        entryTl.progress(1);
+      }
 
       // ── SCROLL-DRIVEN OUTRO ──
       // The Wheels transition, dive, and handoff remain scroll-driven.
@@ -265,7 +336,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence }) {
 
       // What GSAP's own revert doesn't undo.
       return () => {
-        observer.disconnect();
+        window.__lenis?.start();
         Object.assign(live, { power: 1, outro: 0, film: 0, picture: null });
         hero.style.clipPath = "";
         flash.removeAttribute("style");

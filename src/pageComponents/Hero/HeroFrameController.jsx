@@ -18,6 +18,12 @@ const MOBILE_SWIPE_THRESHOLD = 40; // px
 const MOBILE_SWIPE_COOLDOWN_MS = 400; // ms
 const MOBILE_GESTURE_IDLE_MS = 150; // gap between deltas long enough to treat as a new gesture
 
+// Desktop only: a trackpad flick keeps firing wheel events for a second or more after the portal
+// has opened. Frame must not read that tail as a fresh scroll-down, or one big scroll from Hero
+// would carry straight through W1 into the next section. Frame ignores downward wheel input until
+// the wheel has been quiet for this long, so W1 always gets to be seen and takes its own gesture.
+const FRAME_GESTURE_GAP_MS = 140;
+
 // Same breakpoint Hero uses for its mobile layout.
 const MOBILE_QUERY = "(max-width: 768px)";
 const subscribeMobile = (cb) => {
@@ -52,6 +58,9 @@ export default function HeroFrameController({ children }) {
   const mobileTouchAccumRef = useRef(0);
   const mobileTouchDirRef = useRef(0);
   const mobileTouchLastAtRef = useRef(0);
+  // Desktop Frame wheel gate (see FRAME_GESTURE_GAP_MS). Closed whenever Frame has just taken over.
+  const frameGateClosedRef = useRef(false);
+  const frameLastWheelAtRef = useRef(0);
 
   useEffect(() => {
     sectionRef.current = section;
@@ -67,6 +76,10 @@ export default function HeroFrameController({ children }) {
       // panel back and forth.
       if (isMobile && performance.now() < mobileCooldownUntilRef.current) return;
       sectionRef.current = target;
+      if (target === "frame") {
+        frameGateClosedRef.current = true;
+        frameLastWheelAtRef.current = performance.now();
+      }
       setSection(target);
       setHeroVisible(target === "hero");
       if (isMobile) {
@@ -99,9 +112,16 @@ export default function HeroFrameController({ children }) {
   const handleFrameScroll = useCallback(
     (deltaY) => {
       if (!isMobile) {
+        const now = performance.now();
+        const quietFor = now - frameLastWheelAtRef.current;
+        frameLastWheelAtRef.current = now;
         if (deltaY < 0) {
           returnToHero();
         } else if (deltaY > 0) {
+          if (frameGateClosedRef.current) {
+            if (quietFor < FRAME_GESTURE_GAP_MS) return;
+            frameGateClosedRef.current = false;
+          }
           setUnlocked(true);
           setHasReachedContent(true);
         }
