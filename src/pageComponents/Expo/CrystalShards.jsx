@@ -50,7 +50,7 @@ export default function CrystalShards({ journey, compact, prepareGlass, target }
       activation.current = input.activation
       if (available && !input.keyboard && picking.hit >= 0) {
         const shard = state.current[picking.hit]
-        shard.spin += Math.PI * 2
+        shard.spin += Math.PI
         shard.pulse = 1
         input.shardResonance = (input.shardResonance ?? 0) + 1
       }
@@ -71,11 +71,11 @@ export default function CrystalShards({ journey, compact, prepareGlass, target }
       const motion = available ? 1 : Math.max(0, 1 - (detail?.value ?? 0) * 5) * (pose?.interaction ?? 1)
       dummy.position.set(x + shard.x * motion, y + (shard.y + Math.sin(time * .8 + index) * .025) * motion, z)
       dummy.rotation.set(.4 + shard.y * motion, index * .8 + (shard.spin + Math.sin(time * .5 + index) * .06) * motion, angle - shard.x * motion)
-      const scale = reveal * (1 + shard.hover * .08 + shard.pulse * .08)
+      const scale = reveal * (1 + shard.hover * .04 + shard.pulse * .04)
       dummy.scale.set(size * .55 * scale, size * 1.5 * scale, size * .48 * scale)
       dummy.updateMatrix()
       mesh.current.setMatrixAt(index, dummy.matrix)
-      picking.color.setRGB(1 + shard.hover * .5 + shard.pulse * .7, 1 + shard.hover * .65 + shard.pulse * .4, 1 + shard.hover * .7 + shard.pulse * .8)
+      picking.color.setRGB(1 + shard.hover * .25 + shard.pulse * .35, 1 + shard.hover * .3 + shard.pulse * .2, 1 + shard.hover * .35 + shard.pulse * .4)
       mesh.current.setColorAt(index, picking.color)
     })
     mesh.current.instanceMatrix.needsUpdate = true

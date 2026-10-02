@@ -292,7 +292,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const press = available && target.current.pressed && life.current.hitStrength ? .45 : 0
     const interactive = available && life.current.hitStrength > 0
     const control = gl.domElement.closest('[data-crystal-control]')
-    if (control) control.style.cursor = interactive || (available && target.current.shardHover) ? 'pointer' : 'auto'
+    if (control) control.style.cursor = interactive ? 'pointer' : available && target.current.shardHover ? 'grab' : 'auto'
     cursorLight.current.position.set(lightPoint.x, lightPoint.y, 1.2)
     cursorLight.current.intensity = hover * 1.6
     glass.current.envMapIntensity = 2.2 + hover * .25
