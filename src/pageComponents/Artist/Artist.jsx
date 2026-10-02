@@ -87,7 +87,8 @@ function useScrubCrossfade(
       const boards = (boardRefs?.current || []).filter(Boolean)
       const count = Math.max(bgs.length, boards.length, ports.length)
       if (count < 2) return
-            // Hide sticky/promoted layers whenever this section is off-screen so
+
+      // Hide sticky/promoted layers whenever this section is off-screen so
       // they can never paint over neighbouring pages.
       const syncVisibility = (self) =>
         section.classList.toggle('is-offscreen', !self.isActive)
@@ -164,7 +165,7 @@ function useScrubCrossfade(
       }
     }, section)
 
-        return () => {
+    return () => {
       context.revert()
       section.classList.remove('is-offscreen')
     }
@@ -369,7 +370,11 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
   )
 })
 
-function ArtistContent({ artist, connectorRefs, connectorBaseIndex = 0 }) {
+function ArtistContent({
+  artist,
+  onRegisterConnector,
+  connectorBaseIndex = 0,
+}) {
   const slideRef = useRef(null)
   const avatarRef = useRef(null)
   const secondaryRef = useRef(null)
@@ -405,30 +410,21 @@ function ArtistContent({ artist, connectorRefs, connectorBaseIndex = 0 }) {
 
       <svg className='connector-overlay' aria-hidden='true'>
         <ConnectorArrow
-          ref={(el) => {
-            if (connectorRefs)
-              connectorRefs.current[connectorBaseIndex + 0] = el
-          }}
+          ref={(el) => onRegisterConnector?.(connectorBaseIndex + 0, el)}
           slideRef={slideRef}
           bend={1}
           getFrom={() => avatarRef.current}
           getTo={() => secondaryRef.current}
         />
         <ConnectorArrow
-          ref={(el) => {
-            if (connectorRefs)
-              connectorRefs.current[connectorBaseIndex + 1] = el
-          }}
+          ref={(el) => onRegisterConnector?.(connectorBaseIndex + 1, el)}
           slideRef={slideRef}
           bend={-1}
           getFrom={() => secondaryRef.current}
           getTo={() => primaryRef.current}
         />
         <ConnectorArrow
-          ref={(el) => {
-            if (connectorRefs)
-              connectorRefs.current[connectorBaseIndex + 2] = el
-          }}
+          ref={(el) => onRegisterConnector?.(connectorBaseIndex + 2, el)}
           slideRef={slideRef}
           bend={1}
           getFrom={() => primaryRef.current}
@@ -459,6 +455,10 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
   const connectorRefs = useRef([])
   const loopsRef = useRef(0)
   const trackRef = useRef(null)
+
+  const registerConnector = (index, el) => {
+    connectorRefs.current[index] = el
+  }
 
   useLayoutEffect(() => {
     const track = trackRef.current
@@ -573,7 +573,7 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
             <ArtistContent
               artist={a}
               key={`${a.name}-${i}`}
-              connectorRefs={connectorRefs}
+              onRegisterConnector={registerConnector}
               connectorBaseIndex={i * 3}
             />
           ))}
@@ -815,7 +815,7 @@ export default function App() {
           font-weight: 400;
         }
 
-          .proshow-section {
+        .proshow-section {
           display: grid;
           grid-template-columns: minmax(0, 38%) minmax(0, 62%);
           background: #1c1c1c;
@@ -1335,7 +1335,7 @@ export default function App() {
         ref={sectionRef}
         className='proshow-section'
         id='proshow'
-        style={{ minHeight: `${artists.length * 300}dvh` }}
+        style={{ minHeight: `${artists.length * 100}dvh` }}
       >
         <div className='global-bg-container'>
           {artists.map((artist, index) => (
