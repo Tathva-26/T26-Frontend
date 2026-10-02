@@ -16,23 +16,30 @@ const screenRectStyle = {
  * decorative ship/enemies/bullets, so this same canvas can double as the
  * real game's animated background once the real, playable ship/enemies
  * (SpaceShooterCanvas, drawn on top with a transparent clear) take over.
- * Kept in a ref, updated from its own effect (not during render - refs
- * aren't meant to be written while rendering) so the mount effect below
- * can read a live value from its rAF loop without re-mounting the canvas.
+ * `paused`: stops updating and drawing altogether.
+ * `scale`: how much an ancestor's transform enlarges this on screen (the
+ * hero Stage's fit scale), so the canvas is sharp at its displayed size.
+ *
+ * All three are kept in a ref, updated from its own effect (not during
+ * render - refs aren't meant to be written while rendering) so the mount
+ * effect below can read live values from its rAF loop without re-mounting
+ * the canvas.
  */
-export default function ConsoleScreenCanvas({ backgroundOnly = false }) {
+export default function ConsoleScreenCanvas({ backgroundOnly = false, paused = false, scale = 1 }) {
   const screenRef = useRef(null);
   const spillRef = useRef(null);
-  const backgroundOnlyRef = useRef(backgroundOnly);
+  const liveRef = useRef({ backgroundOnly, paused, scale });
 
   useEffect(() => {
-    backgroundOnlyRef.current = backgroundOnly;
-  }, [backgroundOnly]);
+    liveRef.current = { backgroundOnly, paused, scale };
+  }, [backgroundOnly, paused, scale]);
 
   useEffect(() => {
     const stop = mountConsoleScreen(screenRef.current, {
       spill: spillRef.current,
-      isBackgroundOnly: () => backgroundOnlyRef.current,
+      isBackgroundOnly: () => liveRef.current.backgroundOnly,
+      isPaused: () => liveRef.current.paused,
+      getScale: () => liveRef.current.scale,
     });
     return stop;
   }, []);

@@ -9,3 +9,28 @@
 :root {
   --font-akira: 'Akira Expanded', sans-serif;
 }
+
+/*
+ * The site nav is fixed over the top of every section on the home page
+ * (everything inside .main-scroll); the standalone /gpc route has none.
+ *   --gpc-solid-nav: the opaque mobile header. The section is padded by this
+ *                    much, so nothing is laid out underneath it.
+ *   --gpc-float-nav: the see-through desktop navbar. Only the stacked layout
+ *                    keeps its content clear of it.
+ */
+.gpc-section {
+  --gpc-solid-nav: 0px;
+  --gpc-float-nav: 0px;
+  padding-top: var(--gpc-solid-nav);
+}
+
+.main-scroll .gpc-section {
+  --gpc-solid-nav: 56px;
+}
+
+@media (min-width: 768px) {
+  .main-scroll .gpc-section {
+    --gpc-solid-nav: 0px;
+    --gpc-float-nav: 88px;
+  }
+}

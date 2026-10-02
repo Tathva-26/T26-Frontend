@@ -1,36 +1,52 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import Stage from "@/pageComponents/GPC/Stage";
+import { useCallback, useEffect, useRef, useState } from "react";
 import GameOverlay from "@/pageComponents/GPC/game/GameOverlay";
 import HeroLayers from "./HeroLayers";
-import { useFitScale } from "@/hooks/useFitScale";
-import { useHeroTimeline } from "@/pageComponents/GPC/hooks/useHeroTimeline";
-import { STAGE } from "@/pageComponents/GPC/gpcConfig";
-import { orbitron, hammersmithOne, pressStart2P } from "@/pageComponents/GPC/gpcFonts";
+import HeroLayersMobile from "./mobile/HeroLayersMobile";
+import { useGpcLayout } from "@/pageComponents/GPC/hooks/useGpcLayout";
+import { useTouchControls } from "@/pageComponents/GPC/hooks/useTouchControls";
+import { pressStart2P } from "@/pageComponents/GPC/gpcFonts";
 import "@/pageComponents/GPC/gpc.css";
 
+/**
+ * One screen, no scrolling. The section is always rendered at full height -
+ * on the server and on the very first client render too - so the page around
+ * it never sees it at zero height; only its contents wait for the layout to
+ * be measured. The game overlay sits outside the layout switch, so resizing
+ * or rotating between layouts doesn't restart a game in progress.
+ */
 export default function GpcHero() {
-  const rootRef = useRef(null);
+  const sectionRef = useRef(null);
   const consoleRef = useRef(null);
+  const wasOpenRef = useRef(false);
   const [gameOpen, setGameOpen] = useState(false);
 
-  const scale = useFitScale(STAGE);
-  useHeroTimeline(rootRef);
+  const layout = useGpcLayout(sectionRef);
+  const touch = useTouchControls();
 
   const openGame = useCallback(() => setGameOpen(true), []);
   const closeGame = useCallback(() => setGameOpen(false), []);
 
+  // Hand keyboard focus back to the console once it is visible again.
+  useEffect(() => {
+    if (wasOpenRef.current && !gameOpen) {
+      consoleRef.current?.querySelector("button")?.focus({ preventScroll: true });
+    }
+    wasOpenRef.current = gameOpen;
+  }, [gameOpen]);
+
+  const hero = { consoleRef, onPlay: openGame, consoleHidden: gameOpen, paused: gameOpen, touch };
+
   return (
     <section
-      ref={rootRef}
-      className={`relative flex h-screen w-full items-center justify-center overflow-hidden bg-[#101010] ${orbitron.variable} ${hammersmithOne.variable} ${pressStart2P.variable}`}
+      ref={sectionRef}
+      className={`gpc-section relative flex h-dvh w-full items-center justify-center overflow-hidden bg-[#101010] ${pressStart2P.variable}`}
     >
-      <Stage {...STAGE} scale={scale}>
-        <HeroLayers consoleRef={consoleRef} onPlay={openGame} />
-      </Stage>
+      {layout?.mode === "stage" && <HeroLayers scale={layout.scale} {...hero} />}
+      {layout?.mode === "stacked" && <HeroLayersMobile {...hero} />}
 
-      <GameOverlay open={gameOpen} originRef={consoleRef} onClosed={closeGame} />
+      <GameOverlay open={gameOpen} originRef={consoleRef} onClosed={closeGame} touchControls={touch} />
     </section>
   );
 }
