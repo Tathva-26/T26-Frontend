@@ -151,7 +151,9 @@ export default function Preloader({ onComplete }) {
   // 2. LOADING SEQUENCE
   // -------------------------------------------------------------
   useEffect(() => {
-    const MIN_VISIBLE_MS = 1200
+    // At least one full turn of the rings (the 4.5s gimbal animations below),
+    // however fast everything loads, so it is never cut off mid-spin.
+    const MIN_VISIBLE_MS = 4500
     // The whole page is mounted behind the preloader and it waits for all of
     // it, frame sequences included (see lib/loadGate), so that nothing is
     // still loading or setting itself up once the page is shown. On a slow
@@ -290,23 +292,27 @@ export default function Preloader({ onComplete }) {
   return (
     <>
       <style jsx global>{`
+        /* The loader can stay up for as long as the page takes to load, so the
+           rings keep turning: each keyframe set ends where it began (mod 360deg)
+           so the loop has no jump, and none ends edge-on (rotateX 90deg), which
+           made the rings vanish and left only the logo. */
         @keyframes gimbalOuter {
           0% { transform: rotateZ(0deg) rotateX(0deg) rotateY(0deg); }
           30% { transform: rotateZ(360deg) rotateX(0deg) rotateY(0deg); }
           70% { transform: rotateZ(540deg) rotateX(65deg) rotateY(160deg); }
-          100% { transform: rotateZ(720deg) rotateX(90deg) rotateY(0deg); }
+          100% { transform: rotateZ(720deg) rotateX(0deg) rotateY(0deg); }
         }
         @keyframes gimbalMiddle {
           0% { transform: rotateZ(0deg) rotateX(0deg) rotateY(0deg); }
           30% { transform: rotateZ(-540deg) rotateX(0deg) rotateY(0deg); }
           70% { transform: rotateZ(-360deg) rotateX(-75deg) rotateY(-130deg); }
-          100% { transform: rotateZ(-180deg) rotateX(90deg) rotateY(0deg); }
+          100% { transform: rotateZ(-720deg) rotateX(0deg) rotateY(0deg); }
         }
         @keyframes gimbalInner {
           0% { transform: rotateZ(0deg) rotateX(0deg) rotateY(0deg); }
           30% { transform: rotateZ(720deg) rotateX(0deg) rotateY(0deg); }
           70% { transform: rotateZ(1080deg) rotateX(110deg) rotateY(320deg); }
-          100% { transform: rotateZ(1440deg) rotateX(90deg) rotateY(0deg); }
+          100% { transform: rotateZ(1440deg) rotateX(0deg) rotateY(0deg); }
         }
         @keyframes gimbalCore {
           0% { transform: translateZ(20px) rotateZ(0deg) rotateX(0deg) rotateY(0deg); }
@@ -315,16 +321,16 @@ export default function Preloader({ onComplete }) {
           100% { transform: translateZ(20px) rotateZ(1440deg) rotateX(0deg) rotateY(0deg); }
         }
         .animate-gimbal-outer {
-          animation: gimbalOuter 4.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          animation: gimbalOuter 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
         .animate-gimbal-middle {
-          animation: gimbalMiddle 4.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          animation: gimbalMiddle 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
         .animate-gimbal-inner {
-          animation: gimbalInner 4.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          animation: gimbalInner 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
         .animate-gimbal-core {
-          animation: gimbalCore 4.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          animation: gimbalCore 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
       `}</style>
 
