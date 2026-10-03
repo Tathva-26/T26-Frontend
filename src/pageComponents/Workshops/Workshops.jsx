@@ -2136,7 +2136,7 @@ export default function WorkshopsPage() {
       </div>
 
       {/* TOP NAVIGATION BAR */}
-      <header className='relative z-30 w-full border-t-2 border-[#0091ff] border-b border-white/5 bg-[#05060d]/90 backdrop-blur-xl'>
+      <header className='hidden relative z-30 w-full border-t-2 border-[#0091ff] border-b border-white/5 bg-[#05060d]/90 backdrop-blur-xl'>
         <div className='w-full px-4 sm:px-6 lg:px-8 h-[39px] sm:h-14 lg:h-16 flex items-center justify-between'>
           {/* Brand Logo */}
           <Link href='/' className='flex items-center gap-3 group'>
@@ -2206,13 +2206,13 @@ export default function WorkshopsPage() {
       {/* MOBILE SLIDE-IN MENU */}
       {mobileMenuOpen && (
         <div
-          className='fixed inset-0 bg-black/50 backdrop-blur-sm z-40'
+          className='hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40'
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
       <div
-        className={`fixed top-0 right-0 h-full w-48 sm:w-56 bg-[#090b16] border-l border-white/10 z-50 shadow-2xl transform transition-transform duration-300 ease-in-out ${
+        className={`hidden fixed top-0 right-0 h-full w-48 sm:w-56 bg-[#090b16] border-l border-white/10 z-50 shadow-2xl transform transition-transform duration-300 ease-in-out ${
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >

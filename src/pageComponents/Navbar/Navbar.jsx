@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import React, {
   useCallback,
@@ -6,9 +6,9 @@ import React, {
   useImperativeHandle,
   useRef,
   useState,
-} from "react";
-import { Hammersmith_One, Instrument_Serif } from "next/font/google";
-import Link from "next/link";
+} from 'react'
+import { Hammersmith_One, Instrument_Serif } from 'next/font/google'
+import Link from 'next/link'
 /**
  * Navbar
  * ------
@@ -23,43 +23,41 @@ import Link from "next/link";
  */
 
 const hammersmithOne = Hammersmith_One({
-  subsets: ["latin"],
-  weight: "400",
-  display: "swap",
-  variable: "--font-hammersmith",
-});
+  subsets: ['latin'],
+  weight: '400',
+  display: 'swap',
+  variable: '--font-hammersmith',
+})
 
 const instrumentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: "italic",
-  display: "swap",
-  variable: "--font-instrument-serif",
-});
+  subsets: ['latin'],
+  weight: '400',
+  style: 'italic',
+  display: 'swap',
+  variable: '--font-instrument-serif',
+})
 
 const NAV_LINKS = [
-  { label: "Workshops", href: "/workshops" },
-  { label: "Lectures", href: "/lectures" },
-  { label: "ProShow", href: "/proshow" },
-  { label: "Accommodation", href: "/accommodation" },
-  { label: "Map", href: "/map" },
+  { label: 'Workshops', href: '/workshops' },
+  { label: 'Lectures', href: '/lectures' },
+  { label: 'ProShow', href: '/proshow' },
+  { label: 'Accommodation', href: '/accommodation' },
+]
 
-];
-
-const SCROLL_RANGE = 140; // px of scroll over which the bar fully compacts
-const EASE = 0.12; // per-frame lerp factor — gives the resize physical weight
+const SCROLL_RANGE = 140 // px of scroll over which the bar fully compacts
+const EASE = 0.12 // per-frame lerp factor — gives the resize physical weight
 
 /* ---- FlipText portal tuning ------------------------------------------ */
-const PORTAL_DURATION = 520; // ms, whole transition (first letter to last)
-const PORTAL_SPREAD = 0.3; // share of the duration used to ripple outward from the cursor
-const PORTAL_SIGMA_EM = 2.8; // width of the warp falloff, in em
-const PORTAL_PINCH = 0.28; // how strongly letters are pulled toward the cursor x
-const PORTAL_STRETCH = 0.45; // extra vertical stretch at the contact point
-const PORTAL_SQUASH = 0.16; // horizontal squeeze at the contact point
-const PORTAL_SKEW = 14; // degrees of shear at maximum influence
+const PORTAL_DURATION = 520 // ms, whole transition (first letter to last)
+const PORTAL_SPREAD = 0.3 // share of the duration used to ripple outward from the cursor
+const PORTAL_SIGMA_EM = 2.8 // width of the warp falloff, in em
+const PORTAL_PINCH = 0.28 // how strongly letters are pulled toward the cursor x
+const PORTAL_STRETCH = 0.45 // extra vertical stretch at the contact point
+const PORTAL_SQUASH = 0.16 // horizontal squeeze at the contact point
+const PORTAL_SKEW = 14 // degrees of shear at maximum influence
 
-const clamp01 = (v) => Math.max(0, Math.min(1, v));
-const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4);
+const clamp01 = (v) => Math.max(0, Math.min(1, v))
+const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4)
 
 /**
  * FlipText
@@ -73,41 +71,37 @@ const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4);
  * span's position for the warp math. The span also wires its own
  * pointerenter as a sane default for plain nav-link usage.
  */
-const FlipText = React.forwardRef(function FlipText(
-  { text, className },
-  ref
-) {
-  const rootRef = useRef(null);
-  const outgoingRef = useRef([]);
-  const incomingRef = useRef([]);
-  const animationRef = useRef(null);
-  const runningRef = useRef(false);
+const FlipText = React.forwardRef(function FlipText({ text, className }, ref) {
+  const rootRef = useRef(null)
+  const outgoingRef = useRef([])
+  const incomingRef = useRef([])
+  const animationRef = useRef(null)
+  const runningRef = useRef(false)
 
   const trigger = useCallback(
     (event) => {
-      const root = rootRef.current;
-      if (!root || runningRef.current) return;
+      const root = rootRef.current
+      if (!root || runningRef.current) return
 
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        return
       }
 
-      const out = outgoingRef.current;
-      const inc = incomingRef.current;
-      if (!out[0] || !inc[0]) return;
+      const out = outgoingRef.current
+      const inc = incomingRef.current
+      if (!out[0] || !inc[0]) return
 
-      runningRef.current = true;
+      runningRef.current = true
 
       /*
        * Capture the exact cursor X, relative to this span. Character
        * centres come from layout offsets (not bounding rects) so they
        * are unaffected by any transform left over from the previous run.
        */
-      const pointerX = event.clientX - root.getBoundingClientRect().left;
-      const H = inc[0].offsetHeight; // height of one row = travel distance
+      const pointerX = event.clientX - root.getBoundingClientRect().left
+      const H = inc[0].offsetHeight // height of one row = travel distance
       const sigma =
-        parseFloat(window.getComputedStyle(root).fontSize) *
-        PORTAL_SIGMA_EM;
+        parseFloat(window.getComputedStyle(root).fontSize) * PORTAL_SIGMA_EM
 
       /*
        * Per-character distance from the cursor and a smooth gaussian
@@ -115,15 +109,15 @@ const FlipText = React.forwardRef(function FlipText(
        * cursor between two letters gives both neighbours nearly equal
        * influence, so the warp originates between them.
        */
-      const cells = [];
+      const cells = []
       for (let i = 0; i < text.length; i++) {
-        const char = out[i];
+        const char = out[i]
         if (!char) {
-          cells.push({ d: 0, w: 0 });
-          continue;
+          cells.push({ d: 0, w: 0 })
+          continue
         }
-        const d = char.offsetLeft + char.offsetWidth / 2 - pointerX;
-        cells.push({ d, w: Math.exp(-((d / sigma) * (d / sigma))) });
+        const d = char.offsetLeft + char.offsetWidth / 2 - pointerX
+        cells.push({ d, w: Math.exp(-((d / sigma) * (d / sigma))) })
       }
 
       /*
@@ -134,263 +128,262 @@ const FlipText = React.forwardRef(function FlipText(
        */
       const render = (t) => {
         for (let i = 0; i < text.length; i++) {
-          const o = out[i];
-          const n = inc[i];
-          if (!o || !n) continue;
+          const o = out[i]
+          const n = inc[i]
+          if (!o || !n) continue
 
-          const { d, w } = cells[i];
+          const { d, w } = cells[i]
 
           const local = clamp01(
-            (t - PORTAL_SPREAD * (1 - w)) / (1 - PORTAL_SPREAD)
-          );
-          const p = easeOutQuart(local);
+            (t - PORTAL_SPREAD * (1 - w)) / (1 - PORTAL_SPREAD),
+          )
+          const p = easeOutQuart(local)
 
-          const bell = Math.sin(Math.PI * p) * w;
+          const bell = Math.sin(Math.PI * p) * w
 
-          const dx = -d * PORTAL_PINCH * bell;
-          const skew = (d / sigma) * PORTAL_SKEW * bell;
-          const sx = 1 - PORTAL_SQUASH * bell;
-          const sy = 1 + PORTAL_STRETCH * bell;
-          const shape = ` skewX(${skew}deg) scale(${sx}, ${sy})`;
+          const dx = -d * PORTAL_PINCH * bell
+          const skew = (d / sigma) * PORTAL_SKEW * bell
+          const sx = 1 - PORTAL_SQUASH * bell
+          const sy = 1 + PORTAL_STRETCH * bell
+          const shape = ` skewX(${skew}deg) scale(${sx}, ${sy})`
 
-          o.style.transform = `translate3d(${dx}px, ${-p * H}px, 0)` + shape;
-          n.style.transform =
-            `translate3d(${dx}px, ${H - p * H}px, 0)` + shape;
+          o.style.transform = `translate3d(${dx}px, ${-p * H}px, 0)` + shape
+          n.style.transform = `translate3d(${dx}px, ${H - p * H}px, 0)` + shape
 
-          o.style.opacity = String(1 - clamp01((p - 0.6) / 0.4));
-          n.style.opacity = "1";
+          o.style.opacity = String(1 - clamp01((p - 0.6) / 0.4))
+          n.style.opacity = '1'
         }
-      };
+      }
 
-      render(0);
+      render(0)
 
-      const start = performance.now();
+      const start = performance.now()
 
       const tick = (now) => {
-        const raw = clamp01((now - start) / PORTAL_DURATION);
-        render(raw);
+        const raw = clamp01((now - start) / PORTAL_DURATION)
+        render(raw)
 
         if (raw < 1) {
-          animationRef.current = requestAnimationFrame(tick);
-          return;
+          animationRef.current = requestAnimationFrame(tick)
+          return
         }
 
         for (let i = 0; i < text.length; i++) {
-          const o = out[i];
-          const n = inc[i];
-          if (!o || !n) continue;
-          o.style.transform = `translate3d(0, ${-H}px, 0)`;
-          o.style.opacity = "0";
-          n.style.transform = "none";
-          n.style.opacity = "1";
+          const o = out[i]
+          const n = inc[i]
+          if (!o || !n) continue
+          o.style.transform = `translate3d(0, ${-H}px, 0)`
+          o.style.opacity = '0'
+          n.style.transform = 'none'
+          n.style.opacity = '1'
         }
 
-        runningRef.current = false;
-        animationRef.current = null;
-      };
+        runningRef.current = false
+        animationRef.current = null
+      }
 
-      animationRef.current = requestAnimationFrame(tick);
+      animationRef.current = requestAnimationFrame(tick)
     },
-    [text]
-  );
+    [text],
+  )
 
-  useImperativeHandle(ref, () => ({ trigger }), [trigger]);
+  useImperativeHandle(ref, () => ({ trigger }), [trigger])
 
   useEffect(() => {
     return () => {
       if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+        cancelAnimationFrame(animationRef.current)
       }
-    };
-  }, []);
+    }
+  }, [])
 
   return (
     <span
       ref={rootRef}
-      className={`nb-link__flip${className ? ` ${className}` : ""}`}
+      className={`nb-link__flip${className ? ` ${className}` : ''}`}
       onPointerEnter={trigger}
     >
-      <span className="nb-link__portal">
+      <span className='nb-link__portal'>
         {/* OUTGOING */}
-        <span className="nb-link__row nb-link__outgoing">
-          {text.split("").map((char, index) => (
+        <span className='nb-link__row nb-link__outgoing'>
+          {text.split('').map((char, index) => (
             <span
               key={`out-${index}`}
               ref={(el) => {
-                outgoingRef.current[index] = el;
+                outgoingRef.current[index] = el
               }}
-              className="nb-link__char"
+              className='nb-link__char'
             >
-              {char === " " ? "\u00A0" : char}
+              {char === ' ' ? '\u00A0' : char}
             </span>
           ))}
         </span>
 
         {/* INCOMING */}
-        <span className="nb-link__row nb-link__incoming" aria-hidden="true">
-          {text.split("").map((char, index) => (
+        <span className='nb-link__row nb-link__incoming' aria-hidden='true'>
+          {text.split('').map((char, index) => (
             <span
               key={`in-${index}`}
               ref={(el) => {
-                incomingRef.current[index] = el;
+                incomingRef.current[index] = el
               }}
-              className="nb-link__char"
+              className='nb-link__char'
             >
-              {char === " " ? "\u00A0" : char}
+              {char === ' ' ? '\u00A0' : char}
             </span>
           ))}
         </span>
       </span>
     </span>
-  );
-});
+  )
+})
 
 function FlipLink({ href, children, onClick, className }) {
   return (
     <a
       href={href}
-      className={`nb-link${className ? ` ${className}` : ""}`}
+      className={`nb-link${className ? ` ${className}` : ''}`}
       onClick={onClick}
     >
       <FlipText text={String(children)} />
     </a>
-  );
+  )
 }
 
 function MenuIcon() {
   return (
     <svg
-      width="27"
-      height="18"
-      viewBox="0 0 27 18"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
+      width='27'
+      height='18'
+      viewBox='0 0 27 18'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
+      aria-hidden='true'
     >
       <line
-        x1="6.5"
-        y1="3.5"
-        x2="20.5"
-        y2="3.5"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
+        x1='6.5'
+        y1='3.5'
+        x2='20.5'
+        y2='3.5'
+        stroke='currentColor'
+        strokeWidth='3'
+        strokeLinecap='round'
       />
       <line
-        x1="1.5"
-        y1="9.5"
-        x2="25.5"
-        y2="9.5"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
+        x1='1.5'
+        y1='9.5'
+        x2='25.5'
+        y2='9.5'
+        stroke='currentColor'
+        strokeWidth='3'
+        strokeLinecap='round'
       />
       <line
-        x1="6.5"
-        y1="16.5"
-        x2="20.5"
-        y2="16.5"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
+        x1='6.5'
+        y1='16.5'
+        x2='20.5'
+        y2='16.5'
+        stroke='currentColor'
+        strokeWidth='3'
+        strokeLinecap='round'
       />
     </svg>
-  );
+  )
 }
 
 export default function Navbar() {
-  const navRef = useRef(null);
-  const menuButtonRef = useRef(null);
-  const registerFlipRef = useRef(null);
-  const rafId = useRef(null);
-  const current = useRef(0);
-  const target = useRef(0);
-  const reduceMotion = useRef(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const navRef = useRef(null)
+  const menuButtonRef = useRef(null)
+  const registerFlipRef = useRef(null)
+  const rafId = useRef(null)
+  const current = useRef(0)
+  const target = useRef(0)
+  const reduceMotion = useRef(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   // Continuous, eased scroll progress (0 → 1) driving every size change.
   useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    reduceMotion.current = media.matches;
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    reduceMotion.current = media.matches
     const handleMediaChange = () => {
-      reduceMotion.current = media.matches;
-    };
-    media.addEventListener?.("change", handleMediaChange);
+      reduceMotion.current = media.matches
+    }
+    media.addEventListener?.('change', handleMediaChange)
 
     const applyProgress = (value) => {
-      navRef.current?.style.setProperty("--scroll-progress", value.toFixed(4));
-    };
+      navRef.current?.style.setProperty('--scroll-progress', value.toFixed(4))
+    }
 
     const step = () => {
-      const diff = target.current - current.current;
+      const diff = target.current - current.current
       if (reduceMotion.current || Math.abs(diff) < 0.001) {
-        current.current = target.current;
-        applyProgress(current.current);
-        rafId.current = null;
-        return;
+        current.current = target.current
+        applyProgress(current.current)
+        rafId.current = null
+        return
       }
-      current.current += diff * EASE;
-      applyProgress(current.current);
-      rafId.current = requestAnimationFrame(step);
-    };
+      current.current += diff * EASE
+      applyProgress(current.current)
+      rafId.current = requestAnimationFrame(step)
+    }
 
     const requestStep = () => {
       if (rafId.current == null) {
-        rafId.current = requestAnimationFrame(step);
+        rafId.current = requestAnimationFrame(step)
       }
-    };
+    }
 
     const handleScroll = () => {
-      const y = window.scrollY || 0;
-      target.current = Math.min(1, Math.max(0, y / SCROLL_RANGE));
-      requestStep();
-    };
+      const y = window.scrollY || 0
+      target.current = Math.min(1, Math.max(0, y / SCROLL_RANGE))
+      requestStep()
+    }
 
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
-      media.removeEventListener?.("change", handleMediaChange);
-      if (rafId.current != null) cancelAnimationFrame(rafId.current);
-    };
-  }, []);
+      window.removeEventListener('scroll', handleScroll)
+      media.removeEventListener?.('change', handleMediaChange)
+      if (rafId.current != null) cancelAnimationFrame(rafId.current)
+    }
+  }, [])
 
   // Lock background scroll while the mobile menu is open; close on Escape.
   useEffect(() => {
-    if (!menuOpen) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (!menuOpen) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
-        setMenuOpen(false);
-        menuButtonRef.current?.focus();
+      if (event.key === 'Escape') {
+        setMenuOpen(false)
+        menuButtonRef.current?.focus()
       }
-    };
-    window.addEventListener("keydown", handleKeyDown);
+    }
+    window.addEventListener('keydown', handleKeyDown)
     return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [menuOpen]);
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [menuOpen])
 
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const closeMenu = useCallback(() => setMenuOpen(false), [])
 
   return (
     <>
       <nav
         ref={navRef}
         className={`nb ${hammersmithOne.variable} ${instrumentSerif.variable}`}
-        aria-label="Primary"
+        aria-label='Primary'
       >
-        <div className="nb__glow" aria-hidden="true" />
+        <div className='nb__glow' aria-hidden='true' />
 
-        <div className="nb__left">
-          <Link href="/hero" className="nb__mark" aria-label="Home">
-            <img src="/images/hero/tathvalogo.png" alt="Tathva" />
+        <div className='nb__left'>
+          <Link href='/' className='nb__mark' aria-label='Home'>
+            <img src='/images/hero/tathvalogo.png' alt='Tathva' />
           </Link>
 
-          <ul className="nb__links">
+          <ul className='nb__links'>
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <FlipLink href={link.href}>{link.label}</FlipLink>
@@ -399,28 +392,28 @@ export default function Navbar() {
           </ul>
         </div>
 
-        <div className="nb__right">
+        <div className='nb__right'>
           <a
-            href="#register"
-            className="nb__cta"
+            href='#register'
+            className='nb__cta'
             onPointerEnter={(event) => registerFlipRef.current?.trigger(event)}
           >
-            <span className="nb__cta-line" aria-hidden="true" />
-            <FlipText ref={registerFlipRef} text="Register" />
+            <span className='nb__cta-line' aria-hidden='true' />
+            <FlipText ref={registerFlipRef} text='Register' />
             <img
-              src="/images/hero/regarrow.svg"
-              alt=""
-              className="nb__cta-arrow"
+              src='/images/hero/regarrow.svg'
+              alt=''
+              className='nb__cta-arrow'
             />
           </a>
 
           <button
             ref={menuButtonRef}
-            type="button"
-            className="nb__menu"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            type='button'
+            className='nb__menu'
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={menuOpen}
-            aria-controls="nb-mobile-menu"
+            aria-controls='nb-mobile-menu'
             onClick={() => setMenuOpen((open) => !open)}
           >
             <MenuIcon />
@@ -429,17 +422,17 @@ export default function Navbar() {
       </nav>
 
       <div
-        id="nb-mobile-menu"
-        className={`nb-mobile ${menuOpen ? "is-open" : ""}`}
+        id='nb-mobile-menu'
+        className={`nb-mobile ${menuOpen ? 'is-open' : ''}`}
         aria-hidden={!menuOpen}
       >
-        <nav aria-label="Mobile">
-          <ul className="nb-mobile__links">
+        <nav aria-label='Mobile'>
+          <ul className='nb-mobile__links'>
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <a
                   href={link.href}
-                  className="nb-mobile__link"
+                  className='nb-mobile__link'
                   onClick={closeMenu}
                   tabIndex={menuOpen ? 0 : -1}
                 >
@@ -449,8 +442,8 @@ export default function Navbar() {
             ))}
           </ul>
           <a
-            href="#register"
-            className="nb-mobile__cta"
+            href='#register'
+            className='nb-mobile__cta'
             onClick={closeMenu}
             tabIndex={menuOpen ? 0 : -1}
           >
@@ -773,5 +766,5 @@ padding-inline: calc(24px - var(--scroll-progress, 0) * 8px);
         }
       `}</style>
     </>
-  );
+  )
 }

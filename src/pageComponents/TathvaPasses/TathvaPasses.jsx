@@ -1,10 +1,10 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import Image from 'next/image';
-import Navbar from "@/pageComponents/Navbar/Navbar";
-import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
-
+import { useState } from 'react'
+import Image from 'next/image'
+import Navbar from '@/pageComponents/Navbar/Navbar'
+import { useNavbarScope } from '@/pageComponents/Navbar/NavbarContext'
+import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 
 const TICKETS = [
   {
@@ -34,70 +34,70 @@ const TICKETS = [
     src: '/images/tickets/ticket2.svg',
     alt: 'Tathva Pass Day 1 - Oct 9 2026',
   },
-];
+]
 
 export default function TathvaPasses() {
+  const inNavbarScope = useNavbarScope()
+
   // Center ticket index default 1 -> DAY ALL
-  const [activeIndex, setActiveIndex] = useState(1);
+  const [activeIndex, setActiveIndex] = useState(1)
 
   const handlePrev = () => {
-    setActiveIndex((prev) => (prev === 0 ? TICKETS.length - 1 : prev - 1));
-  };
+    setActiveIndex((prev) => (prev === 0 ? TICKETS.length - 1 : prev - 1))
+  }
 
   const handleNext = () => {
-    setActiveIndex((prev) => (prev === TICKETS.length - 1 ? 0 : prev + 1));
-  };
+    setActiveIndex((prev) => (prev === TICKETS.length - 1 ? 0 : prev + 1))
+  }
 
   return (
-    <main className="relative flex min-h-screen w-full flex-col items-center justify-between overflow-hidden bg-black select-none font-sans text-white">
-      <div className="hidden lg:block">
-  <Navbar />
-</div>
-      <TathvaMenu/>
+    <main className='relative flex min-h-screen w-full flex-col items-center justify-between overflow-hidden bg-black select-none font-sans text-white'>
+      {!inNavbarScope && <Navbar />}
+      <TathvaMenu />
       {/* -------------------------------------------------------------
           BACKGROUND IMAGE (OBJECT-TOP ON MOBILE FOR SHIFTED SKYLINE)
       ------------------------------------------------------------- */}
-      <div className="pointer-events-none absolute inset-0 z-0">
+      <div className='pointer-events-none absolute inset-0 z-0'>
         <Image
-          src="/images/tickets/bg-city.png"
-          alt="Tathva Background"
+          src='/images/tickets/bg-city.png'
+          alt='Tathva Background'
           fill
           priority
-          className="object-cover object-top sm:object-center"
+          className='object-cover object-top sm:object-center'
         />
       </div>
 
       {/* -------------------------------------------------------------
           CYBERPUNK SIDE GLOW RODS (MIDDLE-ALIGNED ON MOBILE & DESKTOP)
       ------------------------------------------------------------- */}
-      <div className="pointer-events-none absolute left-1 sm:left-4 md:left-8 top-[55%] sm:top-1/2 z-20 -translate-y-1/2">
+      <div className='pointer-events-none absolute left-1 sm:left-4 md:left-8 top-[55%] sm:top-1/2 z-20 -translate-y-1/2'>
         <img
-          src="/images/tickets/leftrod.svg"
-          alt=""
-          className="h-[55vh] sm:h-[65vh] max-h-[580px] w-auto object-contain drop-shadow-[0_0_15px_rgba(138,56,245,0.8)]"
+          src='/images/tickets/leftrod.svg'
+          alt=''
+          className='h-[55vh] sm:h-[65vh] max-h-[580px] w-auto object-contain drop-shadow-[0_0_15px_rgba(138,56,245,0.8)]'
         />
       </div>
 
-      <div className="pointer-events-none absolute right-1 sm:right-4 md:right-8 top-[55%] sm:top-1/2 z-20 -translate-y-1/2">
+      <div className='pointer-events-none absolute right-1 sm:right-4 md:right-8 top-[55%] sm:top-1/2 z-20 -translate-y-1/2'>
         <img
-          src="/images/tickets/rightrod.svg"
-          alt=""
-          className="h-[55vh] sm:h-[65vh] max-h-[580px] w-auto object-contain drop-shadow-[0_0_15px_rgba(138,56,245,0.8)]"
+          src='/images/tickets/rightrod.svg'
+          alt=''
+          className='h-[55vh] sm:h-[65vh] max-h-[580px] w-auto object-contain drop-shadow-[0_0_15px_rgba(138,56,245,0.8)]'
         />
       </div>
 
       {/* -------------------------------------------------------------
           HERO TITLE & SUBTITLE (AKIRA EXPANDED FONT)
       ------------------------------------------------------------- */}
-      <div className="relative z-10 my-0 sm:my-auto flex w-full flex-col items-center justify-center px-4 pt-24 sm:pt-24 md:pt-20 text-center">
+      <div className='relative z-10 my-0 sm:my-auto flex w-full flex-col items-center justify-center px-4 pt-24 sm:pt-24 md:pt-20 text-center'>
         <h1
-          className="text-4xl font-black tracking-[0.12em] text-white sm:text-5xl md:text-6xl lg:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]"
+          className='text-4xl font-black tracking-[0.12em] text-white sm:text-5xl md:text-6xl lg:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]'
           style={{ fontFamily: "'Akira Expanded', 'Orbitron', sans-serif" }}
         >
           TATHVA PASSES
         </h1>
         <p
-          className="mt-2 text-[10px] font-bold tracking-[0.22em] text-white sm:text-xs md:text-sm lg:text-base"
+          className='mt-2 text-[10px] font-bold tracking-[0.22em] text-white sm:text-xs md:text-sm lg:text-base'
           style={{ fontFamily: "'Akira Expanded', 'Orbitron', sans-serif" }}
         >
           GET THE PASS ENJOY EVERY MOMENT
@@ -108,75 +108,86 @@ export default function TathvaPasses() {
             Mobile: Vertical rotation (Top/Center/Bottom) with middle largest
             Desktop: Horizontal rotation (Left/Center/Right)
         ------------------------------------------------------------- */}
-        <div className="relative mt-48 sm:mt-8 md:mt-12 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16">
+        <div className='relative mt-48 sm:mt-8 md:mt-12 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
           {/* Left Arrow Button (Previous) */}
           <button
-            type="button"
+            type='button'
             onClick={handlePrev}
-            aria-label="Previous ticket"
-            className="group absolute left-2 sm:left-4 md:left-6 lg:left-8 top-1/2 -translate-y-1/2 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14"
+            aria-label='Previous ticket'
+            className='group absolute left-2 sm:left-4 md:left-6 lg:left-8 top-1/2 -translate-y-1/2 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14'
           >
             <svg
-              className="h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:-translate-x-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+              className='h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:-translate-x-0.5'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 12H5M12 19l-7-7 7-7" />
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth='2.5'
+                d='M19 12H5M12 19l-7-7 7-7'
+              />
             </svg>
           </button>
 
           {/* Ticket Showcase Stack */}
-          <div className="relative flex h-[260px] sm:h-[320px] md:h-[370px] lg:h-[400px] w-full max-w-3xl items-center justify-center">
+          <div className='relative flex h-[260px] sm:h-[320px] md:h-[370px] lg:h-[400px] w-full max-w-3xl items-center justify-center'>
             {TICKETS.map((ticket, index) => {
-              let offset = index - activeIndex;
-              if (offset < -1) offset += TICKETS.length;
-              if (offset > 1) offset -= TICKETS.length;
+              let offset = index - activeIndex
+              if (offset < -1) offset += TICKETS.length
+              if (offset > 1) offset -= TICKETS.length
 
-              const isCenter = offset === 0;
-              const isLeft = offset === -1;
+              const isCenter = offset === 0
+              const isLeft = offset === -1
 
               return (
                 <div
                   key={ticket.id}
                   onClick={() => setActiveIndex(index)}
-                  className={`absolute left-1/2 top-1/2 cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${isCenter
-                    ? 'z-30 -translate-x-1/2 -translate-y-[52%] sm:-translate-y-[58%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
-                    : isLeft
-                      ? 'z-10 -translate-x-1/2 sm:-translate-x-[95%] md:-translate-x-[100%] lg:-translate-x-[105%] -translate-y-[115%] sm:-translate-y-[40%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
-                      : 'z-10 -translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] translate-y-[10%] sm:-translate-y-[40%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
-                    }`}
+                  className={`absolute left-1/2 top-1/2 cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${
+                    isCenter
+                      ? 'z-30 -translate-x-1/2 -translate-y-[52%] sm:-translate-y-[58%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
+                      : isLeft
+                        ? 'z-10 -translate-x-1/2 sm:-translate-x-[95%] md:-translate-x-[100%] lg:-translate-x-[105%] -translate-y-[115%] sm:-translate-y-[40%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        : 'z-10 -translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] translate-y-[10%] sm:-translate-y-[40%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                  }`}
                 >
-                  <div className="relative w-[230px] sm:w-[380px] md:w-[480px] lg:w-[560px]">
+                  <div className='relative w-[230px] sm:w-[380px] md:w-[480px] lg:w-[560px]'>
                     <img
                       src={ticket.src}
                       alt={ticket.alt}
-                      className="h-auto w-full object-contain filter transition-all duration-500 hover:brightness-105"
+                      className='h-auto w-full object-contain filter transition-all duration-500 hover:brightness-105'
                     />
                   </div>
                 </div>
-              );
+              )
             })}
           </div>
 
           {/* Right Arrow Button (Next) */}
           <button
-            type="button"
+            type='button'
             onClick={handleNext}
-            aria-label="Next ticket"
-            className="group absolute right-2 sm:right-4 md:right-6 lg:right-8 top-1/2 -translate-y-1/2 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14"
+            aria-label='Next ticket'
+            className='group absolute right-2 sm:right-4 md:right-6 lg:right-8 top-1/2 -translate-y-1/2 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14'
           >
             <svg
-              className="h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:translate-x-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+              className='h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:translate-x-0.5'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 12h14M12 5l7 7-7 7" />
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth='2.5'
+                d='M5 12h14M12 5l7 7-7 7'
+              />
             </svg>
           </button>
         </div>
       </div>
     </main>
-  );
+  )
 }

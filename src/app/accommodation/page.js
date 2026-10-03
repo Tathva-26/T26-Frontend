@@ -1,5 +1,5 @@
-import Accommodation from "@/pageComponents/Accommodation/Accommodation";
+import Accommodation from '@/pageComponents/Accomodation/Accommodation'
 
 export default function Acc() {
-  return <Accommodation/>;
+  return <Accommodation />
 }

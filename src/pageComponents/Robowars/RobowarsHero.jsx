@@ -13,6 +13,7 @@ import {
   TV_ART_STYLE,
 } from '../wheels/robowarsHandoff'
 import './robowars.css'
+import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
@@ -40,6 +41,8 @@ const bowlbyOneSC = localFont({
 const ASSET_ROOT = '/images/Robowars'
 const FRAME_WIDTH = ROBOWARS_FRAME_WIDTH
 const FRAME_HEIGHT = ROBOWARS_FRAME_HEIGHT
+const MOBILE_FRAME_WIDTH = 412
+const MOBILE_FRAME_HEIGHT = 594
 
 function frameStyle({
   x,
@@ -202,7 +205,7 @@ function MobileFrame({ containerRef }) {
   return (
     <div
       ref={containerRef}
-      className='absolute inset-0 h-full w-full [container-type:size] md:hidden'
+      className='absolute left-1/2 top-1/2 aspect-[412/594] w-screen -translate-x-1/2 -translate-y-1/2 [container-type:size] md:hidden'
     >
       <Image
         src={`${ASSET_ROOT}/mobile-background.png`}
@@ -211,85 +214,111 @@ function MobileFrame({ containerRef }) {
         priority
         sizes='100vw'
         draggable={false}
-        className='object-cover object-bottom'
+        className='object-cover'
       />
 
-      {/* Robots: anchored to the bottom, sized from container width */}
-      {/* Robots: bottom-0 vertically; x/width same as old mobile coordinates (412px frame) */}
-      <div
-        className='robowars-motion robowars-robot robowars-left-robot pointer-events-none absolute bottom-0'
-        style={{ left: '-13.1cqw', width: '55.3cqw', aspectRatio: '228 / 379' }}
-      >
-        <Image
-          src={`${ASSET_ROOT}/arena-left-robot.svg`}
-          alt=''
-          fill
-          priority
-          sizes='60vw'
-          draggable={false}
-          className='robowars-art select-none object-fill'
-        />
-      </div>
-      <div
-        className='robowars-motion robowars-robot robowars-right-robot pointer-events-none absolute bottom-0'
-        style={{ left: '58.25cqw', width: '54.9cqw', aspectRatio: '226 / 378' }}
-      >
-        <Image
-          src={`${ASSET_ROOT}/arena-right-robot.svg`}
-          alt=''
-          fill
-          priority
-          sizes='60vw'
-          draggable={false}
-          className='robowars-art select-none object-fill'
-        />
-      </div>
+      <Art
+        src='arena-left-robot.svg'
+        alt=''
+        x={-54}
+        y={34}
+        width={228}
+        height={379}
+        frameWidth={MOBILE_FRAME_WIDTH}
+        frameHeight={MOBILE_FRAME_HEIGHT}
+        priority
+        className='robowars-motion robowars-robot robowars-left-robot pointer-events-none'
+      />
+      <Art
+        src='arena-right-robot.svg'
+        alt=''
+        x={240}
+        y={42}
+        width={226}
+        height={378}
+        frameWidth={MOBILE_FRAME_WIDTH}
+        frameHeight={MOBILE_FRAME_HEIGHT}
+        priority
+        className='robowars-motion robowars-robot robowars-right-robot pointer-events-none'
+      />
 
-      {/* TOP GROUP: title only, centered in the free area above the robots */}
       <div
-        className='pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center justify-center text-center uppercase text-white'
-        style={{ height: '50cqh' }}
+        className='pointer-events-none absolute text-center uppercase text-white'
+        style={frameStyle({
+          x: 63,
+          y: 386,
+          width: 286,
+          height: 66,
+          frameWidth: MOBILE_FRAME_WIDTH,
+          frameHeight: MOBILE_FRAME_HEIGHT,
+        })}
       >
-        <p className='robowars-motion robowars-title-left m-0 whitespace-nowrap font-bowlby-one-sc text-[min(11cqw,6cqh)] leading-[0.95] will-change-transform'>
+        <p className='robowars-motion robowars-title-left m-0 whitespace-nowrap font-bowlby-one-sc text-[8.35cqw] leading-[0.95] will-change-transform'>
           ROBO WARS
         </p>
-        <p className='robowars-motion robowars-title-right m-0 font-calm-serif text-[min(8.5cqw,4.5cqh)] leading-[1.05] normal-case will-change-transform'>
+        <p className='robowars-motion robowars-title-right m-0 font-calm-serif text-[6.9cqw] leading-[1.05] normal-case will-change-transform'>
           Enter Arena
         </p>
       </div>
 
-      {/* BOTTOM GROUP: date + specs, down on the arena floor, above the robots */}
       <div
-        className='pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center text-white'
-        style={{ paddingBottom: '50cqh', gap: '2.5cqh' }}
+        className='robowars-motion robowars-date pointer-events-none absolute flex items-center justify-between text-white will-change-transform'
+        style={frameStyle({
+          x: 134,
+          y: 460,
+          width: 164,
+          height: 12,
+          frameWidth: MOBILE_FRAME_WIDTH,
+          frameHeight: MOBILE_FRAME_HEIGHT,
+        })}
       >
-        <div
-          className='robowars-motion robowars-date flex items-center justify-between will-change-transform'
-          style={{ width: '60cqw' }}
-        >
-          <span className='h-px w-[31%] bg-white' />
-          <span className='font-alata whitespace-nowrap text-[min(3.4cqw,2cqh)] leading-none'>
-            OCT 9,10
-          </span>
-          <span className='h-px w-[31%] bg-white' />
-        </div>
-
-        <div
-          className='flex items-center justify-center uppercase'
-          style={{ gap: '3cqw' }}
-        >
-          <div className='robowars-motion robowars-prizes text-right font-alata text-[min(3cqw,1.8cqh)] leading-[1.2] will-change-transform'>
-            <p className='m-0 text-white'>PRIZES WORTH</p>
-            <p className='m-0 text-white'>INR</p>
-            <p className='m-0 text-[#eb9a58]'>8 LAKH</p>
-          </div>
-          <div className='robowars-motion robowars-date w-px self-stretch bg-white/55 will-change-transform' />
-          <div className='robowars-motion robowars-arena text-left font-alata text-[min(3cqw,1.8cqh)] leading-[1.2] will-change-transform'>
-            <p className='m-0'>16 x 16 FT. ARENA</p>
-            <p className='m-0'>8KG \ 15KG</p>
-          </div>
-        </div>
+        <span className='h-px w-[31%] bg-white' />
+        <span className='font-alata whitespace-nowrap text-[2.45cqw] leading-none'>
+          OCT 9,10
+        </span>
+        <span className='h-px w-[31%] bg-white' />
       </div>
+
+      <div
+        className='robowars-motion robowars-prizes pointer-events-none absolute text-right font-alata text-[2.25cqw] leading-[1.15] uppercase will-change-transform'
+        style={frameStyle({
+          x: 118,
+          y: 498,
+          width: 81,
+          height: 42,
+          frameWidth: MOBILE_FRAME_WIDTH,
+          frameHeight: MOBILE_FRAME_HEIGHT,
+        })}
+      >
+        <p className='m-0 text-white'>PRIZES WORTH</p>
+        <p className='m-0 text-white'>INR</p>
+        <p className='m-0 text-[#eb9a58]'>8 LAKH</p>
+      </div>
+      <div
+        className='robowars-motion robowars-arena pointer-events-none absolute text-left font-alata text-[2.25cqw] leading-[1.38] uppercase text-white will-change-transform'
+        style={frameStyle({
+          x: 219,
+          y: 498,
+          width: 145,
+          height: 30,
+          frameWidth: MOBILE_FRAME_WIDTH,
+          frameHeight: MOBILE_FRAME_HEIGHT,
+        })}
+      >
+        <p className='m-0'>16 x 16 FT. ARENA</p>
+        <p className='m-0'>8KG \ 15KG</p>
+      </div>
+      <div
+        className='robowars-motion robowars-date pointer-events-none absolute w-px bg-white/55 will-change-transform'
+        style={frameStyle({
+          x: 209,
+          y: 501,
+          width: 1,
+          height: 24,
+          frameWidth: MOBILE_FRAME_WIDTH,
+          frameHeight: MOBILE_FRAME_HEIGHT,
+        })}
+      />
     </div>
   )
 }
