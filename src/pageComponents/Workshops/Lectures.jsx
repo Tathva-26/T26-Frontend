@@ -2319,7 +2319,7 @@ export default function LecturesPage() {
                                   if (el) cardRefs.current[lecture.id] = el
                                   else delete cardRefs.current[lecture.id]
                                 }}
-                                className='group relative aspect-[0.9825] w-full overflow-hidden bg-[#0d101c]'
+                                className='group relative aspect-[0.9] w-full overflow-hidden bg-[#0d101c]'
                                 style={{
                                   transformStyle: 'preserve-3d',
                                   transformOrigin: 'center center',
@@ -2373,61 +2373,101 @@ export default function LecturesPage() {
                                     className='lecture-pulse-overlay pointer-events-none absolute inset-0 z-10'
                                   />
 
-                                  {/* CARD VISUAL ARTWORK */}
-                                  <div
-                                    className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-slate-900'
-                                    style={{
-                                      maskImage:
-                                        "url('/images/lectures/lecture-card-image.png')",
-                                      WebkitMaskImage:
-                                        "url('/images/lectures/lecture-card-image.png')",
-                                      maskPosition: 'center',
-                                      WebkitMaskPosition: 'center',
-                                      maskRepeat: 'no-repeat',
-                                      WebkitMaskRepeat: 'no-repeat',
-                                      maskSize: '100% 100%',
-                                      WebkitMaskSize: '100% 100%',
-                                    }}
-                                  >
-                                    <Image
-                                      src={lecture.image}
-                                      alt={lecture.fullTitle}
-                                      fill
-                                      sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                                      className='object-cover object-center transition-transform duration-500 ease-out'
+                                  {/* ORIGINAL CARD SHAPE — kept at its original
+                                      proportions so the mask, cutout and border
+                                      artwork are not stretched */}
+                                  <div className='absolute inset-x-0 top-0 aspect-[0.9825]'>
+                                    {/* CARD VISUAL ARTWORK */}
+                                    <div
+                                      className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-slate-900'
+                                      style={{
+                                        maskImage:
+                                          "url('/images/lectures/lecture-card-image.png')",
+                                        WebkitMaskImage:
+                                          "url('/images/lectures/lecture-card-image.png')",
+                                        maskPosition: 'center',
+                                        WebkitMaskPosition: 'center',
+                                        maskRepeat: 'no-repeat',
+                                        WebkitMaskRepeat: 'no-repeat',
+                                        maskSize: '100% 100%',
+                                        WebkitMaskSize: '100% 100%',
+                                      }}
+                                    >
+                                      <Image
+                                        src={lecture.image}
+                                        alt={lecture.fullTitle}
+                                        fill
+                                        sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                                        className='object-cover object-center transition-transform duration-500 ease-out'
+                                      />
+                                    </div>
+
+                                    {/* BACKGROUND CUTOUT OUTSIDE THE BORDER */}
+                                    <div
+                                      className='pointer-events-none absolute inset-0 z-15 bg-[#06070d]'
+                                      style={{
+                                        clipPath:
+                                          'polygon(32.18% 90.64%, 100% 90.64%, 100% 100%, 23.29% 100%, 24.64% 99%)',
+                                      }}
                                     />
-                                  </div>
 
-                                  {/* BACKGROUND CUTOUT OUTSIDE THE BORDER */}
-                                  <div
-                                    className='pointer-events-none absolute inset-0 z-15 bg-[#06070d]'
-                                    style={{
-                                      clipPath:
-                                        'polygon(32.18% 90.64%, 100% 90.64%, 100% 100%, 23.29% 100%, 24.64% 99%)',
-                                    }}
-                                  />
+                                    {/* DATE (unchanged position) */}
+                                    <div className='absolute inset-x-0 bottom-0 z-20 h-[13.5%]'>
+                                      <div className='absolute bottom-[81%] right-[1.1%] flex flex-col items-end leading-none'>
+                                        <span className='mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#fbebec]'>
+                                          {lecture.dateMonth}
+                                        </span>
+                                        <span className='text-[8.07cqw] font-bold text-white'>
+                                          {lecture.dateDay}
+                                        </span>
+                                      </div>
+                                    </div>
 
-                                  {/* FIGMA CARD LABELS */}
-                                  <div className='absolute inset-x-0 bottom-0 z-20 h-[13.5%]'>
-                                    <p className='absolute bottom-[9%] left-[29.73%] right-[26.82%] text-right text-[5.5cqw] font-bold leading-[normal] text-white'>
-                                      Lecture
-                                    </p>
-                                    <div className='absolute bottom-[81%] right-[1.1%] flex flex-col items-end leading-none'>
-                                      <span className='mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#fbebec]'>
-                                        {lecture.dateMonth}
-                                      </span>
-                                      <span className='text-[8.07cqw] font-bold text-white'>
-                                        {lecture.dateDay}
-                                      </span>
+                                    <div className='pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30'>
+                                      <img
+                                        src='/images/lectures/lecture-card-border.svg'
+                                        alt=''
+                                        className='absolute inset-[-0.38%] h-full w-full'
+                                      />
                                     </div>
                                   </div>
 
-                                  <div className='pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30'>
-                                    <img
-                                      src='/images/lectures/lecture-card-border.svg'
-                                      alt=''
-                                      className='absolute inset-[-0.38%] h-full w-full'
+                                  {/* EXTRA LABEL SPACE — continues the cutout
+                                      colour below the original card shape so the
+                                      title has room to wrap onto several lines */}
+                                  <div
+                                    className='pointer-events-none absolute inset-x-0 bottom-0 z-15 bg-[#06070d]'
+                                    style={{ top: 'calc(100cqw / 0.9825)' }}
+                                  />
+
+                                  {/* TITLE — wraps freely, starts where the
+                                      original cutout begins */}
+                                  <div
+                                    className='absolute left-0 right-0 z-20 text-right'
+                                    style={{
+                                      top: 'calc(100cqw / 0.9825 * 0.9064 + 2.5cqw)',
+                                      paddingLeft: '1cqw',
+                                      paddingRight: '4cqw',
+                                      maxHeight: '13.2cqw',
+                                      overflow: 'hidden',
+                                    }}
+                                  >
+                                    {/* Invisible spacer: pushes only the FIRST line
+                                        to the right of the notch. Line 2 wraps
+                                        underneath it and starts at the left edge. */}
+                                    <span
+                                      aria-hidden='true'
+                                      style={{
+                                        float: 'left',
+                                        width: '33cqw',
+                                        height: '6.6cqw',
+                                      }}
                                     />
+                                    <p
+                                      className='m-0 break-words text-[5.5cqw] font-bold leading-[1.2] text-white'
+                                    >
+                                      Lecture
+                                    </p>
                                   </div>
                                 </div>
                               </div>
