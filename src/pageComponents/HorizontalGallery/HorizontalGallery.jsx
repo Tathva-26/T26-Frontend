@@ -273,17 +273,6 @@ export default function HorizontalGallery({ coordinatedEntrance = false }) {
         const pin = Math.max(scrollAmount - vh * 2, 0)
         const range = pin + vh * 2
 
-        // Where the Expo bridge lets go of the page (it records that on its
-        // own element). This definition went missing from main in a merge
-        // while the two lines that call it stayed, which threw as soon as the
-        // gallery mounted and took the whole home page down with it.
-        const openingScroll = () => {
-          const release = Number(document.querySelector('[data-expo-end]')?.dataset.expoEnd)
-          // Child layout effects can run before the bridge has registered its
-          // pin. The scheduled global refresh will replace this initial value.
-          return Number.isFinite(release) ? release : (scroller.scrollTop || 0) + container.getBoundingClientRect().top
-        }
-
         // Sticky pin length = container height - vh = pin
         container.style.height = `${pin + vh}px`
 
