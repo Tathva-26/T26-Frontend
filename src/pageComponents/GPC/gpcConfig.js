@@ -84,12 +84,12 @@ export const SEQUENCE = {
   tagline: [42, 51],
   // 51-58: nothing moves (but for the "click to play" prompt fading out at
   // the end). This is the hero at rest, where the game is played.
-  outro: [58, 69], // the console announces Wheels and "loads" it
-  film: [68, 71], // the Wheels footage comes up on the screen
+  outro: [30, 41], // the console announces Wheels and "loads" it
+  film: [40, 43], // the Wheels footage comes up on the screen
   // From here the camera pushes into the screen until the footage sits
   // exactly where Wheels shows it. It ends where the handoff begins, which
   // the sequence works out from where Wheels actually is (see --gpc-handoff).
-  diveStart: 71,
+  diveStart: 43,
 };
 
 // How far the pull-back starts beyond "the screen just fills the view".
