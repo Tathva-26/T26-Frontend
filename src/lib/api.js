@@ -27,7 +27,7 @@ export const BACKEND_ENABLED = process.env.NEXT_PUBLIC_BACKEND_ENABLED !== 'fals
 export const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true'
 
 /** The `Event.type` an admin puts on pass events. The passes UI queries exactly this. */
-export const PASS_EVENT_TYPE = process.env.NEXT_PUBLIC_PASS_EVENT_TYPE || 'pass'
+export const PASS_EVENT_TYPE = process.env.NEXT_PUBLIC_PASS_EVENT_TYPE || 'passes'
 
 /** When set, sent as `additionalData: { role }` on sign-in (CA-role deployments). */
 export const OAUTH_ROLE = process.env.NEXT_PUBLIC_OAUTH_ROLE || null

@@ -12,12 +12,17 @@ import React, {
 import Image from 'next/image'
 import { createPortal } from 'react-dom'
 import gsap from 'gsap'
+import { TextPlugin } from 'gsap/TextPlugin'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 import { useEvents } from '@/hooks/useEvents'
 import { useEventDetails } from '@/hooks/useEventDetails'
 import Checkout from '@/components/Checkout/Checkout'
 import Link from 'next/link'
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(TextPlugin)
+}
 
 const workshopsStyles = `
 @import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
@@ -275,6 +280,7 @@ export default function WorkshopsPage() {
   const floatRefs = useRef({})
   const cardRefs = useRef({})
   const frontFaceRefs = useRef({})
+  const descRefs = useRef({})
   const isFinePointer = useRef(true)
   const prefersReducedMotion = useRef(false)
   const focusedIdRef = useRef(null)
@@ -1395,6 +1401,17 @@ export default function WorkshopsPage() {
     }
 
     startCallout(id, slotEl, workshop)
+
+    const descEl = descRefs.current[id]
+    if (descEl && workshop.description) {
+      gsap.killTweensOf(descEl)
+      gsap.set(descEl, { text: '' })
+      gsap.to(descEl, {
+        text: workshop.description,
+        duration: Math.min(1.5, workshop.description.length * 0.02),
+        ease: 'none',
+      })
+    }
   }
 
   const handleCardMove = (id, e) => {
@@ -1474,6 +1491,12 @@ export default function WorkshopsPage() {
     slotEl.style.zIndex = '1'
     resetCardActivation(id)
     stopCardPulse(id)
+
+    const descEl = descRefs.current[id]
+    if (descEl) {
+      gsap.killTweensOf(descEl)
+      gsap.set(descEl, { text: '' })
+    }
 
     if (String(focusedIdRef.current) === String(id)) {
       fadeOutCallout()
@@ -2021,7 +2044,7 @@ export default function WorkshopsPage() {
                         {column.map((workshop, rowIndex) => (
                           <div
                             key={workshop.id}
-                            className='group relative'
+                            className='group relative cursor-pointer'
                             ref={(el) => {
                               if (el) slotRefs.current[workshop.id] = el
                               else delete slotRefs.current[workshop.id]
@@ -2043,6 +2066,7 @@ export default function WorkshopsPage() {
                             }
                             onMouseMove={(e) => handleCardMove(workshop.id, e)}
                             onMouseLeave={() => handleCardLeave(workshop.id)}
+                            onClick={() => setSelectedWorkshop(workshop)}
                           >
                             {/* Static hit area to prevent hover flicker during 3D tilt */}
                             <div className='absolute inset-0 z-50' />
@@ -2106,7 +2130,10 @@ export default function WorkshopsPage() {
                                       proportions so the mask, cutout and border
                                       artwork are not stretched */}
                                   <div className='absolute inset-x-0 top-0 aspect-[0.9825]'>
-                                    {/* CARD VISUAL ARTWORK */}
+                                    {/* CARD VISUAL ARTWORK — the real event
+                                        picture, shown directly (no placeholder
+                                        silhouette, no wipe-in). Hovering fades
+                                        in a typewriter description over it. */}
                                     <div
                                       className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-[#08090e]'
                                       style={{
@@ -2122,25 +2149,31 @@ export default function WorkshopsPage() {
                                         WebkitMaskSize: '100% 100%',
                                       }}
                                     >
-                                      <div className='absolute inset-0 p-5 '>
-                                        <Image
-                                          src='/images/workshops/astronaut-outline.png'
-                                          alt='Astronaut Outline'
-                                          fill
-                                          sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                                          className='object-contain object-center'
-                                        />
-                                      </div>
+                                      <Image
+                                        src={workshop.image}
+                                        alt={workshop.fullTitle}
+                                        fill
+                                        sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                                        className='object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105'
+                                      />
 
-                                      {/* ▼ FIXED: straight wipe instead of ellipse (no rounded top) */}
-                                      <div className='absolute inset-0 transition-all duration-500 ease-in-out group-hover:duration-[1500ms] [clip-path:ellipse(150%_110%_at_50%_-110%)] group-hover:[clip-path:ellipse(150%_110%_at_50%_100%)]'>
-                                        <Image
-                                          src={workshop.image}
-                                          alt={workshop.fullTitle}
-                                          fill
-                                          sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                                          className='object-cover object-center transition-transform duration-500 group-hover:duration-[1500ms] ease-out'
-                                        />
+                                      {/* Typewriter description, revealed on hover */}
+                                      <div className='pointer-events-none absolute inset-0 z-10 flex items-start opacity-0 transition-opacity duration-500 group-hover:opacity-100'>
+                                        <div
+                                          className='w-full px-[6%] pb-[14%] pt-[10%]'
+                                          style={{
+                                            background:
+                                              'linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 70%, transparent 100%)',
+                                          }}
+                                        >
+                                          <p
+                                            ref={(el) => {
+                                              if (el) descRefs.current[workshop.id] = el
+                                              else delete descRefs.current[workshop.id]
+                                            }}
+                                            className='m-0 text-[4.2cqw] font-bold leading-[1.4] text-white/90'
+                                          />
+                                        </div>
                                       </div>
                                     </div>
 
@@ -2153,8 +2186,13 @@ export default function WorkshopsPage() {
                                       }}
                                     />
 
-                                    {/* DATE (unchanged position) */}
+                                    {/* PRICE & DATE (unchanged position) */}
                                     <div className='absolute inset-x-0 bottom-0 z-20 h-[13.5%]'>
+                                      <div className='absolute bottom-[80%] left-[3%] leading-none'>
+                                        <span className='text-[4.28cqw] font-extrabold text-white'>
+                                          {workshop.fee}
+                                        </span>
+                                      </div>
                                       <div className='absolute bottom-[80%] right-[1.1%] flex flex-col items-end leading-none'>
                                         <span className='mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#ffffff]'>
                                           {workshop.dateMonth}
