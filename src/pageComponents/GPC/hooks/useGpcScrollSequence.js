@@ -70,13 +70,15 @@ function holeClip(width, height, { x, y, w, h }) {
  * `sequence` is a ref holding the values the console's screen canvas reads
  * every frame: { power, outro, film, picture }.
  */
-export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence }) {
+// (`sequence` is taken under a ...Ref name so the React lint rules see it for what it is: a ref,
+// which the scroll sequence is meant to write to.)
+export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: sequenceRef }) {
   useGSAP(
     () => {
       const track = trackRef.current;
       const stage = stageRef.current;
       const scroller = track?.closest(".main-scroll");
-      const live = sequence.current;
+      const live = sequenceRef.current;
       if (!layout || !track || !stage || !scroller) return undefined;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
 
