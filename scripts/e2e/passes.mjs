@@ -6,7 +6,7 @@
  *     NEXT_PUBLIC_BACKEND_URL=http://localhost:8787 npm run dev &
  *   node scripts/e2e/passes.mjs
  *
- * Every word on a pass ticket is baked into the bitmap inside its SVG, so the
+ * Every word on a pass ticket is baked into the bitmap inside its image, so the
  * artwork cannot be driven from the API. What the API drives is whether the
  * pass can actually be bought — which is the part that was missing.
  */
@@ -50,14 +50,15 @@ await s.goto(`${BASE}/passes`)
 check('the passes route exists', await waitFor(`/TATHVA PASSES/i.test(document.body.innerText)`), true)
 
 /* ---- the artwork is labelled with what it actually pictures ---- */
-// ticket1 renders DAY 3 and ticket3 renders DAY ALL; the table had them
-// swapped, so two of the three tickets carried the wrong alt text.
+// day3pass renders DAY 3, day1pass renders DAY 1 and day2pass renders the
+// middle pass; the table once had two of the three alt texts swapped, so
+// these checks keep the labelling honest.
 const shown = await tickets()
 check('three passes rendered', shown.length, 3)
 const bySrc = Object.fromEntries(shown.map((t) => [t.src, t.alt]))
-check('ticket1 is labelled Day 3', /day 3/i.test(bySrc['ticket1.svg'] || ''), true)
-check('ticket2 is labelled Day 1', /day 1/i.test(bySrc['ticket2.svg'] || ''), true)
-check('ticket3 is labelled All Days', /all days/i.test(bySrc['ticket3.svg'] || ''), true)
+check('day3pass is labelled Day 3', /day 3/i.test(bySrc['day3pass.png'] || ''), true)
+check('day1pass is labelled Day 1', /day 1/i.test(bySrc['day1pass.png'] || ''), true)
+check('day2pass is labelled All Days', /all days/i.test(bySrc['day2pass.png'] || ''), true)
 
 /* ---- the centred pass is the one the API can sell ---- */
 check('centred pass named from the API', await waitFor(`/Tathva Pass - All Days/.test(document.body.innerText)`), true)

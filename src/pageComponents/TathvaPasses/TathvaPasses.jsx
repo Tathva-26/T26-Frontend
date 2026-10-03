@@ -15,7 +15,7 @@ import LightPillar from '@/components/LightPillar/LightPillar'
  * The three pass artworks, in carousel order.
  *
  * Every word on these tickets — the day, the date, the inclusions and the
- * price — is baked into the bitmap inside each SVG. None of it can be driven
+ * price — is baked into the bitmap inside each image. None of it can be driven
  * from the API, so this table describes what is pictured rather than being
  * the source of truth for it. If a price changes, the artwork has to be
  * redrawn; the figures here only exist so the labelling stays honest.
@@ -27,31 +27,31 @@ const PASS_ARTWORK = [
     id: 'day-3',
     title: 'DAY 3',
     date: 'OCT 11 2026',
-    price: 'Rs. 1399/-',
-    details: 'COMPETITIONS | EVENTS | CONCLAVE',
-    src: '/images/tickets/ticket1.svg',
+    price: 'Rs. 1400/-',
+    details: 'PROSHOW',
+    src: '/images/tickets/day3pass.png',
     alt: 'Tathva Pass Day 3 - Oct 11 2026',
     match: /\bday\s*3\b/i,
+  },
+  {
+    id: 'day-1',
+    title: 'DAY 1',
+    date: 'OCT 9 2026',
+    price: 'Rs. 600/-',
+    details: 'WHEELS | ROBOWARS | INFORMALS',
+    src: '/images/tickets/day1pass.png',
+    alt: 'Tathva Pass Day 1 - Oct 9 2026',
+    match: /\bday\s*1\b/i,
   },
   {
     id: 'day-all',
     title: 'DAY ALL',
     date: 'OCT ALL 2026',
     price: 'Rs. 1999/-',
-    details: 'PROSHOW | EVENTS | CONCLAVE',
-    src: '/images/tickets/ticket3.svg',
-    alt: 'Tathva Pass All Days - Oct 2026',
+    details: 'PROSHOW',
+    src: '/images/tickets/day2pass.png',
+    alt: 'Tathva Pass Day 2 - Oct 2026',
     match: /\b(all\s*days?|day\s*all)\b/i,
-  },
-  {
-    id: 'day-1',
-    title: 'DAY 1',
-    date: 'OCT 9 2026',
-    price: 'Rs. 399/-',
-    details: 'WHEELS | ROBOWARS | CONCLAVE',
-    src: '/images/tickets/ticket2.svg',
-    alt: 'Tathva Pass Day 1 - Oct 9 2026',
-    match: /\bday\s*1\b/i,
   },
 ];
 
