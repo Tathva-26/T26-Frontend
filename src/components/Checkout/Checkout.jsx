@@ -25,11 +25,25 @@ export default function Checkout({ event }) {
   const { book, submitting, failure, reset } = useCheckout()
   const [passcode, setPasscode] = useState('')
 
+  /*
+   * Latched, not derived from the current failure.
+   *
+   * `passcodeRequired` is absent when an admin gates an event after the list
+   * response was cached, so the demand can arrive only as a 403. Deriving the
+   * field's visibility from `failure` meant that clearing the message on the
+   * first keystroke unmounted the input mid-typing, which made such an event
+   * impossible to book at all.
+   */
+  const [passcodeDemanded, setPasscodeDemanded] = useState(false)
+
   const blocker = bookingBlocker(event, user)
   const fees = feeBreakdown(event?.priceInPaise)
-  const needsPasscode = Boolean(event?.passcodeRequired) || Boolean(failure?.needsPasscode)
+  const needsPasscode = Boolean(event?.passcodeRequired) || passcodeDemanded
 
-  const submit = () => book({ eventId: event.id, quantity: 1, passcode })
+  const submit = async () => {
+    const verdict = await book({ eventId: event.id, quantity: 1, passcode })
+    if (verdict?.needsPasscode) setPasscodeDemanded(true)
+  }
 
   /* ---- the button, which depends on why booking is unavailable ---- */
 

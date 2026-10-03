@@ -55,7 +55,20 @@ export default function EventReturn({ eventId }) {
     let cancelled = false
 
     const run = async () => {
-      for (let attempt = 0; attempt < MAX_CONFIRMATION_ATTEMPTS; attempt += 1) {
+      /*
+       * Only a read that actually reached the provider counts against the
+       * attempt budget. `?refresh=1` is debounced server-side, and a call
+       * that lands inside the window is answered from cache — it says
+       * nothing new, so spending one of six attempts on it would mean giving
+       * up early on someone who has just paid. `refreshed` reports which
+       * happened. The loop ceiling bounds the total either way.
+       */
+      let fresh = 0
+      let loops = 0
+
+      while (fresh < MAX_CONFIRMATION_ATTEMPTS && loops < MAX_CONFIRMATION_ATTEMPTS * 2) {
+        loops += 1
+
         let response
         try {
           response = await api.get(PATHS.bookingMy, { params: { refresh: 1 } })
@@ -71,19 +84,26 @@ export default function EventReturn({ eventId }) {
 
         if (cancelled) return
 
-        const raw = latestForEvent(response.data?.bookings, tiqrEventId)
+        const data = response.data ?? {}
+        if (data.refreshed) fresh += 1
+
+        const raw = latestForEvent(data.bookings, tiqrEventId)
         const booking = raw ? normaliseBooking(raw, byTiqrId(event ? [event] : [])) : null
+
+        const exhausted =
+          fresh >= MAX_CONFIRMATION_ATTEMPTS || loops >= MAX_CONFIRMATION_ATTEMPTS * 2
 
         setPoll({
           booking,
-          attemptsLeft: MAX_CONFIRMATION_ATTEMPTS - attempt - 1,
+          attemptsLeft: exhausted ? 0 : MAX_CONFIRMATION_ATTEMPTS - fresh,
           error: null,
         })
 
         if (booking?.status === 'CONFIRMED') return
+        if (exhausted) return
 
         // Honour the server's own debounce window rather than guessing.
-        await sleep(confirmationDelay(response.data?.refreshableInMs))
+        await sleep(confirmationDelay(data.refreshableInMs))
         if (cancelled) return
       }
     }

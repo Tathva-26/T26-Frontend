@@ -172,6 +172,33 @@ for (const [query, pattern, label] of failureCases) {
   }
 }
 
+/* a passcode demanded only by the 403, on an event whose list payload said
+   it was not needed: the field must appear and must survive typing */
+await reset()
+await configure('createStatus=403&createCode=PASSCODE_REQUIRED')
+await s.goto(`${BASE}/workshops`)
+await openCard('Deep Space Robotics')
+check('ungated event shows no passcode field at first', (await modalText()).toLowerCase().includes('passcode'), false)
+await clickRegister()
+check('the 403 reveals the field', await waitFor(`!!document.querySelector('input[placeholder="Required for this event"]')`, 40), true)
+
+await s.evaluate(`(() => {
+  const el = document.querySelector('input[placeholder="Required for this event"]');
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, 's3cret');
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+})()`)
+await settle(500)
+// Clearing the error message on the first keystroke used to unmount the input.
+check('the field survives typing', await s.evaluate(`!!document.querySelector('input[placeholder="Required for this event"]')`), true)
+check('what was typed is kept', await s.evaluate(`document.querySelector('input[placeholder="Required for this event"]').value`), 's3cret')
+
+await configure('createStatus=201')
+await clickRegister()
+check('booking proceeds with the passcode', await waitFor(`window.location.pathname === '/events/12'`, 40), true)
+const withPass = (await posts()).filter((r) => r.body?.passcode)
+check('passcode sent in the body', withPass[0]?.body?.passcode, 's3cret')
+
 /* ---- coming back from payment ---- */
 // The query string is a hint only: nothing here can verify the signature, so
 // only a booking read back from the provider confirms anything.
@@ -214,12 +241,40 @@ check('it does not claim the booking failed', /No booking found/i.test(await tex
 await s.goto(`${BASE}/events/not-a-number?status=CHARGED`)
 check('a malformed id does not hang either', await waitFor(`/could not find that event/i.test(document.body.innerText)`, 60), true)
 
-/* the poll honours the debounce rather than hammering it */
+/* a read answered from cache says nothing new, so it must not spend one of
+   the six attempts — otherwise the poll gives up early on someone who paid */
+await reset()
+await configure('booking=none&refreshableInMs=0&reportFresh=false')
+await s.goto(`${BASE}/events/12?status=CHARGED&signature=stub`)
+check('cache hits do not end the poll early', await waitFor(`/Confirming your booking/i.test(document.body.innerText)`, 20), true)
+// The delay floor is two seconds, so six attempts' worth of time is ~12s;
+// a budget that counted cache hits would have given up well before then.
+await settle(14000)
+check('still polling well past six cache hits', /Confirming your booking/i.test(await text()), true)
+
+// Then it does stop: the loop ceiling bounds it even when nothing is fresh.
+check('eventually settles', await waitFor(`!/Confirming your booking/i.test(document.body.innerText)`, 80), true)
+const staleReads = (await (await fetch(`${STUB}/__received`)).json()).filter(
+  (r) => r.method === 'GET' && r.path === '/api/booking/my',
+)
+check('asked more times than the attempt cap', staleReads.length > 6, true)
+check('but stayed bounded by the loop ceiling', staleReads.length <= 12, true)
+
+/* with every read reaching the provider, the budget is exactly the cap */
+await reset()
+await configure('booking=PENDING&refreshableInMs=0')
+await s.goto(`${BASE}/events/12?status=CHARGED&signature=stub`)
+check('settles on pending', await waitFor(`/Payment received/i.test(document.body.innerText)`, 120), true)
+// A pending booking shows at once but polling continues, so a later
+// confirmation still upgrades the screen. Let the loop run out before
+// counting, or the count is whatever it happened to be mid-flight.
+await settle(16000)
 const reads = (await (await fetch(`${STUB}/__received`)).json()).filter(
   (r) => r.method === 'GET' && r.path === '/api/booking/my',
 )
-check('polled with refresh=1', reads.every((r) => r.refresh === '1'), true)
-check('polled no more than the attempt cap', reads.length <= 6, true)
+check('always asked for a live read', reads.every((r) => r.refresh === '1'), true)
+check('spent no more than the attempt cap', reads.length <= 6, true)
+check('kept polling to try to upgrade pending', reads.length >= 2, true)
 
 const errors = s.pageErrors().filter((e) => !/favicon|Failed to load resource|net::ERR/i.test(e))
 check('no uncaught page errors', errors, [])

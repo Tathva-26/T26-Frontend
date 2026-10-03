@@ -493,6 +493,20 @@ check('nothing at all', paymentOutcome({ booking: null, chargeStatus: null, atte
 check('a booking outranks the query', paymentOutcome({ booking: CONFIRMED, chargeStatus: 'FAILED', attemptsLeft: 0 }), 'confirmed')
 check('no booking is never confirmed', paymentOutcome({ booking: null, chargeStatus: 'CHARGED', attemptsLeft: 0 }) === 'confirmed', false)
 
+/* ---- the multipart profile save, through the mock adapter ---- */
+// The profile form always sends FormData. The stub covers the real network
+// path; this covers the mock path, which is what development runs on.
+const savedForm = await api.put(PATHS.user, buildProfileFormData({ name: 'Grace Hopper', semester: 6 }), {
+  headers: { 'Content-Type': undefined },
+})
+check('mock accepts FormData', savedForm.status, 200)
+check('mock applied the form fields', [savedForm.data.user.name, savedForm.data.user.semester], ['Grace Hopper', 6])
+check('refCode mirrored for older clients', 'refCode' in savedForm.data.user, true)
+await api.put(PATHS.user, buildProfileFormData({}), { headers: { 'Content-Type': undefined } }).then(
+  () => check('empty form rejected', 'resolved', '400'),
+  (e) => check('empty form rejected', apiErrorMessage(e), 'No valid fields to update'),
+)
+
 console.log(`\n${pass} passed, ${fails.length} failed`)
 if (fails.length) {
   console.log('\nFAILURES:')

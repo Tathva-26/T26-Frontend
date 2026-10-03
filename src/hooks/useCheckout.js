@@ -9,6 +9,10 @@ import { clearReferralCode, readReferralCode } from "@/lib/referral";
 /**
  * Creates a booking and hands the browser to TIQR.
  *
+ * `book` resolves to null when the redirect is underway, or to the verdict
+ * when it failed — the caller needs the verdict itself, not just a boolean,
+ * to react to a passcode demand.
+ *
  * On success the button is deliberately never re-enabled: the redirect is
  * already underway, and a second booking fired mid-navigation would be a
  * second charge.
@@ -37,20 +41,22 @@ export function useCheckout() {
         // a booking may or may not exist at TIQR and there is nowhere to send
         // the buyer to pay.
         if (!redirectTo) {
-          setFailure({
+          const verdict = {
             message: "The payment page could not be opened. Please try again.",
             action: BOOKING_ACTION.NONE,
             retryable: true,
-          });
+            needsPasscode: false,
+          };
+          setFailure(verdict);
           setSubmitting(false);
-          return false;
+          return verdict;
         }
 
         // A hard navigation, not a router push: TIQR is not part of this app.
         window.location.assign(redirectTo);
         // Left submitting on purpose, so the button cannot be pressed again
         // while the browser is on its way out.
-        return true;
+        return null;
       } catch (error) {
         const verdict = classifyBookingFailure({
           status: apiErrorStatus(error),
@@ -67,7 +73,7 @@ export function useCheckout() {
           setTimeout(() => router.push("/profile"), 1200);
         }
 
-        return false;
+        return verdict;
       }
     },
     [router],

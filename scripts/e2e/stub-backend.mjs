@@ -37,6 +37,8 @@ const config = {
   booking: 'CONFIRMED', // 'CONFIRMED' | 'PENDING' | 'none'
   refreshableInMs: 0,
   phone: '9876543210',
+  // false simulates a read that landed inside the debounce window
+  reportFresh: true,
 }
 
 let user = {
@@ -176,7 +178,7 @@ createServer(async (req, res) => {
     user = { ...user, name: 'Ada Lovelace', semester: 5, year: 3, branch: 'CSE' }
     Object.assign(config, {
       createStatus: 201, createMessage: null, createCode: null, withRedirect: true,
-      booking: 'CONFIRMED', refreshableInMs: 0, phone: '9876543210',
+      booking: 'CONFIRMED', refreshableInMs: 0, phone: '9876543210', reportFresh: true,
     })
     return json(res, 200, { ok: true })
   }
@@ -218,7 +220,8 @@ createServer(async (req, res) => {
 
     return json(res, 200, {
       bookings: list, count: list.length, cachedAt: Date.now(),
-      refreshed: Boolean(fresh), refreshableInMs: config.refreshableInMs,
+      refreshed: Boolean(fresh) && config.reportFresh,
+      refreshableInMs: config.refreshableInMs,
     })
   }
 
