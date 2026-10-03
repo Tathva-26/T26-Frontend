@@ -39,6 +39,8 @@ const config = {
   phone: '9876543210',
   // false simulates a read that landed inside the debounce window
   reportFresh: true,
+  // false removes the pass events, which is production's current state
+  passes: true,
 }
 
 let user = {
@@ -86,6 +88,28 @@ const events = [
     price: 0, description: 'Booking has ended.',
     picture: null, committee: '', status: 'CLOSED',
     passcodeRequired: false, venue: { name: 'Lab 4' },
+  },
+  // Passes are ordinary events carrying the configured pass type.
+  {
+    id: 40, tiqrEventId: 930, ticketId: 810, type: 'pass',
+    heading: 'Tathva Pass - Day 1', datetime: '2026-10-09T04:30:00.000Z',
+    price: 39900, description: 'Wheels, Robowars and the conclave.',
+    picture: null, committee: '', status: 'OPEN',
+    passcodeRequired: false, venue: null,
+  },
+  {
+    id: 41, tiqrEventId: 931, ticketId: 811, type: 'pass',
+    heading: 'Tathva Pass - Day 3', datetime: '2026-10-11T04:30:00.000Z',
+    price: 139900, description: 'Competitions, events and the conclave.',
+    picture: null, committee: '', status: 'OPEN',
+    passcodeRequired: false, venue: null,
+  },
+  {
+    id: 42, tiqrEventId: 932, ticketId: 812, type: 'pass',
+    heading: 'Tathva Pass - All Days', datetime: '2026-10-09T04:30:00.000Z',
+    price: 199900, description: 'Proshow, events and the conclave.',
+    picture: null, committee: '', status: 'OPEN',
+    passcodeRequired: false, venue: null,
   },
 ]
 
@@ -178,7 +202,7 @@ createServer(async (req, res) => {
     user = { ...user, name: 'Ada Lovelace', semester: 5, year: 3, branch: 'CSE' }
     Object.assign(config, {
       createStatus: 201, createMessage: null, createCode: null, withRedirect: true,
-      booking: 'CONFIRMED', refreshableInMs: 0, phone: '9876543210', reportFresh: true,
+      booking: 'CONFIRMED', refreshableInMs: 0, phone: '9876543210', reportFresh: true, passes: true,
     })
     return json(res, 200, { ok: true })
   }
@@ -187,7 +211,9 @@ createServer(async (req, res) => {
   if (url.pathname === '/api/auth/ok') return json(res, 200, { ok: true })
 
   if (url.pathname === '/api/events/all' && req.method === 'GET') {
-    return json(res, 200, { events })
+    const type = url.searchParams.get('type')
+    const visible = config.passes ? events : events.filter((e) => e.type !== 'pass')
+    return json(res, 200, { events: type ? visible.filter((e) => e.type === type) : visible })
   }
 
   if (url.pathname.startsWith('/api/events/details/') && req.method === 'GET') {
