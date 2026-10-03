@@ -159,6 +159,9 @@ function useScrubCrossfade(
       // to snap again once a glide has ended without the user having scrolled
       // at all; that must not count as another gesture and skip an artist.
       let restingScroll = null
+      // Set when the scroll comes into this section from outside it, to the
+      // side it came in through; taken (and cleared) by the next snap.
+      let enteredFrom = null // 'top' | 'bottom' | null
 
       const tl = gsap.timeline({
         defaults: { duration: 1 },
@@ -196,25 +199,38 @@ function useScrubCrossfade(
                 )
                   return here()
 
+                // Not inside the section yet (it is measured at the very top
+                // of a still-locked page while it waits, hidden, under W1).
+                if (trigger.scroll() <= trigger.start) return here()
+
                 // Arriving from a neighbouring section (the glide down from
-                // W1, GPC handing the page back) and already resting inside
-                // the first / last artist's hold: that artist is whole and
-                // still, so just take it as settled instead of scrolling on.
+                // W1, GPC handing the page back). Coming in through the top
+                // always lands on the first artist, through the bottom on the
+                // last, whatever was settled the last time round. Already
+                // resting inside that artist's hold: it is whole and still,
+                // so take it as settled instead of scrolling on.
                 // (`value` is where ScrollTrigger reckons the scroll would
                 // coast to; returning it would send the page there, so these
                 // return where the page actually is.)
-                const settled = settledArtistIndex.current
                 const time = here() * total
-                if ((settled === null || settled < 0) && time <= HOLD) {
-                  settledArtistIndex.current = 0
-                  restingScroll = trigger.scroll()
-                  return here()
+                if (enteredFrom === 'top') {
+                  enteredFrom = null
+                  if (time <= HOLD) {
+                    settledArtistIndex.current = 0
+                    restingScroll = trigger.scroll()
+                    return here()
+                  }
+                  settledArtistIndex.current = -1
+                } else if (enteredFrom === 'bottom') {
+                  enteredFrom = null
+                  if (time >= total - HOLD) {
+                    settledArtistIndex.current = count - 1
+                    restingScroll = trigger.scroll()
+                    return here()
+                  }
+                  settledArtistIndex.current = count
                 }
-                if (settled !== null && settled >= count && time >= total - HOLD) {
-                  settledArtistIndex.current = count - 1
-                  restingScroll = trigger.scroll()
-                  return here()
-                }
+                const settled = settledArtistIndex.current
 
                 const direction = trigger.direction
                 if (direction > 0) {
@@ -297,6 +313,12 @@ function useScrubCrossfade(
             },
           }),
           invalidateOnRefresh: true,
+          onEnter: () => {
+            enteredFrom = 'top'
+          },
+          onEnterBack: () => {
+            enteredFrom = 'bottom'
+          },
           onLeave: () => {
             settledArtistIndex.current = count
           },

@@ -466,7 +466,6 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       // Lenis reports each step it takes before the frame is painted; the native event is a frame late.
       const offLenisScroll = window.__lenis?.on("scroll", brake);
 
-      window.__gpcDbg = () => ({ phase, gated, touchScreen, start: landing.start, end: landing.end, scroll: landing.scroll(), prog: landing.progress, active: landing.isActive }); // DEBUG
       // Already there. At or past the landing spot: show the entry finished. Part way in
       // (GPC sliding over the last artist): finish landing as if it had just been scrolled to.
       if (landing.scroll() >= landing.end) {
