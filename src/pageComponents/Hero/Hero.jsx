@@ -4,7 +4,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
 import { useGSAP } from '@gsap/react'
-import { animateBird, TRAIL_START, TRAIL_END, FLIGHT_PATH } from './birdFlight'
+import { animateComet, TRAIL_START, BRIDGE, TRAIL_END, FLIGHT_PATH } from './cometFlight'
 import styles from './Hero.module.css'
 
 
@@ -239,9 +239,12 @@ export const Hero = ({
   const portalFrameImgRef = useRef(null)
   const islandRef = useRef(null)
   const trailPathRef = useRef(null)
-  const birdLayerRef = useRef(null)
-  const birdRef = useRef(null)
-  const birdFlipperRef = useRef(null)
+  const frontStrokeRef = useRef(null)
+  const clipBackRef = useRef(null)
+  const clipFrontRef = useRef(null)
+  const cometLayerRef = useRef(null)
+  const cometRef = useRef(null)
+  const cometFlipperRef = useRef(null)
   const girlRef = useRef(null)
   const identityRef = useRef(null)
   const coordsRef = useRef(null)
@@ -274,7 +277,7 @@ export const Hero = ({
   }, [])
 
   // Hero stays mounted (hidden) while Frame is showing. Stop the title video decoding and freeze
-  // the CSS animations (bird flap etc.) until Hero is the active panel again.
+  // the CSS animations until Hero is the active panel again.
   useEffect(() => {
     const video = videoRef.current
     if (video) {
@@ -553,7 +556,7 @@ export const Hero = ({
       lastKey = key
 
       // On desktop, scale to fit the viewport height so the top of the scene
-      // (including the bird flight, island, and sky) is never cropped off on wider screens.
+      // (including the comet flight, island, and sky) is never cropped off on wider screens.
       // On mobile, use cover scale so the portrait canvas fills the screen.
       const scale = mobileMode
         ? Math.max(viewportWidth / designWidth, viewportHeight / designHeight)
@@ -999,13 +1002,16 @@ export const Hero = ({
       }
 
       // Follow the original route, then exit and rejoin outside the viewport.
-      if (birdRef.current && birdFlipperRef.current && trailPathRef.current && birdLayerRef.current) {
-        return animateBird({
+      if (cometRef.current && cometFlipperRef.current && trailPathRef.current && cometLayerRef.current) {
+        return animateComet({
           path: trailPathRef.current,
-          bird: birdRef.current,
-          flipper: birdFlipperRef.current,
-          layer: birdLayerRef.current,
+          comet: cometRef.current,
+          flipper: cometFlipperRef.current,
+          layer: cometLayerRef.current,
           viewport: viewportRef.current,
+          frontStrokes: [frontStrokeRef.current],
+          clipBack: clipBackRef.current,
+          clipFront: clipFrontRef.current,
         })
       }
     },
@@ -1243,7 +1249,10 @@ export const Hero = ({
                 aria-hidden='true'
                 src={`${assetBase}islandv2.png`}
               />
-              <div className={styles.trailWrap}>
+              {/* Back copy of the trail: shows only AFTER the curve (cometFlight.js sizes
+                  the clip rect to the island's leftmost point, where the comet passes
+                  behind it). */}
+              <div className={styles.trailWrap} style={{ zIndex: 0 }}>
                 <svg
                   className={styles.trailSvg}
                   viewBox='0 0 562 363'
@@ -1252,11 +1261,17 @@ export const Hero = ({
                   preserveAspectRatio='xMidYMid meet'
                   aria-hidden='true'
                 >
+                  <defs>
+                    <clipPath id='trailBackClip'>
+                      <rect ref={clipBackRef} x='-2000' y='-2000' width='5000' height='2000' />
+                    </clipPath>
+                  </defs>
                   {/* Visible trail strokes (two segments with gap) */}
                   <path
                     data-flight-trail=''
                     style={{ visibility: 'hidden' }}
-                    d={TRAIL_START}
+                    d={`${TRAIL_START}${BRIDGE}`}
+                    clipPath='url(#trailBackClip)'
                     stroke='#7787FF'
                     strokeWidth='1.11538'
                     strokeLinecap='round'
@@ -1269,7 +1284,7 @@ export const Hero = ({
                     strokeWidth='1.11538'
                     strokeLinecap='round'
                   />
-                  {/* Hidden combined path for bird motion:
+                  {/* Hidden combined path for comet motion:
                                         segment 1 → smooth bridge → segment 2 → extension */}
                   <path
                     ref={trailPathRef}
@@ -1279,15 +1294,52 @@ export const Hero = ({
                   />
                 </svg>
               </div>
-              <div ref={birdLayerRef} className={styles.birdLayer}>
-                <div ref={birdRef} className={styles.bird} style={{ visibility: 'hidden' }}>
-                  <div ref={birdFlipperRef} className={styles.birdFlipper}>
-                    <img
-                      className={styles.birdImg}
-                      alt=''
-                      aria-hidden='true'
-                      src={`${assetBase}birdv2.png`}
-                    />
+              {/* Front copy: sits in front of the island, shows only BEFORE the curve. */}
+              <div className={styles.trailWrap} style={{ zIndex: 2 }}>
+                <svg
+                  className={styles.trailSvg}
+                  viewBox='0 0 562 363'
+                  fill='none'
+                  xmlns='http://www.w3.org/2000/svg'
+                  preserveAspectRatio='xMidYMid meet'
+                  aria-hidden='true'
+                >
+                  <defs>
+                    <clipPath id='trailFrontClip'>
+                      <rect ref={clipFrontRef} x='-2000' y='0' width='5000' height='5000' />
+                    </clipPath>
+                  </defs>
+                  <path
+                    ref={frontStrokeRef}
+                    style={{ visibility: 'hidden' }}
+                    d={`${TRAIL_START}${BRIDGE}`}
+                    clipPath='url(#trailFrontClip)'
+                    stroke='#7787FF'
+                    strokeWidth='1.11538'
+                    strokeLinecap='round'
+                  />
+                </svg>
+              </div>
+              {/* cometLayer's z-index is driven by animateComet (cometFlight.js), not CSS:
+                  it dips behind the island once the comet rounds the curve. */}
+              <div ref={cometLayerRef} className={styles.cometLayer}>
+                <div ref={cometRef} className={styles.comet} style={{ visibility: 'hidden' }}>
+                  <div ref={cometLayerRef} className={styles.cometLayer}>
+                    <div ref={cometRef} className={styles.comet} style={{ visibility: 'hidden' }}>
+                      <div ref={cometFlipperRef} className={styles.cometFlipper}>
+                        {/* Layer 1: Ambient surrounding glow (Coma) */}
+                        <div className={styles.plasmaAura} aria-hidden='true' />
+                        
+                        {/* Layer 2: High-velocity ion tail */}
+                        <div className={styles.plasmaTail} aria-hidden='true' />
+                        
+                        {/* Layer 3: Compressed front edge (Bow Shock) */}
+                        <div className={styles.plasmaBowShock} aria-hidden='true' />
+                        
+                        {/* Layer 4: Blinding hot center */}
+                        <div className={styles.plasmaCore} aria-hidden='true' />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
