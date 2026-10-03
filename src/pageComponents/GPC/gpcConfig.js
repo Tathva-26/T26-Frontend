@@ -40,8 +40,15 @@ export const CLICK_TO_PLAY = { top: 25, fontSize: 3.1 };
 
 // Dragon animation: list every frame here, in order. One entry = static image.
 // e.g. ["/images/GPC/hero/dragon/1.png", "/images/GPC/hero/dragon/2.png", ...]
-export const DRAGON_FRAMES = [ASSETS.dragon];
-export const DRAGON_FPS = 12;
+// Dragon animation: Automatically generates the array of 60 frames
+// ['/frames/ezgif-frame-001.webp', '/frames/ezgif-frame-002.webp', etc...]
+// Updated to match your exact folder structure: /images/GPC/frames/
+export const DRAGON_FRAMES = Array.from(
+  { length: 60 },
+  (_, i) => `/images/GPC/frames/ezgif-frame-${String(i + 1).padStart(3, "0")}.webp`
+);
+
+export const DRAGON_FPS = 60;
 
 // Desktop dragon placement (Stage design units), sitting above the console.
 export const DRAGON_STATIC = { x: 460, y: 8, width: 480, height: 290 };
