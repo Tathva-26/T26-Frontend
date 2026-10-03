@@ -24,7 +24,7 @@ const check = (label, actual, expected) => {
 }
 
 const s = await session()
-await s.goto(`${BASE}/contact-us`)
+await s.goto(`${BASE}/contact`)
 
 // React attaches __reactProps$<id> to the DOM nodes it owns, so this is a
 // direct hydration signal. Submitting before it lands hits no handler at all.
