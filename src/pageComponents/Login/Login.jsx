@@ -10,11 +10,13 @@ import TopoBackground from "@/components/TopoBackground";
  *  - onGoogleSignup: () => void   (trigger your g-auth flow)
  *  - homeHref: string             (route of the hero page, default "/")
  *  - loading: boolean
+ *  - message: string | null       (sign-in failure to display, if any)
  */
 export default function SignupPage({
   onGoogleSignup = () => {},
   homeHref = "/",
   loading = false,
+  message = null,
 }) {
 
   return (
@@ -53,6 +55,12 @@ export default function SignupPage({
               <GoogleIcon />
               {loading ? "Connecting…" : "Continue with Google"}
             </button>
+
+            {message && (
+              <p className="tv-error" role="alert">
+                {message}
+              </p>
+            )}
 
             <Link
               href={homeHref}
@@ -169,6 +177,11 @@ const css = `
   font-size:34px; font-weight:400; letter-spacing:.3em; margin:0 0 28px; padding-left:.3em;
 }
 .tv-body{ display:flex; flex-direction:column; align-items:center; gap:14px; }
+.tv-error{
+  margin:0; max-width:290px;
+  font-family:"Oswald", sans-serif; font-size:15px; letter-spacing:.06em;
+  color:#f0a3a3; text-align:center;
+}
 .tv-google{
   display:inline-flex; align-items:center; justify-content:center; gap:12px;
   width:100%; max-width:290px; padding:12px 18px; cursor:pointer;

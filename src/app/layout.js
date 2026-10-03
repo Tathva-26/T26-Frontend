@@ -1,4 +1,6 @@
 import './globals.css'
+import { UserProvider } from '@/context/UserContext'
+import ReferralCapture from '@/components/ReferralCapture'
 
 export const metadata = {
   title: "Tech Conclave - Tathva '26",
@@ -8,7 +10,14 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang='en' className='h-full antialiased'>
-      <body className='min-h-full flex flex-col'>{children}</body>
+      <body className='min-h-full flex flex-col'>
+        {/* One session for the whole app: every page reads it, and every 401
+            from anywhere routes to the single handler inside. */}
+        <UserProvider>
+          <ReferralCapture />
+          {children}
+        </UserProvider>
+      </body>
     </html>
   )
 }

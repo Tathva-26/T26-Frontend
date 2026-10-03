@@ -14,6 +14,9 @@ import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
+import { useEvents } from '@/hooks/useEvents'
+import { useEventDetails } from '@/hooks/useEventDetails'
+import Checkout from '@/components/Checkout/Checkout'
 
 const lecturesStyles = `
 @import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
@@ -35,410 +38,14 @@ const lecturesStyles = `
 }
 `
 
-// Mock Lectures Data
-const LECTURES_DATA = [
-  {
-    id: 'ws-1',
-    title: 'Lecture',
-    fullTitle: 'Deep Space Robotics & Autonomous Navigation',
-    category: 'Aerospace',
-    badge: 'NASA',
-    dateMonth: 'OCT',
-    dateDay: '09',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Dr. Mark Thorne (Ames Research)',
-    duration: '6 Hours (2 Days)',
-    time: '10:00 AM - 1:00 PM IST',
-    venue: 'Lab 4, Tech Block & Online',
-    activityPoints: '40 KTU Activity Points',
-    fee: '₹499',
-    spotsLeft: 14,
-    description:
-      'Explore the frontier of autonomous rover guidance, spatial sensor fusion, and zero-gravity control systems. Build and test a simulated lunar rover trajectory from scratch.',
-    prerequisites:
-      'Basic Python knowledge & enthusiastic curiosity in aerospace systems.',
-  },
-  {
-    id: 'ws-2',
-    title: 'Lecture',
-    fullTitle: 'Next-Gen Humanoid & Cybernetic Systems',
-    category: 'Robotics',
-    badge: 'NASA',
-    dateMonth: 'OCT',
-    dateDay: '09',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Elena Rostova (CyberTech Labs)',
-    duration: '5 Hours',
-    time: '02:00 PM - 07:00 PM IST',
-    venue: 'Robotics Arena & Mechatronics Lab',
-    activityPoints: '35 KTU Activity Points',
-    fee: '₹549',
-    spotsLeft: 8,
-    description:
-      'Hands-on lecture covering ROS2, kinematic simulation, and computer vision integration for bipedal robotic manipulation and real-time posture adjustments.',
-    prerequisites: 'Fundamentals of C++ or Python, basic mechanics.',
-  },
-  {
-    id: 'ws-3',
-    title: 'Lecture',
-    fullTitle: 'Quantum Algorithms & Quantum Machine Learning',
-    category: 'AI & ML',
-    badge: 'NASA',
-    dateMonth: 'OCT',
-    dateDay: '09',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Vikram Sen (Q-Core Institute)',
-    duration: '4 Hours',
-    time: '11:00 AM - 03:00 PM IST',
-    venue: 'Seminar Complex & Hybrid',
-    activityPoints: '30 KTU Activity Points',
-    fee: '₹449',
-    spotsLeft: 22,
-    description:
-      'Demystify quantum superposition and entanglement. Write quantum circuits on Qiskit and run hybrid quantum-classical neural networks on real quantum emulators.',
-    prerequisites: 'Linear algebra basics and basic Python.',
-  },
-  {
-    id: 'ws-4',
-    title: 'Lecture',
-    fullTitle: 'Orbital Mechanics & Satellite Telemetry',
-    category: 'Aerospace',
-    badge: 'NASA',
-    dateMonth: 'OCT',
-    dateDay: '09',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Dr. Sarah Lin (Orbital Sciences)',
-    duration: '6 Hours',
-    time: '09:30 AM - 03:30 PM IST',
-    venue: 'Avionics Hall',
-    activityPoints: '40 KTU Activity Points',
-    fee: '₹599',
-    spotsLeft: 5,
-    description:
-      'Deep dive into CubeSat hardware architectures, telemetry ground stations, Doppler tracking, and orbital path calculations using real satellite downlink packets.',
-    prerequisites: 'Introductory physics and signal concepts.',
-  },
-  {
-    id: 'ws-5',
-    title: 'Lecture',
-    fullTitle: 'Generative AI Agents & Multi-Modal LLMs',
-    category: 'AI & ML',
-    badge: 'NASA',
-    dateMonth: 'OCT',
-    dateDay: '09',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Arjun Nambiar (AI Research Group)',
-    duration: '5 Hours',
-    time: '01:00 PM - 06:00 PM IST',
-    venue: 'Computing Hall Alpha',
-    activityPoints: '35 KTU Activity Points',
-    fee: '₹499',
-    spotsLeft: 19,
-    description:
-      'Construct autonomous agent swarms, vector retrieval pipelines (RAG), and multimodal reasoning tools that connect directly to APIs and real-world workflows.',
-    prerequisites: 'Python programming.',
-  },
-  {
-    id: 'ws-6',
-    title: 'Lecture',
-    fullTitle: 'Zero-Trust Cybersecurity & Threat Simulation',
-    category: 'Cybersecurity',
-    badge: 'NASA',
-    dateMonth: 'OCT',
-    dateDay: '09',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Kavya Menon (DefSec Global)',
-    duration: '6 Hours',
-    time: '10:00 AM - 04:00 PM IST',
-    venue: 'Cyber Defense Lab',
-    activityPoints: '40 KTU Activity Points',
-    fee: '₹499',
-    spotsLeft: 12,
-    description:
-      'Simulate red-team attacks and blue-team mitigation in an enterprise sandboxed cyber range. Learn real-time incident forensics and hardware cryptographic tokens.',
-    prerequisites: 'Basic networking & Linux command line.',
-  },
-  {
-    id: 'ws-7',
-    title: 'Lecture',
-    fullTitle: 'Advanced Drone Engineering & Swarm Intelligence',
-    category: 'Aerospace',
-    badge: 'NASA',
-    dateMonth: 'OCT',
-    dateDay: '10',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Capt. Neil Iyer (AeroDynamics Lab)',
-    duration: '6 Hours (2 Days)',
-    time: '09:00 AM - 12:00 PM IST',
-    venue: 'Open Arena & Drone Bay',
-    activityPoints: '40 KTU Activity Points',
-    fee: '₹599',
-    spotsLeft: 7,
-    description:
-      'Design autonomous drone flight paths, implement swarm coordination algorithms, and test multi-UAV formations using PX4 and ROS-based simulation environments.',
-    prerequisites: 'Basic Python and introductory robotics concepts.',
-  },
-  {
-    id: 'ws-8',
-    title: 'Lecture',
-    fullTitle: 'Rocket Propulsion & Hypersonic Aerodynamics',
-    category: 'Aerospace',
-    badge: 'ISRO',
-    dateMonth: 'OCT',
-    dateDay: '10',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Dr. K. S. Namboodiri (VSSC / ISRO)',
-    duration: '6 Hours',
-    time: '10:00 AM - 04:00 PM IST',
-    venue: 'Aerospace Simulation Lab',
-    activityPoints: '40 KTU Activity Points',
-    fee: '₹549',
-    spotsLeft: 10,
-    description:
-      'Study cryogenic engine mechanics, solid propellant grain designs, and compressible aerodynamic shockwaves using computational fluid dynamics (CFD).',
-    prerequisites: 'Thermodynamics and basic fluid mechanics.',
-  },
-  {
-    id: 'ws-9',
-    title: 'Lecture',
-    fullTitle: 'Spacecraft Avionics & Interplanetary Comms',
-    category: 'Aerospace',
-    badge: 'ESA',
-    dateMonth: 'OCT',
-    dateDay: '11',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Jean-Luc Dubois (Space Systems Europe)',
-    duration: '5 Hours',
-    time: '01:00 PM - 06:00 PM IST',
-    venue: 'Avionics Hall Alpha',
-    activityPoints: '35 KTU Activity Points',
-    fee: '₹499',
-    spotsLeft: 15,
-    description:
-      'Understand radiation-hardened flight computers, deep-space network protocols, telemetry compression, and fault-tolerant attitude control.',
-    prerequisites: 'Basic digital electronics and signal processing.',
-  },
-  {
-    id: 'ws-10',
-    title: 'Lecture',
-    fullTitle: 'ROS2 & Autonomous Mobile Robot Navigation',
-    category: 'Robotics',
-    badge: 'IEEE',
-    dateMonth: 'OCT',
-    dateDay: '10',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Dr. Ananya Rao (Vision AI Institute)',
-    duration: '6 Hours',
-    time: '09:30 AM - 03:30 PM IST',
-    venue: 'Robotics Arena & Mechatronics Lab',
-    activityPoints: '40 KTU Activity Points',
-    fee: '₹549',
-    spotsLeft: 9,
-    description:
-      'Build map-based navigation pipelines with Nav2, SLAM algorithms, LiDAR integration, and real-time obstacle avoidance on differential-drive rovers.',
-    prerequisites: 'Python or C++ with Linux familiarity.',
-  },
-  {
-    id: 'ws-11',
-    title: 'Lecture',
-    fullTitle: 'Bipedal Locomotion & Dynamic Balance Control',
-    category: 'Robotics',
-    badge: 'NASA',
-    dateMonth: 'OCT',
-    dateDay: '11',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Prof. Kenneth Meyer (Dynamic Robotics)',
-    duration: '5 Hours',
-    time: '10:00 AM - 03:00 PM IST',
-    venue: 'Mechatronics Research Center',
-    activityPoints: '35 KTU Activity Points',
-    fee: '₹599',
-    spotsLeft: 6,
-    description:
-      'Learn inverted pendulum models, Zero Moment Point (ZMP) calculations, and reinforcement learning-driven gait stabilization for biped humanoid robots.',
-    prerequisites: 'Classical mechanics and linear algebra.',
-  },
-  {
-    id: 'ws-12',
-    title: 'Lecture',
-    fullTitle: 'Underwater Robotics & Oceanic ROV Systems',
-    category: 'Robotics',
-    badge: 'IEEE',
-    dateMonth: 'OCT',
-    dateDay: '11',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Tarun Chawla (OceanTech Innovations)',
-    duration: '5 Hours',
-    time: '02:00 PM - 07:00 PM IST',
-    venue: 'Hydrodynamics & Marine Lab',
-    activityPoints: '35 KTU Activity Points',
-    fee: '₹499',
-    spotsLeft: 16,
-    description:
-      'Explore waterproof thruster systems, acoustic positioning, ballast control, and tethered underwater video transmission for marine exploration ROVs.',
-    prerequisites: 'Introductory electronics and mechanics.',
-  },
-  {
-    id: 'ws-13',
-    title: 'Lecture',
-    fullTitle: 'Micro-Robotics & Surgical Robotic Manipulators',
-    category: 'Robotics',
-    badge: 'ASME',
-    dateMonth: 'OCT',
-    dateDay: '12',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Dr. Maya Swaminathan (BioRobotics Lab)',
-    duration: '4 Hours',
-    time: '11:00 AM - 03:00 PM IST',
-    venue: 'Advanced Robotics Center',
-    activityPoints: '30 KTU Activity Points',
-    fee: '₹449',
-    spotsLeft: 18,
-    description:
-      'Understand multi-degree-of-freedom surgical end-effectors, haptic force feedback teleoperation, and sub-millimeter precision servo actuation.',
-    prerequisites: 'Basics of microcontrollers and kinematic linkages.',
-  },
-  {
-    id: 'ws-14',
-    title: 'Lecture',
-    fullTitle: 'Computer Vision & Edge AI Object Detection',
-    category: 'AI & ML',
-    badge: 'IEEE',
-    dateMonth: 'OCT',
-    dateDay: '10',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Arjun Nambiar (AI Research Group)',
-    duration: '5 Hours',
-    time: '11:00 AM - 04:00 PM IST',
-    venue: 'AI Research Wing',
-    activityPoints: '35 KTU Activity Points',
-    fee: '₹449',
-    spotsLeft: 20,
-    description:
-      'Train YOLOv8 models, implement real-time video detection pipelines, and deploy edge-optimised vision models on Jetson Nano and mobile devices.',
-    prerequisites: 'Python and basic machine learning knowledge.',
-  },
-  {
-    id: 'ws-15',
-    title: 'Lecture',
-    fullTitle: 'Reinforcement Learning for Autonomous Driving',
-    category: 'AI & ML',
-    badge: 'NASA',
-    dateMonth: 'OCT',
-    dateDay: '11',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Dr. David Sterling (AutoAI Labs)',
-    duration: '6 Hours',
-    time: '10:00 AM - 04:00 PM IST',
-    venue: 'Computing Hall Alpha',
-    activityPoints: '40 KTU Activity Points',
-    fee: '₹549',
-    spotsLeft: 11,
-    description:
-      'Train deep Q-networks (DQN) and PPO agents in simulated CARLA environments to handle lane keeping, high-speed merging, and obstacle avoidance.',
-    prerequisites: 'Python, PyTorch or TensorFlow, and calculus.',
-  },
-  {
-    id: 'ws-16',
-    title: 'Lecture',
-    fullTitle: 'Diffusion Models & Neural Rendering (NeRFs)',
-    category: 'AI & ML',
-    badge: 'ACM',
-    dateMonth: 'OCT',
-    dateDay: '12',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Siddharth Verma (Visual AI Labs)',
-    duration: '5 Hours',
-    time: '01:00 PM - 06:00 PM IST',
-    venue: 'Seminar Complex & Hybrid',
-    activityPoints: '35 KTU Activity Points',
-    fee: '₹499',
-    spotsLeft: 14,
-    description:
-      'Understand denoising diffusion probabilistic models (DDPM), latent diffusion, and neural radiance fields to synthesize 3D volumetric scenes from 2D images.',
-    prerequisites: 'Deep learning fundamentals and linear algebra.',
-  },
-  {
-    id: 'ws-17',
-    title: 'Lecture',
-    fullTitle: 'Ethical Hacking & Advanced Penetration Testing',
-    category: 'Cybersecurity',
-    badge: 'CEH',
-    dateMonth: 'OCT',
-    dateDay: '10',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Aditya Kulkarni (HackSecure Labs)',
-    duration: '6 Hours (2 Days)',
-    time: '09:30 AM - 12:30 PM IST',
-    venue: 'Cyber Defense Lab',
-    activityPoints: '40 KTU Activity Points',
-    fee: '₹549',
-    spotsLeft: 10,
-    description:
-      'Perform structured penetration tests on vulnerable web apps and networks. Master tools like Burp Suite, Nmap, and Metasploit in a controlled ethical hacking sandbox.',
-    prerequisites: 'Networking basics, Linux CLI, and HTTP fundamentals.',
-  },
-  {
-    id: 'ws-18',
-    title: 'Lecture',
-    fullTitle: 'Cloud Security Architecture & DevSecOps',
-    category: 'Cybersecurity',
-    badge: 'CNCF',
-    dateMonth: 'OCT',
-    dateDay: '11',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Karthik Mohan (CloudScale Solutions)',
-    duration: '5 Hours',
-    time: '10:00 AM - 03:00 PM IST',
-    venue: 'Innovation Hub & Online',
-    activityPoints: '35 KTU Activity Points',
-    fee: '₹499',
-    spotsLeft: 17,
-    description:
-      'Implement infrastructure-as-code security scanning, container image vulnerability detection, automated IAM auditing, and runtime security monitoring.',
-    prerequisites: 'Basic Docker and cloud concepts.',
-  },
-  {
-    id: 'ws-19',
-    title: 'Lecture',
-    fullTitle: 'Hardware Security, Side-Channel & Firmware Hacking',
-    category: 'Cybersecurity',
-    badge: 'DEFCON',
-    dateMonth: 'OCT',
-    dateDay: '12',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Naveen Raj (HardSec Research)',
-    duration: '5 Hours',
-    time: '09:00 AM - 02:00 PM IST',
-    venue: 'Hardware Security Suite',
-    activityPoints: '35 KTU Activity Points',
-    fee: '₹549',
-    spotsLeft: 8,
-    description:
-      'Extract firmware from flash chips, analyze UART/JTAG debug ports, and perform power-analysis differential side-channel attacks on cryptographic chips.',
-    prerequisites: 'Basic electronics and C/assembly understanding.',
-  },
-  {
-    id: 'ws-20',
-    title: 'Lecture',
-    fullTitle: 'Cryptography & Quantum-Resistant Security',
-    category: 'Cybersecurity',
-    badge: 'IEEE',
-    dateMonth: 'OCT',
-    dateDay: '12',
-    image: '/images/lectures/lecture-astronaut.jpg',
-    instructor: 'Dr. Radhika Iyer (CryptoResearch Group)',
-    duration: '5 Hours',
-    time: '02:00 PM - 07:00 PM IST',
-    venue: 'Computing Hall Beta',
-    activityPoints: '35 KTU Activity Points',
-    fee: '₹499',
-    spotsLeft: 13,
-    description:
-      'Explore lattice-based cryptography, post-quantum key exchange algorithms (Kyber, Dilithium), and modern zero-knowledge proof systems (zk-SNARKs).',
-    prerequisites: 'Discrete mathematics and basic cryptography.',
-  },
-]
+// Lectures come from GET /api/events/all?type=lectures. The type is
+// matched exactly and lowercased on write, so it must not be capitalised.
+const EVENT_TYPE = 'lectures'
+const CARD_LABEL = 'Lecture'
+
+// `picture` is non-null on every event in production today, but the field is
+// nullable and next/image requires a src.
+const FALLBACK_IMAGE = '/images/workshops/workshop-astronaut.jpg'
 
 // Tunable hover-response constants — focal card (Step 3 movement unchanged)
 const MAX_TRANSLATE = 15
@@ -557,6 +164,18 @@ export default function LecturesPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
   const [selectedLecture, setSelectedLecture] = useState(null)
+
+  const { events, loading, error, reload } = useEvents(EVENT_TYPE, {
+    label: CARD_LABEL,
+    fallbackImage: FALLBACK_IMAGE,
+  })
+
+  // The full record for whatever the modal has open. The list route returns a
+  // trimmed field set, so `extraInfo` is only available from here.
+  const selectedDetails = useEventDetails(selectedLecture?.id ?? null, {
+    label: CARD_LABEL,
+    fallbackImage: FALLBACK_IMAGE,
+  })
   const [viewDetailsMode, setViewDetailsMode] = useState(false)
 
   const [mounted, setMounted] = useState(false)
@@ -2106,19 +1725,12 @@ export default function LecturesPage() {
     }
   }, [])
   // Filtered lectures
+  // Searching a precomputed haystack rather than individual fields: the old
+  // UI searched `item.instructor`, which the API has no field for.
   const filteredLectures = useMemo(() => {
-    return LECTURES_DATA.filter((item) => {
-      const query = searchQuery.trim().toLowerCase()
-
-      return (
-        !query ||
-        item.title.toLowerCase().includes(query) ||
-        item.fullTitle.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query) ||
-        item.instructor.toLowerCase().includes(query)
-      )
-    })
-  }, [searchQuery])
+    const query = searchQuery.trim().toLowerCase()
+    return query ? events.filter((item) => item.searchText.includes(query)) : events
+  }, [events, searchQuery])
 
   return (
     <div className='lectures-page min-h-screen bg-[#06070d] text-slate-100 font-sans relative overflow-x-clip selection:bg-indigo-600 selection:text-white pb-24'>
@@ -2190,51 +1802,40 @@ export default function LecturesPage() {
           </div>
         </section>
 
-        {/* SEARCH BAR & CATEGORY FILTERS */}
-        <section className='mb-10 w-full flex flex-col items-center'>
-          {/* SEARCH INPUT */}
-          <div className='relative mb-5 w-[clamp(280px,45vw,720px)] max-w-[90vw]'>
-            <input
-              type='text'
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder='Search'
-              className='h-8 w-full rounded-[58.807px] bg-white pl-5 pr-11 text-xs font-medium text-slate-900 placeholder:text-slate-500 shadow-[0_2px_20px_rgba(255,255,255,0.15)] transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500'
-            />
-
-            {/* SEARCH ICON */}
-            <div className='absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600'>
-              <svg
-                className='w-4 h-4 sm:w-4.5 sm:h-4.5'
-                fill='none'
-                viewBox='0 0 24 24'
-                stroke='currentColor'
-                strokeWidth='2.5'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
-                />
-              </svg>
-            </div>
-          </div>
-        </section>
-
         {/* LECTURE CARDS GRID */}
         <section className='relative w-full'>
-          {filteredLectures.length === 0 ? (
+          {loading ? (
             <div className='py-20 text-center text-slate-400'>
-              <p className='text-lg'>No lectures found matching your search.</p>
-
+              <p className='text-lg'>Loading lectures…</p>
+            </div>
+          ) : error ? (
+            <div className='py-20 text-center text-slate-400'>
+              <p className='text-lg'>{error}</p>
               <button
-                onClick={() => {
-                  setSearchQuery('')
-                }}
+                onClick={reload}
                 className='mt-3 text-sm text-indigo-400 hover:underline cursor-pointer'
               >
-                Clear filters
+                Try again
               </button>
+            </div>
+          ) : filteredLectures.length === 0 ? (
+            <div className='py-20 text-center text-slate-400'>
+              <p className='text-lg'>
+                {searchQuery.trim()
+                  ? 'No lectures found matching your search.'
+                  : 'No lectures have been announced yet.'}
+              </p>
+
+              {searchQuery.trim() && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('')
+                  }}
+                  className='mt-3 text-sm text-indigo-400 hover:underline cursor-pointer'
+                >
+                  Clear filters
+                </button>
+              )}
             </div>
           ) : (
             (() => {
@@ -2319,7 +1920,7 @@ export default function LecturesPage() {
                                   if (el) cardRefs.current[lecture.id] = el
                                   else delete cardRefs.current[lecture.id]
                                 }}
-                                className='group relative aspect-[0.9825] w-full overflow-hidden bg-[#0d101c]'
+                                className='group relative aspect-[0.9] w-full overflow-hidden bg-[#0d101c]'
                                 style={{
                                   transformStyle: 'preserve-3d',
                                   transformOrigin: 'center center',
@@ -2373,61 +1974,101 @@ export default function LecturesPage() {
                                     className='lecture-pulse-overlay pointer-events-none absolute inset-0 z-10'
                                   />
 
-                                  {/* CARD VISUAL ARTWORK */}
-                                  <div
-                                    className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-slate-900'
-                                    style={{
-                                      maskImage:
-                                        "url('/images/lectures/lecture-card-image.png')",
-                                      WebkitMaskImage:
-                                        "url('/images/lectures/lecture-card-image.png')",
-                                      maskPosition: 'center',
-                                      WebkitMaskPosition: 'center',
-                                      maskRepeat: 'no-repeat',
-                                      WebkitMaskRepeat: 'no-repeat',
-                                      maskSize: '100% 100%',
-                                      WebkitMaskSize: '100% 100%',
-                                    }}
-                                  >
-                                    <Image
-                                      src={lecture.image}
-                                      alt={lecture.fullTitle}
-                                      fill
-                                      sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                                      className='object-cover object-center transition-transform duration-500 ease-out'
+                                  {/* ORIGINAL CARD SHAPE — kept at its original
+                                      proportions so the mask, cutout and border
+                                      artwork are not stretched */}
+                                  <div className='absolute inset-x-0 top-0 aspect-[0.9825]'>
+                                    {/* CARD VISUAL ARTWORK */}
+                                    <div
+                                      className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-slate-900'
+                                      style={{
+                                        maskImage:
+                                          "url('/images/lectures/lecture-card-image.png')",
+                                        WebkitMaskImage:
+                                          "url('/images/lectures/lecture-card-image.png')",
+                                        maskPosition: 'center',
+                                        WebkitMaskPosition: 'center',
+                                        maskRepeat: 'no-repeat',
+                                        WebkitMaskRepeat: 'no-repeat',
+                                        maskSize: '100% 100%',
+                                        WebkitMaskSize: '100% 100%',
+                                      }}
+                                    >
+                                      <Image
+                                        src={lecture.image}
+                                        alt={lecture.fullTitle}
+                                        fill
+                                        sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                                        className='object-cover object-center transition-transform duration-500 ease-out'
+                                      />
+                                    </div>
+
+                                    {/* BACKGROUND CUTOUT OUTSIDE THE BORDER */}
+                                    <div
+                                      className='pointer-events-none absolute inset-0 z-15 bg-[#06070d]'
+                                      style={{
+                                        clipPath:
+                                          'polygon(32.18% 90.64%, 100% 90.64%, 100% 100%, 23.29% 100%, 24.64% 99%)',
+                                      }}
                                     />
-                                  </div>
 
-                                  {/* BACKGROUND CUTOUT OUTSIDE THE BORDER */}
-                                  <div
-                                    className='pointer-events-none absolute inset-0 z-15 bg-[#06070d]'
-                                    style={{
-                                      clipPath:
-                                        'polygon(32.18% 90.64%, 100% 90.64%, 100% 100%, 23.29% 100%, 24.64% 99%)',
-                                    }}
-                                  />
+                                    {/* DATE (unchanged position) */}
+                                    <div className='absolute inset-x-0 bottom-0 z-20 h-[13.5%]'>
+                                      <div className='absolute bottom-[81%] right-[1.1%] flex flex-col items-end leading-none'>
+                                        <span className='mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#fbebec]'>
+                                          {lecture.dateMonth}
+                                        </span>
+                                        <span className='text-[8.07cqw] font-bold text-white'>
+                                          {lecture.dateDay}
+                                        </span>
+                                      </div>
+                                    </div>
 
-                                  {/* FIGMA CARD LABELS */}
-                                  <div className='absolute inset-x-0 bottom-0 z-20 h-[13.5%]'>
-                                    <p className='absolute bottom-[9%] left-[29.73%] right-[26.82%] text-right text-[5.5cqw] font-bold leading-[normal] text-white'>
-                                      Lecture
-                                    </p>
-                                    <div className='absolute bottom-[81%] right-[1.1%] flex flex-col items-end leading-none'>
-                                      <span className='mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#fbebec]'>
-                                        {lecture.dateMonth}
-                                      </span>
-                                      <span className='text-[8.07cqw] font-bold text-white'>
-                                        {lecture.dateDay}
-                                      </span>
+                                    <div className='pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30'>
+                                      <img
+                                        src='/images/lectures/lecture-card-border.svg'
+                                        alt=''
+                                        className='absolute inset-[-0.38%] h-full w-full'
+                                      />
                                     </div>
                                   </div>
 
-                                  <div className='pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30'>
-                                    <img
-                                      src='/images/lectures/lecture-card-border.svg'
-                                      alt=''
-                                      className='absolute inset-[-0.38%] h-full w-full'
+                                  {/* EXTRA LABEL SPACE — continues the cutout
+                                      colour below the original card shape so the
+                                      title has room to wrap onto several lines */}
+                                  <div
+                                    className='pointer-events-none absolute inset-x-0 bottom-0 z-15 bg-[#06070d]'
+                                    style={{ top: 'calc(100cqw / 0.9825)' }}
+                                  />
+
+                                  {/* TITLE — wraps freely, starts where the
+                                      original cutout begins */}
+                                  <div
+                                    className='absolute left-0 right-0 z-20 text-right'
+                                    style={{
+                                      top: 'calc(100cqw / 0.9825 * 0.9064 + 2.5cqw)',
+                                      paddingLeft: '1cqw',
+                                      paddingRight: '4cqw',
+                                      maxHeight: '13.2cqw',
+                                      overflow: 'hidden',
+                                    }}
+                                  >
+                                    {/* Invisible spacer: pushes only the FIRST line
+                                        to the right of the notch. Line 2 wraps
+                                        underneath it and starts at the left edge. */}
+                                    <span
+                                      aria-hidden='true'
+                                      style={{
+                                        float: 'left',
+                                        width: '33cqw',
+                                        height: '6.6cqw',
+                                      }}
                                     />
+                                    <p
+                                      className='m-0 break-words text-[5.5cqw] font-bold leading-[1.2] text-white'
+                                    >
+                                      Lecture
+                                    </p>
                                   </div>
                                 </div>
                               </div>
@@ -2589,22 +2230,25 @@ export default function LecturesPage() {
 
                 <div className='mt-2 flex items-end justify-between px-1'>
                   <span className='flex items-baseline leading-none text-white'>
-                    <span className='font-sans text-3xl font-bold'>₹</span>
-                    <span className={`lectures-jaro text-3xl`}>
-                      {selectedLecture.fee.replace(/^₹/, '')}
-                    </span>
+                    {selectedLecture.priceInPaise > 0 ? (
+                      <>
+                        <span className='font-sans text-3xl font-bold'>₹</span>
+                        <span className={`lectures-jaro text-3xl`}>
+                          {selectedLecture.fee.replace(/^₹/, '')}
+                        </span>
+                      </>
+                    ) : (
+                      <span className={`lectures-jaro text-3xl`}>
+                        {selectedLecture.fee}
+                      </span>
+                    )}
                   </span>
                   <span className='font-bold text-base leading-none text-white'>
                     {selectedLecture.dateDay} {selectedLecture.dateMonth}
                   </span>
                 </div>
 
-                <button
-                  type='button'
-                  className='mt-4 w-full rounded-[7px] bg-[rgba(78,40,74,0.72)] py-1.5 text-lg font-bold tracking-[0.16em] text-white transition-colors hover:bg-[rgba(104,52,96,0.9)] cursor-pointer'
-                >
-                  REGISTER
-                </button>
+                <Checkout event={selectedLecture} />
               </div>
 
               <div className='pt-2 sm:pt-6'>
@@ -2623,23 +2267,50 @@ export default function LecturesPage() {
                   </p>
                 </div>
 
-                <div className='mt-5'>
-                  <h3 className='text-[11px] font-bold uppercase text-white'>
-                    Contacts :
-                  </h3>
-                  <div className='mt-2 grid grid-cols-2 gap-3 text-[9px] uppercase leading-tight text-white'>
-                    <span>
-                      JOHN DOE
-                      <br />
-                      1234567890
-                    </span>
-                    <span>
-                      JANE DOE
-                      <br />
-                      9087654321
-                    </span>
+                {(selectedLecture.isTeamEvent || selectedLecture.bookingClosed) && (
+                  <div className='mt-3 space-y-1 text-[9px] uppercase leading-tight text-white'>
+                    {selectedLecture.isTeamEvent && (
+                      <p>
+                        Team event
+                        {selectedLecture.teamSize
+                          ? ` · up to ${selectedLecture.teamSize} members`
+                          : ''}
+                      </p>
+                    )}
+                    {selectedLecture.bookingClosed && (
+                      <p className='text-[#f0a3a3]'>Booking closed</p>
+                    )}
                   </div>
-                </div>
+                )}
+
+                {/*
+                  * The backend has no field for event contacts, so the two
+                  * placeholder names that used to sit here would have shipped
+                  * beside real event data. `extraInfo` is the long write-up
+                  * the API does hold, and it only comes back from the detail
+                  * route — the list route omits it.
+                  */}
+                {selectedDetails.event?.extraInfo && (
+                  <div className='mt-5'>
+                    <h3 className='text-[11px] font-bold uppercase text-white'>
+                      Details :
+                    </h3>
+                    <p className='mt-2 whitespace-pre-line text-[9px] leading-[1.35] text-[#8d8d8d]'>
+                      {selectedDetails.event.extraInfo}
+                    </p>
+                  </div>
+                )}
+
+                {(selectedDetails.event?.venueFull || selectedDetails.event?.time) && (
+                  <div className='mt-4 space-y-1 text-[9px] uppercase leading-tight text-white'>
+                    {selectedDetails.event.time && (
+                      <p>{selectedDetails.event.time}</p>
+                    )}
+                    {selectedDetails.event.venueFull && (
+                      <p className='text-[#8d8d8d]'>{selectedDetails.event.venueFull}</p>
+                    )}
+                  </div>
+                )}
 
                 <button
                   type='button'

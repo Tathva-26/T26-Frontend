@@ -418,11 +418,34 @@ export default function RobowarsHero({ leadInVh = 0 }) {
         // ignores viewport height and lands half a screen off from where the
         // scrub's progress actually reaches 0.5.
         let lastProgress = 0
+        // Tracks the fastest speed (px/s) seen since the last time a snap
+        // decision consumed it. Coming to rest *means* decelerating to ~0,
+        // so by the time the snap's debounce fires — after scrolling has
+        // already stopped — the instantaneous velocity is always near zero,
+        // for a hard flick exactly as much as a slow scroll. The peak over
+        // the gesture is what actually tells them apart.
+        let peakVelocity = 0
         const checkCollisionCrossing = (self) => {
+          const velocity = Math.abs(self.getVelocity())
+          if (velocity > peakVelocity) peakVelocity = velocity
           const progress = self.progress
           if (lastProgress < 0.5 !== progress < 0.5) triggerCollisionShake()
           lastProgress = progress
         }
+
+        // Timeline positions (in timeline-time, not 0-1 progress) where each
+        // reveal beat starts. Named so the snap stops below can't drift out
+        // of sync with the tweens that actually define them.
+        const BEAT_ROBOTS = 0
+        const BEAT_TITLE = 0.14
+        const BEAT_DATE = 0.3
+        const BEAT_DETAILS = 0.42
+
+        // A gesture whose peak speed (px/s) exceeded this counts as "hard"
+        // for snapping purposes. Below it, scroll behaves exactly as before
+        // — free, 1:1 scrubbing — so a deliberate scroll-and-read never gets
+        // yanked anywhere.
+        const HARD_SCROLL_VELOCITY = 2200
 
         const buildTimeline = (root) => {
           const timeline = gsap.timeline({
@@ -440,6 +463,57 @@ export default function RobowarsHero({ leadInVh = 0 }) {
               scrub: true,
               invalidateOnRefresh: true,
               onUpdate: checkCollisionCrossing,
+              // A hard/fast scroll otherwise blows straight through the
+              // whole robots -> title -> date -> details reveal in one
+              // motion, since scrub:true maps scroll position to animation
+              // progress 1:1 with no resistance. This catches only that
+              // case: a fast gesture eases to rest on the nearest reveal
+              // beat instead of wherever raw momentum would have landed, so
+              // the sequence visibly pauses there instead of flashing past.
+              snap: {
+                snapTo: (value, trigger) => {
+                  const velocity = peakVelocity
+                  peakVelocity = 0
+                  if (velocity < HARD_SCROLL_VELOCITY) {
+                    return value
+                  }
+
+                  const total = timeline.duration()
+                  const stops = [
+                    BEAT_ROBOTS / total,
+                    BEAT_TITLE / total,
+                    BEAT_DATE / total,
+                    BEAT_DETAILS / total,
+                    1,
+                  ]
+                  const target = stops.reduce((nearest, stop) =>
+                    Math.abs(stop - value) < Math.abs(nearest - value)
+                      ? stop
+                      : nearest,
+                  )
+                  if (Math.abs(target - value) < 0.001) return value
+
+                  // Lenis owns `.main-scroll`'s real scrollTop and keeps
+                  // writing it on its own rAF tick, so letting ScrollTrigger
+                  // tween the scroll position itself here would fight Lenis
+                  // for the same value every frame. Handing the move to
+                  // Lenis and resting ScrollTrigger at its current value
+                  // (below) avoids that fight — see the Artist section's
+                  // snap, which does the same for the same reason.
+                  const lenis = window.__lenis
+                  if (!lenis || lenis.isStopped || lenis.isLocked) {
+                    return value
+                  }
+                  const range = trigger.end - trigger.start
+                  lenis.scrollTo(trigger.start + range * target, {
+                    duration: 0.5,
+                    easing: (t) => 1 - Math.pow(1 - t, 3),
+                  })
+                  return value
+                },
+                duration: { min: 0.2, max: 0.5 },
+                ease: 'power2.out',
+              },
             },
           })
 
@@ -452,7 +526,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
                 opacity: 1,
                 transform: 'translate3d(0, 0, 0) scale(1)',
               },
-              0,
+              BEAT_ROBOTS,
             )
             .to(
               root.querySelectorAll(
@@ -462,7 +536,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
                 opacity: 1,
                 transform: 'translate3d(0, 0, 0) scale(1)',
               },
-              0.14,
+              BEAT_TITLE,
             )
             .to(
               root.querySelectorAll('.robowars-date'),
@@ -470,7 +544,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
                 opacity: 1,
                 transform: 'translate3d(0, 0, 0) scale(1)',
               },
-              0.3,
+              BEAT_DATE,
             )
             .to(
               root.querySelectorAll('.robowars-prizes, .robowars-arena'),
@@ -478,7 +552,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
                 opacity: 1,
                 transform: 'translate3d(0, 0, 0) scale(1)',
               },
-              0.42,
+              BEAT_DETAILS,
             )
         }
 

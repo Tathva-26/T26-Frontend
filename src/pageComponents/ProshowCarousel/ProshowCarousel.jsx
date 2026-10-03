@@ -436,10 +436,10 @@ const AmbientDust = memo(function AmbientDust() {
 const HeaderBadges = memo(function HeaderBadges() {
   return (
     <>
-      <span className='absolute top-[clamp(70px,3dvh,30px)] left-[clamp(16px,2.4vw,32px)] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em]'>
+      <span className='absolute top-[clamp(70px,3dvh,30px)] left-[clamp(16px,2.4vw,32px)] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em] translate-y-[1.5em]'>
         TATHVA ‘26
       </span>
-      <span className='absolute top-[clamp(70px,3dvh,30px)] right-[clamp(8px,2.4vw,32px)] -mr-[0.45em] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em]'>
+      <span className='absolute top-[clamp(70px,3dvh,30px)] right-[clamp(8px,2.4vw,32px)] -mr-[0.45em] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em] translate-y-[1.5em]'>
         PRO-SHOW
       </span>
     </>

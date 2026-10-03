@@ -1,11 +1,19 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 import { gsap } from 'gsap'
-import { Jockey_One } from 'next/font/google'
+import { Jockey_One, Michroma } from 'next/font/google'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useNavbarScope } from '@/pageComponents/Navbar/NavbarContext'
 
 const jockeyOne = Jockey_One({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+})
+
+const michroma = Michroma({
   weight: '400',
   subsets: ['latin'],
   display: 'swap',
@@ -14,7 +22,7 @@ const jockeyOne = Jockey_One({
 const leftMenu = [
   { label: 'HOME', href: '/hero' },
   { label: 'ANNOUNCEMENTS', href: '/announcements' },
-  { label: 'ACCOMMODATIONS', href: '/accommodation' },
+  { label: 'ACCOMMODATION', href: '/accommodation' },
   { label: 'LECTURES', href: '/lectures' },
   { label: 'CREDITS', href: '/credits' },
   { label: 'PROSHOW', href: '/proshow' },
@@ -31,20 +39,7 @@ const rightMenu = [
 
 /* -----------------------------------------------------------------------
    Portal text hover (ported from the reference Navbar's FlipLink)
-   -----------------------------------------------------------------------
-   Same constants and per-character math as the reference implementation,
-   character-by-character outgoing/incoming rows, requestAnimationFrame
-   render loop, Gaussian cursor-proximity warp, prefers-reduced-motion
-   bailout. Nothing here is approximated with a CSS transition.
-
-   One adaptation: in the reference file the hovered <a> WAS the text, so
-   pointer position and the "link" bounding box were the same box. Here
-   each <Link> also wraps the leftwave/rightwave images, so PortalText
-   owns its own wrapping span (ref'd, hover-bound) around just the text,
-   and all pointer/offset math is taken relative to that span. That keeps
-   the character distances correct regardless of the images/gap sitting
-   next to it, without touching the wave images or the Link itself.
------------------------------------------------------------------------ */
+   ----------------------------------------------------------------------- */
 
 const PORTAL_DURATION = 520 // ms, whole transition (first letter to last)
 const PORTAL_SPREAD = 0.3 // share of the duration used to ripple outward from the cursor
@@ -64,11 +59,6 @@ function PortalText({ text }) {
   const animationRef = useRef(null)
   const runningRef = useRef(false)
 
-  /*
-   * Hover is only the TRIGGER. Once started, the animation runs to
-   * completion on its own: no pointerleave handler, no pointermove
-   * tracking, nothing reads hover state after this function returns.
-   */
   const trigger = (event) => {
     const wrap = wrapRef.current
     if (!wrap || runningRef.current) return
@@ -81,22 +71,11 @@ function PortalText({ text }) {
 
     runningRef.current = true
 
-    /*
-     * Capture the exact cursor X, relative to this text span. Character
-     * centres come from layout offsets (not bounding rects) so they are
-     * unaffected by any transform left over from the previous run.
-     */
     const pointerX = event.clientX - wrap.getBoundingClientRect().left
-    const H = inc[0].offsetHeight // height of one row = travel distance
+    const H = inc[0].offsetHeight
     const sigma =
       parseFloat(window.getComputedStyle(wrap).fontSize) * PORTAL_SIGMA_EM
 
-    /*
-     * Per-character distance from the cursor and a smooth gaussian
-     * influence (1 under the cursor, falling off continuously). A cursor
-     * between two letters gives both neighbours nearly equal influence,
-     * so the warp originates between them.
-     */
     const cells = []
     for (let i = 0; i < text.length; i++) {
       const char = out[i]
@@ -108,12 +87,6 @@ function PortalText({ text }) {
       cells.push({ d, w: Math.exp(-((d / sigma) * (d / sigma))) })
     }
 
-    /*
-     * Draws one frame for BOTH copies from a single timeline value t (0..1).
-     * The incoming copy is the outgoing copy shifted one row down, with the
-     * identical warp, so together they form one continuous strip passing
-     * through the clipped window.
-     */
     const render = (t) => {
       for (let i = 0; i < text.length; i++) {
         const o = out[i]
@@ -122,13 +95,11 @@ function PortalText({ text }) {
 
         const { d, w } = cells[i]
 
-        /* Letters near the cursor start immediately; the rest ripple out. */
         const local = clamp01(
           (t - PORTAL_SPREAD * (1 - w)) / (1 - PORTAL_SPREAD),
         )
-        const p = easeOutQuart(local) // 0 -> 1, fast start, soft landing
+        const p = easeOutQuart(local)
 
-        /* Warp strength: 0 at rest, peaks early, back to 0 on arrival. */
         const bell = Math.sin(Math.PI * p) * w
 
         const dx = -d * PORTAL_PINCH * bell
@@ -140,18 +111,11 @@ function PortalText({ text }) {
         o.style.transform = `translate3d(${dx}px, ${-p * H}px, 0)` + shape
         n.style.transform = `translate3d(${dx}px, ${H - p * H}px, 0)` + shape
 
-        /* Outgoing copy dissolves only as it leaves the window. */
         o.style.opacity = String(1 - clamp01((p - 0.6) / 0.4))
         n.style.opacity = '1'
       }
     }
 
-    /*
-     * Clean start: outgoing copy at its natural position, incoming copy
-     * one row below. On a repeat run the previous incoming copy is
-     * showing identical text in the identical spot, so this swap is
-     * invisible. Frame 0 is drawn now, so there is no delay before motion.
-     */
     render(0)
 
     const start = performance.now()
@@ -165,11 +129,6 @@ function PortalText({ text }) {
         return
       }
 
-      /*
-       * Finish: outgoing copy stays parked and hidden above the window;
-       * incoming copy stays exactly at its resting position, fully
-       * visible. Nothing is cleared back to the offscreen CSS start.
-       */
       for (let i = 0; i < text.length; i++) {
         const o = out[i]
         const n = inc[i]
@@ -232,11 +191,34 @@ function PortalText({ text }) {
   )
 }
 
-const allMenuItems = [...leftMenu, ...rightMenu];
+const allMenuItems = [...leftMenu, ...rightMenu]
+
+function getPageName(pathname) {
+  if (!pathname || pathname === '/' || pathname === '/hero') return 'TATHVA-26'
+  const match = allMenuItems.find(
+    (item) => pathname === item.href || pathname.startsWith(item.href + '/'),
+  )
+  if (match) return match.label
+  return pathname.split('/').filter(Boolean)[0].replace(/[-_]/g, ' ').toUpperCase()
+}
 
 export default function TathvaMenu() {
+  const inNavbarScope = useNavbarScope()
+
+  if (inNavbarScope) return null
+
+  return <TathvaMenuOverlay />
+}
+
+function TathvaMenuOverlay() {
+  const pathname = usePathname()
+  const basePageName = getPageName(pathname)
+
+  // Track the current dynamic section name
+  const [activeSectionName, setActiveSectionName] = useState(basePageName)
   const [isOpen, setIsOpen] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [showArrow, setShowArrow] = useState(true)
 
   const rootRef = useRef(null)
   const panelRef = useRef(null)
@@ -248,20 +230,88 @@ export default function TathvaMenu() {
 
   const timelineRef = useRef(null)
 
+  // Sync section name with route changes (e.g., navigating to /workshops).
+  // Done during render rather than in an effect, so the reset lands in the same
+  // render as the new route instead of cascading into a second one.
+  const [syncedPathname, setSyncedPathname] = useState(pathname)
+  if (syncedPathname !== pathname) {
+    setSyncedPathname(pathname)
+    setActiveSectionName(basePageName)
+    setIsOpen(false)
+    setIsMobileOpen(false)
+    setShowArrow(true)
+  }
+
+  // Scroll spy for dynamic multi-section scroll in page.js
+  useEffect(() => {
+    const isHomePage = pathname === '/' || pathname === '/hero'
+    if (!isHomePage) return
+
+    let rafId = null
+    let timeoutId = null
+
+    const update = () => {
+      rafId = null
+
+      const scroller = document.querySelector('.main-scroll')
+      const scrollTop = scroller ? scroller.scrollTop : window.scrollY
+      const sections = document.querySelectorAll('[data-section-name]')
+
+      if (scrollTop < 5 || !sections.length) {
+        setActiveSectionName(basePageName)
+        return
+      }
+
+      const viewTop = scroller ? scroller.getBoundingClientRect().top : 0
+      const viewHeight = scroller ? scroller.clientHeight : window.innerHeight
+      const line = viewTop + viewHeight * 0.2
+
+      let current = null
+      let bestTop = -Infinity
+      sections.forEach((sec) => {
+        const r = sec.getBoundingClientRect()
+        if (r.height === 0) return
+        if (r.top <= line && r.bottom > line && r.top >= bestTop) {
+          bestTop = r.top
+          current = sec
+        }
+      })
+
+      const name = current ? current.getAttribute('data-section-name') : null
+      setActiveSectionName(name || basePageName)
+    }
+
+    const onScroll = () => {
+      if (rafId === null) rafId = requestAnimationFrame(update)
+    }
+
+    document.addEventListener('scroll', onScroll, true)
+    window.addEventListener('resize', onScroll)
+
+    timeoutId = setTimeout(update, 150)
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      if (rafId !== null) cancelAnimationFrame(rafId)
+      document.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [pathname, basePageName])
+
   // Close menus on Escape key
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        if (isMobileOpen) setIsMobileOpen(false);
+      if (e.key === 'Escape') {
+        if (isMobileOpen) setIsMobileOpen(false)
         if (isOpen && timelineRef.current) {
-          timelineRef.current.reverse();
-          setIsOpen(false);
+          timelineRef.current.reverse()
+          setIsOpen(false)
         }
       }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isMobileOpen, isOpen]);
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isMobileOpen, isOpen])
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
@@ -307,15 +357,19 @@ export default function TathvaMenu() {
 
       const tl = gsap.timeline({
         paused: true,
+        onReverseComplete: () => {
+          // Arrow only shows again after the panel is fully closed and tucked away
+          setShowArrow(true)
+        },
       })
 
       timelineRef.current = tl
 
-      /* 1. VERTICAL UNROLL: STRIP DROPS & NARROW PANEL UNROLLS VERTICALLY ATTACHED */
+      /* 1. VERTICAL UNROLL: STRIP DROPS & PANEL UNROLLS */
       tl.to(
         triggerRef.current,
         {
-          y: 380,
+          y: 375,
           duration: 0.5,
           ease: 'power2.inOut',
         },
@@ -374,11 +428,7 @@ export default function TathvaMenu() {
     return () => {
       ctx.revert()
     }
-  }, [])
-
-  /* =====================================================
-     OPEN / CLOSE DESKTOP MENU
-  ===================================================== */
+  }, [pathname])
 
   const toggleMenu = () => {
     const timeline = timelineRef.current
@@ -387,13 +437,26 @@ export default function TathvaMenu() {
     if (timeline.isActive()) return
 
     if (!isOpen) {
+      // Instantly hide the arrow when opening begins
+      setShowArrow(false)
       timeline.play()
       setIsOpen(true)
     } else {
+      // Ensure the arrow stays hidden while closing
+      setShowArrow(false)
       timeline.reverse()
       setIsOpen(false)
     }
   }
+
+  useEffect(() => {
+    window.__tathvaMenuToggle = toggleMenu
+    return () => {
+      if (window.__tathvaMenuToggle === toggleMenu) {
+        delete window.__tathvaMenuToggle
+      }
+    }
+  }, [toggleMenu])
 
   return (
     <div
@@ -664,6 +727,7 @@ export default function TathvaMenu() {
           absolute
           left-1/2
           top-0
+          z-30
           hidden
           lg:flex
           -translate-x-1/2
@@ -674,14 +738,15 @@ export default function TathvaMenu() {
           [clip-path:polygon(0_0,100%_0,100%_92%,93%_100%,7%_100%,0_92%)]
         '
       >
+        <div className="absolute inset-0 z-0 bg-[#2E2E2F]" aria-hidden="true" />
+
         {/* LEFT MENU */}
 
         <nav
           ref={leftColumnRef}
           className='
-            absolute
-            left-0
-            top-0
+            relative
+            z-10
             flex
             h-full
             w-1/2
@@ -770,7 +835,7 @@ export default function TathvaMenu() {
             absolute
             left-1/2
             top-5
-            z-10
+            z-20
             w-px
             -translate-x-1/2
             origin-top
@@ -783,9 +848,8 @@ export default function TathvaMenu() {
         <nav
           ref={rightColumnRef}
           className='
-            absolute
-            right-0
-            top-0
+            relative
+            z-10
             flex
             h-full
             w-1/2
@@ -872,24 +936,25 @@ export default function TathvaMenu() {
       ================================================= */}
 
       <button
+        id='tathva-menu-trigger'
         ref={triggerRef}
         type='button'
         onClick={toggleMenu}
         aria-label={isOpen ? 'Close menu' : 'Open menu'}
         aria-expanded={isOpen}
         className='
+          group
           pointer-events-auto
           absolute
           left-1/2
-          top-0
-          z-20
+          top-5
+          z-40
           hidden
           h-auto
-          w-[130px]
-          aspect-[100/28]
+          w-[540px]
           -translate-x-1/2
           cursor-pointer
-          items-start
+          items-center
           justify-center
           border-0
           bg-transparent
@@ -898,21 +963,60 @@ export default function TathvaMenu() {
           lg:flex
         '
       >
+        {/* Center Base Image */}
         <img
-          src='/images/menu/tathva.png'
+          src='/images/menu/tathva.svg'
           alt='Tathva 26'
           draggable={false}
-          className='
-            pointer-events-none
-            block
-            h-full
-            w-full
-            select-none
-            object-contain
-            object-top
-          '
+          className='pointer-events-none block h-auto w-full select-none object-contain'
         />
+
+        {/* Left Wing (aligned over the center image) */}
+        <img
+          src='/images/menu/tleft.svg'
+          alt=''
+          draggable={false}
+          className='pointer-events-none absolute -left-2 top-1/2 h-full w-[195px] -translate-y-5.25 select-none object-contain'
+        />
+
+        {/* Right Wing (aligned over the center image) */}
+        <img
+          src='/images/menu/tright.svg'
+          alt=''
+          draggable={false}
+          className='pointer-events-none absolute -right-2 top-1/2 h-full w-[195px] -translate-y-5.25 select-none object-contain'
+        />
+
+        {/* Current page or scrolled section name */}
+        <span
+          className={`${michroma.className} pointer-events-none absolute inset-0 flex select-none items-center justify-center text-[9px] leading-none tracking-[3px] text-white -translate-y-[5px] transition-all duration-200`}
+        >
+          {activeSectionName}
+        </span>
+
+        {/* Downward indicator chevron (only reappears once closing completes) */}
+        <span
+          className={`pointer-events-none absolute -bottom-3.5 left-1/2 flex -translate-x-1/2 items-center justify-center transition-all duration-300 ${
+            showArrow
+              ? 'opacity-80 scale-100 group-hover:opacity-100 group-hover:translate-y-0.5'
+              : 'opacity-0 scale-75 pointer-events-none -translate-y-1'
+          }`}
+          aria-hidden='true'
+        >
+          <svg
+            className='h-3.5 w-3.5 text-white/70 group-hover:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2.5'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+          >
+            <path d='M6 9l6 6 6-6' />
+          </svg>
+        </span>
       </button>
+
       <style>{`
         .mlink-flip {
           display: block;
