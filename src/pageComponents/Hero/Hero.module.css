@@ -240,10 +240,11 @@
 }
 */
 
-/* Trail sits directly over the island (same box, matching aspect) and
-   always stays in front of it. The bird flies in its own sibling layer
-   with identical geometry so MotionPath aligns to the same coordinates —
-   only the bird layer dips behind the island mid-flight. */
+/* Trail sits directly over the island (same box, matching aspect) and is
+   split into a back copy (behind the island) and a front copy (in front of
+   it); each instance sets its own z-index inline. The comet flies in its
+   own sibling layer with identical geometry so MotionPath aligns to the
+   same coordinates — only the comet layer dips behind the island mid-flight. */
 .trailWrap {
   position: absolute;
   left: 10%;
@@ -251,7 +252,6 @@
   width: 75%;
   height: 90%;
   pointer-events: none;
-  z-index: 2;
 }
 
 .trailSvg {
@@ -260,12 +260,21 @@
   width: 100%;
   height: 100%;
   overflow: visible;
+  /* Misty vapor trail: a tight bright core plus two widening, softer haze
+     layers, instead of one crisp line. Applied to the whole <svg> (not the
+     individual paths) so it rasterizes once at the element's real on-screen
+     size — the dynamically-drawn tail segment (cometFlight.js) is a plain
+     sibling <path> in the same svg, so it picks this up automatically. */
+  filter:
+    drop-shadow(0 0 1px rgba(224, 236, 255, 0.95))
+    drop-shadow(0 0 5px rgba(122, 170, 255, 0.7))
+    drop-shadow(0 0 13px rgba(59, 130, 246, 0.45));
 }
 
-/* Bird flight layer — same box as .trailWrap so the MotionPath alignment
+/* Comet flight layer — same box as .trailWrap so the MotionPath alignment
    matches the trail exactly. Starts above the island (z 2), drops to
    z 0 (behind the island image) mid-flight via GSAP. */
-.birdLayer {
+.cometLayer {
   position: absolute;
   left: 13%;
   top: -2%;
@@ -276,49 +285,125 @@
   overflow: visible;
 }
 
-.bird {
+.comet {
   position: absolute;
   left: 0;
   top: 0;
-  width: 25%;
-  aspect-ratio: 186 / 124;
+  width: 4rem;
+  aspect-ratio: 1 / 1;
   pointer-events: none;
   will-change: transform;
   overflow: visible;
 }
 
-.birdFlipper {
+/* Update this existing class to add mix-blend-mode */
+.cometFlipper {
   width: 100%;
   height: 100%;
   transform-origin: 50% 50%;
   will-change: transform;
+  mix-blend-mode: screen; /* Crucial: makes it act like real light */
 }
 
-.birdImg {
+/* ===============================
+   REALISTIC COMET PHYSICS
+   =============================== */
+
+/* 1. The massive, flickering ambient glow */
+.plasmaAura {
+  position: absolute;
+  top: 50%;
+  right: 40%;
+  width: 400%;
+  height: 250%;
+  transform: translateY(-50%);
+  background: radial-gradient(ellipse at right, rgba(59, 130, 246, 0.6) 0%, rgba(30, 58, 138, 0.25) 40%, transparent 75%);
+  filter: blur(12px);
+  z-index: 1;
+  border-radius: 100%;
+  animation: plasmaFlicker 0.08s infinite alternate;
+}
+
+/* 2. The razor-thin, bright inner plasma streak */
+.plasmaTail {
+  position: absolute;
+  top: 50%;
+  right: 50%; /* Anchored exactly to the center core */
+  width: 300%;
+  height: 3px;
+  transform: translateY(-50%);
+  background: linear-gradient(to right, transparent 0%, rgba(96, 165, 250, 0.8) 60%, rgba(255, 255, 255, 1) 100%);
+  border-radius: 100px;
+  filter: blur(1px);
+  box-shadow: 0 0 15px 3px rgba(96, 165, 250, 0.7);
+  z-index: 2;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 100%);
+}
+
+/* 3. The glowing gas pushed in front of the comet */
+/* 3. The glowing gas pushed in front of the comet */
+.plasmaBowShock {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 20px;
+  /* Pushed further right to sit exactly on the nose of the teardrop */
+  transform: translate(70%, -50%);
+  background: rgba(147, 197, 253, 0.9);
+  border-radius: 50%;
+  filter: blur(2px);
+  box-shadow:
+    4px 0 8px 1px rgba(255, 255, 255, 0.9),
+    8px 0 16px 4px rgba(59, 130, 246, 0.8);
+  z-index: 3;
+}
+
+/* 4. The blinding white physical rock/nucleus (Teardrop shape) */
+.plasmaCore {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px; /* Made longer so the tail taper is obvious */
+  height: 8px;
+  transform: translate(-30%, -50%);
+  background: #ffffff;
+  
+  /* Strict point on the left (0px), perfect round nose on the right (12px) */
+  border-radius: 0px 12px 12px 0px; 
+  
+  /* THE FIX: Reduced the white spread from 4px to 0px so the sharp tail isn't swallowed */
+  box-shadow:
+    0 0 6px 0px rgba(255, 255, 255, 1),
+    0 0 15px 4px rgba(191, 219, 254, 0.9);
+  z-index: 4;
+}
+
+/* Micro-turbulence makes the fire look alive instead of static */
+@keyframes plasmaFlicker {
+  0% { 
+    opacity: 0.75; 
+    transform: translateY(-50%) scale(0.96, 0.9); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: translateY(-50%) scale(1.04, 1.1); 
+  }
+}
+
+.cometSpark {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  display: block;
-  animation: birdFlap 0.9s ease-in-out infinite;
-  transform-origin: 50% 50%;
-}
-
-@keyframes birdFlap {
-
-  0%,
-  100% {
-    transform: scaleY(1) translateY(0);
-  }
-
-  50% {
-    transform: scaleY(0.82) translateY(-4%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .birdImg {
-    animation: none;
-  }
+  overflow: visible;
+  pointer-events: none;
+  user-select: none;
+  /* A light glow accent only — kept small so the teardrop shape itself stays
+     readable instead of blurring back into a soft ball. */
+  filter:
+    drop-shadow(0 0 1.5px rgba(255, 255, 255, 0.9))
+    drop-shadow(0 0 5px rgba(59, 130, 246, 0.5));
 }
 
 /* Foreground figure — nearest layer, strongest parallax. */
@@ -1182,6 +1267,14 @@
   .fixedLogo,
   .fixedRegister {
     display: none;
+  }
+
+  /* .girlWrap scales to 60x here (vs. 15.55x on desktop) — a layer that large promoted to its
+     own compositor layer is a plausible source of mid-gesture rasterisation hiccups on mobile
+     GPUs. She's also now faded out/hidden well before reaching that scale (see Hero.jsx
+     syncPortalFrame), so losing the promotion costs nothing visible. */
+  .girlWrap {
+    will-change: auto;
   }
 }
 

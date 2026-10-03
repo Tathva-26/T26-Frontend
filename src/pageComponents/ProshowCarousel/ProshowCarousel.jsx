@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import React, {
   memo,
@@ -8,16 +8,18 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from "react";
-import { proshowArtists } from "@/lib/proshowArtists";
-import useHoldToPlay from "@/hooks/useHoldToPlay";
-import { haptics } from "@/lib/haptics";
+} from 'react'
+import { proshowArtists } from '@/lib/proshowArtists'
+import useHoldToPlay from '@/hooks/useHoldToPlay'
+import { haptics } from '@/lib/haptics'
+import Navbar from '@/pageComponents/Navbar/Navbar'
+import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 
-const HOLD_MS = 1100;
-const RING_COUNT = 7;
-const SENS = 0.5;
-const SPRING_MS = 75;
-const IDLE_MS = 4250;
+const HOLD_MS = 1100
+const RING_COUNT = 7
+const SENS = 0.5
+const SPRING_MS = 75
+const IDLE_MS = 4250
 
 const carouselStyles = `
 /* ---------- animations ---------- */
@@ -55,12 +57,12 @@ const carouselStyles = `
 .proshow-carousel .keyPress { animation: keyPress 2.4s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .proshow-carousel .ringPulse, 
-  .proshow-carousel .twinkle, 
-  .proshow-carousel .twinkleSlow, 
-  .proshow-carousel .fadeUp, 
-  .proshow-carousel .eq, 
-  .proshow-carousel .hintPulse, 
+  .proshow-carousel .ringPulse,
+  .proshow-carousel .twinkle,
+  .proshow-carousel .twinkleSlow,
+  .proshow-carousel .fadeUp,
+  .proshow-carousel .eq,
+  .proshow-carousel .hintPulse,
   .proshow-carousel .keyPress {
     animation: none;
   }
@@ -254,21 +256,21 @@ const carouselStyles = `
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .proshow-carousel .smokeFar, 
-  .proshow-carousel .smokeNear, 
-  .proshow-carousel .aura, 
+  .proshow-carousel .smokeFar,
+  .proshow-carousel .smokeNear,
+  .proshow-carousel .aura,
   .proshow-carousel .dustInner {
     animation: none;
   }
 }
-`;
+`
 
-const N = proshowArtists.length;
+const N = proshowArtists.length
 
 // Only items within this radius are ever visible (the CSS opacity formula
 // already goes to 0 past a=3), so nothing further out needs to be mounted,
 // styled, or held as a GPU-composited layer.
-const VISIBLE_RADIUS = Math.min(3, Math.floor((N - 1) / 2));
+const VISIBLE_RADIUS = Math.min(3, Math.floor((N - 1) / 2))
 
 const SPARKLES = [
   { x: 70.7, y: 15.5, size: 30, rot: 84, o: 0.6 },
@@ -280,7 +282,7 @@ const SPARKLES = [
   { x: 15.1, y: 30.2, size: 28, rot: 31, o: 0.5 },
   { x: 80, y: 88, size: 30, rot: 22, o: 0.55 },
   { x: 34.2, y: 16.1, size: 20, rot: 14, o: 0.6 },
-];
+]
 
 const MINI_SPARKLES = [
   { x: 9.9, y: 97.7, size: 14, rot: 31, o: 0.68 },
@@ -299,81 +301,81 @@ const MINI_SPARKLES = [
   { x: 1.6, y: 70.8, size: 11, rot: 62, o: 0.6 },
   { x: 11.4, y: 84, size: 15, rot: 17, o: 0.45 },
   { x: 84, y: 18.4, size: 9, rot: 68, o: 0.41 },
-];
+]
 
 function offsetOf(i, active) {
-  let d = (((i - active) % N) + N) % N;
-  if (d > N / 2) d -= N;
-  return d;
+  let d = (((i - active) % N) + N) % N
+  if (d > N / 2) d -= N
+  return d
 }
 
 // Canvas-backed static starfield avoids re-rasterizing 100+ CSS radial gradients
 const CanvasStarfield = memo(function CanvasStarfield() {
-  const canvasRef = useRef(null);
+  const canvasRef = useRef(null)
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
 
-    let w = (canvas.width = window.innerWidth);
-    let h = (canvas.height = window.innerHeight);
+    let w = (canvas.width = window.innerWidth)
+    let h = (canvas.height = window.innerHeight)
 
     const onResize = () => {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-      draw();
-    };
+      w = canvas.width = window.innerWidth
+      h = canvas.height = window.innerHeight
+      draw()
+    }
 
     const draw = () => {
-      ctx.clearRect(0, 0, w, h);
+      ctx.clearRect(0, 0, w, h)
       // Fixed pseudo-random seed points for predictable rendering
-      let seed = 42;
+      let seed = 42
       const rnd = () => {
-        seed = (seed * 16807) % 2147483647;
-        return (seed - 1) / 2147483646;
-      };
+        seed = (seed * 16807) % 2147483647
+        return (seed - 1) / 2147483646
+      }
 
       for (let i = 0; i < 180; i++) {
-        const x = rnd() * w;
-        const y = rnd() * h;
-        const r = rnd() * 1.2 + 0.4;
-        const alpha = rnd() * 0.7 + 0.2;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(2)})`;
-        ctx.fill();
+        const x = rnd() * w
+        const y = rnd() * h
+        const r = rnd() * 1.2 + 0.4
+        const alpha = rnd() * 0.7 + 0.2
+        ctx.beginPath()
+        ctx.arc(x, y, r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(2)})`
+        ctx.fill()
       }
-    };
+    }
 
-    draw();
-    window.addEventListener("resize", onResize, { passive: true });
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+    draw()
+    window.addEventListener('resize', onResize, { passive: true })
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none absolute inset-0 size-full"
-      aria-hidden="true"
+      className='pointer-events-none absolute inset-0 size-full'
+      aria-hidden='true'
     />
-  );
-});
+  )
+})
 
 const BackgroundLayers = memo(function BackgroundLayers() {
-  const allSparkles = useMemo(() => [...SPARKLES, ...MINI_SPARKLES], []);
+  const allSparkles = useMemo(() => [...SPARKLES, ...MINI_SPARKLES], [])
 
   return (
     <>
-      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-        <div className="twinkle absolute inset-0">
+      <div className='pointer-events-none absolute inset-0' aria-hidden='true'>
+        <div className='twinkle absolute inset-0'>
           <CanvasStarfield />
         </div>
         {allSparkles.map((s, i) => (
           <span
             key={i}
-            className="sparkle absolute"
+            className='sparkle absolute'
             style={{
               left: `${s.x}%`,
               top: `${s.y}%`,
@@ -386,87 +388,102 @@ const BackgroundLayers = memo(function BackgroundLayers() {
         ))}
       </div>
 
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div className="smokeLayer smokeFar darkFar" />
-        <div className="smokeLayer smokeNear darkNear" />
-        <div className="litField">
-          <div className="smokeLayer smokeFar litFar" />
-          <div className="smokeLayer smokeNear litNear" />
+      <div
+        className='pointer-events-none absolute inset-0 overflow-hidden'
+        aria-hidden='true'
+      >
+        <div className='smokeLayer smokeFar darkFar' />
+        <div className='smokeLayer smokeNear darkNear' />
+        <div className='litField'>
+          <div className='smokeLayer smokeFar litFar' />
+          <div className='smokeLayer smokeNear litNear' />
         </div>
       </div>
     </>
-  );
-});
+  )
+})
 
 const AmbientRings = memo(function AmbientRings() {
   const ringDelays = useMemo(
     () => Array.from({ length: RING_COUNT }, (_, i) => `${i * -1.2}s`),
-    []
-  );
+    [],
+  )
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
+    <div
+      className='pointer-events-none absolute inset-0 z-0'
+      aria-hidden='true'
+    >
       {ringDelays.map((delay, i) => (
         <span
           key={i}
-          className="ringPulse absolute top-1/2 left-1/2 aspect-square w-[calc(var(--c)*(1+var(--k)*0.62))] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[rgba(190,170,255,0.09)]"
-          style={{ "--k": i + 1, animationDelay: delay }}
+          className='ringPulse absolute top-1/2 left-1/2 aspect-square w-[calc(var(--c)*(1+var(--k)*0.62))] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[rgba(190,170,255,0.09)]'
+          style={{ '--k': i + 1, animationDelay: delay }}
         />
       ))}
     </div>
-  );
-});
+  )
+})
 
 const AmbientDust = memo(function AmbientDust() {
   return (
-    <div className="dust" aria-hidden="true">
-      <div className="dustInner" />
+    <div className='dust' aria-hidden='true'>
+      <div className='dustInner' />
     </div>
-  );
-});
+  )
+})
 
 const HeaderBadges = memo(function HeaderBadges() {
   return (
     <>
-      <span className="absolute top-[clamp(14px,3dvh,30px)] left-[clamp(16px,2.4vw,32px)] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em]">
+      <span className='absolute top-[clamp(70px,3dvh,30px)] left-[clamp(16px,2.4vw,32px)] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em]'>
         TATHVA ‘26
       </span>
-      <span className="absolute top-[clamp(14px,3dvh,30px)] right-[clamp(8px,2.4vw,32px)] -mr-[0.45em] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em]">
+      <span className='absolute top-[clamp(70px,3dvh,30px)] right-[clamp(8px,2.4vw,32px)] -mr-[0.45em] z-2 font-(family-name:--font-bebas) text-[clamp(16px,2.4vw,30px)] tracking-[0.45em] max-sm:text-[14px] max-sm:tracking-[0.3em]'>
         PRO-SHOW
       </span>
     </>
-  );
-});
+  )
+})
 
 const PlayHint = memo(function PlayHint({ coarse }) {
   return (
     <div
-      className="hintPulse mt-[clamp(10px,2dvh,22px)] flex items-center gap-2.5 rounded-full border border-white/20 bg-white/5 px-5 py-1.5 text-white/85 shadow-[0_0_18px_-4px_rgba(201,182,255,0.5)]"
-      role="note"
-      aria-label={coarse ? "Hold the artist to play" : "Hold space bar to play"}
+      className='hintPulse mt-[clamp(10px,2dvh,22px)] flex items-center gap-2.5 rounded-full border border-white/20 bg-white/5 px-5 py-1.5 text-white/85 shadow-[0_0_18px_-4px_rgba(201,182,255,0.5)]'
+      role='note'
+      aria-label={coarse ? 'Hold the artist to play' : 'Hold space bar to play'}
     >
       {coarse && (
         <svg
-          className="keyPress size-4 shrink-0"
-          viewBox="0 0 24 24"
-          fill="none"
-          aria-hidden="true"
+          className='keyPress size-4 shrink-0'
+          viewBox='0 0 24 24'
+          fill='none'
+          aria-hidden='true'
         >
-          <circle cx="12" cy="10" r="4.5" stroke="currentColor" strokeWidth="1.6" />
+          <circle
+            cx='12'
+            cy='10'
+            r='4.5'
+            stroke='currentColor'
+            strokeWidth='1.6'
+          />
           <path
-            d="M4 21c1.6-3.4 4.6-5 8-5s6.4 1.6 8 5"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
+            d='M4 21c1.6-3.4 4.6-5 8-5s6.4 1.6 8 5'
+            stroke='currentColor'
+            strokeWidth='1.6'
+            strokeLinecap='round'
           />
         </svg>
       )}
-      <span className="text-[clamp(11px,1.2vw,16px)] tracking-[0.04em]" aria-hidden="true">
-        {coarse ? "HOLD THE ARTIST TO PLAY" : "HOLD SPACE BAR TO PLAY"}
+      <span
+        className='text-[clamp(11px,1.2vw,16px)] tracking-[0.04em]'
+        aria-hidden='true'
+      >
+        {coarse ? 'HOLD THE ARTIST TO PLAY' : 'HOLD SPACE BAR TO PLAY'}
       </span>
     </div>
-  );
-});
+  )
+})
 
 const CarouselItem = memo(function CarouselItem({
   artist,
@@ -479,35 +496,34 @@ const CarouselItem = memo(function CarouselItem({
 }) {
   const handlePointerDown = useCallback(
     (e) => onPointerDown(e, isCenter, index),
-    [onPointerDown, isCenter, index]
-  );
+    [onPointerDown, isCenter, index],
+  )
 
   const handleClick = useCallback(
     (e) => onItemClick(e, isCenter, index),
-    [onItemClick, isCenter, index]
-  );
+    [onItemClick, isCenter, index],
+  )
 
   const handleKeyDown = useCallback((e) => {
-    if (e.code === "Space") e.preventDefault();
-  }, []);
+    if (e.code === 'Space') e.preventDefault()
+  }, [])
 
   const handleContextMenu = useCallback((e) => {
-    e.preventDefault();
-  }, []);
+    e.preventDefault()
+  }, [])
 
-  const handleRef = useCallback(
-    (el) => setRef(el, index),
-    [setRef, index]
-  );
+  const handleRef = useCallback((el) => setRef(el, index), [setRef, index])
 
   return (
     <button
-      type="button"
+      type='button'
       tabIndex={isCenter ? 0 : -1}
-      className="item absolute inset-0 cursor-grab touch-pan-y overflow-hidden rounded-full border-0 bg-[#120b22] p-0 outline-none [-webkit-tap-highlight-color:transparent] active:cursor-grabbing"
-      style={{ willChange: isFar ? "auto" : "transform, opacity" }}
+      className='item absolute inset-0 cursor-grab touch-pan-y overflow-hidden rounded-full border-0 bg-[#120b22] p-0 outline-none [-webkit-tap-highlight-color:transparent] active:cursor-grabbing'
+      style={{ willChange: isFar ? 'auto' : 'transform, opacity' }}
       ref={handleRef}
-      aria-label={isCenter ? `${artist.name}, hold to play` : `Show ${artist.name}`}
+      aria-label={
+        isCenter ? `${artist.name}, hold to play` : `Show ${artist.name}`
+      }
       aria-current={isCenter}
       aria-hidden={isFar}
       onPointerDown={handlePointerDown}
@@ -516,161 +532,171 @@ const CarouselItem = memo(function CarouselItem({
       onContextMenu={handleContextMenu}
     >
       <img
-        className="pointer-events-none block size-full object-cover"
+        className='pointer-events-none block size-full object-cover'
         src={artist.image}
-        alt=""
+        alt=''
         draggable={false}
         // Only the centered artist needs to decode/paint immediately; every
         // neighboring image can be deferred so it doesn't compete for the
         // main thread or network during a drag/swipe.
-        loading={isCenter ? "eager" : "lazy"}
-        decoding="async"
-        fetchPriority={isCenter ? "high" : "low"}
+        loading={isCenter ? 'eager' : 'lazy'}
+        decoding='async'
+        fetchPriority={isCenter ? 'high' : 'low'}
       />
     </button>
-  );
-});
+  )
+})
 
-const EQ_DELAYS = [0, -0.3, -0.6];
+const EQ_DELAYS = [0, -0.3, -0.6]
 
 const NowPlayingWidget = memo(function NowPlayingWidget({ artist, playing }) {
   return (
     <div
       className={`pointer-events-none absolute right-[clamp(12px,2.4vw,32px)] bottom-[clamp(12px,3dvh,32px)] z-7 flex items-center gap-3 rounded-full bg-white/[0.07] py-2 pr-[18px] pl-2 backdrop-blur-[10px] transition-[opacity,translate] duration-400 max-sm:right-1/2 max-sm:bottom-3.5 max-sm:translate-x-1/2 ${
-        playing ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+        playing ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
       }`}
     >
       <img
         src={artist.image}
-        alt=""
-        className="size-11 rounded-full object-cover"
+        alt=''
+        className='size-11 rounded-full object-cover'
         draggable={false}
-        loading="lazy"
-        decoding="async"
+        loading='lazy'
+        decoding='async'
       />
-      <div className="flex flex-col leading-[1.15]">
-        <span className="text-[8px] tracking-[0.08em] text-[#ddd]">
+      <div className='flex flex-col leading-[1.15]'>
+        <span className='text-[8px] tracking-[0.08em] text-[#ddd]'>
           NOW PLAYING
         </span>
-        <span className="text-base font-bold">{artist.track.title}</span>
-        <span className="text-[9px] text-[#ccc]">{artist.track.artist}</span>
+        <span className='text-base font-bold'>{artist.track.title}</span>
+        <span className='text-[9px] text-[#ccc]'>{artist.track.artist}</span>
       </div>
-      <span className="ml-1 inline-flex h-3.5 items-end gap-0.5" aria-hidden="true">
+      <span
+        className='ml-1 inline-flex h-3.5 items-end gap-0.5'
+        aria-hidden='true'
+      >
         {EQ_DELAYS.map((delay) => (
           <i
             key={delay}
-            className="eq h-full w-[3px] origin-bottom rounded-xs bg-[#c9b6ff]"
+            className='eq h-full w-[3px] origin-bottom rounded-xs bg-[#c9b6ff]'
             style={{ animationDelay: `${delay}s` }}
           />
         ))}
       </span>
     </div>
-  );
-});
+  )
+})
 
 function ProshowCarousel() {
-  const [active, setActive] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  const [coarse, setCoarse] = useState(false);
+  const [active, setActive] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const [coarse, setCoarse] = useState(false)
 
-  const audioRef = useRef(null);
-  const progressRef = useRef(null);
-  const pageRef = useRef(null);
-  const orbitRef = useRef(null);
-  const itemRefs = useRef([]);
-  const playingRef = useRef(false);
-  const activeRef = useRef(0);
-  const posRef = useRef(0);
-  const tweenRef = useRef(0);
-  const goalRef = useRef(0);
-  const followingRef = useRef(false);
-  const velRef = useRef(0);
-  const gesture = useRef({ down: false, moved: false });
-  const stepPxRef = useRef(240); // Cached dimensions eliminate forced layout reflows
+  const audioRef = useRef(null)
+  const progressRef = useRef(null)
+  const pageRef = useRef(null)
+  const orbitRef = useRef(null)
+  const itemRefs = useRef([])
+  const playingRef = useRef(false)
+  const activeRef = useRef(0)
+  const posRef = useRef(0)
+  const tweenRef = useRef(0)
+  const goalRef = useRef(0)
+  const followingRef = useRef(false)
+  const velRef = useRef(0)
+  const gesture = useRef({ down: false, moved: false })
+  const stepPxRef = useRef(240) // Cached dimensions eliminate forced layout reflows
   // Responsive layout numbers (orbit radius in px, and the --x1/--x2/--x3/
   // --o1/--o2 curve constants) read once per resize instead of being solved
   // by CSS calc() on every animation frame. Defaults match the desktop
   // values so the first paint (before the initial measure) still looks right.
-  const metricsRef = useRef({ c: 300, x1: 0.8, x2: 1.32, x3: 1.7, o1: 0.6, o2: 0.4 });
+  const metricsRef = useRef({
+    c: 300,
+    x1: 0.8,
+    x2: 1.32,
+    x3: 1.7,
+    o1: 0.6,
+    o2: 0.4,
+  })
 
-  const artist = useMemo(() => proshowArtists[active], [active]);
-  const movingTimerRef = useRef(0);
-  const movingRef = useRef(false);
+  const artist = useMemo(() => proshowArtists[active], [active])
+  const movingTimerRef = useRef(0)
+  const movingRef = useRef(false)
 
   useLayoutEffect(() => {
-    const cores = navigator.hardwareConcurrency || 8;
-    const mem = navigator.deviceMemory || 8;
-    if (cores <= 4 || mem <= 4) pageRef.current?.setAttribute("data-lite", "");
-  }, []);
+    const cores = navigator.hardwareConcurrency || 8
+    const mem = navigator.deviceMemory || 8
+    if (cores <= 4 || mem <= 4) pageRef.current?.setAttribute('data-lite', '')
+  }, [])
 
   useEffect(() => {
-    const mq = window.matchMedia("(pointer: coarse)");
-    const update = () => setCoarse(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
+    const mq = window.matchMedia('(pointer: coarse)')
+    const update = () => setCoarse(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
 
   useEffect(() => {
-    const audio = new Audio();
-    audio.loop = false;
-    audio.preload = "none";
-    audioRef.current = audio;
+    const audio = new Audio()
+    audio.loop = false
+    audio.preload = 'none'
+    audioRef.current = audio
     return () => {
-      audio.pause();
-      audio.removeAttribute("src");
-      audio.load();
-      audioRef.current = null;
-    };
-  }, []);
+      audio.pause()
+      audio.removeAttribute('src')
+      audio.load()
+      audioRef.current = null
+    }
+  }, [])
 
   const startTrack = useCallback((index) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const src = proshowArtists[index].track.src;
-    if (!audio.src.endsWith(src)) audio.src = src;
-    audio.currentTime = 0;
+    const audio = audioRef.current
+    if (!audio) return
+    const src = proshowArtists[index].track.src
+    if (!audio.src.endsWith(src)) audio.src = src
+    audio.currentTime = 0
     audio
       .play()
       .then(() => {
-        playingRef.current = true;
-        setPlaying(true);
+        playingRef.current = true
+        setPlaying(true)
       })
       .catch(() => {
-        playingRef.current = false;
-        setPlaying(false);
-      });
-  }, []);
+        playingRef.current = false
+        setPlaying(false)
+      })
+  }, [])
 
   const stopTrack = useCallback(() => {
-    audioRef.current?.pause();
-    playingRef.current = false;
-    setPlaying(false);
-  }, []);
+    audioRef.current?.pause()
+    playingRef.current = false
+    setPlaying(false)
+  }, [])
 
-  const lastLockRef = useRef(1);
+  const lastLockRef = useRef(1)
 
   const applyPos = useCallback(
     (p) => {
-      posRef.current = p;
+      posRef.current = p
       if (!movingRef.current) {
-        movingRef.current = true;
-        pageRef.current?.classList.add("moving");
+        movingRef.current = true
+        pageRef.current?.classList.add('moving')
       }
-      clearTimeout(movingTimerRef.current);
+      clearTimeout(movingTimerRef.current)
       movingTimerRef.current = setTimeout(() => {
-        movingRef.current = false;
-        pageRef.current?.classList.remove("moving");
-      }, 120);
-      const off = Math.min(1, Math.abs(p - Math.round(p)) * 2.2);
-      const lock = 1 - off * off * (3 - 2 * off);
+        movingRef.current = false
+        pageRef.current?.classList.remove('moving')
+      }, 120)
+      const off = Math.min(1, Math.abs(p - Math.round(p)) * 2.2)
+      const lock = 1 - off * off * (3 - 2 * off)
       // --lock now only drives plain `opacity` (see .auraLock), so this is
       // compositor-only — but still skip the DOM write when it wouldn't
       // produce a visible difference, to cut needless style work during
       // fast drags.
       if (Math.abs(lock - lastLockRef.current) > 0.008) {
-        lastLockRef.current = lock;
-        pageRef.current?.style.setProperty("--lock", lock.toFixed(3));
+        lastLockRef.current = lock
+        pageRef.current?.style.setProperty('--lock', lock.toFixed(3))
       }
       // Only items within VISIBLE_RADIUS(+1 buffer) are ever mounted, so this
       // loop is now bounded (≈7 elements) instead of scanning every artist.
@@ -679,222 +705,230 @@ function ProshowCarousel() {
       // now plain JS, written straight to `transform`/`opacity` as numbers --
       // far cheaper for the browser to apply, which matters most exactly
       // when it's most visible: during drag.
-      const { c, x1, x2, x3, o1, o2 } = metricsRef.current;
+      const { c, x1, x2, x3, o1, o2 } = metricsRef.current
       itemRefs.current.forEach((el, i) => {
-        if (!el) return;
-        let d = (((i - p) % N) + N) % N;
-        if (d > N / 2) d -= N;
-        const a = Math.abs(d);
-        const sgn = d < 0 ? -1 : 1;
-        const m1 = Math.min(a, 1);
-        const m2 = Math.min(Math.max(a - 1, 0), 1);
-        const m3 = Math.min(Math.max(a - 2, 0), 1);
-        const tx = c * sgn * (x1 * m1 + (x2 - x1) * m2 + (x3 - x2) * m3);
-        const scale = 1 - 0.32 * m1 - 0.18 * m2 - 0.2 * m3;
-        const opacity = 1 - (1 - o1) * m1 - (o1 - o2) * m2 - o2 * m3;
-        el.style.transform = `translate3d(${tx.toFixed(2)}px,0,0) scale(${scale.toFixed(3)})`;
-        el.style.opacity = opacity.toFixed(3);
-        const m1s = m1.toFixed(2);
+        if (!el) return
+        let d = (((i - p) % N) + N) % N
+        if (d > N / 2) d -= N
+        const a = Math.abs(d)
+        const sgn = d < 0 ? -1 : 1
+        const m1 = Math.min(a, 1)
+        const m2 = Math.min(Math.max(a - 1, 0), 1)
+        const m3 = Math.min(Math.max(a - 2, 0), 1)
+        const tx = c * sgn * (x1 * m1 + (x2 - x1) * m2 + (x3 - x2) * m3)
+        const scale = 1 - 0.32 * m1 - 0.18 * m2 - 0.2 * m3
+        const opacity = 1 - (1 - o1) * m1 - (o1 - o2) * m2 - o2 * m3
+        el.style.transform = `translate3d(${tx.toFixed(2)}px,0,0) scale(${scale.toFixed(3)})`
+        el.style.opacity = opacity.toFixed(3)
+        const m1s = m1.toFixed(2)
         if (el.dataset.m !== m1s) {
-          el.dataset.m = m1s;
-          el.style.setProperty("--m1", m1s);
+          el.dataset.m = m1s
+          el.style.setProperty('--m1', m1s)
         }
         // Only the darkening overlay (::after) still needs a CSS variable,
         // and it's a single multiplication rather than a dependent chain.
         // zIndex and pointerEvents changes can invalidate style/paint even
         // when the written value is identical to the current one, so guard
         // them explicitly instead of writing on every frame.
-        const z = String(Math.round(10 - a * 2));
+        const z = String(Math.round(10 - a * 2))
         if (el.dataset.z !== z) {
-          el.dataset.z = z;
-          el.style.zIndex = z;
+          el.dataset.z = z
+          el.style.zIndex = z
         }
-        const pe = a > 2.5 ? "none" : "";
+        const pe = a > 2.5 ? 'none' : ''
         if (el.dataset.pe !== pe) {
-          el.dataset.pe = pe;
-          el.style.pointerEvents = pe;
+          el.dataset.pe = pe
+          el.style.pointerEvents = pe
         }
-      });
-      const idx = ((Math.round(p) % N) + N) % N;
+      })
+      const idx = ((Math.round(p) % N) + N) % N
       if (idx !== activeRef.current) {
-        activeRef.current = idx;
-        setActive(idx);
-        if (playingRef.current) stopTrack();
+        activeRef.current = idx
+        setActive(idx)
+        if (playingRef.current) stopTrack()
       }
     },
-    [stopTrack]
-  );
+    [stopTrack],
+  )
 
   useLayoutEffect(() => {
-    const page = pageRef.current;
-    const orbit = orbitRef.current;
-    if (!page || !orbit) return;
+    const page = pageRef.current
+    const orbit = orbitRef.current
+    if (!page || !orbit) return
     const measure = () => {
-      const p = page.getBoundingClientRect();
-      const o = orbit.getBoundingClientRect();
-      stepPxRef.current = o.width * 0.8 || 240;
-      page.style.setProperty("--beam-cy", `${Math.round(o.top - p.top + o.height / 2)}px`);
+      const p = page.getBoundingClientRect()
+      const o = orbit.getBoundingClientRect()
+      stepPxRef.current = o.width * 0.8 || 240
+      page.style.setProperty(
+        '--beam-cy',
+        `${Math.round(o.top - p.top + o.height / 2)}px`,
+      )
       // Read the responsive --c/--x1/--x2/--x3/--o1/--o2 values (they change
       // across the max-lg/max-sm breakpoints) once here, so applyPos never
       // needs CSS to resolve them per frame -- it just reads plain numbers.
-      const cs = getComputedStyle(page);
+      const cs = getComputedStyle(page)
       const num = (name, fallback) => {
-        const v = parseFloat(cs.getPropertyValue(name));
-        return Number.isFinite(v) ? v : fallback;
-      };
-      const prev = metricsRef.current;
+        const v = parseFloat(cs.getPropertyValue(name))
+        return Number.isFinite(v) ? v : fallback
+      }
+      const prev = metricsRef.current
       metricsRef.current = {
-        c: num("--c", prev.c),
-        x1: num("--x1", prev.x1),
-        x2: num("--x2", prev.x2),
-        x3: num("--x3", prev.x3),
-        o1: num("--o1", prev.o1),
-        o2: num("--o2", prev.o2),
-      };
-      applyPos(posRef.current);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(page);
-    ro.observe(orbit.parentElement);
-    document.fonts?.ready.then(measure);
-    return () => ro.disconnect();
-  }, [applyPos]);
+        c: num('--c', prev.c),
+        x1: num('--x1', prev.x1),
+        x2: num('--x2', prev.x2),
+        x3: num('--x3', prev.x3),
+        o1: num('--o1', prev.o1),
+        o2: num('--o2', prev.o2),
+      }
+      applyPos(posRef.current)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(page)
+    ro.observe(orbit.parentElement)
+    document.fonts?.ready.then(measure)
+    return () => ro.disconnect()
+  }, [applyPos])
 
   const stopTween = useCallback(() => {
-    cancelAnimationFrame(tweenRef.current);
-    tweenRef.current = 0;
-    followingRef.current = false;
-  }, []);
+    cancelAnimationFrame(tweenRef.current)
+    tweenRef.current = 0
+    followingRef.current = false
+  }, [])
 
   const animateTo = useCallback(
     (target, fast = false) => {
-      stopTween();
-      goalRef.current = target;
-      const from = posRef.current;
-      if (from === target) return;
-      const dur = fast ? 300 : Math.min(450 + Math.abs(target - from) * 100, 800);
-      let t0;
+      stopTween()
+      goalRef.current = target
+      const from = posRef.current
+      if (from === target) return
+      const dur = fast
+        ? 300
+        : Math.min(450 + Math.abs(target - from) * 100, 800)
+      let t0
       const tick = (now) => {
-        t0 ??= now;
-        const k = Math.min((now - t0) / dur, 1);
-        const e = 1 - Math.pow(1 - k, 3);
-        applyPos(from + (target - from) * e);
-        if (k < 1) tweenRef.current = requestAnimationFrame(tick);
-        else tweenRef.current = 0;
-      };
-      tweenRef.current = requestAnimationFrame(tick);
+        t0 ??= now
+        const k = Math.min((now - t0) / dur, 1)
+        const e = 1 - Math.pow(1 - k, 3)
+        applyPos(from + (target - from) * e)
+        if (k < 1) tweenRef.current = requestAnimationFrame(tick)
+        else tweenRef.current = 0
+      }
+      tweenRef.current = requestAnimationFrame(tick)
     },
-    [applyPos, stopTween]
-  );
+    [applyPos, stopTween],
+  )
 
   const followTo = useCallback(
     (goal) => {
-      goalRef.current = goal;
-      if (followingRef.current) return;
-      stopTween();
-      followingRef.current = true;
-      velRef.current = 0;
-      let last = performance.now();
-      const w = 1 / SPRING_MS;
+      goalRef.current = goal
+      if (followingRef.current) return
+      stopTween()
+      followingRef.current = true
+      velRef.current = 0
+      let last = performance.now()
+      const w = 1 / SPRING_MS
       const tick = (now) => {
-        const dt = Math.min(now - last, 40);
-        last = now;
-        const x = posRef.current - goalRef.current;
-        const v = velRef.current;
-        const acc = -w * w * x - 2 * w * v;
-        const nv = v + acc * dt;
-        const nx = x + nv * dt;
-        velRef.current = nv;
-        const done = Math.abs(nx) < 0.001 && Math.abs(nv) < 0.0002;
-        applyPos(done ? goalRef.current : goalRef.current + nx);
-        if (done) stopTween();
-        else tweenRef.current = requestAnimationFrame(tick);
-      };
-      tweenRef.current = requestAnimationFrame(tick);
+        const dt = Math.min(now - last, 40)
+        last = now
+        const x = posRef.current - goalRef.current
+        const v = velRef.current
+        const acc = -w * w * x - 2 * w * v
+        const nv = v + acc * dt
+        const nx = x + nv * dt
+        velRef.current = nv
+        const done = Math.abs(nx) < 0.001 && Math.abs(nv) < 0.0002
+        applyPos(done ? goalRef.current : goalRef.current + nx)
+        if (done) stopTween()
+        else tweenRef.current = requestAnimationFrame(tick)
+      }
+      tweenRef.current = requestAnimationFrame(tick)
     },
-    [applyPos, stopTween]
-  );
+    [applyPos, stopTween],
+  )
 
-  const step = useCallback((dir) => animateTo(Math.round(goalRef.current) + dir), [animateTo]);
+  const step = useCallback(
+    (dir) => animateTo(Math.round(goalRef.current) + dir),
+    [animateTo],
+  )
 
   const goTo = useCallback(
     (index) => {
-      animateTo(Math.round(posRef.current) + offsetOf(index, activeRef.current));
+      animateTo(Math.round(posRef.current) + offsetOf(index, activeRef.current))
     },
-    [animateTo]
-  );
+    [animateTo],
+  )
 
-  const idleTimerRef = useRef(0);
+  const idleTimerRef = useRef(0)
   const resetIdle = useCallback(() => {
-    clearTimeout(idleTimerRef.current);
+    clearTimeout(idleTimerRef.current)
     idleTimerRef.current = setTimeout(function tick() {
-      if (!gesture.current.down && !playingRef.current) step(1);
-      idleTimerRef.current = setTimeout(tick, IDLE_MS);
-    }, IDLE_MS);
-  }, [step]);
+      if (!gesture.current.down && !playingRef.current) step(1)
+      idleTimerRef.current = setTimeout(tick, IDLE_MS)
+    }, IDLE_MS)
+  }, [step])
 
   useEffect(() => {
-    resetIdle();
-    window.addEventListener("pointerdown", resetIdle, { passive: true });
-    window.addEventListener("wheel", resetIdle, { passive: true });
-    window.addEventListener("keydown", resetIdle, { passive: true });
+    resetIdle()
+    window.addEventListener('pointerdown', resetIdle, { passive: true })
+    window.addEventListener('wheel', resetIdle, { passive: true })
+    window.addEventListener('keydown', resetIdle, { passive: true })
     return () => {
-      clearTimeout(idleTimerRef.current);
-      window.removeEventListener("pointerdown", resetIdle);
-      window.removeEventListener("wheel", resetIdle);
-      window.removeEventListener("keydown", resetIdle);
-    };
-  }, [resetIdle]);
+      clearTimeout(idleTimerRef.current)
+      window.removeEventListener('pointerdown', resetIdle)
+      window.removeEventListener('wheel', resetIdle)
+      window.removeEventListener('keydown', resetIdle)
+    }
+  }, [resetIdle])
 
   const stopAndAdvance = useCallback(() => {
-    stopTrack();
-    step(1);
-    resetIdle();
-  }, [stopTrack, step, resetIdle]);
+    stopTrack()
+    step(1)
+    resetIdle()
+  }, [stopTrack, step, resetIdle])
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.addEventListener("ended", stopAndAdvance);
-    return () => audio.removeEventListener("ended", stopAndAdvance);
-  }, [stopAndAdvance]);
+    const audio = audioRef.current
+    if (!audio) return
+    audio.addEventListener('ended', stopAndAdvance)
+    return () => audio.removeEventListener('ended', stopAndAdvance)
+  }, [stopAndAdvance])
 
   const onProgress = useCallback((p) => {
-    progressRef.current?.style.setProperty("stroke-dashoffset", String(1 - p));
-  }, []);
+    progressRef.current?.style.setProperty('stroke-dashoffset', String(1 - p))
+  }, [])
 
   const onComplete = useCallback(() => {
-    startTrack(activeRef.current);
-  }, [startTrack]);
+    startTrack(activeRef.current)
+  }, [startTrack])
 
-  const didMountRef = useRef(false);
+  const didMountRef = useRef(false)
   const { holding, start, cancel } = useHoldToPlay({
     duration: HOLD_MS,
     onProgress,
     onComplete,
-  });
+  })
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.code === "ArrowRight") step(1);
-      else if (e.code === "ArrowLeft") step(-1);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [step]);
+      if (e.code === 'ArrowRight') step(1)
+      else if (e.code === 'ArrowLeft') step(-1)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [step])
 
   useEffect(() => {
-    cancel();
-    if (didMountRef.current) haptics.tick();
-    didMountRef.current = true;
-  }, [active, cancel]);
+    cancel()
+    if (didMountRef.current) haptics.tick()
+    didMountRef.current = true
+  }, [active, cancel])
 
   useEffect(() => {
-    const page = pageRef.current;
-    if (!page) return;
-    let settle = 0;
-    let dir = 0;
+    const page = pageRef.current
+    if (!page) return
+    let settle = 0
+    let dir = 0
     const onWheel = (e) => {
       // Require deltaX to clearly dominate (not just edge it out) before
       // hijacking the wheel event for carousel rotation — a mostly-vertical
@@ -902,39 +936,46 @@ function ProshowCarousel() {
       // tie-breaking threshold that jitter was intermittently swallowing
       // page-scroll wheel ticks, making scrolling past this section feel like
       // it randomly stalls.
-      if (Math.abs(e.deltaX) < 4 || Math.abs(e.deltaX) <= Math.abs(e.deltaY) * 2) return;
-      e.preventDefault();
-      cancel();
-      dir = Math.sign(e.deltaX);
-      if (!followingRef.current) goalRef.current = posRef.current;
-      followTo(goalRef.current + (e.deltaX / stepPxRef.current) * SENS);
-      clearTimeout(settle);
+      if (
+        Math.abs(e.deltaX) < 4 ||
+        Math.abs(e.deltaX) <= Math.abs(e.deltaY) * 2
+      )
+        return
+      e.preventDefault()
+      cancel()
+      dir = Math.sign(e.deltaX)
+      if (!followingRef.current) goalRef.current = posRef.current
+      followTo(goalRef.current + (e.deltaX / stepPxRef.current) * SENS)
+      clearTimeout(settle)
       settle = setTimeout(() => {
-        const p = goalRef.current;
-        const target = dir > 0 ? Math.floor(p + 0.75) : Math.ceil(p - 0.75);
-        followTo(target);
-      }, 40);
-    };
-    page.addEventListener("wheel", onWheel, { passive: false });
+        const p = goalRef.current
+        const target = dir > 0 ? Math.floor(p + 0.75) : Math.ceil(p - 0.75)
+        followTo(target)
+      }, 40)
+    }
+    page.addEventListener('wheel', onWheel, { passive: false })
     return () => {
-      page.removeEventListener("wheel", onWheel);
-      clearTimeout(settle);
-    };
-  }, [followTo, cancel]);
+      page.removeEventListener('wheel', onWheel)
+      clearTimeout(settle)
+    }
+  }, [followTo, cancel])
 
-  useEffect(() => () => {
-    stopTween();
-    clearTimeout(movingTimerRef.current);
-  }, [stopTween]);
+  useEffect(
+    () => () => {
+      stopTween()
+      clearTimeout(movingTimerRef.current)
+    },
+    [stopTween],
+  )
 
   const onPointerDown = useCallback(
     (e, isCenter, index) => {
-      if (!e.isPrimary || gesture.current.down) return;
+      if (!e.isPrimary || gesture.current.down) return
       try {
-        e.currentTarget.setPointerCapture(e.pointerId);
+        e.currentTarget.setPointerCapture(e.pointerId)
       } catch {}
-      stopTween();
-      goalRef.current = posRef.current;
+      stopTween()
+      goalRef.current = posRef.current
       gesture.current = {
         index,
         x: e.clientX,
@@ -945,59 +986,61 @@ function ProshowCarousel() {
         lastT: e.timeStamp,
         moved: false,
         down: true,
-      };
-      if (isCenter) start();
+      }
+      if (isCenter) start()
     },
-    [start, stopTween]
-  );
+    [start, stopTween],
+  )
 
   const onItemClick = useCallback(
     (e, isCenter, index) => {
-      if (!isCenter && e.detail === 0) goTo(index);
+      if (!isCenter && e.detail === 0) goTo(index)
     },
-    [goTo]
-  );
+    [goTo],
+  )
 
   const setItemRef = useCallback((el, i) => {
-    itemRefs.current[i] = el;
-  }, []);
+    itemRefs.current[i] = el
+  }, [])
 
   const onPointerMove = useCallback(
     (e) => {
-      const g = gesture.current;
-      if (!g.down) return;
-      const dx = e.clientX - g.x;
-      if (!g.moved && Math.abs(dx) < 8 && Math.abs(e.clientY - g.y) < 8) return;
+      const g = gesture.current
+      if (!g.down) return
+      const dx = e.clientX - g.x
+      if (!g.moved && Math.abs(dx) < 8 && Math.abs(e.clientY - g.y) < 8) return
       if (!g.moved) {
-        cancel();
-        if (e.pointerType === "touch") haptics.tick();
+        cancel()
+        if (e.pointerType === 'touch') haptics.tick()
       }
-      g.moved = true;
-      const now = e.timeStamp;
+      g.moved = true
+      const now = e.timeStamp
       if (now > g.lastT) {
-        g.vx = 0.7 * g.vx + 0.3 * ((e.clientX - g.lastX) / (now - g.lastT));
+        g.vx = 0.7 * g.vx + 0.3 * ((e.clientX - g.lastX) / (now - g.lastT))
       }
-      g.lastX = e.clientX;
-      g.lastT = now;
-      followTo(g.startPos - (dx / stepPxRef.current) * SENS);
+      g.lastX = e.clientX
+      g.lastT = now
+      followTo(g.startPos - (dx / stepPxRef.current) * SENS)
     },
-    [cancel, followTo]
-  );
+    [cancel, followTo],
+  )
 
   const onPointerUp = useCallback(() => {
-    const g = gesture.current;
-    if (!g.down) return;
-    g.down = false;
-    cancel();
+    const g = gesture.current
+    if (!g.down) return
+    g.down = false
+    cancel()
     if (!g.moved) {
       if (g.index !== undefined && g.index !== activeRef.current) {
-        haptics.select();
-        goTo(g.index);
+        haptics.select()
+        goTo(g.index)
       }
-      return;
+      return
     }
-    followTo(Math.round(goalRef.current - ((g.vx * 160) / stepPxRef.current) * SENS));
-  }, [cancel, followTo, goTo]);
+    followTo(
+      Math.round(goalRef.current - ((g.vx * 160) / stepPxRef.current) * SENS),
+    )
+  }, [cancel, followTo, goTo])
 
   // Windowed rendering: the CSS opacity formula already zeroes out anything
   // past VISIBLE_RADIUS steps from center, so items outside that window are
@@ -1005,13 +1048,13 @@ function ProshowCarousel() {
   // and always-on `will-change` compositor layers to maintain — this is the
   // main fix for the reported lag on lists with many artists.
   const carouselItems = useMemo(() => {
-    const items = [];
-    const seen = new Set();
+    const items = []
+    const seen = new Set()
     for (let o = -VISIBLE_RADIUS; o <= VISIBLE_RADIUS; o++) {
-      const i = ((active + o) % N + N) % N;
-      if (seen.has(i)) continue; // guard against wraparound dupes when N is small
-      seen.add(i);
-      const a = proshowArtists[i];
+      const i = (((active + o) % N) + N) % N
+      if (seen.has(i)) continue // guard against wraparound dupes when N is small
+      seen.add(i)
+      const a = proshowArtists[i]
       items.push(
         <CarouselItem
           key={a.id}
@@ -1022,64 +1065,68 @@ function ProshowCarousel() {
           onPointerDown={onPointerDown}
           onItemClick={onItemClick}
           setRef={setItemRef}
-        />
-      );
+        />,
+      )
     }
-    return items;
-  }, [active, onPointerDown, onItemClick, setItemRef]);
+    return items
+  }, [active, onPointerDown, onItemClick, setItemRef])
 
   return (
     <main
       ref={pageRef}
-      className="proshow-carousel relative grid h-dvh w-full touch-pan-y select-none grid-rows-[auto_minmax(0,1fr)_auto_auto_auto] items-center justify-items-center overflow-hidden bg-[radial-gradient(ellipse_at_50%_45%,#100e18_0%,#0a0912_55%,#050408_100%)] px-4 pt-[clamp(14px,3dvh,32px)] pb-[clamp(28px,7dvh,64px)] text-white [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [--c:clamp(180px,min(38dvh,36vw),470px)] [--o1:0.6] [--o2:0.4] [--x1:0.8] [--x2:1.32] [--x3:1.7] max-lg:[--c:clamp(170px,min(40dvh,52vw),420px)] max-lg:[--x1:0.84] max-lg:[--x2:1.38] max-sm:pb-[92px] max-sm:[--c:min(58vw,40dvh)] max-sm:[--o1:0.78] max-sm:[--o2:0] max-sm:[--x1:0.65] max-sm:[--x2:1.4]"
+      className='proshow-carousel relative grid h-dvh w-full touch-pan-y select-none grid-rows-[auto_minmax(0,1fr)_auto_auto_auto] items-center justify-items-center overflow-hidden bg-[radial-gradient(ellipse_at_50%_45%,#100e18_0%,#0a0912_55%,#050408_100%)] px-4 pt-[clamp(14px,3dvh,32px)] pb-[clamp(28px,7dvh,64px)] text-white [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [--c:clamp(180px,min(38dvh,36vw),470px)] [--o1:0.6] [--o2:0.4] [--x1:0.8] [--x2:1.32] [--x3:1.7] max-lg:[--c:clamp(170px,min(40dvh,52vw),420px)] max-lg:[--x1:0.84] max-lg:[--x2:1.38] max-sm:pb-[92px] max-sm:[--c:min(58vw,40dvh)] max-sm:[--o1:0.78] max-sm:[--o2:0] max-sm:[--x1:0.65] max-sm:[--x2:1.4]'
     >
+      <div className='hidden lg:block'>
+        <Navbar />
+      </div>
+      <TathvaMenu />
       <style>{carouselStyles}</style>
       <BackgroundLayers />
       <HeaderBadges />
 
       <h1
         key={artist.id}
-        className="fadeUp z-2 mt-[clamp(22px,4dvh,44px)] text-center font-(family-name:--font-space) text-[clamp(40px,min(9vw,11dvh),104px)] leading-none font-bold tracking-[-0.01em]"
+        className='fadeUp z-2 mt-[clamp(22px,4dvh,44px)] text-center font-(family-name:--font-space) text-[clamp(40px,min(9vw,11dvh),104px)] leading-none font-bold tracking-[-0.01em]'
       >
         {artist.name}
       </h1>
 
       <section
-        className="relative z-1 grid h-full min-h-0 w-full touch-pan-y place-items-center py-[clamp(10px,2.5dvh,28px)]"
-        aria-roledescription="carousel"
-        aria-label="Proshow artists"
+        className='relative z-1 grid h-full min-h-0 w-full touch-pan-y place-items-center py-[clamp(10px,2.5dvh,28px)]'
+        aria-roledescription='carousel'
+        aria-label='Proshow artists'
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         onPointerLeave={onPointerUp}
       >
-        <div className="relative h-(--c) w-(--c)" ref={orbitRef}>
+        <div className='relative h-(--c) w-(--c)' ref={orbitRef}>
           <AmbientRings />
-          <div className="auraLock" aria-hidden="true">
-            <div className="aura" />
+          <div className='auraLock' aria-hidden='true'>
+            <div className='aura' />
           </div>
           <svg
-            className="pointer-events-none absolute -inset-[6.5%] z-6 h-[113%] w-[113%] overflow-visible"
-            viewBox="0 0 100 100"
-            aria-hidden="true"
+            className='pointer-events-none absolute -inset-[6.5%] z-6 h-[113%] w-[113%] overflow-visible'
+            viewBox='0 0 100 100'
+            aria-hidden='true'
           >
             <circle
-              className="fill-none stroke-white opacity-90 [stroke-width:0.35]"
-              cx="50"
-              cy="50"
-              r="49.4"
+              className='fill-none stroke-white opacity-90 [stroke-width:0.35]'
+              cx='50'
+              cy='50'
+              r='49.4'
             />
             <circle
               ref={progressRef}
               className={`origin-center -rotate-90 fill-none stroke-[#c9b6ff] drop-shadow-[0_0_3px_#a78bfa] [stroke-linecap:round] [stroke-width:1.6] ${
-                holding ? "opacity-100" : "opacity-0"
+                holding ? 'opacity-100' : 'opacity-0'
               }`}
-              cx="50"
-              cy="50"
-              r="49.4"
-              pathLength="1"
-              strokeDasharray="1"
-              strokeDashoffset="1"
+              cx='50'
+              cy='50'
+              r='49.4'
+              pathLength='1'
+              strokeDasharray='1'
+              strokeDashoffset='1'
             />
           </svg>
 
@@ -1091,13 +1138,13 @@ function ProshowCarousel() {
 
       <p
         key={`d-${artist.id}`}
-        className="fadeUp -mr-[0.4em] mt-[clamp(8px,1.6dvh,18px)] text-center font-(family-name:--font-bebas) text-[clamp(20px,3vw,34px)] tracking-[0.4em] uppercase"
+        className='fadeUp -mr-[0.4em] mt-[clamp(8px,1.6dvh,18px)] text-center font-(family-name:--font-bebas) text-[clamp(20px,3vw,34px)] tracking-[0.4em] uppercase'
       >
         {artist.date}
       </p>
       <p
         key={`p-${artist.id}`}
-        className="fadeUp mt-[clamp(8px,1.6dvh,18px)] line-clamp-4 max-w-[min(640px,100%)] overflow-hidden text-justify text-[clamp(12px,1.35vw,17px)] leading-[1.55] text-[#ece8f7] [text-align-last:center] max-sm:line-clamp-3 max-sm:text-center [@media(max-height:520px)]:hidden!"
+        className='fadeUp mt-[clamp(8px,1.6dvh,18px)] line-clamp-4 max-w-[min(640px,100%)] overflow-hidden text-justify text-[clamp(12px,1.35vw,17px)] leading-[1.55] text-[#ece8f7] [text-align-last:center] max-sm:line-clamp-3 max-sm:text-center [@media(max-height:520px)]:hidden!'
       >
         {artist.description}
       </p>
@@ -1105,7 +1152,7 @@ function ProshowCarousel() {
       <AmbientDust />
       <NowPlayingWidget artist={artist} playing={playing} />
     </main>
-  );
+  )
 }
 
-export default memo(ProshowCarousel);
+export default memo(ProshowCarousel)

@@ -2,11 +2,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { useGSAP } from '@gsap/react'
-// MotionPathPlugin ships inside the installed `gsap` package (all
-// GSAP plugins are free since 3.13), so no new dependency is needed.
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
+import { useGSAP } from '@gsap/react'
+import { animateComet, TRAIL_START, BRIDGE, TRAIL_END, FLIGHT_PATH } from './cometFlight'
 import styles from './Hero.module.css'
+
 
 // Register once at module level so ScrollTrigger.refresh() is safe to
 // call from any effect, regardless of effect order.
@@ -25,7 +25,6 @@ const assetBase = '/images/hero/'
 // The portal is drawn by this video; it sits over a hole cut in the scene (the real Frame shows
 // through the hole) and fades out as the portal grows. PORTAL_IMG_FADE_END = portal progress (0..1) at which it is fully gone.
 const PORTAL_VIDEO = 'portalloop.mp4' // small, low-res, muted, seamless loop
-const PORTAL_POSTER = 'img.png' // shown until the first video frame is ready
 const PORTAL_IMG_FADE_END = 0.85
 
 // Decorative PNG frame around the portal. It sits inside the portal div, so it zooms with it.
@@ -240,9 +239,12 @@ export const Hero = ({
   const portalFrameImgRef = useRef(null)
   const islandRef = useRef(null)
   const trailPathRef = useRef(null)
-  const birdLayerRef = useRef(null)
-  const birdRef = useRef(null)
-  const birdFlipperRef = useRef(null)
+  const frontStrokeRef = useRef(null)
+  const clipBackRef = useRef(null)
+  const clipFrontRef = useRef(null)
+  const cometLayerRef = useRef(null)
+  const cometRef = useRef(null)
+  const cometFlipperRef = useRef(null)
   const girlRef = useRef(null)
   const identityRef = useRef(null)
   const coordsRef = useRef(null)
@@ -275,7 +277,7 @@ export const Hero = ({
   }, [])
 
   // Hero stays mounted (hidden) while Frame is showing. Stop the title video decoding and freeze
-  // the CSS animations (bird flap etc.) until Hero is the active panel again.
+  // the CSS animations until Hero is the active panel again.
   useEffect(() => {
     const video = videoRef.current
     if (video) {
@@ -297,6 +299,27 @@ export const Hero = ({
     }
     return undefined
   }, [isActive])
+
+  // Mobile only: iOS Low Power Mode and some Android browsers silently block or suspend
+  // <video> autoplay/decode, which shows the poster or a blank frame instead of the loop.
+  // Retry play() once on the first touch, and again whenever the tab regains visibility.
+  useEffect(() => {
+    if (!isMobile) return undefined
+    const retryPlayback = () => {
+      if (!isActive) return
+      videoRef.current?.play().catch(() => {})
+      portalVideoRef.current?.play().catch(() => {})
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') retryPlayback()
+    }
+    window.addEventListener('touchstart', retryPlayback, { once: true, passive: true })
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('touchstart', retryPlayback)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [isMobile, isActive])
 
   // Enter click: ripple at the click point, then animate the hero
   // scroll runway to its end (portal zoom), then let the page scroll
@@ -496,6 +519,9 @@ export const Hero = ({
 
     let lastKey = ''
     let refreshTimer = 0
+    // Mobile only (see the check below): last viewport size we actually acted on.
+    let lastMobileViewportW = 0
+    let lastMobileViewportH = 0
 
     const updateDesignScale = () => {
       const designWidth = scene.offsetWidth
@@ -508,12 +534,29 @@ export const Hero = ({
 
       const mobileMode = window.matchMedia('(max-width: 768px)').matches
 
+      // Mobile only: the URL bar hiding/showing while scrolling fires ResizeObserver
+      // notifications that only change viewport HEIGHT by a small amount. Rebuilding every
+      // ScrollTrigger tween mid-gesture for that (invalidateOnRefresh below) is what makes the
+      // scene jump/flash, so ignore height-only changes under this threshold. A real rotation
+      // or breakpoint change still goes through (width changes, or a big enough height jump).
+      if (mobileMode) {
+        if (
+          lastMobileViewportW &&
+          viewportWidth === lastMobileViewportW &&
+          Math.abs(viewportHeight - lastMobileViewportH) < 140
+        ) {
+          return
+        }
+        lastMobileViewportW = viewportWidth
+        lastMobileViewportH = viewportHeight
+      }
+
       const key = `${designWidth}|${designHeight}|${viewportWidth}|${viewportHeight}|${mobileMode}`
       if (key === lastKey) return
       lastKey = key
 
       // On desktop, scale to fit the viewport height so the top of the scene
-      // (including the bird flight, island, and sky) is never cropped off on wider screens.
+      // (including the comet flight, island, and sky) is never cropped off on wider screens.
       // On mobile, use cover scale so the portrait canvas fills the screen.
       const scale = mobileMode
         ? Math.max(viewportWidth / designWidth, viewportHeight / designHeight)
@@ -550,7 +593,7 @@ export const Hero = ({
           // visible regardless of orientation (landscape/portrait).
           // Measure the actual navbar height; fall back to 68px.
           const navEl = document.querySelector('.nb')
-          const navH = navEl ? navEl.getBoundingClientRect().bottom : 68
+         const navH = navEl?.getBoundingClientRect().bottom || 68
           const PAD = 20
 
           // Theme — top-left, flush below navbar
@@ -783,6 +826,7 @@ export const Hero = ({
         let lastFrameImgOpacity = -1
         let lastWrapOpacity = -1
         let lastGirlHidden = false
+        let lastGirlOpacity = -1
         const syncPortalFrame = () => {
           const portalEl = portalRef.current
           if (!portalEl) return
@@ -821,7 +865,21 @@ export const Hero = ({
           // The girl layer is scaled up to 15.55x (desktop) / 60x (mobile) by the time the
           // portal is fully open, which keeps a huge decoded texture alive for nothing (it's
           // fully covered by the portal/Frame by then). Drop it once covered, restore on the way back.
-          if (girlRef.current) {
+          if (girlRef.current && isMobile) {
+            // Mobile only: 60x (vs. desktop's 15.55x) is well past typical mobile GPU
+            // compositing budgets, a likely contributor to the mobile-only flicker. Fade her
+            // out earlier and drop her a bit sooner than desktop's flat p>=0.9 cutoff.
+            const go = 1 - gsap.utils.clamp(0, 1, (p - 0.55) / 0.25) // 1 at p<=0.55, 0 at p>=0.8
+            if (go !== lastGirlOpacity) {
+              lastGirlOpacity = go
+              girlRef.current.style.opacity = go
+            }
+            const hideGirl = p >= 0.8
+            if (hideGirl !== lastGirlHidden) {
+              lastGirlHidden = hideGirl
+              girlRef.current.style.visibility = hideGirl ? 'hidden' : 'visible'
+            }
+          } else if (girlRef.current) {
             const hideGirl = p >= 0.9
             if (hideGirl !== lastGirlHidden) {
               lastGirlHidden = hideGirl
@@ -943,74 +1001,18 @@ export const Hero = ({
         }
       }
 
-      // Bird flight — flies along the combined trail (both segments merged
-      // with bridge + extension beyond the trail end). The outer .bird div
-      // is positioned by MotionPath; the inner birdFlipper handles the
-      // mirror flip; the innermost img does the wing-flap via CSS.
-      //
-      // Behaviour:
-      //  • Starts facing left (scaleX -1)
-      //  • Gradually flips to right around the curve turnaround (~5s)
-      //  • After the first trail segment (~7s), drops behind the island
-      //  • Continues through bridge, second segment, and extension
-      //  • Stops ~2-3s after the visible trail ends
-      if (
-        birdRef.current &&
-        birdFlipperRef.current &&
-        trailPathRef.current &&
-        birdLayerRef.current
-      ) {
-        const reduceMotion = window.matchMedia?.(
-          '(prefers-reduced-motion: reduce)',
-        ).matches
-        const flightDuration = 11
-        const baseMotionPath = {
+      // Follow the original route, then exit and rejoin outside the viewport.
+      if (cometRef.current && cometFlipperRef.current && trailPathRef.current && cometLayerRef.current) {
+        return animateComet({
           path: trailPathRef.current,
-          align: trailPathRef.current,
-          alignOrigin: [0.5, 0.5],
-        }
-        if (!reduceMotion) {
-          const flight = gsap.timeline()
-          // 1. Motion path along the combined curve (outer container only)
-          flight.fromTo(
-            birdRef.current,
-            {
-              motionPath: { ...baseMotionPath, start: 0, end: 0 },
-            },
-            {
-              motionPath: { ...baseMotionPath, start: 0, end: 1 },
-              duration: flightDuration,
-              ease: 'sine.inOut',
-            },
-            0,
-          )
-          // 2. Initial orientation: facing left (scaleX: -1)
-          flight.set(
-            birdFlipperRef.current,
-            { scaleX: -1, transformOrigin: '50% 50%' },
-            0,
-          )
-          // 3. Gradual flip to facing right around the turnaround (~5.0s to ~6.6s)
-          flight.fromTo(
-            birdFlipperRef.current,
-            { scaleX: -1, transformOrigin: '50% 50%' },
-            { scaleX: 1, duration: 2.0, ease: 'sine.inOut' },
-            4.5,
-          )
-          // 4. After the first trail segment, send only the bird layer
-          // behind the island (~6s) — the trail stays in front.
-          flight.set(birdLayerRef.current, { zIndex: 0 }, 6.0)
-        } else {
-          // Static pose: park the bird at the end facing right, behind island.
-          gsap.set(birdRef.current, {
-            motionPath: { ...baseMotionPath, start: 1, end: 1 },
-          })
-          gsap.set(birdFlipperRef.current, {
-            scaleX: 1,
-            transformOrigin: '50% 50%',
-          })
-          gsap.set(birdLayerRef.current, { zIndex: 0 })
-        }
+          comet: cometRef.current,
+          flipper: cometFlipperRef.current,
+          layer: cometLayerRef.current,
+          viewport: viewportRef.current,
+          frontStrokes: [frontStrokeRef.current],
+          clipBack: clipBackRef.current,
+          clipFront: clipFrontRef.current,
+        })
       }
     },
     { scope: scrollerRef, dependencies: [isMobile], revertOnUpdate: true },
@@ -1247,7 +1249,10 @@ export const Hero = ({
                 aria-hidden='true'
                 src={`${assetBase}islandv2.png`}
               />
-              <div className={styles.trailWrap}>
+              {/* Back copy of the trail: shows only AFTER the curve (cometFlight.js sizes
+                  the clip rect to the island's leftmost point, where the comet passes
+                  behind it). */}
+              <div className={styles.trailWrap} style={{ zIndex: 0 }}>
                 <svg
                   className={styles.trailSvg}
                   viewBox='0 0 562 363'
@@ -1256,38 +1261,85 @@ export const Hero = ({
                   preserveAspectRatio='xMidYMid meet'
                   aria-hidden='true'
                 >
+                  <defs>
+                    <clipPath id='trailBackClip'>
+                      <rect ref={clipBackRef} x='-2000' y='-2000' width='5000' height='2000' />
+                    </clipPath>
+                  </defs>
                   {/* Visible trail strokes (two segments with gap) */}
                   <path
-                    d='M560.523 361.761C293.335 280.614 -343.389 227.67 237.506 62.9024'
+                    data-flight-trail=''
+                    style={{ visibility: 'hidden' }}
+                    d={`${TRAIL_START}${BRIDGE}`}
+                    clipPath='url(#trailBackClip)'
                     stroke='#7787FF'
                     strokeWidth='1.11538'
                     strokeLinecap='round'
                   />
                   <path
-                    d='M379.513 43.6052C484.905 18.8653 490.756 16.8861 507.085 0.557739'
+                    data-flight-trail=''
+                    style={{ visibility: 'hidden' }}
+                    d={TRAIL_END}
                     stroke='#7787FF'
                     strokeWidth='1.11538'
                     strokeLinecap='round'
                   />
-                  {/* Hidden combined path for bird motion:
+                  {/* Hidden combined path for comet motion:
                                         segment 1 → smooth bridge → segment 2 → extension */}
                   <path
                     ref={trailPathRef}
-                    d='M560.523 361.761C293.335 280.614 -343.389 227.67 237.506 62.9024C290 54 340 47 379.513 43.6052C484.905 18.8653 490.756 16.8861 507.085 0.557739C518 -8 530 -18 545 -30'
+                    d={FLIGHT_PATH}
                     stroke='none'
                     fill='none'
                   />
                 </svg>
               </div>
-              <div ref={birdLayerRef} className={styles.birdLayer}>
-                <div ref={birdRef} className={styles.bird}>
-                  <div ref={birdFlipperRef} className={styles.birdFlipper}>
-                    <img
-                      className={styles.birdImg}
-                      alt=''
-                      aria-hidden='true'
-                      src={`${assetBase}birdv2.png`}
-                    />
+              {/* Front copy: sits in front of the island, shows only BEFORE the curve. */}
+              <div className={styles.trailWrap} style={{ zIndex: 2 }}>
+                <svg
+                  className={styles.trailSvg}
+                  viewBox='0 0 562 363'
+                  fill='none'
+                  xmlns='http://www.w3.org/2000/svg'
+                  preserveAspectRatio='xMidYMid meet'
+                  aria-hidden='true'
+                >
+                  <defs>
+                    <clipPath id='trailFrontClip'>
+                      <rect ref={clipFrontRef} x='-2000' y='0' width='5000' height='5000' />
+                    </clipPath>
+                  </defs>
+                  <path
+                    ref={frontStrokeRef}
+                    style={{ visibility: 'hidden' }}
+                    d={`${TRAIL_START}${BRIDGE}`}
+                    clipPath='url(#trailFrontClip)'
+                    stroke='#7787FF'
+                    strokeWidth='1.11538'
+                    strokeLinecap='round'
+                  />
+                </svg>
+              </div>
+              {/* cometLayer's z-index is driven by animateComet (cometFlight.js), not CSS:
+                  it dips behind the island once the comet rounds the curve. */}
+              <div ref={cometLayerRef} className={styles.cometLayer}>
+                <div ref={cometRef} className={styles.comet} style={{ visibility: 'hidden' }}>
+                  <div ref={cometLayerRef} className={styles.cometLayer}>
+                    <div ref={cometRef} className={styles.comet} style={{ visibility: 'hidden' }}>
+                      <div ref={cometFlipperRef} className={styles.cometFlipper}>
+                        {/* Layer 1: Ambient surrounding glow (Coma) */}
+                        <div className={styles.plasmaAura} aria-hidden='true' />
+                        
+                        {/* Layer 2: High-velocity ion tail */}
+                        <div className={styles.plasmaTail} aria-hidden='true' />
+                        
+                        {/* Layer 3: Compressed front edge (Bow Shock) */}
+                        <div className={styles.plasmaBowShock} aria-hidden='true' />
+                        
+                        {/* Layer 4: Blinding hot center */}
+                        <div className={styles.plasmaCore} aria-hidden='true' />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1388,7 +1440,6 @@ export const Hero = ({
               <video
                 ref={portalVideoRef}
                 src={`${assetBase}${PORTAL_VIDEO}`}
-                poster={`${assetBase}${PORTAL_POSTER}`}
                 autoPlay
                 loop
                 muted

@@ -128,6 +128,7 @@
   font-weight: 700;
   line-height: 56px;
   text-align: center;
+   transform: translateY(50px);
 }
 
 .panel {
@@ -138,6 +139,7 @@
   border-radius: 17px;
   background: rgba(0, 0, 0, 0.6);
   box-shadow: 0 4px 4px rgba(255, 255, 255, 0.25);
+   transform: translateY(50px);
 }
 
 .form {

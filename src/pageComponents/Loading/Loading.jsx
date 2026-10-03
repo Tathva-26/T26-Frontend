@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
+import { holdLoader, loaderHolds, onLoaderHoldsChange } from '@/lib/loadGate'
 
 const EASE_OUT_CUBIC = (t) => 1 - Math.pow(1 - t, 3)
 const REVEAL_DURATION = 900 // ms, radial mask reveal after loading completes
@@ -151,7 +152,11 @@ export default function Preloader({ onComplete }) {
   // -------------------------------------------------------------
   useEffect(() => {
     const MIN_VISIBLE_MS = 1200
-    const MAX_WAIT_MS = 15000
+    // The whole page is mounted behind the preloader and it waits for all of
+    // it, frame sequences included (see lib/loadGate), so that nothing is
+    // still loading or setting itself up once the page is shown. On a slow
+    // connection that takes a while; past this it is shown regardless.
+    const MAX_WAIT_MS = 30000
     const QUIET_MS = 400
     const start = performance.now()
 
@@ -162,6 +167,7 @@ export default function Preloader({ onComplete }) {
     const finish = () => {
       if (settled) return
       settled = true
+      stopWatchingHolds()
       observer.disconnect()
       clearTimeout(quietTimer)
       clearTimeout(maxTimer)
@@ -172,9 +178,15 @@ export default function Preloader({ onComplete }) {
     const maybeFinishWhenQuiet = () => {
       clearTimeout(quietTimer)
       quietTimer = setTimeout(() => {
-        if (pending.size === 0) finish()
+        if (pending.size === 0 && loaderHolds() === 0) finish()
       }, QUIET_MS)
     }
+    // Assets loaded from script rather than from the markup: see lib/loadGate.
+    const stopWatchingHolds = onLoaderHoldsChange(maybeFinishWhenQuiet)
+    // The fonts too, so text doesn't change face after the reveal.
+    const releaseFonts = holdLoader('fonts')
+    if (document.fonts?.ready) document.fonts.ready.then(releaseFonts, releaseFonts)
+    else releaseFonts()
 
     const trackMedia = (el) => {
       const isImage = el.tagName === 'IMG'
@@ -226,6 +238,8 @@ export default function Preloader({ onComplete }) {
 
     return () => {
       settled = true
+      stopWatchingHolds()
+      releaseFonts()
       observer.disconnect()
       clearTimeout(quietTimer)
       clearTimeout(maxTimer)
@@ -260,6 +274,7 @@ export default function Preloader({ onComplete }) {
       }
 
       setDone(true)
+      window.dispatchEvent(new Event('tathva:ready'))
       if (onComplete) onComplete()
     }
 
@@ -316,6 +331,7 @@ export default function Preloader({ onComplete }) {
       {/* PRELOADER WRAPPER: Added overflow-hidden */}
       <div
         ref={overlayRef}
+        data-preloader=''
         className={`fixed inset-0 z-[10050] flex items-center justify-center bg-[#030303] overflow-hidden ${
           revealing ? 'pointer-events-none' : ''
         }`}

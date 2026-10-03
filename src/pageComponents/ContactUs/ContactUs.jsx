@@ -1,52 +1,54 @@
-'use client';
+'use client'
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { useState } from 'react';
-import styles from './ContactUs.module.css';
-import { BACKEND_ENABLED, PATHS, api, apiErrorMessage, apiFieldErrors } from '@/lib/api';
-import { CONTACT_FIELDS, normalisePhone, validateContact } from '@/lib/validation';
+import Image from 'next/image'
+import Link from 'next/link'
+import { useState } from 'react'
+import styles from './ContactUs.module.css'
+import Navbar from '@/pageComponents/Navbar/Navbar'
+import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
+import { BACKEND_ENABLED, PATHS, api, apiErrorMessage, apiFieldErrors } from '@/lib/api'
+import { CONTACT_FIELDS, normalisePhone, validateContact } from '@/lib/validation'
 
 export default function ContactUs() {
-  const [fieldErrors, setFieldErrors] = useState({});
-  const [status, setStatus] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [status, setStatus] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit(event) {
-    event.preventDefault();
-    if (submitting) return;
+    event.preventDefault()
+    if (submitting) return
 
-    const form = event.currentTarget;
-    const data = new FormData(form);
+    const form = event.currentTarget
+    const data = new FormData(form)
     const values = Object.fromEntries(
       CONTACT_FIELDS.map((field) => [field, String(data.get(field) ?? '').trim()]),
-    );
+    )
 
-    const errors = validateContact(values);
+    const errors = validateContact(values)
     if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      setStatus({ kind: 'error', message: 'Check the highlighted fields and try again.' });
-      return;
+      setFieldErrors(errors)
+      setStatus({ kind: 'error', message: 'Check the highlighted fields and try again.' })
+      return
     }
 
-    setFieldErrors({});
+    setFieldErrors({})
 
     if (!BACKEND_ENABLED) {
       setStatus({
         kind: 'error',
         message: 'The contact form is not open yet. Please try again later.',
-      });
-      return;
+      })
+      return
     }
 
-    setSubmitting(true);
-    setStatus(null);
+    setSubmitting(true)
+    setStatus(null)
 
     try {
       const response = await api.post(PATHS.contactCreate, {
         ...values,
         phone: normalisePhone(values.phone),
-      });
+      })
 
       // The backend signals success with 201. A 200 here is not a success,
       // so it must not be treated as one.
@@ -54,92 +56,107 @@ export default function ContactUs() {
         setStatus({
           kind: 'error',
           message: 'Your message could not be sent. Please try again.',
-        });
-        return;
+        })
+        return
       }
 
-      form.reset();
-      setStatus({ kind: 'success', message: 'Thanks — your query has reached us.' });
+      form.reset()
+      setStatus({ kind: 'success', message: 'Thanks — your query has reached us.' })
     } catch (error) {
       // The form is deliberately left as it was, so nothing has to be retyped.
-      setFieldErrors(apiFieldErrors(error));
+      setFieldErrors(apiFieldErrors(error))
       setStatus({
         kind: 'error',
         message: apiErrorMessage(error, 'Your message could not be sent. Please try again.'),
-      });
+      })
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
   }
 
   /** Clears a field's error as soon as it is edited, rather than on resubmit. */
   function handleInput(event) {
-    const { name } = event.target;
+    const { name } = event.target
     setFieldErrors((previous) => {
-      if (!name || !previous[name]) return previous;
-      const next = { ...previous };
-      delete next[name];
-      return next;
-    });
+      if (!name || !previous[name]) return previous
+      const next = { ...previous }
+      delete next[name]
+      return next
+    })
   }
 
   function fieldProps(name) {
-    const message = fieldErrors[name];
+    const message = fieldErrors[name]
     return {
       'aria-invalid': message ? 'true' : undefined,
       'aria-describedby': message ? `contact-${name}-error` : undefined,
-    };
+    }
   }
 
   function fieldError(name) {
-    const message = fieldErrors[name];
-    if (!message) return null;
+    const message = fieldErrors[name]
+    if (!message) return null
 
     return (
-      <span className={styles.fieldError} id={`contact-${name}-error`} role="alert">
+      <span className={styles.fieldError} id={`contact-${name}-error`} role='alert'>
         {message}
       </span>
-    );
+    )
   }
 
   return (
     <div className={styles.page}>
-      <Link className={styles.brand} href="/" aria-label="Tathva home">
+      {/* <Link className={styles.brand} href="/" aria-label="Tathva home">
         <Image src="/images/contact-us/tathva-logo.png" alt="Tathva" fill priority sizes="55px" />
-      </Link>
+      </Link> */}
 
       <main className={styles.main}>
+        <div className='hidden lg:block'>
+          <Navbar />
+        </div>
+        <TathvaMenu />
         <h1 className={styles.title}>CONTACT US</h1>
 
-        <section className={styles.panel} aria-label="Contact form">
+        <section className={styles.panel} aria-label='Contact form'>
           <form className={styles.form} onSubmit={handleSubmit} onInput={handleInput} noValidate>
             <div className={styles.fieldRow}>
-              <label className={styles.topicLabel} htmlFor="contact-topic">Topic:</label>
-              <input className={styles.control} id="contact-topic" name="topic" {...fieldProps('topic')} />
+              <label className={styles.topicLabel} htmlFor='contact-topic'>
+                Topic:
+              </label>
+              <input
+                className={styles.control}
+                id='contact-topic'
+                name='topic'
+                {...fieldProps('topic')}
+              />
               {fieldError('topic')}
             </div>
 
             <div className={styles.pairedFields}>
               <div className={styles.fieldRow}>
-                <label className={styles.nameLabel} htmlFor="contact-name">Name:</label>
+                <label className={styles.nameLabel} htmlFor='contact-name'>
+                  Name:
+                </label>
                 <input
                   className={styles.control}
-                  id="contact-name"
-                  name="name"
-                  autoComplete="name"
+                  id='contact-name'
+                  name='name'
+                  autoComplete='name'
                   {...fieldProps('name')}
                 />
                 {fieldError('name')}
               </div>
               <div className={styles.fieldRow}>
-                <label className={styles.phoneLabel} htmlFor="contact-phone">Phone No:</label>
+                <label className={styles.phoneLabel} htmlFor='contact-phone'>
+                  Phone No:
+                </label>
                 <input
                   className={styles.control}
-                  id="contact-phone"
-                  name="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  inputMode="tel"
+                  id='contact-phone'
+                  name='phone'
+                  type='tel'
+                  autoComplete='tel'
+                  inputMode='tel'
                   {...fieldProps('phone')}
                 />
                 {fieldError('phone')}
@@ -147,32 +164,36 @@ export default function ContactUs() {
             </div>
 
             <div className={styles.fieldRow}>
-              <label className={styles.emailLabel} htmlFor="contact-email">Email:</label>
+              <label className={styles.emailLabel} htmlFor='contact-email'>
+                Email:
+              </label>
               <input
                 className={styles.control}
-                id="contact-email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id='contact-email'
+                name='email'
+                type='email'
+                autoComplete='email'
                 {...fieldProps('email')}
               />
               {fieldError('email')}
             </div>
 
             <div className={`${styles.fieldRow} ${styles.queryRow}`}>
-              <label className={styles.queryLabel} htmlFor="contact-query">Query:</label>
+              <label className={styles.queryLabel} htmlFor='contact-query'>
+                Query:
+              </label>
               <textarea
                 className={`${styles.control} ${styles.queryControl}`}
-                id="contact-query"
-                name="query"
+                id='contact-query'
+                name='query'
                 {...fieldProps('query')}
               />
               {fieldError('query')}
             </div>
 
             <div className={styles.submitArea}>
-              <button className={styles.submitButton} type="submit" disabled={submitting}>
-                {submitting ? 'Sending…' : <>Submit <span aria-hidden="true">→</span></>}
+              <button className={styles.submitButton} type='submit' disabled={submitting}>
+                {submitting ? 'Sending…' : <>Submit <span aria-hidden='true'>→</span></>}
               </button>
               {status && (
                 <p
@@ -189,5 +210,5 @@ export default function ContactUs() {
         </section>
       </main>
     </div>
-  );
+  )
 }

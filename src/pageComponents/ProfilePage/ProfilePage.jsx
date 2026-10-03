@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './ProfilePage.module.css';
 import Galaxy from '../../components/Galaxy/Galaxy';
+import Navbar from '@/pageComponents/Navbar/Navbar';
+import TathvaMenu from '@/components/TathvaMenu/TathvaMenu';
 import { PATHS, api, apiErrorMessage, apiErrorStatus, apiFieldErrors } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { joinBookings } from '@/lib/bookings';
@@ -18,8 +20,6 @@ import {
 import { useUser } from '@/context/UserContext';
 import { useBookings } from '@/hooks/useBookings';
 import { useEvents } from '@/hooks/useEvents';
-
-const tathvaWhiteLogo = 'https://www.figma.com/api/mcp/asset/c4b1e068-12d7-4e70-bc34-c2dad84d5388.png';
 
 const range = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => String(from + i));
 
@@ -219,11 +219,7 @@ export default function ProfilePage() {
 
       <header className={styles.topbar}>
         <div className={styles.leftHeader}>
-          <div className={styles.brandWrap}>
-            <div className={styles.logoMark} aria-hidden="true">
-              <img src={tathvaWhiteLogo} alt="Tathva logo" className={styles.logoImage} />
-            </div>
-          </div>
+          <div className={styles.brandWrap}></div>
         </div>
 
         <button type="button" className={styles.signOutButton} onClick={() => signOut('/')}>
@@ -235,6 +231,10 @@ export default function ProfilePage() {
       </header>
 
       <main className={styles.contentWrap}>
+        <div className='hidden lg:block'>
+          <Navbar />
+        </div>
+        <TathvaMenu />
         <div className={styles.avatarGroup}>
           <div className={styles.avatar} aria-label="User avatar">
             {/* `picture` is null until an upload, and the Google avatar on the
