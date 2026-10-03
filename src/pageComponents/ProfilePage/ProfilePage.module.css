@@ -152,7 +152,7 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-/* Edit affordance: a badge on the avatar's corner, outside the flex row. */
+/* Edit affordance: same chip as the modal's .avatarEditOverlay, on the avatar's corner. */
 .avatarEditButton {
   position: absolute;
   right: -6px;
@@ -163,27 +163,31 @@
   width: 2rem;
   height: 2rem;
   padding: 0;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(var(--violet), 0.9);
-  color: #fff;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #15101e;
+  color: rgba(228, 218, 255, 0.9);
   cursor: pointer;
-  transition: background 0.18s ease, transform 0.18s ease;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
 }
 
 .avatarEditButton:hover {
-  background: rgba(var(--violet), 1);
-  transform: scale(1.08);
+  background: rgba(var(--violet), 0.26);
+  border-color: var(--violet-soft);
+  color: #fff;
 }
 
 .avatarEditButton:focus-visible {
-  outline: 2px solid rgba(var(--violet), 0.8);
-  outline-offset: 3px;
+  outline: 2px solid var(--violet-soft);
+  outline-offset: 2px;
 }
 
 .avatarEditIcon {
-  width: 1rem;
-  height: 1rem;
+  width: 1.05rem;
+  height: 1.05rem;
 }
 
 .avatar {
@@ -865,19 +869,3 @@
   color: #e2bd78;
 }
 
-.avatarRow {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  margin-bottom: 0.4rem;
-}
-
-.avatarInput {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.68rem;
-}
-
-.avatarHint {
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 0.62rem;
-}

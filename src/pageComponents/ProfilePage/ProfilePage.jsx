@@ -47,6 +47,11 @@ export default function ProfilePage() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState({});
   const [imageFile, setImageFile] = useState(null);
+  const fileInputRef = useRef(null);
+  const previewUrl = useMemo(() => (imageFile ? URL.createObjectURL(imageFile) : null), [imageFile]);
+  useEffect(() => () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
   const [fieldErrors, setFieldErrors] = useState({});
   const [saveError, setSaveError] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -378,21 +383,49 @@ export default function ProfilePage() {
             <h2 id="profile-editor-title" className={styles.modalTitle}>Edit Profile</h2>
 
             <div className={styles.modalRows}>
-              <div className={styles.avatarRow}>
-                <span className={styles.modalLabel}>Profile picture</span>
+              <section className={styles.avatarEditSection} aria-label="Profile picture">
+                <div className={styles.avatarEditPreview}>
+                  <img src={previewUrl || avatar || '/images/profile-main-avatar.png'} alt="" />
+                  <button
+                    type="button"
+                    className={styles.avatarEditOverlay}
+                    aria-label="Choose a profile picture"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 20h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4L16.5 3.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className={styles.avatarEditActions}>
+                  <button type="button" className={styles.avatarEditButtonText} onClick={() => fileInputRef.current?.click()}>
+                    {imageFile ? 'Choose another' : 'Choose image'}
+                  </button>
+                  {imageFile && (
+                    <button type="button" className={styles.avatarEditButtonText} onClick={() => chooseImage(null)}>
+                      Remove
+                    </button>
+                  )}
+                </div>
+
                 <input
-                  className={styles.avatarInput}
+                  ref={fileInputRef}
+                  className={styles.avatarFileInput}
                   type="file"
                   accept="image/*"
+                  tabIndex={-1}
                   onChange={(event) => chooseImage(event.target.files?.[0] ?? null)}
                 />
+
                 <span className={styles.avatarHint}>
                   Up to 400 KB. Stored as webp; SVG is not accepted.
                 </span>
                 {fieldErrors.image && (
-                  <span className={styles.modalFieldError} role="alert">{fieldErrors.image}</span>
+                  <p className={styles.avatarEditError} role="alert">{fieldErrors.image}</p>
                 )}
-              </div>
+              </section>
 
               {MODAL_ROWS.map(({ key, type, inputMode, required, options }, index) => (
                 <label className={styles.modalRow} htmlFor={`profile-edit-${key}`} key={key}>
