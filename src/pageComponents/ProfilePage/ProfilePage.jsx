@@ -6,10 +6,8 @@ import Galaxy from '../../components/Galaxy/Galaxy'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 
-const tathvaWhiteLogo =
-  'https://www.figma.com/api/mcp/asset/c4b1e068-12d7-4e70-bc34-c2dad84d5388.png'
-
 const profileStorageKey = 'tathva-profile'
+const defaultAvatar = '/images/profile-main-avatar.png'
 
 const initialProfile = {
   username: 'Username',
@@ -20,6 +18,7 @@ const initialProfile = {
   yearOfStudy: '2',
   district: 'Kozhikode',
   state: 'Kerala',
+  avatar: defaultAvatar,
 }
 
 const yearOfStudyOptions = ['1', '2', '3', '4']
@@ -78,6 +77,37 @@ export default function ProfilePage() {
   const [showSubmitError, setShowSubmitError] = useState(false)
   const profileModalRef = useRef(null)
 
+  const [avatarPreview, setAvatarPreview] = useState(defaultAvatar)
+  const [draftAvatar, setDraftAvatar] = useState(defaultAvatar)
+  const [avatarError, setAvatarError] = useState('')
+  const fileInputRef = useRef(null)
+
+  function handleAvatarChange(event) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Check file size (400KB = 400 * 1024 bytes)
+    if (file.size > 400 * 1024) {
+      setAvatarError('Image size must be below 400KB')
+      return
+    }
+
+    setAvatarError('')
+    const reader = new FileReader()
+    reader.onload = () => {
+      setDraftAvatar(reader.result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function handleRemoveAvatar() {
+    setDraftAvatar(defaultAvatar)
+    setAvatarError('')
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
   useEffect(() => {
     const savedProfile = window.localStorage.getItem(profileStorageKey)
     if (!savedProfile) return
@@ -94,6 +124,10 @@ export default function ProfilePage() {
         startTransition(() => {
           setProfile(loadedProfile)
           setDraftProfile(loadedProfile)
+          if (loadedProfile.avatar) {
+            setAvatarPreview(loadedProfile.avatar)
+            setDraftAvatar(loadedProfile.avatar)
+          }
         })
       }
     } catch {
@@ -137,6 +171,8 @@ export default function ProfilePage() {
 
   function openProfileEditor() {
     setDraftProfile(profile)
+    setDraftAvatar(avatarPreview)
+    setAvatarError('')
     setValidationErrors({})
     setShowSubmitError(false)
     setIsEditorOpen(true)
@@ -154,10 +190,12 @@ export default function ProfilePage() {
     const savedProfile = {
       ...draftProfile,
       username: draftProfile.username.trim() || profile.username,
+      avatar: draftAvatar,
     }
     window.localStorage.setItem(profileStorageKey, JSON.stringify(savedProfile))
     setProfile(savedProfile)
     setDraftProfile(savedProfile)
+    setAvatarPreview(draftAvatar)
     setShowSubmitError(false)
     setIsEditorOpen(false)
   }
@@ -185,15 +223,17 @@ export default function ProfilePage() {
 
   return (
     <div className={styles.pageShell}>
-      <Galaxy
-        mouseInteraction={false}
-        hueShift={205}
-        density={0.9}
-        glowIntensity={0.35}
-        saturation={0.55}
-        twinkleIntensity={0.4}
-        rotationSpeed={0.05}
-      />
+      <div className={styles.backdrop}>
+        <Galaxy
+          mouseInteraction={false}
+          hueShift={205}
+          density={0.9}
+          glowIntensity={0.35}
+          saturation={0.55}
+          twinkleIntensity={0.4}
+          rotationSpeed={0.05}
+        />
+      </div>
 
       <header className={styles.topbar}>
         <div className={styles.leftHeader}>
@@ -213,18 +253,25 @@ export default function ProfilePage() {
           <Navbar />
         </div>
         <TathvaMenu />
+        
+        {/* Avatar container displaying saved profile avatar */}
         <div className={styles.avatarGroup}>
           <div className={styles.avatar} aria-label='User avatar'>
-            <img src='/images/profile-main-avatar.png' alt='' />
+            <img src={avatarPreview} alt='User avatar' />
           </div>
+        </div>
+
+        {/* Username row with edit button aligned flex inline */}
+        <div className={styles.usernameRow}>
+          <h1 className={styles.username}>{profile.username}</h1>
           <button
             type='button'
-            className={styles.avatarEditButton}
+            className={styles.nameEditButton}
             aria-label='Edit profile'
             onClick={openProfileEditor}
           >
             <svg
-              className={styles.avatarEditIcon}
+              className={styles.nameEditIcon}
               viewBox='0 0 24 24'
               fill='none'
               xmlns='http://www.w3.org/2000/svg'
@@ -246,7 +293,6 @@ export default function ProfilePage() {
             </svg>
           </button>
         </div>
-        <h1 className={styles.username}>{profile.username}</h1>
 
         <label className={styles.emailField}>
           <span className={styles.inputIcon} aria-hidden='true'>
@@ -340,6 +386,63 @@ export default function ProfilePage() {
             <h2 id='profile-editor-title' className={styles.modalTitle}>
               Edit Profile
             </h2>
+
+            {/* Avatar Upload & Remove Section */}
+            <div className={styles.avatarEditSection}>
+              <div className={styles.avatarEditPreview}>
+                <img src={draftAvatar} alt="Profile avatar preview" />
+                <button
+                  type="button"
+                  className={styles.avatarEditOverlay}
+                  aria-label="Upload profile picture"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                </button>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className={styles.avatarFileInput}
+                onChange={handleAvatarChange}
+              />
+
+              <div className={styles.avatarEditActions}>
+                {draftAvatar !== defaultAvatar && (
+                  <button
+                    type="button"
+                    className={styles.avatarEditButtonText}
+                    style={{ color: '#ff6b6b' }}
+                    onClick={handleRemoveAvatar}
+                  >
+                    Remove Photo
+                  </button>
+                )}
+              </div>
+
+              <span style={{ fontSize: '0.72rem', color: 'rgba(238, 228, 255, 0.5)', marginTop: '0.2rem' }}>
+                Max size: 400KB
+              </span>
+
+              {avatarError && (
+                <p className={styles.avatarEditError} role="alert">
+                  {avatarError}
+                </p>
+              )}
+            </div>
+
             <div className={styles.modalRows}>
               {modalRows.map(
                 (
