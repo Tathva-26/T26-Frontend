@@ -107,6 +107,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       const flash = find("flash");
       const letters = stage.querySelectorAll('[data-gpc="letter"]');
       if (!hero || !screen || !consoleBox || !label || !tagline || !film || !flash) return undefined;
+      hero.style.opacity = ""; // see the handoff at the end: nothing may start out faded
 
       // Measured now, while nothing is transformed yet (this whole callback is
       // reverted and re-run whenever the layout changes size or mode).
@@ -703,9 +704,15 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       }
 
       // The handoff: Wheels is full-screen underneath, so the hero fades away.
+      // The closing `set` only pads the timeline to exactly 100 long, which is what makes every
+      // position above a percentage of the scroll. It is on a throwaway object on purpose: a
+      // zero-length set on the hero is undone LAST when this is torn down, after the fade before
+      // it, so it would put back the "opacity: 0" it found. That left the hero invisible for
+      // good once the page had been scrolled past GPC and this was then rebuilt (any resize; on
+      // a phone, the address bar sliding away is one).
       tl.to(hero, { pointerEvents: "none", duration: 0.01 }, at(handoff))
         .to(hero, { opacity: 0, duration: span(handoff) * 0.85 }, at(handoff))
-        .set(hero, { opacity: 0 }, 100);
+        .set({}, {}, 100);
 
       sync();
 
@@ -778,6 +785,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         if (!lite) release();
         Object.assign(live, { power: 1, outro: 0, film: 0, picture: null });
         hero.style.clipPath = "";
+        hero.style.opacity = ""; // never carried over into the next build: see the handoff above
         flash.removeAttribute("style");
       };
     },
