@@ -33,11 +33,10 @@ const CONTENT_GLIDE_S = 1.2;
 // The glide stops this far inside the first section, so that section's own scroll logic sees
 // the page arrive (at exactly its top edge it isn't "in" it yet).
 const CONTENT_GLIDE_INSET_PX = 4;
-// Touch screens: how long the page has to be still before it counts as at rest, and how far it
-// has to have travelled since it last rested for that to count as a direction.
-const TOUCH_IDLE_MS = 160;
-const TOUCH_INTENT_PX = 24;
 const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+// `children` are heavy to mount. They are mounted (hidden) this long after Frame first shows,
+// while W1 is being looked at, so the glide into them doesn't start with a dropped-frame jump.
+const CONTENT_PREMOUNT_DELAY_MS = 600;
 
 // Same breakpoint Hero uses for its mobile layout.
 const MOBILE_QUERY = "(max-width: 768px)";
@@ -64,9 +63,8 @@ export default function HeroFrameController({ children }) {
   // Once Frame is showing and the user keeps scrolling down, stop intercepting the wheel and
   // let normal page scroll reach `children`. Scrolling back up to the very top re-locks.
   const [unlocked, setUnlocked] = useState(false);
-  // `children` are heavy. They mount, hidden, right after the first paint, while the preloader
-  // is still up: it waits for everything in them to load (see Loading.jsx), so their cost is
-  // paid behind it rather than as dropped frames in the middle of a scroll.
+  // `children` are heavy, so they only mount once the user has got as far as Frame
+  // (see CONTENT_PREMOUNT_DELAY_MS), or unlocks past it before that.
   const [hasReachedContent, setHasReachedContent] = useState(false);
   // wrapper around `children`, observed so ScrollTrigger can re-measure when content settles
   const contentRef = useRef(null);
@@ -187,11 +185,12 @@ export default function HeroFrameController({ children }) {
     if (hasReachedContent) ScrollTrigger.refresh();
   }, [unlocked, hasReachedContent]);
 
-  // Mount `children` behind the preloader. (A frame late, so Hero gets its first paint first.)
+  // Mount `children` ahead of time, hidden, once Frame is on screen.
   useEffect(() => {
-    const frame = requestAnimationFrame(() => setHasReachedContent(true));
-    return () => cancelAnimationFrame(frame);
-  }, []);
+    if (section !== "frame" || hasReachedContent) return undefined;
+    const timer = window.setTimeout(() => setHasReachedContent(true), CONTENT_PREMOUNT_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [section, hasReachedContent]);
 
   // Frame <-> content. The stretch of scroll between W1 and the first section is never left to
   // the wheel: going down it is one eased, locked glide onto that section (see CONTENT_GLIDE_S),
@@ -230,41 +229,12 @@ export default function HeroFrameController({ children }) {
     });
     // Scrolled back up out of the first section (or dragged into the gap): finish the trip.
     // Not while a finger is down: a native drag can't be taken over until it is released.
-    // Touch screens scroll natively (finger, then momentum), and a scripted glide run against
-    // that makes the page judder. There nothing is done while the page is moving: once it has
-    // come to rest in the gap with the finger off, it is eased (not locked, a touch takes it
-    // back) to whichever of the two it was taken towards since it last rested.
-    const touchScreen = window.matchMedia("(pointer: coarse)").matches;
-    let idle = 0;
-    let rested = 0;
-    const settle = () => {
-      const content = contentRef.current;
-      const scroller = content?.closest(".main-scroll");
-      if (!content || !scroller) return;
-      if (lenis.isTouching || lenis.isLocked || lenis.isStopped) return;
-      const scroll = scroller.scrollTop;
-      const travelled = scroll - rested;
-      rested = scroll;
-      if (scroll > scroller.clientHeight * 2) return;
-      const top = scroll + content.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
-      if (scroll <= 0 || scroll >= top) return;
-      const down = Math.abs(travelled) >= TOUCH_INTENT_PX ? travelled > 0 : scroll > top / 2;
-      lenis.scrollTo(down ? top + CONTENT_GLIDE_INSET_PX : 0, { duration: 0.5, easing: easeInOut });
-    };
-    const settleSoon = () => {
-      window.clearTimeout(idle);
-      idle = window.setTimeout(settle, TOUCH_IDLE_MS);
-    };
     const offScroll = lenis.on("scroll", () => {
-      if (touchScreen) settleSoon();
-      else if (!lenis.isTouching && lenis.direction !== 0) glide(lenis.direction);
+      if (lenis.isTouching || lenis.direction === 0) return;
+      glide(lenis.direction);
     });
-    const scrollerEl = contentRef.current?.closest(".main-scroll");
-    if (touchScreen) scrollerEl?.addEventListener("touchend", settleSoon, { passive: true });
     return () => {
       cancelAnimationFrame(frame);
-      window.clearTimeout(idle);
-      scrollerEl?.removeEventListener("touchend", settleSoon);
       offScroll();
     };
   }, [unlocked]);
