@@ -1956,6 +1956,15 @@ export default function LecturesPage() {
                                     />
                                   </div>
 
+                                  {/* BOOKING CLOSED BANNER */}
+                                  {lecture.bookingClosed && (
+                                    <div className="absolute inset-x-0 top-[7%] z-20 flex justify-center">
+                                      <span className="rounded-sm border border-red-400/40 bg-black/70 px-3 py-1 text-[3.8cqw] font-extrabold uppercase tracking-[0.2em] text-red-300">
+                                        Booking closed
+                                      </span>
+                                    </div>
+                                  )}
+
                                   {/* BACKGROUND CUTOUT OUTSIDE THE BORDER */}
                                   <div
                                     className="pointer-events-none absolute inset-0 z-15 bg-[#06070d]"
@@ -1967,8 +1976,11 @@ export default function LecturesPage() {
 
                                   {/* FIGMA CARD LABELS */}
                                   <div className="absolute inset-x-0 bottom-0 z-20 h-[13.5%]">
-                                    <p className="absolute bottom-[9%] left-[29.73%] right-[26.82%] text-right text-[5.5cqw] font-bold leading-[normal] text-white">
-                                      Lecture
+                                    <p
+                                      className="absolute bottom-[9%] left-[29.73%] right-[26.82%] truncate text-right text-[5.5cqw] font-bold leading-[normal] text-white"
+                                      title={lecture.fullTitle}
+                                    >
+                                      {lecture.fullTitle}
                                     </p>
                                     <div className="absolute bottom-[81%] right-[1.1%] flex flex-col items-end leading-none">
                                       <span className="mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#fbebec]">
@@ -2161,8 +2173,11 @@ export default function LecturesPage() {
               </div>
 
               <div className="pt-2 sm:pt-6">
-                <h2 className={`lectures-fragment-serif max-w-full overflow-hidden whitespace-nowrap text-[clamp(1.75rem,7cqw,3rem)] leading-none text-white`}>
-                  LECTURES
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8d8d8d]">
+                  Lecture
+                </p>
+                <h2 className={`lectures-fragment-serif mt-1 max-w-full text-[clamp(1.5rem,6cqw,2.5rem)] leading-tight text-white`}>
+                  {selectedLecture.fullTitle}
                 </h2>
 
                 <div className="mt-7 space-y-2">
@@ -2173,6 +2188,22 @@ export default function LecturesPage() {
                     {selectedLecture.description}
                   </p>
                 </div>
+
+                {(selectedLecture.isTeamEvent || selectedLecture.bookingClosed) && (
+                  <div className="mt-3 space-y-1 text-[9px] uppercase leading-tight text-white">
+                    {selectedLecture.isTeamEvent && (
+                      <p>
+                        Team event
+                        {selectedLecture.teamSize
+                          ? ` · up to ${selectedLecture.teamSize} members`
+                          : ''}
+                      </p>
+                    )}
+                    {selectedLecture.bookingClosed && (
+                      <p className="text-[#f0a3a3]">Booking closed</p>
+                    )}
+                  </div>
+                )}
 
                 {/*
                   * The backend has no field for event contacts, so the two
@@ -2202,13 +2233,6 @@ export default function LecturesPage() {
                     )}
                   </div>
                 )}
-
-                <button
-                  type="button"
-                  className="mt-5 rounded-[7px] bg-[rgba(0,116,122,0.75)] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[rgba(0,145,151,0.9)] cursor-pointer"
-                >
-                  LEARN MORE
-                </button>
               </div>
             </div>
 
