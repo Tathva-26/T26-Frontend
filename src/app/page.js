@@ -1,17 +1,23 @@
 import Preloader from '@/pageComponents/Loading/Loading'
 import HeroFrameController from '@/pageComponents/Hero/HeroFrameController'
-import HorizontalGallery from '@/pageComponents/HorizontalGallery/HorizontalGallery'
+import ProfilePage from '@/pageComponents/ProfilePage/ProfilePage'
+import ProshowCarousel from '@/pageComponents/ProshowCarousel/ProshowCarousel'
 import WheelsExperience from '@/pageComponents/wheels/WheelsExperience'
+import Lead from '@/pageComponents/Team/Lead'
+import Frontend from '@/pageComponents/Team/Frontend'
+import Backend from '@/pageComponents/Team/Backend'
+import Uiux from '@/pageComponents/Team/UIUX'
+import Accommodation from '@/pageComponents/Accomodation/Accommodation'
+import TechConclaveExpoTransition from '@/pageComponents/Expo/TechConclaveExpoTransition'
+import HorizontalGallery from '@/pageComponents/HorizontalGallery/HorizontalGallery'
 import Expo from '@/pageComponents/Expo/Expo'
 import Footer from '@/pageComponents/Footer/Footer'
 import RobowarsPage from './robowars/page'
 import SmoothScroll from '@/components/SmoothScroll'
 import TathvaPasses from '@/pageComponents/TathvaPasses/TathvaPasses'
 import ArtistPage from './artist/page'
-import TechConclave from '@/pageComponents/TechConclave/TechConclave'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import GPC from './gpc/page'
-import Accommodation from '@/pageComponents/Accomodation/Accommodation'
 
 export default function Home() {
   return (
@@ -46,30 +52,10 @@ export default function Home() {
         <Frontend />
         <Backend />
         <Uiux /> */}
-
-        <div data-section-name="ACCOMMODATION" className="w-full">
-          <Accommodation />
-        </div>
-
-        <div data-section-name="PASSES" className="w-full">
-          <TathvaPasses />
-        </div>
-
-        <div data-section-name="TECH CONCLAVE" className="w-full">
-          <TechConclave />
-        </div>
-
-        <div data-section-name="EXPO" className="w-full">
-          <Expo />
-        </div>
-
-        <div data-section-name="GALLERY" className="w-full">
-          <HorizontalGallery />
-        </div>
-
-        <div data-section-name="TATHVA-26" className="w-full">
-          <Footer />
-        </div>
+        <Accommodation />
+        <TathvaPasses />
+        <TechConclaveExpoTransition />
+        <Footer />
       </HeroFrameController>
     </div>
   )
