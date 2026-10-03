@@ -182,19 +182,6 @@ function useScrubCrossfade(
       )
       let pendingArtistIndex = null
       let snappingWithLenis = false
-      // Where the page was last settled on an artist. ScrollTrigger can ask
-      // to snap again once a glide has ended without the user having scrolled
-      // at all; that must not count as another gesture and skip an artist.
-      let restingScroll = null
-      // Set when the scroll comes into this section from outside it, to the
-      // side it came in through; taken (and cleared) by the next snap.
-      let enteredFrom = null // 'top' | 'bottom' | null
-      // Touch screens: where the page was when the current swipe began (see
-      // TOUCH_INTENT_PX), or null when there is no swipe to account for.
-      let gestureStart = null
-      // Touch screens: the artist the current swipe started on (-1 above the
-      // section, `count` below it), or null when no swipe is being followed.
-      let gestureFrom = null
 
       const tl = gsap.timeline({
         defaults: { duration: 1 },
@@ -221,118 +208,29 @@ function useScrubCrossfade(
                     1,
                     (trigger.scroll() - trigger.start) / (trigger.end - trigger.start),
                   )
-                // Touch screens. A swipe is native scroll with momentum: it
-                // goes as far as it was thrown, so "one artist per gesture"
-                // can't be kept without taking the page away from the finger,
-                // and a locked glide after every swipe swallows the next one.
-                // So nothing is locked and nothing is remembered there: a
-                // page that comes to rest on an artist's hold is left alone,
-                // and one left mid-way between two artists is eased onto the
-                // one it was heading for. A new touch takes over at once.
-                if (touchScreen) {
-                  // How far this swipe took the page, start to rest.
-                  const scroll = trigger.scroll()
-                  const travelled =
-                    gestureStart === null ? 0 : scroll - gestureStart
-                  gestureStart = null
-                  gestureFrom = null // the swipe is over: see the stops below
-                  const swiped = Math.abs(travelled) >= TOUCH_INTENT_PX
-                  const range = trigger.end - trigger.start
-                  const toScroll = (time) => trigger.start + range * (time / total)
-                  const time = here() * total
-                  const index = Math.min(count - 1, Math.floor(time / STEP))
-                  const onHold = index >= count - 1 || time - index * STEP <= HOLD
-
-                  let target = null
-                  if (!onHold) {
-                    // Between two artists: on to the one it was heading for
-                    // (too little travel to tell: whichever is nearer).
-                    const forward = swiped
-                      ? travelled > 0
-                      : time - index * STEP - HOLD > 0.5
-                    target = toScroll(
-                      forward
-                        ? (index + 1) * STEP + TOUCH_HOLD_INSET
-                        : index * STEP + HOLD - TOUCH_HOLD_INSET,
-                    )
-                  } else if (swiped && travelled > 0) {
-                    // A swipe that never left this artist still means "next":
-                    // the hold is a long stretch in which nothing moves, and a
-                    // swipe that does nothing reads as the page being stuck.
-                    // Past the last artist, next is GPC's resting spot.
-                    target =
-                      index < count - 1
-                        ? toScroll((index + 1) * STEP + TOUCH_HOLD_INSET)
-                        : trigger.end + gpcOverlapPx()
-                  } else if (swiped) {
-                    // ...and "previous": above the first artist that is
-                    // whatever comes before this section (W1 on the home page).
-                    target =
-                      index > 0
-                        ? toScroll((index - 1) * STEP + HOLD - TOUCH_HOLD_INSET)
-                        : Math.max(
-                            0,
-                            trigger.start - (scroller?.clientHeight ?? 0) * 1.2,
-                          )
-                  }
-                  if (target === null || Math.abs(target - scroll) < 2)
-                    return here()
-
-                  const lenis = window.__lenis
-                  if (!lenis)
-                    return gsap.utils.clamp(0, 1, (target - trigger.start) / range)
-                  if (!lenis.isStopped && !lenis.isLocked) {
-                    lenis.scrollTo(target, {
-                      duration: 0.45,
-                      easing: (progress) => 1 - Math.pow(1 - progress, 3),
-                    })
-                  }
-                  return here()
-                }
-
                 // Still gliding to an artist. If Lenis is no longer locked the
                 // glide was cut short by something stopping it (GPC holding
                 // the page), and it will never report back: carry on as usual.
                 if (snappingWithLenis && window.__lenis?.isLocked) return here()
                 snappingWithLenis = false
-                if (
-                  restingScroll !== null &&
-                  Math.abs(trigger.scroll() - restingScroll) < 2
-                )
-                  return here()
-
-                // Not inside the section yet (it is measured at the very top
-                // of a still-locked page while it waits, hidden, under W1).
-                if (trigger.scroll() <= trigger.start) return here()
 
                 // Arriving from a neighbouring section (the glide down from
-                // W1, GPC handing the page back). Coming in through the top
-                // always lands on the first artist, through the bottom on the
-                // last, whatever was settled the last time round. Already
-                // resting inside that artist's hold: it is whole and still,
-                // so take it as settled instead of scrolling on.
+                // W1, GPC handing the page back) and already resting inside
+                // the first / last artist's hold: that artist is whole and
+                // still, so just take it as settled instead of scrolling on.
                 // (`value` is where ScrollTrigger reckons the scroll would
                 // coast to; returning it would send the page there, so these
                 // return where the page actually is.)
-                const time = here() * total
-                if (enteredFrom === 'top') {
-                  enteredFrom = null
-                  if (time <= HOLD) {
-                    settledArtistIndex.current = 0
-                    restingScroll = trigger.scroll()
-                    return here()
-                  }
-                  settledArtistIndex.current = -1
-                } else if (enteredFrom === 'bottom') {
-                  enteredFrom = null
-                  if (time >= total - HOLD) {
-                    settledArtistIndex.current = count - 1
-                    restingScroll = trigger.scroll()
-                    return here()
-                  }
-                  settledArtistIndex.current = count
-                }
                 const settled = settledArtistIndex.current
+                const time = here() * total
+                if ((settled === null || settled < 0) && time <= HOLD) {
+                  settledArtistIndex.current = 0
+                  return here()
+                }
+                if (settled !== null && settled >= count && time >= total - HOLD) {
+                  settledArtistIndex.current = count - 1
+                  return here()
+                }
 
                 const direction = trigger.direction
                 if (direction > 0) {
@@ -390,7 +288,6 @@ function useScrubCrossfade(
                       settledArtistIndex.current = targetIndex
                       pendingArtistIndex = null
                       snappingWithLenis = false
-                      restingScroll = trigger.scroll()
                     },
                   })
                   // Lenis owns the home scroller; avoid a competing native
@@ -415,12 +312,6 @@ function useScrubCrossfade(
             },
           }),
           invalidateOnRefresh: true,
-          onEnter: () => {
-            enteredFrom = 'top'
-          },
-          onEnterBack: () => {
-            enteredFrom = 'bottom'
-          },
           onLeave: () => {
             settledArtistIndex.current = count
           },

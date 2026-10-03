@@ -34,19 +34,6 @@ const EXIT_INTENT_PX = 40;
 // starts to slide in: inside the last artist's hold, so nothing there moves.
 const EXIT_REST = 0.15;
 
-// Phones (see `lite` below). GPC keeps its stops there, done the cheap way.
-// A swipe has to have been this far from GPC's resting spot before reaching it counts as an
-// arrival to stop at, so a finger wobbling on the spot doesn't keep getting stopped.
-const LITE_ARM_PX = 80;
-// Scroll has to be still this long before a page left part way between the last artist and GPC
-// is finished off to whichever of the two it was heading for.
-const LITE_SETTLE_IDLE_MS = 160;
-const LITE_SETTLE_S = 0.45;
-// Which way it was heading is read off how far the page has travelled since it last rested, and
-// it has to be at least this far to count. (Not off the last movement: a finger wobbles as it
-// lifts and momentum can tick back a pixel as it dies, and either would turn the page around.)
-const LITE_INTENT_PX = 24;
-
 const easeOut = (progress) => 1 - Math.pow(1 - progress, 3);
 
 const at = ([start]) => start;
@@ -150,18 +137,6 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         return { x: hole.x, y: centerY - h / 2, w: hole.w, h, wash: Math.pow(1 - open, 1.2) * 0.95, edge: (1 - open) * 0.9 };
       }
 
-      // Phones and tablets get none of the camera moves: no TV entry / exit, and no push into the
-      // console's screen at the end. Each of those zooms the whole hero, a full-screen layer, to
-      // several times its size; at a phone's pixel density that is a picture far bigger than its
-      // GPU will hold, and once it has given up on it the hero is left painted black, which is
-      // how GPC came back as a blank after being scrolled past once. There GPC is simply the
-      // finished hero: it scrolls in over the last artist, and back out, like any other section;
-      // at the end the console announces Wheels, plays its footage on its own small screen, and
-      // the hero fades out over Wheels, at its real size throughout. It still can't be skipped:
-      // see "PHONES: STOPS" below.
-      const touchScreen = window.matchMedia("(pointer: coarse)").matches;
-      const lite = touchScreen;
-
       // Out: the footage canvas and the push-in zoom target.
       const wheels = preview();
       const picture = wheels.pinnedPicture(width, height);
@@ -176,21 +151,16 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       // console's own screen shows the footage, and this one stays hidden and unallocated.)
       let filmContext = null;
       let filmShown = null;
-      if (!lite) {
-        film.width = window.innerWidth <= FILM_SMALL.below ? FILM_SMALL.width : FILM_RATIO.width;
-        film.height = (film.width * FILM_RATIO.height) / FILM_RATIO.width;
-        filmContext = film.getContext("2d");
-        const box = { width: Math.round(hole.w), height: Math.round(filmHeight) };
-        gsap.set(film, {
-          ...box,
-          transformOrigin: "0 0",
-          x: hole.x,
-          y: centerY - filmHeight / 2,
-          scaleX: hole.w / box.width,
-          scaleY: filmHeight / box.height,
-          visibility: "visible",
-        });
-      }
+      const box = { width: Math.round(hole.w), height: Math.round(filmHeight) };
+      gsap.set(film, {
+        ...box,
+        transformOrigin: "0 0",
+        x: hole.x,
+        y: centerY - filmHeight / 2,
+        scaleX: hole.w / box.width,
+        scaleY: filmHeight / box.height,
+        visibility: "visible",
+      });
 
       // Handoff: where Wheels is already stuck underneath.
       const travel = trackBox.height - height;
@@ -199,25 +169,21 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       const dive = [SEQUENCE.diveStart, handoff[0]];
 
       // ── Entry state: the camera is inside the console's screen, which still shows the Artist page ──
-      if (lite) {
-        tube.on = 0; // no picture of the Artist page on the screen, so no hole cut for it
-      } else {
-        gsap.set(hero, pulledIn);
-        live.power = 0;
-        gsap.set(consoleBox, { pointerEvents: "none" });
-        gsap.set(label, { opacity: 0 });
-        gsap.set(tagline, { opacity: 0, clipPath: "inset(0% 100% 0% 0%)" });
-        letters.forEach((letter) => gsap.set(letter, { opacity: 0 }));
-      }
+      gsap.set(hero, pulledIn);
+      live.power = 0;
+      gsap.set(consoleBox, { pointerEvents: "none" });
+      gsap.set(label, { opacity: 0 });
+      gsap.set(tagline, { opacity: 0, clipPath: "inset(0% 100% 0% 0%)" });
+      letters.forEach((letter) => gsap.set(letter, { opacity: 0 }));
 
       // ── ENTRY (time-based keyframes) ──
       // Plays once GPC has landed (see `land` below): the camera pulls back out of the console's
       // screen, which was showing the Artist page; that picture switches off like an old TV; the
       // screen switches on to the game; the title flickers on and the tagline slides in.
-      // (Phones: always "done". Nothing below that would move it is set up.)
-      let phase = lite ? "done" : "idle"; // idle -> landing -> playing -> done -> exiting -> idle
+      let phase = "idle"; // idle -> landing -> playing -> done -> exiting -> idle
       // State of the hold / gate / brake / exit helpers further down. Declared up here because
       // the landing trigger can call into them as soon as it is created.
+      const touchScreen = window.matchMedia("(pointer: coarse)").matches;
       let gated = false;
       let gateTimer = 0;
       let touching = false;
@@ -235,79 +201,66 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         onReverseComplete: leave,
       });
 
-      // (fromTo tweens apply their start values as soon as they are created, so on phones the
-      // timeline is left empty rather than built and never played.)
-      if (!lite) {
-        // Pull back. Quick at first, easing as the hero comes to rest.
-        entryTl.fromTo(hero, pulledIn, { x: 0, y: 0, scale: 1, duration: 1.6, ease: "power3.out" }, 0);
+      // Pull back. Quick at first, easing as the hero comes to rest.
+      entryTl.fromTo(hero, pulledIn, { x: 0, y: 0, scale: 1, duration: 1.6, ease: "power3.out" }, 0);
 
-        // Switch off: the picture closes to a bright line (the first beat), then the line shrinks
-        // to nothing (the second), with a held breath on the line in between.
+      // Switch off: the picture closes to a bright line (the first beat), then the line shrinks
+      // to nothing (the second), with a held breath on the line in between.
+      entryTl.fromTo(
+        tube,
+        { on: 1 },
+        {
+          keyframes: { "65%": { on: POWER_LINE }, "100%": { on: 0 }, easeEach: "power1.inOut" },
+          duration: 0.75,
+        },
+        ">0.2"
+      );
+
+      // Switch on to the game, then the prompt, and the console can be played.
+      entryTl.fromTo(live, { power: 0 }, { power: 1, duration: 0.9, ease: "power1.in" }, ">0.15");
+      entryTl.fromTo(label, { opacity: 0 }, { opacity: 1, duration: 0.4 }, ">-0.1");
+      entryTl.fromTo(consoleBox, { pointerEvents: "none" }, { pointerEvents: "auto", duration: 0.01 }, "<");
+
+      // Title: each letter flickers on like a neon tube, hot then white.
+      const letterDur = 0.15;
+      letters.forEach((letter, i) => {
         entryTl.fromTo(
-          tube,
-          { on: 1 },
+          letter,
+          { opacity: 0, color: TITLE_HOT, textShadow: TITLE_GLOW },
           {
-            keyframes: { "65%": { on: POWER_LINE }, "100%": { on: 0 }, easeEach: "power1.inOut" },
-            duration: 0.75,
-          },
-          ">0.2"
-        );
-
-        // Switch on to the game, then the prompt, and the console can be played.
-        entryTl.fromTo(live, { power: 0 }, { power: 1, duration: 0.9, ease: "power1.in" }, ">0.15");
-        entryTl.fromTo(label, { opacity: 0 }, { opacity: 1, duration: 0.4 }, ">-0.1");
-        entryTl.fromTo(consoleBox, { pointerEvents: "none" }, { pointerEvents: "auto", duration: 0.01 }, "<");
-
-        // Title: each letter flickers on like a neon tube, hot then white.
-        const letterDur = 0.15;
-        letters.forEach((letter, i) => {
-          entryTl.fromTo(
-            letter,
-            { opacity: 0, color: TITLE_HOT, textShadow: TITLE_GLOW },
-            {
-              keyframes: {
-                "20%": { opacity: 1 },
-                "35%": { opacity: 0.25 },
-                "55%": { opacity: 1, color: TITLE_HOT, textShadow: TITLE_GLOW },
-                "100%": { color: "#ffffff", textShadow: NO_GLOW },
-                easeEach: "none",
-              },
-              duration: letterDur * 2.5,
+            keyframes: {
+              "20%": { opacity: 1 },
+              "35%": { opacity: 0.25 },
+              "55%": { opacity: 1, color: TITLE_HOT, textShadow: TITLE_GLOW },
+              "100%": { color: "#ffffff", textShadow: NO_GLOW },
+              easeEach: "none",
             },
-            i === 0 ? "-=0.2" : `>-${letterDur}`
-          );
-        });
-
-        // Tagline slides in from the right.
-        entryTl.fromTo(
-          tagline,
-          { opacity: 0, clipPath: "inset(0% 100% 0% 0%)" },
-          { opacity: 1, clipPath: "inset(0% 0% 0% 0%)", duration: 0.6, ease: "power2.out" },
-          "-=0.3"
+            duration: letterDur * 2.5,
+          },
+          i === 0 ? "-=0.2" : `>-${letterDur}`
         );
-      }
+      });
+
+      // Tagline slides in from the right.
+      entryTl.fromTo(
+        tagline,
+        { opacity: 0, clipPath: "inset(0% 100% 0% 0%)" },
+        { opacity: 1, clipPath: "inset(0% 0% 0% 0%)", duration: 0.6, ease: "power2.out" },
+        "-=0.3"
+      );
 
       // ── LANDING SNAP ──
       // However hard the page was scrolled, it can't carry past GPC: as soon as GPC starts sliding
       // over the last artist, the scroll glides to the exact spot where its stage is fully in
       // view, then is held still (Lenis stopped) while the entry plays out, so the whole
       // transition is seen. Scrolling back above GPC re-arms it for the next time.
-      // When the page is already scrolled past GPC as this is built (a reload or a re-measure
-      // mid-page), ScrollTrigger fires onEnter / onLeave from inside create(), before `landing`
-      // exists. Those are ignored; where the page already is gets settled right after the
-      // listeners are in place (see "Already there" below).
-      // (Phones only use it as a ruler: where GPC starts to slide in, and where it rests.)
-      let landing = null;
-      landing = ScrollTrigger.create({
+      const landing = ScrollTrigger.create({
         scroller,
         trigger: track,
         start: "top bottom",
         end: "top top",
-        ...(!lite && {
-          onEnter: () => landing && land(),
-          onLeave: () => landing && arrive(),
-          onLeaveBack: () => landing && reset(),
-        }),
+        onEnter: land,
+        onLeaveBack: reset,
       });
 
       // ── HOLD / GATE ──
@@ -359,11 +312,6 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         if (phase !== "idle") return;
         phase = "landing";
         dropGate();
-        // Touch screens scroll natively, under the finger and then on momentum, and a scripted
-        // glide run against that makes the page judder. There the drag is left alone: nothing of
-        // GPC shows while it slides in (its screen, a hole, covers the view), and the entry
-        // starts once the drag has brought it all the way up (see arrive()).
-        if (touchScreen) return;
         hold();
         const lenis = window.__lenis;
         if (!lenis) {
@@ -372,15 +320,6 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
           return;
         }
         lenis.scrollTo(landing.end, { duration: 0.9, lock: true, force: true, easing: easeOut, onComplete: play });
-      }
-
-      // Touch screens: GPC has been dragged fully into view. Stop the page there, once, and play.
-      function arrive() {
-        if (!touchScreen || phase !== "landing") return;
-        hold();
-        window.__lenis?.scrollTo(landing.end, { immediate: true, force: true });
-        if (Math.abs(scroller.scrollTop - landing.end) > 0.5) scroller.scrollTop = landing.end;
-        play();
       }
 
       function reset() {
@@ -400,9 +339,6 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       // the page can never drift out between GPC and the artists; the only way up is exit().
       function brake() {
         if (braking || phase !== "done") return;
-        // Touch screens: put back once per gesture. Correcting a native drag on every scroll
-        // event is a tug of war with the finger, which is what judder is.
-        if (touchScreen && gated) return;
         const top = landing.end;
         const scroll = scroller.scrollTop;
         if (scroll >= top - 0.5 || scroll < landing.start) return;
@@ -498,136 +434,20 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
 
       // Capture, so these run before Lenis' own listeners on the same element.
       const listen = { capture: true, passive: false };
-      let offLenisScroll = null;
-      if (!lite) {
-        scroller.addEventListener("wheel", onWheel, listen);
-        scroller.addEventListener("touchstart", onTouchStart, { capture: true, passive: true });
-        scroller.addEventListener("touchmove", onTouchMove, listen);
-        scroller.addEventListener("touchend", onTouchEnd, { capture: true, passive: true });
-        scroller.addEventListener("touchcancel", onTouchEnd, { capture: true, passive: true });
-        scroller.addEventListener("scroll", brake, { passive: true });
-        window.addEventListener("keydown", onKeyDown);
-        // Lenis reports each step it takes before the frame is painted; the native event is a frame late.
-        offLenisScroll = window.__lenis?.on("scroll", brake);
+      scroller.addEventListener("wheel", onWheel, listen);
+      scroller.addEventListener("touchstart", onTouchStart, { capture: true, passive: true });
+      scroller.addEventListener("touchmove", onTouchMove, listen);
+      scroller.addEventListener("touchend", onTouchEnd, { capture: true, passive: true });
+      scroller.addEventListener("touchcancel", onTouchEnd, { capture: true, passive: true });
+      scroller.addEventListener("scroll", brake, { passive: true });
+      window.addEventListener("keydown", onKeyDown);
+      // Lenis reports each step it takes before the frame is painted; the native event is a frame late.
+      const offLenisScroll = window.__lenis?.on("scroll", brake);
 
-        // Already there. At or past the landing spot: show the entry finished. Part way in
-        // (GPC sliding over the last artist): finish landing as if it had just been scrolled to.
-        if (landing.scroll() >= landing.end) {
-          phase = "done";
-          entryTl.progress(1, true);
-        } else if (landing.scroll() > landing.start) {
-          land();
-        }
-      }
-
-      // ── PHONES: STOPS ──
-      // Touch scrolling is native (the finger, then momentum) and stays that way; nothing here
-      // runs against it while it is moving. Two things only:
-      //   - a swipe that reaches GPC's resting spot, from the artists above or from the Wheels
-      //     transition below, stops dead there, however hard it was thrown (see lib/touchStop).
-      //   - a page left part way between the last artist and GPC, once it has come to rest, is
-      //     eased the rest of the way to whichever it was heading for. A touch takes it back.
-      let stopLite = null;
-      if (lite) {
-        const stopper = touchStop(scroller);
-        let last = scroller.scrollTop;
-        let rested = last; // where the page last came to rest
-        let armed = Math.abs(last - landing.end) > LITE_ARM_PX;
-        let settling = false;
-        let settleTimer = 0;
-
-        const settle = () => {
-          const lenis = window.__lenis;
-          if (stopper.stopped || stopper.fingerDown || settling || !lenis || lenis.isStopped || lenis.isLocked) return;
-          const scroll = scroller.scrollTop;
-          const from = landing.start;
-          const to = landing.end;
-          const travelled = scroll - rested;
-          rested = scroll;
-          // A swipe up out of the Wheels transition that died just short of the resting spot:
-          // finish it. (Left there, the next swipe would be stopped after moving a few px.)
-          if (armed && scroll > to + 0.5 && scroll - to < LITE_ARM_PX) {
-            settling = true;
-            lenis.scrollTo(to, {
-              duration: LITE_SETTLE_S,
-              easing: easeOut,
-              onComplete: () => {
-                settling = false;
-                armed = false;
-                last = rested = scroller.scrollTop;
-              },
-            });
-            return;
-          }
-          if (scroll <= from + 2 || scroll >= to - 2) return;
-          // Too little travel to tell which way it was going: whichever end is nearer.
-          const down = Math.abs(travelled) >= LITE_INTENT_PX ? travelled > 0 : scroll - from > to - scroll;
-          settling = true;
-          lenis.scrollTo(down ? to : from, {
-            duration: LITE_SETTLE_S,
-            easing: easeOut,
-            onComplete: () => {
-              settling = false;
-              armed = false;
-              last = rested = scroller.scrollTop;
-            },
-          });
-        };
-        const settleSoon = () => {
-          window.clearTimeout(settleTimer);
-          settleTimer = window.setTimeout(settle, LITE_SETTLE_IDLE_MS);
-        };
-
-        const onScroll = () => {
-          const scroll = scroller.scrollTop;
-          if (stopper.stopped) {
-            last = scroll;
-            return;
-          }
-          const top = landing.end;
-          if (!settling) {
-            // (A jump of a screen or more in one step is the page being sent somewhere, not a swipe.)
-            const swiped = Math.abs(scroll - last) < height;
-            const reached = (last < top && scroll >= top) || (last > top && scroll <= top);
-            if (armed && swiped && reached) {
-              armed = false;
-              window.clearTimeout(settleTimer);
-              stopper.stopAt(top);
-              last = rested = top;
-              return;
-            }
-            if (Math.abs(scroll - top) > LITE_ARM_PX) armed = true;
-          }
-          last = scroll;
-          settleSoon();
-        };
-        const onFingerDown = () => {
-          settling = false; // Lenis drops its glide as soon as the finger moves
-        };
-        const onFingerUp = (event) => {
-          if (event.touches.length === 0 && !stopper.stopped) settleSoon();
-        };
-        // Handed back after a stop (this section's or another's): in case it was let go a
-        // little off the spot.
-        const offRelease = stopper.onRelease(() => {
-          last = rested = scroller.scrollTop;
-          settleSoon();
-        });
-
-        const passive = { passive: true };
-        scroller.addEventListener("scroll", onScroll, passive);
-        scroller.addEventListener("touchstart", onFingerDown, passive);
-        scroller.addEventListener("touchend", onFingerUp, passive);
-        scroller.addEventListener("touchcancel", onFingerUp, passive);
-        stopLite = () => {
-          window.clearTimeout(settleTimer);
-          scroller.removeEventListener("scroll", onScroll);
-          scroller.removeEventListener("touchstart", onFingerDown);
-          scroller.removeEventListener("touchend", onFingerUp);
-          scroller.removeEventListener("touchcancel", onFingerUp);
-          offRelease();
-          stopper.dispose();
-        };
+      // Already at or past the landing spot (reloaded or re-measured mid-page): show it finished.
+      if (landing.scroll() >= landing.end) {
+        phase = "done";
+        entryTl.progress(1, true);
       }
 
       // ── SCROLL-DRIVEN OUTRO ──
@@ -679,26 +499,18 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       tl.to(label, { opacity: 0, duration: LABEL_FADE }, at(SEQUENCE.outro) - LABEL_FADE)
         .to(consoleBox, { pointerEvents: "none", duration: 0.01 }, at(SEQUENCE.outro))
         .fromTo(live, { outro: 0 }, { outro: 1, duration: span(SEQUENCE.outro) }, at(SEQUENCE.outro))
-        .fromTo(live, { film: 0 }, { film: 1, duration: span(SEQUENCE.film) }, at(SEQUENCE.film));
+        .fromTo(live, { film: 0 }, { film: 1, duration: span(SEQUENCE.film) }, at(SEQUENCE.film))
+        .fromTo(film, { opacity: 0 }, { opacity: 1, duration: span(SEQUENCE.film) }, at(SEQUENCE.film));
 
-      // The push in toward the Wheels footage. (Not on phones: see `lite`.)
-      if (!lite) {
-        tl.fromTo(film, { opacity: 0 }, { opacity: 1, duration: span(SEQUENCE.film) }, at(SEQUENCE.film));
-        tl.fromTo(
-          hero,
-          { x: 0, y: 0, scale: 1 },
-          { ...pushedIn, duration: span(dive), ease: "power2.in", immediateRender: false },
-          at(dive)
-        );
-      }
+      // The push in toward the Wheels footage.
+      tl.fromTo(
+        hero,
+        { x: 0, y: 0, scale: 1 },
+        { ...pushedIn, duration: span(dive), ease: "power2.in", immediateRender: false },
+        at(dive)
+      );
 
       // The handoff: Wheels is full-screen underneath, so the hero fades away.
-      // The closing `set` only pads the timeline to exactly 100 long, which is what makes every
-      // position above a percentage of the scroll. It is on a throwaway object on purpose: a
-      // zero-length set on the hero is undone LAST when this is torn down, after the fade before
-      // it, so it would put back the "opacity: 0" it found. That left the hero invisible for
-      // good once the page had been scrolled past GPC and this was then rebuilt (any resize; on
-      // a phone, the address bar sliding away is one).
       tl.to(hero, { pointerEvents: "none", duration: 0.01 }, at(handoff))
         .to(hero, { opacity: 0, duration: span(handoff) * 0.85 }, at(handoff))
         .set({}, {}, 100);
@@ -717,8 +529,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         scroller.removeEventListener("scroll", brake);
         window.removeEventListener("keydown", onKeyDown);
         offLenisScroll?.();
-        stopLite?.();
-        if (!lite) release();
+        release();
         Object.assign(live, { power: 1, outro: 0, film: 0, picture: null });
         hero.style.clipPath = "";
         hero.style.opacity = ""; // never carried over into the next build: see the handoff above
