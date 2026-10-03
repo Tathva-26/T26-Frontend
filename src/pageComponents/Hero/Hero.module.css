@@ -1183,6 +1183,14 @@
   .fixedRegister {
     display: none;
   }
+
+  /* .girlWrap scales to 60x here (vs. 15.55x on desktop) — a layer that large promoted to its
+     own compositor layer is a plausible source of mid-gesture rasterisation hiccups on mobile
+     GPUs. She's also now faded out/hidden well before reaching that scale (see Hero.jsx
+     syncPortalFrame), so losing the promotion costs nothing visible. */
+  .girlWrap {
+    will-change: auto;
+  }
 }
 
 /* ===============================

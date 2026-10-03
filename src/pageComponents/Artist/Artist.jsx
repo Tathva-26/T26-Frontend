@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  useCallback,
   useLayoutEffect,
   useRef,
   useState,
@@ -67,10 +68,47 @@ function ScheduleCard({ artist, activeIndex = 0, onSelectDay }) {
 const PORTRAIT_EASE = 'sine.inOut'
 const PORTRAIT_EXIT = -60
 
+// --- Scroll pacing --------------------------------------------------------
+// Each artist is held still, whole, before and after its transition, so the
+// crossfade reads as "artist, slide, artist" instead of one continuous morph.
+// In timeline units: HOLD, transition (1), HOLD, transition, ... HOLD.
+const HOLD = 0.5
+const STEP = 1 + HOLD // one transition plus the hold that follows it
+const timelineTotal = (count) => HOLD + Math.max(0, count - 1) * STEP
+// Scroll spent on one timeline unit. 100dvh per unit = a full screen of wheel
+// for each transition, half a screen for each hold.
+const SCROLL_PER_UNIT_DVH = 100
+
+// GPC sits on top of the end of this section: its track starts (100dvh +
+// --gpc-lead) early (see gpc.css), so its stage slides up into view while this
+// section is still scrolling. The crossfade is finished by then, which leaves
+// the last artist held still and whole for GPC to pull back out of.
+//   272 = 100 (the viewport) + 100 + 72 (--gpc-lead above 768px)
+//   200 = 100 (the viewport) + 100 + 0  (no lead at 768px and below)
+const CROSSFADE_END_DVH = 272
+const SECTION_SCROLL_DVH = timelineTotal(2) * SCROLL_PER_UNIT_DVH
+
+// How far GPC's track reaches back over this section, in px. Read off its own
+// margin so --gpc-lead and its breakpoint never have to be repeated here; 0 on
+// routes without GPC and for reduced motion, where it doesn't overlap at all.
+function gpcOverlapPx() {
+  const track =
+    typeof document !== 'undefined'
+      ? document.querySelector('.gpc-track')
+      : null
+  if (!track) return 0
+  const overlap = -parseFloat(window.getComputedStyle(track).marginTop || '0')
+  return Number.isFinite(overlap) && overlap > 0 ? overlap : 0
+}
+
 function useScrubCrossfade(
   ref,
   { bgRefs, portraitRefs, boardRefs, onIndexChange, snap = false },
 ) {
+  // Set while the timeline is alive: maps an artist index to the scroll
+  // position where that artist is shown whole (see scrollToIndex below).
+  const scrollForIndex = useRef(null)
+
   useLayoutEffect(() => {
     const section = ref.current
     if (!section) return
@@ -106,20 +144,29 @@ function useScrubCrossfade(
       if (boards.length > 1)
         gsap.set(boards.slice(1), { yPercent: 100, autoAlpha: 0 })
 
+      const total = timelineTotal(count)
+
       const tl = gsap.timeline({
         defaults: { duration: 1 },
         scrollTrigger: {
           trigger: section,
           ...(scroller ? { scroller } : {}),
           start: 'top top',
-          end: 'bottom bottom',
-          scrub: 1.5,
+          // Done by the time GPC's stage comes into view at the bottom, so the
+          // last artist is already held still when GPC starts pulling back
+          // out of it. (A function so it is re-read on every refresh.)
+          end: () => `bottom bottom+=${gpcOverlapPx()}`,
+          scrub: 0.8,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             if (onIndexChange) {
-              const idx = Math.min(
-                Math.round(self.progress * (count - 1)),
+              // Which artist is showing, counting the holds: the label flips
+              // halfway through each transition.
+              const t = self.progress * total
+              const idx = gsap.utils.clamp(
+                0,
                 count - 1,
+                Math.round((t - HOLD) / STEP),
               )
               onIndexChange(idx)
             }
@@ -128,7 +175,7 @@ function useScrubCrossfade(
       })
 
       for (let i = 0; i < count - 1; i++) {
-        const t = i
+        const t = HOLD + i * STEP
 
         if (bgs[i] && bgs[i + 1]) {
           tl.to(bgs[i], { autoAlpha: 0, ease: 'none' }, t).to(
@@ -163,13 +210,44 @@ function useScrubCrossfade(
           )
         }
       }
+
+      // The last hold has to be a real part of the timeline: without it the
+      // timeline would end on the last transition and the scroll after it
+      // would do nothing because there is nothing left, not because the last
+      // artist is being held.
+      tl.to({}, { duration: HOLD }, total - HOLD)
+
+      // Where to scroll to show artist `idx` whole: the end of its hold, as a
+      // fraction of this trigger's own scroll range.
+      scrollForIndex.current = (idx) => {
+        const st = tl.scrollTrigger
+        if (!st) return null
+        const time = HOLD + gsap.utils.clamp(0, count - 1, idx) * STEP
+        return st.start + (st.end - st.start) * (time / total)
+      }
     }, section)
 
     return () => {
       context.revert()
+      scrollForIndex.current = null
       section.classList.remove('is-offscreen')
     }
   }, [ref, bgRefs, portraitRefs, boardRefs, onIndexChange, snap])
+
+  // Jump to an artist (the day tabs). Lenis drives .main-scroll on the home
+  // page, so going through it keeps its own target in step; elsewhere this is
+  // a plain smooth scroll.
+  return useCallback(
+    (idx) => {
+      const target = scrollForIndex.current?.(idx)
+      if (target == null) return
+      const scroller = ref.current?.closest('.main-scroll')
+      if (window.__lenis) window.__lenis.scrollTo(target)
+      else if (scroller) scroller.scrollTo({ top: target, behavior: 'smooth' })
+      else window.scrollTo({ top: target, behavior: 'smooth' })
+    },
+    [ref],
+  )
 }
 
 // Point where the line from the rect's center in direction (dx, dy) leaves the
@@ -590,7 +668,7 @@ function ArtistMobile() {
   const mobileBoardRefs = useRef([])
   const [activeDay, setActiveDay] = useState(0)
 
-  useScrubCrossfade(sectionRef, {
+  const scrollToArtist = useScrubCrossfade(sectionRef, {
     bgRefs: mobileBgRefs,
     portraitRefs: null,
     boardRefs: mobileBoardRefs,
@@ -599,22 +677,7 @@ function ArtistMobile() {
 
   const goToDay = (index) => {
     setActiveDay(index)
-    const targetIdx = index % artists.length
-    const section = sectionRef.current
-    if (!section) return
-
-    const rect = section.getBoundingClientRect()
-    const scroller = section.closest('.main-scroll') || window
-    const scrollStart =
-      (scroller === window ? window.scrollY : scroller.scrollTop) + rect.top
-    const totalScroll = rect.height - window.innerHeight
-    const targetProgress = targetIdx / (artists.length - 1)
-    const targetScroll = scrollStart + totalScroll * targetProgress
-
-    scroller.scrollTo({
-      top: targetScroll,
-      behavior: 'smooth',
-    })
+    scrollToArtist(index % artists.length)
   }
 
   return (
@@ -692,7 +755,7 @@ export default function App() {
   const boardRefs = useRef([])
   const [activeArtistIndex, setActiveArtistIndex] = useState(0)
 
-  useScrubCrossfade(sectionRef, {
+  const scrollToArtist = useScrubCrossfade(sectionRef, {
     bgRefs,
     portraitRefs,
     boardRefs,
@@ -700,22 +763,7 @@ export default function App() {
   })
 
   const handleSelectDay = (dayIndex) => {
-    const section = sectionRef.current
-    if (!section) return
-    const targetIdx = dayIndex % artists.length
-    const rect = section.getBoundingClientRect()
-    const scroller = section.closest('.main-scroll') || window
-
-    const scrollStart =
-      (scroller === window ? window.scrollY : scroller.scrollTop) + rect.top
-    const totalScroll = rect.height - window.innerHeight
-    const targetProgress = targetIdx / (artists.length - 1)
-    const targetScroll = scrollStart + totalScroll * targetProgress
-
-    scroller.scrollTo({
-      top: targetScroll,
-      behavior: 'smooth',
-    })
+    scrollToArtist(dayIndex % artists.length)
   }
 
   return (
@@ -1201,7 +1249,10 @@ export default function App() {
             display: block;
             position: relative;
             background: #1c1c1c;
-            height: 250dvh;
+            /* 200dvh of crossfade scroll + the 200dvh GPC overlaps at the end
+               (one screen + its one-screen track margin; no --gpc-lead here).
+               Keep in step with CROSSFADE_END_DVH / SECTION_SCROLL_DVH. */
+            height: 400dvh;
           }
 
           .mobile-sticky-container {
@@ -1335,7 +1386,14 @@ export default function App() {
         ref={sectionRef}
         className='proshow-section'
         id='proshow'
-        style={{ minHeight: `${artists.length * 100}dvh` }}
+        // The crossfade's own scroll, plus the stretch at the end that GPC
+        // overlaps (see CROSSFADE_END_DVH). Plain layout, not measured after
+        // mount, so everything below is laid out against the right height from
+        // the first render. Phones override it: .proshow-mobile is the section
+        // there, and carries the same sum.
+        style={{
+          minHeight: `calc(${CROSSFADE_END_DVH}dvh + ${SECTION_SCROLL_DVH}dvh)`,
+        }}
       >
         <div className='global-bg-container'>
           {artists.map((artist, index) => (
