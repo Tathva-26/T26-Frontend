@@ -32,16 +32,12 @@ const LightPillar = ({
   const isRunningRef = useRef(false);
   const isVisibleRef = useRef(true);
   const isPageVisibleRef = useRef(true);
-  const [webGLSupported, setWebGLSupported] = useState(true);
-
-  // Check WebGL support
-  useEffect(() => {
+  const [webGLSupported, setWebGLSupported] = useState(() => {
+    if (typeof document === 'undefined') return true;
     const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    if (!gl) {
-      setWebGLSupported(false);
-    }
-  }, []);
+    return Boolean(gl);
+  });
 
   useEffect(() => {
     if (!containerRef.current || !webGLSupported) return;
@@ -93,7 +89,7 @@ const LightPillar = ({
         preserveDrawingBuffer: false
       });
     } catch (error) {
-      setWebGLSupported(false);
+      window.setTimeout(() => setWebGLSupported(false), 0);
       return;
     }
 
