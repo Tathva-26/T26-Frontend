@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { Hammersmith_One, Instrument_Serif } from "next/font/google";
 import { useUser } from "@/context/UserContext";
+import Link from "next/link";
 
 /**
  * Navbar
@@ -44,6 +45,8 @@ const NAV_LINKS = [
   { label: "ProShow", href: "#journal" },
   { label: "Accomodation", href: "#contact" },
 ];
+
+const LOGIN_HREF = "/login";
 
 const SCROLL_RANGE = 140; // px of scroll over which the bar fully compacts
 const EASE = 0.12; // per-frame lerp factor — gives the resize physical weight
@@ -303,23 +306,20 @@ export default function Navbar() {
   const registerFlipRef = useRef(null);
 
   /*
-   * The call to action is the only sign-in entry point. It always points at
-   * /profile, so it still goes somewhere sensible without JS; when nobody is
-   * signed in, clicking it starts Google sign-in instead.
+   * The call to action routes through the login page: /login when signed
+   * out (which still works without JS), /profile once signed in.
    *
    * The label can only settle after the session is known, because the session
    * is an httpOnly cookie the server render cannot see.
    */
-  const { isSignedIn, user, signIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const ctaLabel = isSignedIn
     ? (user?.name || "").trim().split(/\s+/)[0] || "Profile"
     : "Register";
 
-  const handleCtaClick = (event) => {
-    if (isSignedIn) return;
-    event.preventDefault();
-    signIn();
-  };
+  // Signed out, the CTA goes to the login page (and still works without JS).
+  // Signed in, it shows the first name and goes to the profile.
+  const ctaHref = isSignedIn ? "/profile" : LOGIN_HREF;
   const rafId = useRef(null);
   const current = useRef(0);
   const target = useRef(0);
@@ -418,11 +418,10 @@ export default function Navbar() {
         </div>
 
         <div className="nb__right">
-          <a
-            href="/profile"
+          <Link
+            href={ctaHref}
             className="nb__cta"
             onPointerEnter={(event) => registerFlipRef.current?.trigger(event)}
-            onClick={handleCtaClick}
           >
             <span className="nb__cta-line" aria-hidden="true" />
             <FlipText ref={registerFlipRef} text={ctaLabel} />
@@ -431,7 +430,7 @@ export default function Navbar() {
               alt=""
               className="nb__cta-arrow"
             />
-          </a>
+          </Link>
 
           <button
             ref={menuButtonRef}
@@ -455,6 +454,7 @@ export default function Navbar() {
         <nav aria-label="Mobile">
           <ul className="nb-mobile__links">
             {NAV_LINKS.map((link) => (
+              
               <li key={link.href}>
                 <a
                   href={link.href}
@@ -467,17 +467,14 @@ export default function Navbar() {
               </li>
             ))}
           </ul>
-          <a
-            href="/profile"
+          <Link
+            href={ctaHref}
             className="nb-mobile__cta"
-            onClick={(event) => {
-              closeMenu();
-              handleCtaClick(event);
-            }}
+            onClick={closeMenu}
             tabIndex={menuOpen ? 0 : -1}
           >
             {ctaLabel}
-          </a>
+          </Link>
         </nav>
       </div>
 
