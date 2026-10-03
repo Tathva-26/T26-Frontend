@@ -39,8 +39,11 @@ const artists = [
   },
 ]
 
+// The days the artists play on: the same on every layout.
+const DAYS = ['DAY 2', 'DAY 3']
+
 function ScheduleCard({ artist, activeIndex = 0, onSelectDay }) {
-  const days = ['DAY 2', 'DAY 3']
+  const days = DAYS
 
   return (
     <div className='schedule-card'>
@@ -74,6 +77,8 @@ const PORTRAIT_EXIT = -60
 // In timeline units: HOLD, transition (1), HOLD, transition, ... HOLD.
 const HOLD = 0.5
 const STEP = 1 + HOLD // one transition plus the hold that follows it
+// Touch screens: how far inside an artist's hold a settling page is brought.
+const TOUCH_HOLD_INSET = 0.06
 const timelineTotal = (count) => HOLD + Math.max(0, count - 1) * STEP
 // Scroll spent on one timeline unit. 100dvh per unit = a full screen of wheel
 // for each transition, half a screen for each hold.
@@ -122,6 +127,7 @@ function useScrubCrossfade(
     )
       return
     const scroller = section.closest('.main-scroll')
+    const touchScreen = window.matchMedia('(pointer: coarse)').matches
 
     const context = gsap.context(() => {
       const bgs = (bgRefs?.current || []).filter(Boolean)
@@ -188,6 +194,42 @@ function useScrubCrossfade(
                     1,
                     (trigger.scroll() - trigger.start) / (trigger.end - trigger.start),
                   )
+                // Touch screens. A swipe is native scroll with momentum: it
+                // goes as far as it was thrown, so "one artist per gesture"
+                // can't be kept without taking the page away from the finger,
+                // and a locked glide after every swipe swallows the next one.
+                // So nothing is locked and nothing is remembered there: a
+                // page that comes to rest on an artist's hold is left alone,
+                // and one left mid-way between two artists is eased onto the
+                // one it was heading for. A new touch takes over at once.
+                if (touchScreen) {
+                  const time = here() * total
+                  const index = Math.min(count - 1, Math.floor(time / STEP))
+                  if (index >= count - 1 || time - index * STEP <= HOLD)
+                    return here()
+                  const forward =
+                    trigger.direction !== 0
+                      ? trigger.direction > 0
+                      : time - index * STEP - HOLD > 0.5
+                  // Just inside the hold, not on its very edge.
+                  const targetTime = forward
+                    ? (index + 1) * STEP + TOUCH_HOLD_INSET
+                    : index * STEP + HOLD - TOUCH_HOLD_INSET
+                  const lenis = window.__lenis
+                  if (!lenis) return targetTime / total
+                  if (!lenis.isStopped && !lenis.isLocked) {
+                    lenis.scrollTo(
+                      trigger.start +
+                        (trigger.end - trigger.start) * (targetTime / total),
+                      {
+                        duration: 0.45,
+                        easing: (progress) => 1 - Math.pow(1 - progress, 3),
+                      },
+                    )
+                  }
+                  return here()
+                }
+
                 // Still gliding to an artist. If Lenis is no longer locked the
                 // glide was cut short by something stopping it (GPC holding
                 // the page), and it will never report back: carry on as usual.
@@ -831,7 +873,7 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
 })
 
 function ArtistMobile() {
-  const days = ['DAY 1', 'DAY 2']
+  const days = DAYS
   const sectionRef = useRef(null)
   const mobileBgRefs = useRef([])
   const mobileBoardRefs = useRef([])
