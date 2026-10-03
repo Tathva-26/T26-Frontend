@@ -709,8 +709,61 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
 
       sync();
 
+      // TEMPORARY DIAGNOSTIC. Open the page with ?gpcdebug in the address and a small readout of
+      // what GPC is actually doing on this device is drawn in the corner, for problems that only
+      // show on a real phone. Remove once the phone issues are settled.
+      let stopDebug = null;
+      if (new URLSearchParams(window.location.search).has("gpcdebug")) {
+        const panel = document.createElement("pre");
+        panel.style.cssText =
+          "position:fixed;left:4px;top:60px;z-index:2147483647;margin:0;padding:4px 6px;max-width:92vw;" +
+          "font:10px/1.25 monospace;color:#0f0;background:rgba(0,0,0,.82);pointer-events:none;white-space:pre-wrap";
+        document.body.appendChild(panel);
+        let lastError = "none";
+        const onError = (event) => (lastError = String(event.message || event.reason).slice(0, 90));
+        window.addEventListener("error", onError);
+        window.addEventListener("unhandledrejection", onError);
+        const describe = (el) =>
+          el ? `${el.tagName.toLowerCase()}${el.dataset?.gpc ? `[gpc=${el.dataset.gpc}]` : ""}.${String(el.className).slice(0, 34)}` : "nothing";
+        const report = () => {
+          const heroStyle = getComputedStyle(hero);
+          const heroRect = hero.getBoundingClientRect();
+          const stageRect = stage.getBoundingClientRect();
+          const banner = hero.querySelector("img");
+          const canvases = [...hero.querySelectorAll("canvas")]
+            .map((c) => `${c.dataset.gpc || "cv"}:${c.width}x${c.height}`)
+            .join(" ");
+          const onTop = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+          panel.textContent = [
+            `dpr ${window.devicePixelRatio} view ${window.innerWidth}x${window.innerHeight} coarse ${touchScreen} lite ${lite}`,
+            `scroll ${Math.round(scroller.scrollTop)} gpc ${Math.round(landing.start)}..${Math.round(landing.end)} outro ${tl.progress().toFixed(3)}`,
+            `lenis stop ${!!window.__lenis?.isStopped} lock ${!!window.__lenis?.isLocked} overflow "${scroller.style.overflowY}"`,
+            `layout ${layout?.mode} children ${hero.children.length}`,
+            `hero op ${heroStyle.opacity} vis ${heroStyle.visibility} disp ${heroStyle.display}`,
+            `hero tf ${heroStyle.transform.slice(0, 44)}`,
+            `hero clip ${heroStyle.clipPath.slice(0, 30)}`,
+            `hero box y ${Math.round(heroRect.top)} ${Math.round(heroRect.width)}x${Math.round(heroRect.height)} stage y ${Math.round(stageRect.top)}`,
+            `banner loaded ${banner?.complete} ${banner?.naturalWidth}x${banner?.naturalHeight}`,
+            `canvases ${canvases}`,
+            `screen power ${live.power} outro ${Number(live.outro).toFixed(2)} film ${Number(live.film).toFixed(2)}`,
+            `at centre: ${describe(onTop)}`,
+            `  its parent: ${describe(onTop?.parentElement)}`,
+            `error: ${lastError}`,
+          ].join("\n");
+        };
+        const timer = window.setInterval(report, 300);
+        report();
+        stopDebug = () => {
+          window.clearInterval(timer);
+          window.removeEventListener("error", onError);
+          window.removeEventListener("unhandledrejection", onError);
+          panel.remove();
+        };
+      }
+
       // What GSAP's own revert doesn't undo.
       return () => {
+        stopDebug?.();
         window.clearTimeout(gateTimer);
         window.clearTimeout(intentTimer);
         scroller.removeEventListener("wheel", onWheel, listen);
