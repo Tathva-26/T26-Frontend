@@ -22,22 +22,23 @@ const assetPathPrefix = '/images/artist'
 
 const artists = [
   {
-    name: 'Arijit Singh',
-    background: `${assetPathPrefix}/21bbf.png`,
-    portrait: `${assetPathPrefix}/arijit.png`,
+    name: 'Day 2 Artists',
+    background: `${assetPathPrefix}/21bbf.svg`,
+    portrait: `${assetPathPrefix}/day2_main.svg`,
     portraitClassName: 'artist-portrait artist-portrait--arijit',
-    cardPortrait: `${assetPathPrefix}/50195.png`,
-    cardSecondary: `${assetPathPrefix}/8577e.png`,
-    avatar: `${assetPathPrefix}/475ef.png`,
+    cardPortrait: `${assetPathPrefix}/day2_anim_1.svg`,
+    cardSecondary: `${assetPathPrefix}/day2_anim_2.svg`,
+    avatar: `${assetPathPrefix}/day2_anim_3.svg`,
+    avatar2: `${assetPathPrefix}/day2_anim_4.svg`,
   },
   {
-    name: 'Shreya ghoshal',
-    background: `${assetPathPrefix}/bef85.png`,
-    portrait: `${assetPathPrefix}/shreya.png`,
-    portraitClassName: 'artist-portrait artist-portrait--shreya',
-    cardPortrait: `${assetPathPrefix}/1fbda.png`,
-    cardSecondary: `${assetPathPrefix}/3a288.png`,
-    avatar: `${assetPathPrefix}/09bd3.png`,
+    name: 'Day 3 Artists',
+    background: `${assetPathPrefix}/bef85.svg`,
+    portrait: `${assetPathPrefix}/day3.svg`,
+    portraitClassName: 'artist-portrait artist-portrait--day3',
+    cardPortrait: `${assetPathPrefix}/day3_anim_2.svg`,
+    cardSecondary: `${assetPathPrefix}/day3_anim_3.svg`,
+    avatar: `${assetPathPrefix}/day3_anim_1.svg`,
   },
 ]
 
@@ -271,9 +272,9 @@ function useScrubCrossfade(
                       index > 0
                         ? toScroll((index - 1) * STEP + HOLD - TOUCH_HOLD_INSET)
                         : Math.max(
-                            0,
-                            trigger.start - (scroller?.clientHeight ?? 0) * 1.2,
-                          )
+                          0,
+                          trigger.start - (scroller?.clientHeight ?? 0) * 1.2,
+                        )
                   }
                   if (target === null || Math.abs(target - scroll) < 2)
                     return here()
@@ -350,13 +351,13 @@ function useScrubCrossfade(
                     settledArtistIndex.current === null
                       ? 0
                       : artistStops.reduce(
-                          (nearest, point, index) =>
-                            Math.abs(point - value) <
+                        (nearest, point, index) =>
+                          Math.abs(point - value) <
                             Math.abs(artistStops[nearest] - value)
-                              ? index
-                              : nearest,
-                          0,
-                        )
+                            ? index
+                            : nearest,
+                        0,
+                      )
                 }
 
                 // Advance exactly one artist per completed scroll gesture.
@@ -600,20 +601,20 @@ function useScrubCrossfade(
 // Point where the line from the rect's center in direction (dx, dy) leaves the
 // shape. Circular/elliptical shapes (rect.round) use the real ellipse edge so
 // arrows touch the circle instead of stopping at the bounding-box corner.
-function edgePoint(rect, dx, dy) {
+function edgePoint(rect, dx, dy, gap = 4) {
   const cx = rect.left + rect.width / 2
   const cy = rect.top + rect.height / 2
   if (dx === 0 && dy === 0) return { x: cx, y: cy }
 
   let scale
   if (rect.round) {
-    const a = rect.width / 2
-    const b = rect.height / 2
+    const a = rect.width / 2 + gap
+    const b = rect.height / 2 + gap
     scale = 1 / Math.sqrt((dx / a) ** 2 + (dy / b) ** 2)
   } else {
     scale = Math.min(
-      rect.width / 2 / Math.abs(dx || Infinity),
-      rect.height / 2 / Math.abs(dy || Infinity),
+      (rect.width / 2 + gap) / Math.abs(dx || Infinity),
+      (rect.height / 2 + gap) / Math.abs(dy || Infinity),
     )
   }
   return { x: cx + dx * scale, y: cy + dy * scale }
@@ -630,7 +631,7 @@ function segmentBetween(rectA, rectB) {
   }
   const dx = centerB.x - centerA.x
   const dy = centerB.y - centerA.y
-  return { start: edgePoint(rectA, dx, dy), end: edgePoint(rectB, -dx, -dy) }
+  return { start: edgePoint(rectA, dx, dy, 6), end: edgePoint(rectB, -dx, -dy, 6) }
 }
 
 function buildCurve(start, end, bend = 1) {
@@ -710,8 +711,9 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
       const rectOf = (el) => {
         if (!(el instanceof Element)) return el
         const r = el.getBoundingClientRect()
+        const isAvatar = el.classList.contains('slide__avatar')
         const radius = window.getComputedStyle(el).borderTopLeftRadius || ''
-        const round = radius.includes('%') && parseFloat(radius) >= 50
+        const round = isAvatar || (radius.includes('%') && parseFloat(radius) >= 50)
         return {
           left: r.left - slideBox.left,
           top: r.top - slideBox.top,
@@ -809,6 +811,7 @@ function ArtistContent({
   const avatarRef = useRef(null)
   const secondaryRef = useRef(null)
   const primaryRef = useRef(null)
+  const avatar2Ref = useRef(null)
 
   const getNextAvatar = () => {
     const slide = slideRef.current
@@ -830,7 +833,7 @@ function ArtistContent({
   }
 
   return (
-    <div className='artist-content-slide' ref={slideRef}>
+    <div className={`artist-content-slide slide--${artist.name.replace(/\s+/g, '-').toLowerCase()}`} ref={slideRef}>
       <img
         ref={avatarRef}
         className='slide__avatar'
@@ -853,13 +856,46 @@ function ArtistContent({
           getFrom={() => secondaryRef.current}
           getTo={() => primaryRef.current}
         />
-        <ConnectorArrow
-          ref={(el) => onRegisterConnector?.(connectorBaseIndex + 2, el)}
-          slideRef={slideRef}
-          bend={1}
-          getFrom={() => primaryRef.current}
-          getTo={getNextAvatar}
-        />
+        {artist.avatar2 ? (
+          <>
+            <ConnectorArrow
+              ref={(el) => onRegisterConnector?.(connectorBaseIndex + 0, el)}
+              slideRef={slideRef}
+              bend={1}
+              getFrom={() => avatarRef.current}
+              getTo={() => secondaryRef.current}
+            />
+            <ConnectorArrow
+              ref={(el) => onRegisterConnector?.(connectorBaseIndex + 1, el)}
+              slideRef={slideRef}
+              bend={-1}
+              getFrom={() => secondaryRef.current}
+              getTo={() => avatar2Ref.current}
+            />
+            <ConnectorArrow
+              ref={(el) => onRegisterConnector?.(connectorBaseIndex + 2, el)}
+              slideRef={slideRef}
+              bend={1}
+              getFrom={() => avatar2Ref.current}
+              getTo={() => primaryRef.current}
+            />
+            <ConnectorArrow
+              ref={(el) => onRegisterConnector?.(connectorBaseIndex + 3, el)}
+              slideRef={slideRef}
+              bend={-1}
+              getFrom={() => primaryRef.current}
+              getTo={getNextAvatar}
+            />
+          </>
+        ) : (
+          <ConnectorArrow
+            ref={(el) => onRegisterConnector?.(connectorBaseIndex + 2, el)}
+            slideRef={slideRef}
+            bend={1}
+            getFrom={() => primaryRef.current}
+            getTo={getNextAvatar}
+          />
+        )}
       </svg>
 
       <img
@@ -875,6 +911,15 @@ function ArtistContent({
         alt={`${artist.name} performing`}
       />
 
+      {artist.avatar2 && (
+        <img
+          ref={avatar2Ref}
+          className='slide__avatar2'
+          src={artist.avatar2}
+          alt=''
+        />
+      )}
+
       <h2 className='slide__name'>{artist.name}</h2>
     </div>
   )
@@ -882,6 +927,7 @@ function ArtistContent({
 
 const ArtistBoard = memo(function ArtistBoard({ artist }) {
   const dupes = [artist, artist, artist]
+  const numConnectors = artist.avatar2 ? 4 : 3
   const connectorRefs = useRef([])
   const loopsRef = useRef(0)
   const trackRef = useRef(null)
@@ -907,12 +953,12 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
       loopsRef.current += 1
       const arrows = connectorRefs.current
       const total = arrows.length
-      for (let i = 0; i < total - 3; i++) {
-        const from = arrows[i + 3]
+      for (let i = 0; i < total - numConnectors; i++) {
+        const from = arrows[i + numConnectors]
         const to = arrows[i]
         if (from && to) to.setProgress(from.getProgress())
       }
-      for (let i = Math.max(0, total - 3); i < total; i++) {
+      for (let i = Math.max(0, total - numConnectors); i < total; i++) {
         arrows[i]?.setProgress(0)
       }
     }
@@ -928,14 +974,12 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
         onRepeat: swapConnectors,
       },
     )
-    // The board only moves while it can be seen: it used to run for the whole
-    // life of the page, every copy of it, wherever the page was scrolled to.
     const stopWatching = watchVisible(track, (visible) => tween.paused(!visible))
     return () => {
       stopWatching()
       tween.kill()
     }
-  }, [])
+  }, [numConnectors])
 
   useLayoutEffect(() => {
     if (
@@ -949,28 +993,26 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
     let cancelled = false
     let timer = null
     let tween = null
-    let L = 3
+    let L = numConnectors
     let seen = true
-    for (let i = 0; i < 3; i++) connectorRefs.current[i]?.setProgress(1)
+    for (let i = 0; i < numConnectors; i++) connectorRefs.current[i]?.setProgress(1)
 
     const wait = () => {
       timer = setTimeout(step, seen ? 60 : 400)
     }
-    // Same as the board itself: the arrows only draw while they can be seen.
-    // (Each step measures its SVG path, which is slow.)
     const stopWatching = trackRef.current
       ? watchVisible(trackRef.current, (visible) => {
-          seen = visible
-          tween?.paused(!visible)
-        })
+        seen = visible
+        tween?.paused(!visible)
+      })
       : null
 
     const step = () => {
       if (cancelled) return
       if (!seen) return wait()
       const loops = loopsRef.current
-      if (L < 3 * loops) L = 3 * loops
-      const arrow = connectorRefs.current[L - 3 * loops]
+      if (L < numConnectors * loops) L = numConnectors * loops
+      const arrow = connectorRefs.current[L - numConnectors * loops]
       if (!arrow) return wait()
       if (arrow.getProgress() >= 1) {
         L += 1
@@ -982,15 +1024,15 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
       const prog = { v: 0 }
       tween = gsap.to(prog, {
         v: 1,
-        duration: CONNECTOR_DURATION,
+        duration: numConnectors === 4 ? 1.2 : 1.8,
         ease: 'power1.inOut',
         onUpdate: () => {
-          connectorRefs.current[current - 3 * loopsRef.current]?.setProgress(
+          connectorRefs.current[current - numConnectors * loopsRef.current]?.setProgress(
             prog.v,
           )
         },
         onComplete: () => {
-          connectorRefs.current[current - 3 * loopsRef.current]?.setProgress(1)
+          connectorRefs.current[current - numConnectors * loopsRef.current]?.setProgress(1)
           L = current + 1
           step()
         },
@@ -1005,13 +1047,13 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
       clearTimeout(timer)
       tween?.kill()
     }
-  }, [])
+  }, [numConnectors])
 
   return (
     <div className='artist-board'>
       <img
         className='artist-board__texture'
-        src={`${assetPathPrefix}/88fac.png`}
+        src={`${assetPathPrefix}/88fac.svg`}
         alt=''
       />
       <div className='board-marquee'>
@@ -1021,7 +1063,7 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
               artist={a}
               key={`${a.name}-${i}`}
               onRegisterConnector={registerConnector}
-              connectorBaseIndex={i * 3}
+              connectorBaseIndex={i * numConnectors}
             />
           ))}
         </div>
@@ -1323,19 +1365,19 @@ export default function App() {
 
         .artist-portrait--arijit {
           position: absolute;
-          top: 7.32vh;
-          left: -27.29%;
-          width: 263.16%;
-          height: 92.68vh;
+          bottom: 0;
+          left: 5%;
+          width: 90%;
+          height: 85vh;
           max-width: none;
           object-fit: contain;
-          object-position: left top;
+          object-position: bottom;
           transform: none;
         }
 
-        .artist-portrait--shreya {
+        .artist-portrait--day3 {
           left: -4%;
-          bottom: -1%;
+          bottom: 0;
           width: 91%;
           height: 76%;
         }
@@ -1496,44 +1538,83 @@ export default function App() {
           -webkit-backface-visibility: hidden;
         }
 
-        .slide__avatar {
+        .slide__avatar, .slide__avatar2 {
           position: absolute;
           z-index: 2;
-          top: 35%;
-          left: 8%;
-          width: 10%;
+          width: 16%;
           aspect-ratio: 1;
           border-radius: 50%;
           object-fit: cover;
         }
 
-        .slide__secondary {
+        .slide__secondary, .slide__primary {
           position: absolute;
           z-index: 2;
-          top: 55%;
-          left: 32%;
           width: 24%;
           height: 38%;
           object-fit: cover;
           border-radius: 12px;
         }
 
-        .slide__primary {
-          position: absolute;
-          z-index: 2;
+        /* --- DAY 2 SPECIFIC LAYOUT --- */
+        .slide--day-2-artists .slide__avatar {
+          top: 25%;
+          left: 4%;
+          width: 18%;
+          height: 34%;
+          aspect-ratio: auto;
+          border-radius: 12px;
+          object-position: 70% center;
+        }
+        .slide--day-2-artists .slide__secondary {
+          top: 55%;
+          left: 30%;
+          width: 18%;
+          height: 34%;
+          border-radius: 12px;
+        }
+        .slide--day-2-artists .slide__avatar2 {
+          top: 25%;
+          left: 56%;
+          width: 16%;
+          height: auto;
+          aspect-ratio: 1;
+          border-radius: 50%;
+        }
+        .slide--day-2-artists .slide__primary {
+          top: 55%;
+          left: 80%;
+          width: 16%;
+          height: auto;
+          aspect-ratio: 1;
+          border-radius: 50%;
+        }
+        .slide--day-2-artists .slide__name {
+          top: 10%;
+          left: 40%;
+        }
+
+        /* --- DAY 3 SPECIFIC LAYOUT --- */
+        .slide--day-3-artists .slide__avatar {
+          top: 32%;
+          left: 5%;
+        }
+        .slide--day-3-artists .slide__secondary {
+          top: 55%;
+          left: 32%;
+        }
+        .slide--day-3-artists .slide__primary {
           top: 10%;
           left: 68%;
-          width: 24%;
-          height: 38%;
-          object-fit: cover;
-          border-radius: 12px;
+        }
+        .slide--day-3-artists .slide__name {
+          top: 65%;
+          left: 65%;
         }
 
         .slide__name {
           position: absolute;
           z-index: 3;
-          top: 65%;
-          left: 65%;
           margin: 0;
           color: white;
           font-family: 'La Belle Aurore:Regular', cursive;
@@ -1544,7 +1625,7 @@ export default function App() {
         .connector-overlay {
           position: absolute;
           inset: 0;
-          z-index: 1;
+          z-index: 3;
           width: 100%;
           height: 100%;
           overflow: visible;
