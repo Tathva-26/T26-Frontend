@@ -56,19 +56,19 @@ const desktopCards = [
 // Mobile Constants
 const mobileCards = [
   {
-    number: '01',
-    title: 'WORKSHOPS',
-    description: (
-      <>
-        HANDS ON
-        <br />
-        MINDS ON
-        <br />
-        REAL WORLD
-      </>
-    ),
-    image: 'https://c.animaapp.com/UqxAlqQL/img/group-34@2x.png',
-    position: 'absolute top-0 left-px w-[143px] h-[401px]',
+    number: "01",
+    title: "WORKSHOPS",
+    // description: (
+    //   <>
+    //     HANDS ON
+    //     <br />
+    //     MINDS ON
+    //     <br />
+    //     REAL WORLD
+    //   </>
+    // ),
+    image: "https://c.animaapp.com/UqxAlqQL/img/group-34@2x.png",
+    position: "absolute top-0 left-px w-[143px] h-[401px]",
     titleClass:
       "absolute top-[76px] left-0 w-[139px] [font-family:'Hammersmith_One',Helvetica] font-normal text-white text-[13.6px] text-center tracking-[3.40px] leading-[normal]",
     descriptionClass:
@@ -77,19 +77,19 @@ const mobileCards = [
     iconPosition: 'top-[347px] left-[52px]',
   },
   {
-    number: '02',
-    title: 'COMPETITIONS',
-    description: (
-      <>
-        THINK
-        <br />
-        SOLVE
-        <br />
-        BUILD
-      </>
-    ),
-    image: 'https://c.animaapp.com/UqxAlqQL/img/group-35@2x.png',
-    position: 'absolute top-px left-[174px] w-[143px] h-[401px]',
+    number: "02",
+    title: "COMPETITIONS",
+    // description: (
+    //   <>
+    //     THINK
+    //     <br />
+    //     SOLVE
+    //     <br />
+    //     BUILD
+    //   </>
+    // ),
+    image: "https://c.animaapp.com/UqxAlqQL/img/group-35@2x.png",
+    position: "absolute top-px left-[174px] w-[143px] h-[401px]",
     titleClass:
       "left-px w-[139px] text-[12.2px] tracking-[3.06px] absolute top-[76px] [font-family:'Hammersmith_One',Helvetica] font-normal text-white text-center leading-[normal]",
     descriptionClass:
@@ -98,19 +98,19 @@ const mobileCards = [
     iconPosition: 'top-[347px] left-[52px]',
   },
   {
-    number: '03',
-    title: 'LECTURES',
-    description: (
-      <>
-        LEARN
-        <br />
-        GAIN PERSPECTIVE
-        <br />
-        GROW
-      </>
-    ),
-    image: 'https://c.animaapp.com/UqxAlqQL/img/group-36@2x.png',
-    position: 'absolute top-[419px] left-0 w-[143px] h-[401px]',
+    number: "03",
+    title: "LECTURES",
+    // description: (
+    //   <>
+    //     LEARN
+    //     <br />
+    //     GAIN PERSPECTIVE
+    //     <br />
+    //     GROW
+    //   </>
+    // ),
+    image: "https://c.animaapp.com/UqxAlqQL/img/group-36@2x.png",
+    position: "absolute top-[419px] left-0 w-[143px] h-[401px]",
     titleClass:
       "left-3.5 w-[116px] text-[13.6px] tracking-[3.40px] absolute top-[76px] [font-family:'Hammersmith_One',Helvetica] font-normal text-white text-center leading-[normal]",
     descriptionClass:
@@ -119,19 +119,19 @@ const mobileCards = [
     iconPosition: 'top-[347px] left-[52px]',
   },
   {
-    number: '04',
-    title: 'HACKATHONS',
-    description: (
-      <>
-        CODE
-        <br />
-        COLLABORATE
-        <br />
-        CREATE
-      </>
-    ),
-    image: 'https://c.animaapp.com/UqxAlqQL/img/group-37@2x.png',
-    position: 'absolute top-[419px] left-[174px] w-[143px] h-[401px]',
+    number: "04",
+    title: "HACKATHONS",
+    // description: (
+    //   <>
+    //     CODE
+    //     <br />
+    //     COLLABORATE
+    //     <br />
+    //     CREATE
+    //   </>
+    // ),
+    image: "https://c.animaapp.com/UqxAlqQL/img/group-37@2x.png",
+    position: "absolute top-[419px] left-[174px] w-[143px] h-[401px]",
     titleClass:
       "absolute top-[76px] left-0 w-[139px] [font-family:'Hammersmith_One',Helvetica] font-normal text-white text-[13.6px] text-center tracking-[3.40px] leading-[normal]",
     descriptionClass:
@@ -340,12 +340,12 @@ export const Frame = ({ onScrollUp, onScroll, isActive }) => {
   useEffect(() => {
     if (!isActive) return
     const handleWheel = (e) => {
-      if (typeof onScroll === 'function') {
-        e.preventDefault()
-        onScroll(e.deltaY)
-      } else if (e.deltaY < 0 && typeof onScrollUp === 'function') {
-        e.preventDefault()
-        onScrollUp()
+      if (typeof onScroll === "function") {
+        e.preventDefault();
+        onScroll(e.deltaY, e.timeStamp);
+      } else if (e.deltaY < 0 && typeof onScrollUp === "function") {
+        e.preventDefault();
+        onScrollUp();
       }
     }
 

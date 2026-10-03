@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
+import { watchVisible } from "@/lib/watchVisible";
 
 function makeNoise(seed = 7) {
   let s = seed >>> 0;
@@ -124,27 +125,33 @@ export default function TopoBackground({
       ctx.stroke();
     };
 
+    // Redrawing the whole field is a lot of work for the main thread, and it used to run every
+    // frame for as long as the page was open, wherever it had been scrolled to. It only runs
+    // while the canvas can be seen, and on touch screens at half the frame rate: the lines drift
+    // slowly, and a phone needs the time for scrolling.
+    const everyOther = window.matchMedia?.("(pointer: coarse)").matches;
+    let skip = false;
     const loop = (now) => {
-      draw(now);
       raf = requestAnimationFrame(loop);
+      if (everyOther && (skip = !skip)) return;
+      draw(now);
     };
 
     resize();
     draw(performance.now());
-    if (!reduce) raf = requestAnimationFrame(loop);
 
-    const onVis = () => {
+    const stopWatching = watchVisible(canvas, (visible) => {
       cancelAnimationFrame(raf);
-      if (!document.hidden && !reduce) raf = requestAnimationFrame(loop);
-    };
+      raf = 0;
+      if (visible && !reduce) raf = requestAnimationFrame(loop);
+    });
     const ro = new ResizeObserver(() => { resize(); draw(performance.now()); });
     ro.observe(canvas);
-    document.addEventListener("visibilitychange", onVis);
 
     return () => {
       cancelAnimationFrame(raf);
+      stopWatching();
       ro.disconnect();
-      document.removeEventListener("visibilitychange", onVis);
     };
   }, [lineColor, lineOpacity, lineWidth, levels, scale, speed, cell, seed]);
 

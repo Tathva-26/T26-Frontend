@@ -13,6 +13,8 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { EasePack } from 'gsap/EasePack'
 import TopoBackground from '@/components/TopoBackground'
+import { watchVisible } from '@/lib/watchVisible'
+import { touchStop } from '@/lib/touchStop'
 
 gsap.registerPlugin(ScrollTrigger, EasePack)
 
@@ -39,8 +41,11 @@ const artists = [
   },
 ]
 
+// The days the artists play on: the same on every layout.
+const DAYS = ['DAY 2', 'DAY 3']
+
 function ScheduleCard({ artist, activeIndex = 0, onSelectDay }) {
-  const days = ['DAY 2', 'DAY 3']
+  const days = DAYS
 
   return (
     <div className='schedule-card'>
@@ -74,6 +79,14 @@ const PORTRAIT_EXIT = -60
 // In timeline units: HOLD, transition (1), HOLD, transition, ... HOLD.
 const HOLD = 0.5
 const STEP = 1 + HOLD // one transition plus the hold that follows it
+// Touch screens: how far inside an artist's hold a settling page is brought.
+const TOUCH_HOLD_INSET = 0.06
+// Touch screens: which way a swipe was going is read off how far it took the
+// page from where it began to where it came to rest, at least this many px.
+// (Not off its last movement: a finger wobbles as it lifts, and momentum can
+// tick back a pixel as it dies; either would send the page back the way it
+// came.)
+const TOUCH_INTENT_PX = 24
 const timelineTotal = (count) => HOLD + Math.max(0, count - 1) * STEP
 // Scroll spent on one timeline unit. 100dvh per unit = a full screen of wheel
 // for each transition, half a screen for each hold.
@@ -103,11 +116,15 @@ function gpcOverlapPx() {
 
 function useScrubCrossfade(
   ref,
-  { bgRefs, portraitRefs, boardRefs, onIndexChange, snap = false },
+  { bgRefs, portraitRefs, boardRefs, onIndexChange, snap = true },
 ) {
   // Set while the timeline is alive: maps an artist index to the scroll
   // position where that artist is shown whole (see scrollToIndex below).
   const scrollForIndex = useRef(null)
+  // null means the user has not landed on an artist yet (e.g. entering from W1).
+  // -1 / `count` mean the section was last left through its top / bottom, so
+  // coming back in lands on the first / last artist, not one further along.
+  const settledArtistIndex = useRef(null)
 
   useLayoutEffect(() => {
     const section = ref.current
@@ -118,6 +135,8 @@ function useScrubCrossfade(
     )
       return
     const scroller = section.closest('.main-scroll')
+    const touchScreen = window.matchMedia('(pointer: coarse)').matches
+    let stopTouchStops = null
 
     const context = gsap.context(() => {
       const bgs = (bgRefs?.current || []).filter(Boolean)
@@ -125,6 +144,12 @@ function useScrubCrossfade(
       const boards = (boardRefs?.current || []).filter(Boolean)
       const count = Math.max(bgs.length, boards.length, ports.length)
       if (count < 2) return
+      // The wide layout's section also wraps the phone layout, so on a phone
+      // it is on the page but its own layers are not laid out at all. Without
+      // this both copies would drive the scroll there, one of them animating
+      // nothing anyone can see.
+      const probe = bgs[0] || boards[0] || ports[0]
+      if (probe && probe.getClientRects().length === 0) return
 
       // Hide sticky/promoted layers whenever this section is off-screen so
       // they can never paint over neighbouring pages.
@@ -134,7 +159,13 @@ function useScrubCrossfade(
         trigger: section,
         ...(scroller ? { scroller } : {}),
         start: 'top bottom',
-        end: 'bottom top',
+        // Touch screens: GPC is a plain opaque page there, and once it has
+        // slid all the way up (this section's bottom at the bottom of the
+        // screen) nothing of the artists can be seen, so they stop there and
+        // stop animating underneath it. Elsewhere GPC's entry shows the last
+        // artist through the console's screen, so they stay until they are
+        // really off the top.
+        end: touchScreen && gpcOverlapPx() ? 'bottom bottom' : 'bottom top',
         onToggle: syncVisibility,
         onRefresh: syncVisibility,
       })
@@ -145,6 +176,12 @@ function useScrubCrossfade(
         gsap.set(boards.slice(1), { yPercent: 100, autoAlpha: 0 })
 
       const total = timelineTotal(count)
+      const artistStops = Array.from(
+        { length: count },
+        (_, index) => (HOLD / 2 + index * STEP) / total,
+      )
+      let pendingArtistIndex = null
+      let snappingWithLenis = false
 
       const tl = gsap.timeline({
         defaults: { duration: 1 },
@@ -156,8 +193,131 @@ function useScrubCrossfade(
           // last artist is already held still when GPC starts pulling back
           // out of it. (A function so it is re-read on every refresh.)
           end: () => `bottom bottom+=${gpcOverlapPx()}`,
-          scrub: 0.8,
+          // Let the snap tween itself carry the crossfade; a second scrub lag
+          // made the visible artist continue changing after the scroll settled.
+          scrub: true,
+          ...(snap && {
+            // Settle on the fully visible hold for each artist. Leave the
+            // ranges beyond the first/last artist free so adjacent sections
+            // (especially GPC) can take over without being pulled back here.
+            snap: {
+              snapTo: (value, trigger) => {
+                const here = () =>
+                  gsap.utils.clamp(
+                    0,
+                    1,
+                    (trigger.scroll() - trigger.start) / (trigger.end - trigger.start),
+                  )
+                // Still gliding to an artist. If Lenis is no longer locked the
+                // glide was cut short by something stopping it (GPC holding
+                // the page), and it will never report back: carry on as usual.
+                if (snappingWithLenis && window.__lenis?.isLocked) return here()
+                snappingWithLenis = false
+
+                // Arriving from a neighbouring section (the glide down from
+                // W1, GPC handing the page back) and already resting inside
+                // the first / last artist's hold: that artist is whole and
+                // still, so just take it as settled instead of scrolling on.
+                // (`value` is where ScrollTrigger reckons the scroll would
+                // coast to; returning it would send the page there, so these
+                // return where the page actually is.)
+                const settled = settledArtistIndex.current
+                const time = here() * total
+                if ((settled === null || settled < 0) && time <= HOLD) {
+                  settledArtistIndex.current = 0
+                  return here()
+                }
+                if (settled !== null && settled >= count && time >= total - HOLD) {
+                  settledArtistIndex.current = count - 1
+                  return here()
+                }
+
+                const direction = trigger.direction
+                if (direction > 0) {
+                  pendingArtistIndex = settled === null ? 0 : settled + 1
+                } else if (direction < 0) {
+                  pendingArtistIndex = settled === null ? count - 1 : settled - 1
+                } else {
+                  // On the homepage the Artists trigger can first become
+                  // active in the same frame that content is unlocked from
+                  // W1. ScrollTrigger may report direction 0 for that first
+                  // snap; choosing the nearest stop then can land on artist 1
+                  // after a large unlock delta. The first unresolved snap is
+                  // always Arijit, independent of the sampled progress.
+                  pendingArtistIndex =
+                    settledArtistIndex.current === null
+                      ? 0
+                      : artistStops.reduce(
+                          (nearest, point, index) =>
+                            Math.abs(point - value) <
+                            Math.abs(artistStops[nearest] - value)
+                              ? index
+                              : nearest,
+                          0,
+                        )
+                }
+
+                // Advance exactly one artist per completed scroll gesture.
+                // At either edge, let the page continue into the neighboring
+                // section instead of snapping back to an artist.
+                if (pendingArtistIndex < 0 || pendingArtistIndex >= count) {
+                  pendingArtistIndex = null
+                  // Lenis is already carrying the page where the user sent
+                  // it; don't have ScrollTrigger tween it somewhere as well.
+                  return window.__lenis ? here() : value
+                }
+
+                const lenis = window.__lenis
+                // Something else is holding the page (a locked glide, GPC):
+                // a scrollTo would be dropped and never report back.
+                if (lenis && (lenis.isStopped || lenis.isLocked)) {
+                  pendingArtistIndex = null
+                  return here()
+                }
+                if (lenis) {
+                  const targetIndex = pendingArtistIndex
+                  const target =
+                    trigger.start +
+                    (trigger.end - trigger.start) * artistStops[targetIndex]
+                  snappingWithLenis = true
+                  lenis.scrollTo(target, {
+                    duration: 0.7,
+                    lock: true,
+                    easing: (progress) => 1 - Math.pow(1 - progress, 3),
+                    onComplete: () => {
+                      settledArtistIndex.current = targetIndex
+                      pendingArtistIndex = null
+                      snappingWithLenis = false
+                    },
+                  })
+                  // Lenis owns the home scroller; avoid a competing native
+                  // ScrollTrigger scroll tween.
+                  return here()
+                }
+
+                return artistStops[pendingArtistIndex]
+              },
+              delay: 0.1,
+              duration: { min: 0.45, max: 0.85 },
+              ease: 'power2.out',
+              onComplete: () => {
+                if (pendingArtistIndex !== null) {
+                  settledArtistIndex.current = pendingArtistIndex
+                  pendingArtistIndex = null
+                }
+              },
+              onInterrupt: () => {
+                pendingArtistIndex = null
+              },
+            },
+          }),
           invalidateOnRefresh: true,
+          onLeave: () => {
+            settledArtistIndex.current = count
+          },
+          onLeaveBack: () => {
+            settledArtistIndex.current = -1
+          },
           onUpdate: (self) => {
             if (onIndexChange) {
               // Which artist is showing, counting the holds: the label flips
@@ -217,6 +377,81 @@ function useScrubCrossfade(
       // artist is being held.
       tl.to({}, { duration: HOLD }, total - HOLD)
 
+      // Touch screens: one artist per swipe, as with the wheel. A swipe goes
+      // as far as it was thrown, so the page is stopped (see lib/touchStop)
+      // the moment it reaches the next artist along from the one the swipe
+      // started on, in either direction. Past the last artist it is GPC that
+      // stops it, and above the first it runs on to W1.
+      if (touchScreen && snap && scroller && tl.scrollTrigger) {
+        const st = tl.scrollTrigger
+        const stopper = touchStop(scroller)
+        const timeAt = (scroll) =>
+          ((scroll - st.start) / (st.end - st.start)) * total
+        const artistAt = (scroll) => {
+          const time = timeAt(scroll)
+          if (time < 0) return -1
+          if (time > total) return count
+          return gsap.utils.clamp(0, count - 1, Math.round((time - HOLD / 2) / STEP))
+        }
+        let last = scroller.scrollTop
+        // On screen for real: while the page is still locked on Hero / W1
+        // this section waits underneath, hidden, at the top of a clipped
+        // page, and by its measurements there a swipe on W1 is a swipe on it.
+        const showing = () =>
+          typeof section.checkVisibility !== 'function' ||
+          section.checkVisibility({ visibilityProperty: true, checkVisibilityCSS: true })
+        const onTouchStart = () => {
+          last = scroller.scrollTop
+          gestureStart = null
+          gestureFrom = null
+          if (!showing()) return
+          // Only a swipe that begins on the artists counts as "next" or
+          // "previous" for them. One that begins on W1 or GPC and ends up
+          // here has already done its job by arriving.
+          if (last >= st.start && last <= st.end) gestureStart = last
+          gestureFrom = artistAt(last)
+        }
+        // A tap (the day tabs, say) is not a swipe: forget it, or wherever
+        // the page is sent next would be put down to it.
+        const onTouchEnd = () => {
+          if (gestureStart === null) return
+          if (Math.abs(scroller.scrollTop - gestureStart) >= 3) return
+          gestureStart = null
+          gestureFrom = null
+        }
+        const onScroll = () => {
+          const scroll = scroller.scrollTop
+          const moved = scroll - last
+          last = scroll
+          if (gestureFrom === null || stopper.stopped || moved === 0) return
+          // A screen or more in one step is the page being sent somewhere.
+          if (Math.abs(moved) >= scroller.clientHeight) return
+          const next = gestureFrom + Math.sign(moved)
+          if (next < 0 || next > count - 1) return
+          // The near edge of that artist's hold, coming from this side.
+          const edge =
+            moved > 0
+              ? next * STEP + TOUCH_HOLD_INSET
+              : next * STEP + HOLD - TOUCH_HOLD_INSET
+          const time = timeAt(scroll)
+          if (moved > 0 ? time < edge : time > edge) return
+          // Stopped here: the swipe is spent, and nothing more is owed to it.
+          gestureFrom = null
+          gestureStart = null
+          stopper.stopAt(st.start + (st.end - st.start) * (edge / total))
+        }
+        const passive = { passive: true }
+        scroller.addEventListener('touchstart', onTouchStart, passive)
+        scroller.addEventListener('touchend', onTouchEnd, passive)
+        scroller.addEventListener('scroll', onScroll, passive)
+        stopTouchStops = () => {
+          scroller.removeEventListener('touchstart', onTouchStart)
+          scroller.removeEventListener('touchend', onTouchEnd)
+          scroller.removeEventListener('scroll', onScroll)
+          stopper.dispose()
+        }
+      }
+
       // Where to scroll to show artist `idx` whole: the end of its hold, as a
       // fraction of this trigger's own scroll range.
       scrollForIndex.current = (idx) => {
@@ -228,6 +463,7 @@ function useScrubCrossfade(
     }, section)
 
     return () => {
+      stopTouchStops?.()
       context.revert()
       scrollForIndex.current = null
       section.classList.remove('is-offscreen')
@@ -239,7 +475,9 @@ function useScrubCrossfade(
   // a plain smooth scroll.
   return useCallback(
     (idx) => {
-      const target = scrollForIndex.current?.(idx)
+      const targetIndex = Math.trunc(idx)
+      settledArtistIndex.current = targetIndex
+      const target = scrollForIndex.current?.(targetIndex)
       if (target == null) return
       const scroller = ref.current?.closest('.main-scroll')
       if (window.__lenis) window.__lenis.scrollTo(target)
@@ -330,6 +568,7 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
   const pathRef = useRef(null)
   const arrowheadRef = useRef(null)
   const progressRef = useRef(0)
+  const lengthRef = useRef(null)
   const segmentKeyRef = useRef('')
 
   const getFromRef = useRef(getFrom)
@@ -397,7 +636,10 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
     const path = pathRef.current
     const head = arrowheadRef.current
     if (!path || !head) return
-    const length = path.getTotalLength()
+    // Measuring an SVG path is slow and this runs every frame, so the length
+    // is measured once per shape (see the effect below, which forgets it).
+    if (lengthRef.current === null) lengthRef.current = path.getTotalLength()
+    const length = lengthRef.current
     path.style.strokeDasharray = `${length} ${length}`
     path.style.strokeDashoffset = `${length * (1 - p)}`
     if (p <= 0) {
@@ -409,6 +651,7 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
   }
 
   useLayoutEffect(() => {
+    lengthRef.current = null // a new shape: measure it again
     applyProgress(progressRef.current)
   }, [segment])
 
@@ -576,7 +819,13 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
         onRepeat: swapConnectors,
       },
     )
-    return () => tween.kill()
+    // The board only moves while it can be seen: it used to run for the whole
+    // life of the page, every copy of it, wherever the page was scrolled to.
+    const stopWatching = watchVisible(track, (visible) => tween.paused(!visible))
+    return () => {
+      stopWatching()
+      tween.kill()
+    }
   }, [])
 
   useLayoutEffect(() => {
@@ -592,14 +841,24 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
     let timer = null
     let tween = null
     let L = 3
+    let seen = true
     for (let i = 0; i < 3; i++) connectorRefs.current[i]?.setProgress(1)
 
     const wait = () => {
-      timer = setTimeout(step, 60)
+      timer = setTimeout(step, seen ? 60 : 400)
     }
+    // Same as the board itself: the arrows only draw while they can be seen.
+    // (Each step measures its SVG path, which is slow.)
+    const stopWatching = trackRef.current
+      ? watchVisible(trackRef.current, (visible) => {
+          seen = visible
+          tween?.paused(!visible)
+        })
+      : null
 
     const step = () => {
       if (cancelled) return
+      if (!seen) return wait()
       const loops = loopsRef.current
       if (L < 3 * loops) L = 3 * loops
       const arrow = connectorRefs.current[L - 3 * loops]
@@ -633,6 +892,7 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
 
     return () => {
       cancelled = true
+      stopWatching?.()
       clearTimeout(timer)
       tween?.kill()
     }
@@ -662,7 +922,7 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
 })
 
 function ArtistMobile() {
-  const days = ['DAY 1', 'DAY 2']
+  const days = DAYS
   const sectionRef = useRef(null)
   const mobileBgRefs = useRef([])
   const mobileBoardRefs = useRef([])
