@@ -140,7 +140,7 @@ await s.goto(`${BASE}/workshops?referral_code=AB12CD`)
 await waitFor(`localStorage.getItem('tathva-referral-code') === 'AB12CD'`)
 await openCard('Deep Space Robotics')
 await clickRegister()
-check('refusal explained', await waitFor(`/referral code was refused/i.test(document.body.innerText)`), true)
+check('refusal explained', await waitFor(`/TIQR rejected booking/i.test(document.body.innerText)`), true)
 check('refused code cleared', await s.evaluate(`localStorage.getItem('tathva-referral-code')`), null)
 check('stayed on the page', await s.evaluate(`window.location.pathname`), '/workshops')
 

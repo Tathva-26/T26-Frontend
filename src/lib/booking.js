@@ -82,12 +82,12 @@ export function classifyBookingFailure({ status = null, code = null, message = '
       return { ...base, message: 'You have already booked this event.' }
     }
 
-    // TIQR refused the referral code. Clearing it means the retry is not
-    // refused for the same reason, rather than leaving the buyer stuck.
+    // TIQR refused the booking without a machine-readable reason. Report
+    // it plainly rather than guessing at the cause.
     if (says(/booking\s+rejected/i)) {
       return {
         ...base,
-        message: 'That referral code was refused. Trying again without it.',
+        message: 'TIQR rejected booking.',
         clearReferral: true,
         retryable: true,
       }

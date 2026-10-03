@@ -427,8 +427,9 @@ check('missing phone routes to the profile', failPhone.action, BOOKING_ACTION.CO
 check('missing phone is not retryable as-is', failPhone.retryable, false)
 
 const failReferral = classifyBookingFailure({ status: 400, message: 'Booking rejected' })
-check('referral rejection clears the code', failReferral.clearReferral, true)
-check('referral rejection is retryable', failReferral.retryable, true)
+check('rejection clears the code', failReferral.clearReferral, true)
+check('rejection is retryable', failReferral.retryable, true)
+check('rejection says TIQR refused', failReferral.message, 'TIQR rejected booking.')
 
 const failDuplicate = classifyBookingFailure({ status: 400, message: 'You have already registered for this event' })
 check('duplicate is not retryable', failDuplicate.retryable, false)
