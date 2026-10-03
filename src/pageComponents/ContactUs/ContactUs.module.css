@@ -422,3 +422,35 @@
     padding-left: 14px;
   }
 }
+
+/* ---- validation and submission feedback ---- */
+
+.control[aria-invalid='true'] {
+  border-color: rgba(233, 115, 115, 0.9);
+  background: rgba(78, 52, 52, 0.5);
+}
+
+.fieldError {
+  display: block;
+  margin: 4px 0 0;
+  color: #e97373;
+  font: 12px/1.35 'Space Grotesk', sans-serif;
+}
+
+.formStatusError {
+  color: #e97373;
+}
+
+.formStatusSuccess {
+  color: #7cc79a;
+}
+
+.submitButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.submitButton:disabled:hover {
+  background: rgba(49, 49, 49, 0.72);
+  color: var(--muted);
+}
