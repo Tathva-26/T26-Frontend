@@ -5,6 +5,10 @@
 	width: 100%;
 	height: 100%;
 	pointer-events: none;
+	/* This subtree's canvas redraws on its own rAF loop and never affects
+	   surrounding layout; containment keeps the browser from re-checking
+	   layout/paint here when ancestors change, and vice versa. */
+	contain: layout style paint;
 }
 
 .galaxy-container canvas {
