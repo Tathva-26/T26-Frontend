@@ -947,7 +947,7 @@ function TathvaMenuOverlay() {
           z-40
           hidden
           h-auto
-          w-[600px]
+          w-[540px]
           -translate-x-1/2
           cursor-pointer
           items-center

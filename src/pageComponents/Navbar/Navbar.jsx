@@ -470,7 +470,7 @@ export default function Navbar() {
       <style>{`
         .nb {
           position: fixed;
-          top: 30px;
+          top: 0;
           left: 0;
           right: 0;
           z-index: 1000;
