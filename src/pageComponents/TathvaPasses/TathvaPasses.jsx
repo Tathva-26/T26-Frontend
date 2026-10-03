@@ -9,6 +9,7 @@ import Checkout from '@/components/Checkout/Checkout'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import { useNavbarScope } from '@/pageComponents/Navbar/NavbarContext'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
+import LightPillar from '@/components/LightPillar/LightPillar'
 
 /**
  * The three pass artworks, in carousel order.
@@ -92,37 +93,41 @@ export default function TathvaPasses() {
     <main className='relative flex min-h-screen w-full flex-col items-center justify-between overflow-hidden bg-black select-none font-sans text-white'>
       {!inNavbarScope && <Navbar />}
       <TathvaMenu />
-      {/* -------------------------------------------------------------
-          BACKGROUND IMAGE (OBJECT-TOP ON MOBILE FOR SHIFTED SKYLINE)
-      ------------------------------------------------------------- */}
-      <div className='pointer-events-none absolute inset-0 z-0'>
-        <Image
-          src='/images/tickets/bg-city.png'
-          alt='Tathva Background'
-          fill
-          priority
-          className='object-cover object-top sm:object-center'
+      <div className='pointer-events-none absolute inset-0 z-[5] overflow-hidden'>
+        <LightPillar
+          topColor='#5227FF'
+          bottomColor='#FF9FFC'
+          intensity={0.6}
+          rotationSpeed={0.2}
+          glowAmount={0.002}
+          pillarWidth={7.4}
+          pillarHeight={0.2}
+          noiseIntensity={0.1}
+          pillarRotation={58}
+          interactive={false}
+          mixBlendMode='normal'
+          quality='high'
         />
       </div>
 
       {/* -------------------------------------------------------------
           CYBERPUNK SIDE GLOW RODS (MIDDLE-ALIGNED ON MOBILE & DESKTOP)
       ------------------------------------------------------------- */}
-      <div className='pointer-events-none absolute left-1 sm:left-4 md:left-8 top-[55%] sm:top-1/2 z-20 -translate-y-1/2'>
+      {/* <div className='pointer-events-none absolute left-1 sm:left-4 md:left-8 top-[55%] sm:top-1/2 z-20 -translate-y-1/2'>
         <img
           src='/images/tickets/leftrod.svg'
           alt=''
           className='h-[55vh] sm:h-[65vh] max-h-[580px] w-auto object-contain drop-shadow-[0_0_15px_rgba(138,56,245,0.8)]'
         />
-      </div>
+      </div> */}
 
-      <div className='pointer-events-none absolute right-1 sm:right-4 md:right-8 top-[55%] sm:top-1/2 z-20 -translate-y-1/2'>
+      {/* <div className='pointer-events-none absolute right-1 sm:right-4 md:right-8 top-[55%] sm:top-1/2 z-20 -translate-y-1/2'>
         <img
           src='/images/tickets/rightrod.svg'
           alt=''
           className='h-[55vh] sm:h-[65vh] max-h-[580px] w-auto object-contain drop-shadow-[0_0_15px_rgba(138,56,245,0.8)]'
         />
-      </div>
+      </div> */}
 
       {/* -------------------------------------------------------------
           HERO TITLE & SUBTITLE (AKIRA EXPANDED FONT)
@@ -146,7 +151,7 @@ export default function TathvaPasses() {
             Mobile: Vertical rotation (Top/Center/Bottom) with middle largest
             Desktop: Horizontal rotation (Left/Center/Right)
         ------------------------------------------------------------- */}
-        <div className='relative mt-48 sm:mt-8 md:mt-12 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
+        <div className='relative mt-56 sm:mt-10 md:mt-14 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
           {/* Left Arrow Button (Previous) */}
           <button
             type='button'
@@ -187,11 +192,11 @@ export default function TathvaPasses() {
                     isCenter
                       ? 'z-30 -translate-x-1/2 -translate-y-[52%] sm:-translate-y-[58%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
                       : isLeft
-                        ? 'z-10 -translate-x-1/2 sm:-translate-x-[95%] md:-translate-x-[100%] lg:-translate-x-[105%] -translate-y-[115%] sm:-translate-y-[40%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
-                        : 'z-10 -translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] translate-y-[10%] sm:-translate-y-[40%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        ? 'z-10 -translate-x-1/2 sm:-translate-x-[95%] md:-translate-x-[100%] lg:-translate-x-[105%] -translate-y-[100%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        : 'z-10 -translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] translate-y-[20%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
                   }`}
                 >
-                  <div className='relative w-[230px] sm:w-[380px] md:w-[480px] lg:w-[560px]'>
+                  <div className='relative w-[260px] sm:w-[420px] md:w-[540px] lg:w-[640px] xl:w-[700px]'>
                     <img
                       src={ticket.src}
                       alt={ticket.alt}

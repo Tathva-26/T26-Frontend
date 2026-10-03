@@ -6,6 +6,7 @@ import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
 import { useGSAP } from '@gsap/react'
 import { animateComet, TRAIL_START, BRIDGE, TRAIL_END, FLIGHT_PATH } from './cometFlight'
 import styles from './Hero.module.css'
+// import { MotionPathPlugin } from "gsap/MotionPathPlugin"
 
 
 // Register once at module level so ScrollTrigger.refresh() is safe to
@@ -20,7 +21,13 @@ const USE_CLIP_HOLE =
   typeof window !== 'undefined' &&
   new URLSearchParams(window.location.search).get('clip') === '1'
 
+
+
 const assetBase = '/images/hero/'
+
+// Size of the blue spark that replaces the bird (design-space rem). The sprite is drawn
+// heading right with its tail on the left; birdOrientation rotates it along the flight path.
+const SPARK_SIZE = '4rem'
 
 // The portal is drawn by this video; it sits over a hole cut in the scene (the real Frame shows
 // through the hole) and fades out as the portal grows. PORTAL_IMG_FADE_END = portal progress (0..1) at which it is fully gone.
@@ -107,7 +114,6 @@ const MOTION = {
   glyph: { scrub: 0.6, ease: 'power2.out' },
   portal: { scrub: 0.9, ease: 'none' },
   girl: { scrub: 0.9, ease: 'none' },
-  // chrome: { scrub: 0.0001, ease: "power1.out" }, // UNUSED: chrome fade uses quickSetter, not MOTION
 }
 
 // ---------------------------------------------------------------------
@@ -219,9 +225,6 @@ export const Hero = ({
 }) => {
   const [hasEntered, setHasEntered] = useState(false)
   const [ripples, setRipples] = useState([])
-  // Must start as false so the first client render matches the server
-  // HTML (no hydration mismatch). The layout effect below flips it
-  // before first paint on mobile.
   const [isMobile, setIsMobile] = useState(false)
 
   const scrollerRef = useRef(null)
@@ -253,10 +256,7 @@ export const Hero = ({
   const enterRef = useRef(null)
   const videoRef = useRef(null)
 
-  // Cover scale applied to the fixed-size design canvas.
   const designScaleRef = useRef(1)
-  // Set inside useGSAP once syncPortalFrame exists; forces a full resync (bypassing the
-  // lastClip/lastVideoOpacity/... guards) the frame after Hero becomes active again.
   const forceSyncRef = useRef(null)
 
   const onProgressRef = useRef(onProgress)
@@ -268,8 +268,6 @@ export const Hero = ({
     onAutoEnterRef.current = onAutoEnter || onEnter
   })
 
-  // KEEP: React sets `muted` as a property, not an attribute, so autoPlay can be blocked after
-  // hydration; this explicit play() is the standard workaround.
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.play().catch(() => {})
@@ -291,8 +289,6 @@ export const Hero = ({
     }
     scrollerRef.current?.toggleAttribute('data-paused', !isActive)
 
-    // Coming back active: the scene was frozen (no scroll ticks) while hidden, so force one
-    // resync past the lastClip/lastVideoOpacity/... guards to repaint it for the current frame.
     if (isActive) {
       const id = requestAnimationFrame(() => forceSyncRef.current?.())
       return () => cancelAnimationFrame(id)
@@ -300,9 +296,6 @@ export const Hero = ({
     return undefined
   }, [isActive])
 
-  // Mobile only: iOS Low Power Mode and some Android browsers silently block or suspend
-  // <video> autoplay/decode, which shows the poster or a blank frame instead of the loop.
-  // Retry play() once on the first touch, and again whenever the tab regains visibility.
   useEffect(() => {
     if (!isMobile) return undefined
     const retryPlayback = () => {
@@ -321,9 +314,6 @@ export const Hero = ({
     }
   }, [isMobile, isActive])
 
-  // Enter click: ripple at the click point, then animate the hero
-  // scroll runway to its end (portal zoom), then let the page scroll
-  // naturally to the Frame section below.
   const handleEnterClick = (event) => {
     const rect = event.currentTarget.getBoundingClientRect()
     const ripple = {
@@ -355,7 +345,6 @@ export const Hero = ({
     })
   }
 
-  // Physical Enter key -> same cinematic zoom as button click.
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key !== 'Enter' || e.repeat || hasEntered) return
@@ -370,19 +359,8 @@ export const Hero = ({
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasEntered])
 
-  // ---------------------------------------------------------------------
-  // SMOOTH (INERTIAL) WHEEL SCROLLING — wheel input sets a target; the
-  // real scrollTop eases toward it every frame. Touch, keyboard and
-  // scrollbar dragging stay native. Skipped for reduced-motion.
-  //
-  // PERF: the per-frame ticker callback is only registered while there
-  // is distance left to cover (wheel input starts it, settling stops
-  // it). Previously it ran — and read scrollTop — on every frame for
-  // the life of the page, including at rest.
-  // ---------------------------------------------------------------------
   useEffect(() => {
     const scrollerEl = scrollerRef.current
     if (!scrollerEl) return undefined
@@ -459,9 +437,6 @@ export const Hero = ({
         current + delta * Math.min(1, SMOOTHING * gsap.ticker.deltaRatio())
       scrollerEl.scrollTop = next
       lastWritten = next
-      // If the browser snapped the write back to where we started
-      // (sub-pixel step on a whole-pixel scroller) we can't get any
-      // closer, so stop instead of spinning every frame.
       if (scrollerEl.scrollTop === current) stopTicking()
     }
 
@@ -493,8 +468,6 @@ export const Hero = ({
     }
   }, [])
 
-  // Breakpoint detection. Runs before first paint, so on mobile there
-  // is no visible flash of the desktop layout.
   useLayoutEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)')
     const update = () => setIsMobile(mq.matches)
@@ -503,15 +476,6 @@ export const Hero = ({
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  // Cover-scale the design canvas to the viewport and anchor the fixed
-  // chrome to exact screen pixels. Re-runs on breakpoint change.
-  //
-  // PERF: everything here is a pure function of the five inputs in
-  // `key`. ResizeObserver fires once right after observe() with the size
-  // we just handled, and can fire again for unchanged inputs, so we skip
-  // those (each pass restyles the subtree via the CSS variables). The
-  // full ScrollTrigger.refresh() is coalesced into one trailing call
-  // instead of running for every observer notification.
   useLayoutEffect(() => {
     const scene = sceneRef.current
     const viewport = viewportRef.current
@@ -519,7 +483,6 @@ export const Hero = ({
 
     let lastKey = ''
     let refreshTimer = 0
-    // Mobile only (see the check below): last viewport size we actually acted on.
     let lastMobileViewportW = 0
     let lastMobileViewportH = 0
 
@@ -534,11 +497,6 @@ export const Hero = ({
 
       const mobileMode = window.matchMedia('(max-width: 768px)').matches
 
-      // Mobile only: the URL bar hiding/showing while scrolling fires ResizeObserver
-      // notifications that only change viewport HEIGHT by a small amount. Rebuilding every
-      // ScrollTrigger tween mid-gesture for that (invalidateOnRefresh below) is what makes the
-      // scene jump/flash, so ignore height-only changes under this threshold. A real rotation
-      // or breakpoint change still goes through (width changes, or a big enough height jump).
       if (mobileMode) {
         if (
           lastMobileViewportW &&
@@ -566,14 +524,9 @@ export const Hero = ({
       scene.style.setProperty('--design-scale', scale)
       scrollerRef.current?.style.setProperty('--design-scale', scale)
 
-      // Chrome anchoring — maps a local point in .scene's design
-      // space to its exact screen position.
       const canvasW = mobileMode ? 24.375 : 88.3125
       const chrome = mobileMode ? CHROME_MOBILE : CHROME
       const remToPx = designWidth / canvasW
-
-      // In all landscape orientations, maintain the exact distance from the sides
-      // based on the reference desktop scale (695 / 785 ≈ 0.88535).
       const REF_SCALE = 695 / 785
 
       const toScreenLeft = (localRem) => localRem * remToPx * REF_SCALE
@@ -589,30 +542,18 @@ export const Hero = ({
       if (host) {
         const set = (name, px) => host.style.setProperty(name, `${px}px`)
         if (mobileMode) {
-          // On mobile, use viewport-relative positions so chrome is always
-          // visible regardless of orientation (landscape/portrait).
-          // Measure the actual navbar height; fall back to 68px.
           const navEl = document.querySelector('.nb')
          const navH = navEl?.getBoundingClientRect().bottom || 68
           const PAD = 20
 
-          // Theme — top-left, flush below navbar
           set('--theme-left', PAD)
           set('--theme-top', navH + 16)
-
-          // Identity — top-right, cleanly below navbar lines
-          host.style.setProperty('--identity-left', `${viewportWidth - PAD}px`)
+          set('--identity-left', viewportWidth - PAD)
           set('--identity-top', navH + 16)
-
-          // Coords — right-anchored below identity
           set('--coords-left', viewportWidth - PAD)
-          set('--coords-top', navH + 12065)
-
-          // Exhibits — bottom-right, comfortably above enter button
-          host.style.setProperty('--exhibits-left', `${viewportWidth - PAD}px`)
+          set('--coords-top', navH + 120)
+          set('--exhibits-left', viewportWidth - PAD)
           set('--exhibits-top', viewportHeight - 190)
-
-          // Enter button — bottom-left
           set('--enter-left', PAD)
           set('--enter-bottom', 36)
         } else {
@@ -656,9 +597,6 @@ export const Hero = ({
     }
   }, [isMobile])
 
-  // Scroll-driven scene. Every layer gets its own ScrollTrigger sharing
-  // the same runway but with its own scrub/ease from MOTION. Rebuilt
-  // whenever the breakpoint changes so it uses the right layout.
   useGSAP(
     () => {
       const L = isMobile ? LAYOUT_MOBILE : LAYOUT
@@ -670,14 +608,6 @@ export const Hero = ({
         end: 'bottom bottom',
       }
 
-      // Progress is reported from the portal's own (scrubbed) timeline below, not from the raw
-      // scroll position, so the hand-over to Frame only happens once the portal has really finished.
-
-      // Chrome fade: gone within the first 10% of the runway.
-      // PERF: no animation is attached here, so scrub/invalidateOnRefresh
-      // did nothing. quickSetter writes opacity directly (no tween object
-      // per call), and we skip the write when the value hasn't changed —
-      // i.e. for the whole runway after the fade has finished.
       const chromeTargets = [
         themeRef.current,
         identityRef.current,
@@ -700,9 +630,6 @@ export const Hero = ({
         })
       }
 
-      // counterRef (optional): an element INSIDE `ref` that is counter-scaled so it stays the same
-      // on-screen size while `ref` zooms. Used to keep the title video static while the text-shaped
-      // mask (the "clip") grows around it. Both are transform-only, so it stays on the compositor.
       const createParallaxLayer = (ref, config, motion, fadeAt, counterRef) => {
         if (!ref.current) return
         const fromVars = { scale: config.scaleFrom ?? 1, x: 0, y: 0 }
@@ -723,8 +650,6 @@ export const Hero = ({
         if (counterRef?.current) {
           gsap.set(counterRef.current, { clearProps: 'transform' })
           if (config.scaleTo && config.scaleTo !== 1) {
-            // exact inverse of the parent's CURRENT scale on every frame (not a second tween,
-            // which would only match at the endpoints)
             toVars.onUpdate = () => {
               gsap.set(counterRef.current, {
                 scale: 1 / gsap.getProperty(ref.current, 'scaleX'),
@@ -742,8 +667,6 @@ export const Hero = ({
         })
         layerTl.fromTo(ref.current, fromVars, toVars, 0)
 
-        // Title opacity fades partway through the scroll, on the same
-        // per-layer timeline so it shares that layer's scrub feel.
         if (fadeAt !== undefined) {
           layerTl.fromTo(
             ref.current,
@@ -762,46 +685,23 @@ export const Hero = ({
       createParallaxLayer(girlRef, L.girl, MOTION.girl)
 
       if (portalRef.current) {
-        /* UNUSED (never called) - commented out:
-            const portalCoversViewport = () => {
-                const p = portalRef.current?.getBoundingClientRect();
-                const v = viewportRef.current?.getBoundingClientRect();
-                if (!p || !v) return false;
-                return (
-                    p.left <= v.left + 1 &&
-                    p.right >= v.right - 1 &&
-                    p.top <= v.top + 1 &&
-                    p.bottom >= v.bottom - 1
-                );
-            };
-            */
-
-        // let coverScaleFloor = 0; // UNUSED
         const portalTargetScale = () => {
-          const target =
+          return (
             (Math.max(
               viewportRef.current.clientWidth / portalRef.current.offsetWidth,
               viewportRef.current.clientHeight / portalRef.current.offsetHeight,
             ) *
               L.portal.zoomMultiplier) /
             (designScaleRef.current || 1)
-          // coverScaleFloor = (target / L.portal.zoomMultiplier) * 0.9; // UNUSED
-          return target
+          )
         }
 
-        // The REAL Frame (rendered by HeroFrameController) sits underneath the whole Hero panel,
-        // static, never scaled or moved. Every scene layer behind the portal lives in one wrapper
-        // (backLayersRef); each update we cut a hole in that wrapper exactly where the portal is
-        // (scene-local maths on the portal's own GSAP transform, no DOM reads), so the Frame
-        // shows through. The portal video on top fades out with scroll to reveal it.
-        // Screen position (relative to the viewport) of scene-local (0,0). Desktop: left/bottom
-        // anchored. Mobile: centred horizontally, so this is negative on tall phones.
         const sceneOrigin = () => {
           const sr = sceneRef.current.getBoundingClientRect()
           const vr = viewportRef.current.getBoundingClientRect()
           return { ox: sr.left - vr.left, oy: sr.top - vr.top }
         }
-        // sw/sh = scene size in scene-local px (used to keep the clip-path coordinates small)
+
         const m = { left: 0, top: 0, w: 1, h: 1, ox: 0, oy: 0, vw: 1, vh: 1, sw: 1, sh: 1, target: 2 }
         const measure = () => {
           const portalEl = portalRef.current
@@ -821,7 +721,6 @@ export const Hero = ({
         }
 
         let lastClip = ''
-        let wasOpen = false
         let lastVideoOpacity = -1
         let lastFrameImgOpacity = -1
         let lastWrapOpacity = -1
@@ -862,14 +761,8 @@ export const Hero = ({
             }
           }
 
-          // The girl layer is scaled up to 15.55x (desktop) / 60x (mobile) by the time the
-          // portal is fully open, which keeps a huge decoded texture alive for nothing (it's
-          // fully covered by the portal/Frame by then). Drop it once covered, restore on the way back.
           if (girlRef.current && isMobile) {
-            // Mobile only: 60x (vs. desktop's 15.55x) is well past typical mobile GPU
-            // compositing budgets, a likely contributor to the mobile-only flicker. Fade her
-            // out earlier and drop her a bit sooner than desktop's flat p>=0.9 cutoff.
-            const go = 1 - gsap.utils.clamp(0, 1, (p - 0.55) / 0.25) // 1 at p<=0.55, 0 at p>=0.8
+            const go = 1 - gsap.utils.clamp(0, 1, (p - 0.55) / 0.25)
             if (go !== lastGirlOpacity) {
               lastGirlOpacity = go
               girlRef.current.style.opacity = go
@@ -890,10 +783,6 @@ export const Hero = ({
           const wrap = backLayersRef.current
           if (!wrap) return
 
-          // Default: cross-fade the whole back-layers wrapper out instead of cutting an
-          // animated clip-path hole in it (the hole is expensive to rasterise on software/
-          // low-VRAM GPUs and is what causes the half-painted-scene flicker). ?clip=1 forces
-          // the legacy hole-cut path below for comparison.
           if (!USE_CLIP_HOLE) {
             const wo = 1 - gsap.utils.clamp(0, 1, (p - 0.5) / 0.4)
             if (wo !== lastWrapOpacity) {
@@ -903,7 +792,6 @@ export const Hero = ({
             return
           }
 
-          // hole = portal's current rect in scene-local px
           const cx = m.left + m.w / 2 + tx
           const cy = m.top + m.h / 2 + ty
           const hw = (m.w * s) / 2
@@ -913,7 +801,6 @@ export const Hero = ({
           const y0 = cy - hh
           const y1 = cy + hh
 
-          // Does the hole already cover the whole viewport? (screen = origin + d * local)
           const d = designScaleRef.current || 1
           const open =
             m.ox + d * x0 <= 0 &&
@@ -921,14 +808,9 @@ export const Hero = ({
             m.ox + d * x1 >= m.vw &&
             m.oy + d * y1 >= m.vh
           if (open) {
-            wasOpen = true // nothing left to paint behind the portal; keep the last clip
             return
           }
 
-          // Outer rect (just past the scene) + inner rect (the hole), even-odd = a rectangular hole.
-          // Kept as two separate sub-paths with SMALL coordinates (the old ±20000px polygon joined
-          // them with a zero-width bridge, which Chrome rasterises badly on a scaled, animated layer).
-          // The hole is clamped to the outer rect; anything beyond it is off-scene anyway.
           const P = 50
           const clampX = (v) => Math.min(m.sw + P, Math.max(-P, v))
           const clampY = (v) => Math.min(m.sh + P, Math.max(-P, v))
@@ -989,9 +871,6 @@ export const Hero = ({
           )
         syncPortalFrame()
 
-        // Lets the isActive effect force a full repaint (bypassing the lastClip/
-        // lastVideoOpacity/... guards) the frame Hero becomes active again, since no scroll
-        // tick runs while it's hidden and those guards would otherwise skip a no-op-looking write.
         forceSyncRef.current = () => {
           lastClip = ''
           lastVideoOpacity = -1
@@ -1020,8 +899,6 @@ export const Hero = ({
 
   const activeLayout = isMobile ? LAYOUT_MOBILE : LAYOUT
   const activeChrome = isMobile ? CHROME_MOBILE : CHROME
-  // If the title layer zooms (scaleTo > 1) the video is sized zoom-times larger, centred, and
-  // counter-scaled by GSAP, so the video itself never appears to zoom. scaleTo === 1 -> no change.
   const titleZoom = activeLayout.t1.scaleTo || 1
   const titleVideoStyle =
     titleZoom > 1
@@ -1038,7 +915,7 @@ export const Hero = ({
       id='hero-scroller'
       ref={scrollerRef}
       className={styles.scroller}
-      style={{ background: 'transparent' }} // the real Frame underneath shows through the portal hole
+      style={{ background: 'transparent' }}
       tabIndex={0}
       aria-label='Scroll to move toward the black box'
     >
@@ -1051,10 +928,6 @@ export const Hero = ({
         aria-label='Tathva home'
       />
 
-      {/* FIXED HERO CHROME — siblings of .runway/.scene so they are
-                position: fixed to the real viewport. Their top/left come
-                from CSS variables set in the layout effect above. Only
-                opacity is tied to scroll (chrome fade). */}
       <section
         ref={themeRef}
         className={styles.theme}
@@ -1198,24 +1071,6 @@ export const Hero = ({
             data-model-id='10:78'
             aria-label='Tathva 26 Asteria'
           >
-            {/* UNUSED (no CSS references #portalEdgeNoise) - commented out.
-                            feTurbulence + feDisplacementMap is expensive; do not wire it back in.
-
-                        <svg aria-hidden="true" focusable="false" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
-                            <filter id="portalEdgeNoise" x="-40%" y="-40%" width="180%" height="180%">
-                                <feTurbulence type="fractalNoise" baseFrequency="0.015 0.05" numOctaves="2" seed="7" result="noise" />
-                                <feDisplacementMap in="SourceGraphic" in2="noise" scale="7" xChannelSelector="R" yChannelSelector="G" />
-                            </filter>
-                        </svg>
-                        */}
-
-            {/* Everything behind the portal. A rectangular hole is clipped out of this wrapper
-                (see syncPortalFrame) so the real Frame underneath shows through the portal.
-                The first child is a dark backing that BLEEDS 40px past every edge of the scene
-                (the viewport clips it). The scene is a scaled layer, so its own top edge can land
-                on a fractional pixel and anti-alias into a thin see-through row that leaks the
-                Frame; with the bleed, the screen edge is never the scene edge. The hole is cut out
-                of it too (outer clip rect is 50px past the scene), so the portal still shows the Frame. */}
             <div
               ref={backLayersRef}
               className={styles.backLayers}
@@ -1433,7 +1288,7 @@ export const Hero = ({
                 left: `${activeLayout.portal.left}rem`,
                 width: `${activeLayout.portal.width}rem`,
                 height: `${activeLayout.portal.height}rem`,
-                background: 'transparent', // was the white core
+                background: 'transparent',
               }}
               aria-hidden='true'
             >
@@ -1477,16 +1332,6 @@ export const Hero = ({
                   userSelect: 'none',
                 }}
               />
-              {/* <div
-                className={styles.portalHalo}
-                style={{ backgroundImage: `url(${assetBase}portal-glow.png)` }}
-              /> */}
-              {/* REMOVED (baked into portal-glow.png):
-                            <div className={styles.portalGlow} />
-                            <div className={styles.portalHaze} />
-                            <div className={styles.portalGroundGlow} />
-                            <div className={styles.portalRim} />
-                            */}
             </div>
 
             <div
