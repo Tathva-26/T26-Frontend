@@ -20,7 +20,7 @@ const michroma = Michroma({
 })
 
 const leftMenu = [
-  { label: 'HOME', href: '/hero' },
+  { label: 'HOME', href: '/' },
   { label: 'ANNOUNCEMENTS', href: '/announcements' },
   { label: 'ACCOMMODATION', href: '/accommodation' },
   { label: 'LECTURES', href: '/lectures' },
@@ -490,7 +490,7 @@ function TathvaMenuOverlay() {
         "
       >
         <Link
-          href="/hero"
+          href="/"
           aria-label="Tathva home"
           className="pointer-events-auto inline-flex items-center"
         >
