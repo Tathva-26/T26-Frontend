@@ -9,6 +9,10 @@ import React, {
 } from 'react'
 import { Hammersmith_One, Instrument_Serif } from 'next/font/google'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useUser } from '@/context/UserContext'
+
+const LOGIN_HREF = '/login'
 /**
  * Navbar
  * ------
@@ -295,6 +299,33 @@ export default function Navbar() {
   const navRef = useRef(null)
   const menuButtonRef = useRef(null)
   const registerFlipRef = useRef(null)
+
+  /*
+   * The call to action routes through the login page: /login when signed
+   * out (which still works without JS), /profile once signed in.
+   *
+   * The label can only settle after the session is known, because the session
+   * is an httpOnly cookie the server render cannot see.
+   */
+  const { isSignedIn, user, signOut } = useUser()
+  const pathname = usePathname()
+  // On the profile page the CTA is the way out, so it signs out in place.
+  const signingOut = isSignedIn && pathname === '/profile'
+  const ctaLabel = signingOut
+    ? 'Sign out'
+    : isSignedIn
+      ? (user?.name || '').trim().split(/\s+/)[0] || 'Profile'
+      : 'Register'
+  const onCtaClick = signingOut
+    ? (event) => {
+        event.preventDefault()
+        signOut('/')
+      }
+    : undefined
+
+  // Signed out, the CTA goes to the login page (and still works without JS).
+  // Signed in, it shows the first name and goes to the profile.
+  const ctaHref = isSignedIn ? '/profile' : LOGIN_HREF
   const rafId = useRef(null)
   const current = useRef(0)
   const target = useRef(0)
@@ -393,19 +424,20 @@ export default function Navbar() {
         </div>
 
         <div className='nb__right'>
-          <a
-            href='#register'
+          <Link
+            href={ctaHref}
+            onClick={onCtaClick}
             className='nb__cta'
             onPointerEnter={(event) => registerFlipRef.current?.trigger(event)}
           >
             <span className='nb__cta-line' aria-hidden='true' />
-            <FlipText ref={registerFlipRef} text='Register' />
+            <FlipText ref={registerFlipRef} text={ctaLabel} />
             <img
               src='/images/hero/regarrow.svg'
               alt=''
               className='nb__cta-arrow'
             />
-          </a>
+          </Link>
 
           <button
             ref={menuButtonRef}
@@ -441,14 +473,14 @@ export default function Navbar() {
               </li>
             ))}
           </ul>
-          <a
-            href='#register'
+          <Link
+            href={ctaHref}
             className='nb-mobile__cta'
-            onClick={closeMenu}
+            onClick={signingOut ? onCtaClick : closeMenu}
             tabIndex={menuOpen ? 0 : -1}
           >
-            Register
-          </a>
+            {ctaLabel}
+          </Link>
         </nav>
       </div>
 

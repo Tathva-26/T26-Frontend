@@ -1,21 +1,37 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useMemo, useState } from 'react'
 import Image from 'next/image'
+import { PASS_EVENT_TYPE } from '@/lib/api'
+import { formatPrice } from '@/lib/format'
+import { useEvents } from '@/hooks/useEvents'
+import Checkout from '@/components/Checkout/Checkout'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import { useNavbarScope } from '@/pageComponents/Navbar/NavbarContext'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 import LightPillar from '@/components/LightPillar/LightPillar'
 
-const TICKETS = [
+/**
+ * The three pass artworks, in carousel order.
+ *
+ * Every word on these tickets — the day, the date, the inclusions and the
+ * price — is baked into the bitmap inside each SVG. None of it can be driven
+ * from the API, so this table describes what is pictured rather than being
+ * the source of truth for it. If a price changes, the artwork has to be
+ * redrawn; the figures here only exist so the labelling stays honest.
+ *
+ * `match` pairs an artwork with the backend event that sells it, by heading.
+ */
+const PASS_ARTWORK = [
   {
     id: 'day-3',
     title: 'DAY 3',
     date: 'OCT 11 2026',
     price: 'Rs. 1399/-',
     details: 'COMPETITIONS | EVENTS | CONCLAVE',
-    src: '/images/tickets/ticket3.svg',
+    src: '/images/tickets/ticket1.svg',
     alt: 'Tathva Pass Day 3 - Oct 11 2026',
+    match: /\bday\s*3\b/i,
   },
   {
     id: 'day-all',
@@ -23,8 +39,9 @@ const TICKETS = [
     date: 'OCT ALL 2026',
     price: 'Rs. 1999/-',
     details: 'PROSHOW | EVENTS | CONCLAVE',
-    src: '/images/tickets/ticket1.svg',
-    alt: 'Tathva Pass Day All - Oct 2026',
+    src: '/images/tickets/ticket3.svg',
+    alt: 'Tathva Pass All Days - Oct 2026',
+    match: /\b(all\s*days?|day\s*all)\b/i,
   },
   {
     id: 'day-1',
@@ -34,8 +51,10 @@ const TICKETS = [
     details: 'WHEELS | ROBOWARS | CONCLAVE',
     src: '/images/tickets/ticket2.svg',
     alt: 'Tathva Pass Day 1 - Oct 9 2026',
+    match: /\bday\s*1\b/i,
   },
-]
+];
+
 
 export default function TathvaPasses() {
   const inNavbarScope = useNavbarScope()
@@ -43,37 +62,32 @@ export default function TathvaPasses() {
   // Center ticket index default 1 -> DAY ALL
   const [activeIndex, setActiveIndex] = useState(1)
 
-  const handlePrev = useCallback(() => {
-    setActiveIndex((prev) => (prev === 0 ? TICKETS.length - 1 : prev - 1))
-  }, [])
+  /*
+   * Passes are ordinary bookable events, queried by the type an admin puts on
+   * them. Until they exist the carousel still renders: the artwork is the
+   * design, and the booking control is what depends on the API.
+   */
+  const { events, loading } = useEvents(PASS_EVENT_TYPE);
 
-  const handleNext = useCallback(() => {
-    setActiveIndex((prev) => (prev === TICKETS.length - 1 ? 0 : prev + 1))
-  }, [])
+  const passes = useMemo(
+    () =>
+      PASS_ARTWORK.map((artwork) => ({
+        ...artwork,
+        event: events.find((candidate) => artwork.match.test(candidate.fullTitle || '')) ?? null,
+      })),
+    [events],
+  );
 
-  // Left/right arrow keys drive the same carousel as the on-screen buttons.
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      const target = event.target
-      const isTypingTarget =
-        target?.tagName === 'INPUT' ||
-        target?.tagName === 'TEXTAREA' ||
-        target?.isContentEditable
+  const active = passes[activeIndex];
 
-      if (isTypingTarget) return
 
-      if (event.key === 'ArrowLeft') {
-        event.preventDefault()
-        handlePrev()
-      } else if (event.key === 'ArrowRight') {
-        event.preventDefault()
-        handleNext()
-      }
-    }
+  const handlePrev = () => {
+    setActiveIndex((prev) => (prev === 0 ? passes.length - 1 : prev - 1))
+  }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handlePrev, handleNext])
+  const handleNext = () => {
+    setActiveIndex((prev) => (prev === passes.length - 1 ? 0 : prev + 1))
+  }
 
   return (
     <main className='relative flex min-h-screen w-full flex-col items-center justify-between overflow-hidden bg-black select-none font-sans text-white'>
@@ -161,11 +175,11 @@ export default function TathvaPasses() {
           </button>
 
           {/* Ticket Showcase Stack */}
-          <div className='relative flex h-[300px] sm:h-[380px] md:h-[440px] lg:h-[480px] w-full max-w-4xl items-center justify-center'>
-            {TICKETS.map((ticket, index) => {
+          <div className='relative flex h-[260px] sm:h-[320px] md:h-[370px] lg:h-[400px] w-full max-w-3xl items-center justify-center'>
+            {passes.map((ticket, index) => {
               let offset = index - activeIndex
-              if (offset < -1) offset += TICKETS.length
-              if (offset > 1) offset -= TICKETS.length
+              if (offset < -1) offset += passes.length
+              if (offset > 1) offset -= passes.length
 
               const isCenter = offset === 0
               const isLeft = offset === -1
@@ -215,6 +229,32 @@ export default function TathvaPasses() {
               />
             </svg>
           </button>
+        </div>
+
+        {/*
+          * The artwork promises "REGISTER" but nothing was ever clickable.
+          * The control belongs to whichever pass is centred.
+          */}
+        <div className='relative z-30 mt-6 w-full max-w-[280px] sm:mt-8'>
+          {loading ? (
+            <p className='text-center text-[11px] tracking-[0.18em] text-white/60'>
+              CHECKING AVAILABILITY…
+            </p>
+          ) : active?.event ? (
+            <>
+              <p className='mb-1 text-center text-[11px] tracking-[0.18em] text-white/80'>
+                {active.event.fullTitle}
+                {active.event.priceInPaise !== null && ` · ${formatPrice(active.event.priceInPaise)}`}
+              </p>
+              <Checkout event={active.event} />
+            </>
+          ) : (
+            /* No pass event carries this name yet, so there is nothing to sell.
+               Saying so beats a button that cannot work. */
+            <p className='text-center text-[11px] leading-relaxed tracking-[0.14em] text-white/60'>
+              REGISTRATIONS OPENING SOON
+            </p>
+          )}
         </div>
       </div>
     </main>

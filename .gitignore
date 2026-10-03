@@ -41,3 +41,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# ...but the documented variable list is committed
+!.env.example
