@@ -14,6 +14,7 @@ import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
+import Link from 'next/link'
 
 const workshopsStyles = `
 @import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
@@ -560,6 +561,7 @@ export default function WorkshopsPage() {
   const [viewDetailsMode, setViewDetailsMode] = useState(false)
 
   const [mounted, setMounted] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Step 6 — annotation callout render state
   const [calloutWorkshop, setCalloutWorkshop] = useState(null)
@@ -2153,7 +2155,7 @@ export default function WorkshopsPage() {
               <span>Tathva</span>
 
               <span
-                className={`${styles.fragmentSerif} text-2xl sm:text-3xl font-extrabold text-white leading-none`}
+                className={`text-2xl sm:text-3xl font-extrabold text-white leading-none`}
               >
                 26
               </span>
@@ -2527,7 +2529,8 @@ export default function WorkshopsPage() {
                                       />
                                     </div>
 
-                                    <div className='absolute inset-0 transition-all duration-500 ease-in-out group-hover:duration-[1500ms] [clip-path:ellipse(150%_100%_at_50%_-100%)] group-hover:[clip-path:ellipse(150%_100%_at_50%_100%)]'>
+                                    {/* ▼ FIXED: straight wipe instead of ellipse (no rounded top) */}
+                                    <div className='absolute inset-0 transition-all duration-500 ease-in-out group-hover:duration-[1500ms] [clip-path:ellipse(150%_110%_at_50%_-110%)] group-hover:[clip-path:ellipse(150%_110%_at_50%_100%)]'>
                                       <Image
                                         src={workshop.image}
                                         alt={workshop.fullTitle}
@@ -2553,7 +2556,7 @@ export default function WorkshopsPage() {
                                       Workshop
                                     </p>
                                     <div className='absolute bottom-[80%] right-[1.1%] flex flex-col items-end leading-none'>
-                                      <span className='mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#fbebec]'>
+                                      <span className='mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#ffffff]'>
                                         {workshop.dateMonth}
                                       </span>
                                       <span className='text-[8.07cqw] font-bold text-white'>
@@ -2566,7 +2569,7 @@ export default function WorkshopsPage() {
                                     <svg
                                       preserveAspectRatio='none'
                                       overflow='visible'
-                                      className='absolute inset-[-0.38%] h-full w-full stroke-[#ffffff] transition-colors duration-500 group-hover:duration-[1500ms] group-hover:stroke-[#00f3ff]'
+                                      className='workshop-card-border absolute inset-[-0.38%] h-full w-full stroke-[#ffffff]'
                                       viewBox='0 0 135.239 135.639'
                                       fill='none'
                                       xmlns='http://www.w3.org/2000/svg'
@@ -2626,10 +2629,22 @@ export default function WorkshopsPage() {
       {/* GSAP SPECIFIC CSS */}
       <style jsx global>{`
         .workshop-image-reveal {
-          clip-path: ellipse(150% 100% at 50% -100%);
+          clip-path: ellipse(150% 110% at 50% -110%);
         }
         .group:hover .workshop-image-reveal {
-          clip-path: ellipse(150% 100% at 50% 100%);
+          clip-path: ellipse(150% 110% at 50% 100%);
+        }
+        .group:hover .workshop-card-border {
+          animation: workshop-border-pulse 1.6s ease-in-out infinite;
+        }
+        @keyframes workshop-border-pulse {
+          0%,
+          100% {
+            filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
+          }
+          50% {
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.95));
+          }
         }
         .workshop-pulse-overlay {
           background: radial-gradient(
