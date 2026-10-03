@@ -241,15 +241,15 @@ function useIntroAnimation(ref) {
       `side` is the preferred side for the leader line on roomy screens. ── */
 const SPEAKERS = [
   {
-    name: 'Speaker One',
-    role: 'Role · Organisation',
-    bio: 'A short description of the speaker and what they will talk about at Tech Conclave.',
+    name: 'Joseph Annamkutty Jose',
+    role: '9 Oct · 3-4PM · Aryabhatta Hall',
+    bio: 'Join us for an engaging talk show with Joseph Annamkutty Jose, renowned speaker, author, and motivator. The session will feature an interactive segment, giving the audience an opportunity to connect and engage with him.',
     side: 'left',
   },
   {
-    name: 'Speaker Two',
-    role: 'Role · Organisation',
-    bio: 'A short description of the speaker and what they will talk about at Tech Conclave.',
+    name:' Mahadevan A R',
+    role: '10 Oct · 3-4PM · Aryabhatta Hall',
+    bio: 'Get ready for an evening of laughter with Mahadevan A.R. and his Malayalam stand-up comedy show.',
     side: 'right',
   },
 ]
@@ -1062,7 +1062,7 @@ function MobilePoster() {
 
             <div
               className='tc-abs tc-m-people'
-              style={mbox(270, 10, 112, 240)}
+              style={mbox(270, -2, 112, 240)}
               role='list'
               aria-label='Speakers'
             >
