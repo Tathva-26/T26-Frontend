@@ -1,9 +1,11 @@
 // Replace only this content when the final Expo copy is supplied.
 export const expoDetailContent = {
   label: 'TATHVA ’26 / EXPO',
-  heading: 'Tathva Expo',
+  heading: 'About Interface Expo.',
   paragraphs: [
-    'Tathva’26 Expo brings together technology, innovations, and tech startups at the National Institute of Technology, Calicut.',
-    'Programme details will be announced soon.',
+    "Discover innovation at its finest at Interface EXPO'26, held as part of South India's largest techno—management fest, Tathva'26.",
+    "Originally launched in 2017 at NIT Calicut as a startup accelerator program to nurture innovative business ideas, Interface has grown over the years into a grand expo that brings together cutting-edge products from across the tech domain. ",
+    "This dynamic event showcases the latest advancements in the industry and offers a unique opportunity to connect with industry pioneers, mentors, and like—minded peers, fostering valuable relationships that can fuel your future success. ",
+    "Whether you're a tech enthusiast, an aspiring entrepreneur, or simply a curious observer, Interface EXPO'26 promises to be a hub for inspiration, creativity, and the tech of tomorrow!",
   ],
 }

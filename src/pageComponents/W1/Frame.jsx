@@ -144,17 +144,21 @@ const mobileCards = [
 const cardIcon =
   'https://c.animaapp.com/UqxAlqQL/img/3ef01d988cdc695be23d44d3ff250f97-removebg-preview-4@2x.png'
 
-function ActivityCard({ card, onSelect, selected, index, anySelected }) {
+function ActivityCard({ card, onSelect, selected, index, anySelected, customStyle }) {
+  const positionClass = customStyle?.position !== undefined ? customStyle.position : card.position
   return (
     <article
-      className={`${card.position} animate-float transition-all duration-500 cursor-pointer ${
+      className={`${positionClass} animate-float transition-all duration-500 cursor-pointer ${
         anySelected
           ? selected
             ? 'scale-105 z-20'
             : 'opacity-70 blur-[2px] grayscale-[20%] z-0'
           : 'scale-100 opacity-100 blur-0 grayscale-0 z-10'
       }`}
-      style={{ animationDelay: `${index * 0.15}s` }}
+      style={{
+        animationDelay: `${index * 0.15}s`,
+        ...(customStyle?.style || {}),
+      }}
       aria-label={`${card.title}`}
       aria-current={selected ? 'true' : undefined}
       data-card-number={card.number}
@@ -194,13 +198,47 @@ function ActivityCard({ card, onSelect, selected, index, anySelected }) {
 function MobileView() {
   const [selectedCard, setSelectedCard] = useState(null)
   const [scale, setScale] = useState(1)
-  const [viewportHeight, setViewportHeight] = useState(917)
+  const [viewType, setViewType] = useState('mobile') // 'mobile' | 'tablet-portrait' | 'tablet-landscape'
+  const [tabletParams, setTabletParams] = useState({
+    col1Left: 0,
+    col2Left: 174,
+    containerWidth: 313,
+  })
 
   useEffect(() => {
     const handleResize = () => {
-      setScale(window.innerWidth / 412)
-      setViewportHeight(window.innerHeight)
+      const w = window.innerWidth
+      const h = window.innerHeight
+
+      if (w < 460) {
+        // Mobile View (< 460px): Exact original scaling & positions
+        setViewType('mobile')
+        setScale(Math.min(w / 412, h / 917))
+      } else if (w >= h) {
+        // Tablet Landscape (460px to 1284px, wide aspect): Horizontal 4-card layout
+        setViewType('tablet-landscape')
+        setScale(Math.min((w - 20) / 988, (h - 20) / 590))
+      } else {
+        // Tablet Portrait (460px to 1284px, tall aspect): Expanded 2x2 grid fitting screen width & height
+        setViewType('tablet-portrait')
+        const baseH = 820
+        const scaleFactor = Math.min((w - 20) / 320, (h - 20) / baseH)
+        setScale(scaleFactor)
+
+        const availableUnscaledW = (w - 20) / scaleFactor
+        const totalCardW = 286 // 143 * 2
+        const remainingSpace = availableUnscaledW - totalCardW
+        const gap = Math.max(31, remainingSpace / 2)
+        const sideMargin = Math.max(0, (remainingSpace - gap) / 2)
+
+        setTabletParams({
+          col1Left: sideMargin,
+          col2Left: sideMargin + 143 + gap,
+          containerWidth: availableUnscaledW,
+        })
+      }
     }
+
     handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
@@ -208,45 +246,180 @@ function MobileView() {
 
   return (
     <main
-      className='block min-[1285px]:hidden bg-[url(https://c.animaapp.com/UqxAlqQL/img/android-compact---16.png)] bg-cover bg-[50%_50%] w-full relative overflow-hidden'
-      style={{ minHeight: `${Math.max(917 * scale, viewportHeight)}px` }}
+      className='block min-[1285px]:hidden bg-[url(https://c.animaapp.com/UqxAlqQL/img/android-compact---16.png)] bg-cover bg-[50%_50%] w-full h-[100svh] relative overflow-hidden flex items-center justify-center'
       onClick={() => setSelectedCard(null)}
     >
-      <div
-        className='w-[412px] h-[917px] absolute left-1/2 origin-top'
-        style={{
-          top: `${Math.max((viewportHeight - 917 * scale) / 2, 0)}px`,
-          transform: `translateX(-50%) scale(${scale})`,
-        }}
-      >
+      {viewType === 'tablet-landscape' ? (
+        // Tablet Landscape: 4 cards side-by-side scaled to fill screen with zero wasted space
         <div
-          className={`absolute inset-0 bg-black/60 transition-opacity duration-500 z-10 ${
-            selectedCard
-              ? 'opacity-100 pointer-events-auto'
-              : 'opacity-0 pointer-events-none'
-          }`}
-          onClick={(e) => {
-            e.stopPropagation()
-            setSelectedCard(null)
+          className='w-[988px] h-[590px] absolute left-1/2 top-1/2 origin-center flex shrink-0'
+          style={{
+            transform: `translate(-50%, -50%) scale(${scale})`,
           }}
-        />
-        <section
-          id='activities'
-          className='absolute w-[313px] h-[820px] top-[50px] left-[53px]'
-          aria-label='Tathva activities'
         >
-          {mobileCards.map((card, index) => (
-            <ActivityCard
-              key={card.number}
-              card={card}
-              index={index}
-              anySelected={selectedCard !== null}
-              selected={selectedCard === card.number}
-              onSelect={setSelectedCard}
-            />
-          ))}
-        </section>
-      </div>
+          <div
+            className={`absolute inset-0 bg-black/60 transition-opacity duration-500 z-10 ${
+              selectedCard
+                ? 'opacity-100 pointer-events-auto'
+                : 'opacity-0 pointer-events-none'
+            }`}
+            onClick={(e) => {
+              e.stopPropagation()
+              setSelectedCard(null)
+            }}
+          />
+          <section
+            className='relative w-[988px] h-[590px] flex shrink-0'
+            aria-label='Tathva activities'
+          >
+            {desktopCards.map((card, index) => (
+              <article
+                id={`tablet-${card.id}`}
+                key={card.id}
+                className={`w-[207.79px] h-[590.5px] relative animate-float transition-all duration-500 cursor-pointer ${
+                  index === 0 ? '' : index === 2 ? 'ml-[44.9px]' : 'ml-[57.9px]'
+                } ${
+                  selectedCard !== null
+                    ? selectedCard === card.id
+                      ? 'scale-105 z-20'
+                      : 'opacity-70 blur-[2px] grayscale-[20%] z-0'
+                    : 'scale-100 opacity-100 blur-0 grayscale-0 z-10'
+                }`}
+                style={{ animationDelay: `${index * 0.15}s` }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSelectedCard(card.id)
+                }}
+              >
+                <div className='w-full h-full relative'>
+                  <img
+                    className='absolute top-0 left-0 w-[205px] h-[592px]'
+                    alt=''
+                    aria-hidden='true'
+                    src={card.frame}
+                  />
+                  {card.image && (
+                    <img
+                      className='absolute top-[251px] left-5 w-[164px] h-[249px] aspect-[0.66] object-cover'
+                      alt='Workshop artwork'
+                      src={card.image}
+                    />
+                  )}
+                  <h2
+                    className={`absolute [font-family:'Hammersmith_One',Helvetica] font-normal text-white text-center leading-[normal] ${card.titleClass}`}
+                  >
+                    {card.title}
+                  </h2>
+                  <p
+                    className={`absolute [font-family:'Instrument_Serif',Helvetica] font-normal text-white text-base text-center tracking-[4.48px] leading-[normal] ${card.descriptionClass}`}
+                  >
+                    {card.description.map((line) => (
+                      <span className='block' key={line}>
+                        {line}
+                      </span>
+                    ))}
+                  </p>
+                  <div
+                    className={`absolute w-[49px] h-[50px] bg-[url(https://c.animaapp.com/Dp7bguVy/img/22e6ef5def6cb45e16f88405d9a1a8e5-removebg-preview-1-3@2x.png)] bg-cover bg-[50%_50%] ${card.markerClass}`}
+                    aria-label={`${card.number}: ${card.title}`}
+                  >
+                    <span className="absolute w-full h-[36.00%] top-[32.00%] left-0 [font-family:'Hammersmith_One',Helvetica] font-normal text-white text-base text-center tracking-[4.48px] leading-[normal] whitespace-nowrap">
+                      {card.number}
+                    </span>
+                  </div>
+                  <img
+                    className={`absolute w-[52px] h-[52px] aspect-[1] object-cover ${card.iconClass}`}
+                    alt=''
+                    aria-hidden='true'
+                    src={`${desktopAssetBase}/3ef01d988cdc695be23d44d3ff250f97-removebg-preview-4@2x.png`}
+                  />
+                </div>
+              </article>
+            ))}
+          </section>
+        </div>
+      ) : viewType === 'tablet-portrait' ? (
+        // Tablet Portrait: Expanded 2x2 grid fitting full tablet screen width and height
+        <div
+          className='h-[820px] absolute left-1/2 top-1/2 origin-center'
+          style={{
+            width: `${tabletParams.containerWidth}px`,
+            transform: `translate(-50%, -50%) scale(${scale})`,
+          }}
+        >
+          <div
+            className={`absolute inset-0 bg-black/60 transition-opacity duration-500 z-10 ${
+              selectedCard
+                ? 'opacity-100 pointer-events-auto'
+                : 'opacity-0 pointer-events-none'
+            }`}
+            onClick={(e) => {
+              e.stopPropagation()
+              setSelectedCard(null)
+            }}
+          />
+          <section
+            id='activities-tablet'
+            className='absolute inset-0'
+            aria-label='Tathva activities'
+          >
+            {mobileCards.map((card, index) => {
+              const leftPos = index % 2 === 0 ? tabletParams.col1Left : tabletParams.col2Left
+              const topPos = index < 2 ? 0 : 419
+              return (
+                <ActivityCard
+                  key={card.number}
+                  card={card}
+                  index={index}
+                  anySelected={selectedCard !== null}
+                  selected={selectedCard === card.number}
+                  onSelect={setSelectedCard}
+                  customStyle={{
+                    position: 'absolute w-[143px] h-[401px]',
+                    style: { top: `${topPos}px`, left: `${leftPos}px` },
+                  }}
+                />
+              )
+            })}
+          </section>
+        </div>
+      ) : (
+        // Mobile View (< 460px): Exact original mobile scaling and layout
+        <div
+          className='w-[412px] h-[917px] absolute left-1/2 top-1/2 origin-center'
+          style={{
+            transform: `translate(-50%, -50%) scale(${scale})`,
+          }}
+        >
+          <div
+            className={`absolute inset-0 bg-black/60 transition-opacity duration-500 z-10 ${
+              selectedCard
+                ? 'opacity-100 pointer-events-auto'
+                : 'opacity-0 pointer-events-none'
+            }`}
+            onClick={(e) => {
+              e.stopPropagation()
+              setSelectedCard(null)
+            }}
+          />
+          <section
+            id='activities'
+            className='absolute w-[313px] h-[820px] top-[50px] left-[53px]'
+            aria-label='Tathva activities'
+          >
+            {mobileCards.map((card, index) => (
+              <ActivityCard
+                key={card.number}
+                card={card}
+                index={index}
+                anySelected={selectedCard !== null}
+                selected={selectedCard === card.number}
+                onSelect={setSelectedCard}
+              />
+            ))}
+          </section>
+        </div>
+      )}
     </main>
   )
 }

@@ -3,16 +3,18 @@
 /* The context transports a ref; only event handlers and the frame loop read it. */
 /* eslint-disable react-hooks/refs */
 
-import { createContext, useContext, useEffect, useMemo, useRef } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { detailMotion, detailDuration } from './expoDetailMotion.mjs'
 import { expoDetailContent } from './expoDetailContent.mjs'
+import TextType from './TextType'
 import styles from './ExpoDetails.module.css'
 
 const DetailsContext = createContext(null)
 export const useExpoDetails = () => useContext(DetailsContext)
 
 export function ExpoDetailsProvider({ children }) {
+  const [activeParagraph, setActiveParagraph] = useState(0)
   const root = useRef(null)
   const dialog = useRef(null)
   const progress = useRef({ value: 0, reduced: false, state: 'closed' })
@@ -124,7 +126,22 @@ export function ExpoDetailsProvider({ children }) {
         <article className={styles.content}>
           <p className={styles.eyebrow}>{expoDetailContent.label}</p>
           <h2 id='expo-detail-title'>{expoDetailContent.heading}</h2>
-          {expoDetailContent.paragraphs.map((paragraph, index) => <p key={index} className={styles.paragraph} style={{ '--paragraph-order': Math.min(index, 5) }}>{paragraph}</p>)}
+          {expoDetailContent.paragraphs.map((paragraph, index) => (
+            <TextType
+              key={index}
+              as='p'
+              aria-label={paragraph}
+              className={styles.paragraph}
+              style={{ '--paragraph-order': Math.min(index, 5) }}
+              text={paragraph}
+              loop={false}
+              start={index === activeParagraph}
+              onSentenceComplete={() => setActiveParagraph(index + 1)}
+              showCursor={false}
+              startOnVisible
+              typingSpeed={6.7}
+            />
+          ))}
         </article>
       </dialog>
     </div>

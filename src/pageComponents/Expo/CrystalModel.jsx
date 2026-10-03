@@ -4,25 +4,27 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useLoader, useThree } from '@react-three/fiber'
 import {
   AdditiveBlending,
+  Box3,
   CanvasTexture,
   BufferGeometry,
+  Color,
   Float32BufferAttribute,
+  Group,
   MathUtils,
   Raycaster,
   ShaderChunk,
   SRGBColorSpace,
-  TextureLoader,
   Vector2,
   Vector3,
 } from 'three'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
 import { createCrystalVeins } from './crystalGeometry.mjs'
 import { journeyScreenPoint } from './expoJourney.mjs'
 import { detailMotion } from './expoDetailMotion.mjs'
 import { useExpoDetails } from './ExpoDetails'
 import { springStep, fractureSector, animationDelta, pulseStrength } from './crystalInteraction.mjs'
-import CrystalShards from './CrystalShards'
 
 const geometryLoader = new DRACOLoader()
   .setDecoderPath('/images/expo/decoders/draco/')
@@ -30,6 +32,8 @@ const geometryLoader = new DRACOLoader()
 const surfaceLoader = new KTX2Loader()
   .setTranscoderPath('/images/expo/decoders/basis/')
   .setWorkerLimit(1)
+// Reuse the Draco worker pool for any Draco-compressed GLB payloads.
+const modelLoader = new GLTFLoader().setDRACOLoader(geometryLoader)
 let decodersReleased = false
 
 function releaseCrystalDecoders() {
@@ -37,6 +41,7 @@ function releaseCrystalDecoders() {
   decodersReleased = true
   geometryLoader.dispose()
   surfaceLoader.dispose()
+  // modelLoader shares geometryLoader; nothing extra to release here.
 }
 
 function prepareGlass(shader) {
@@ -120,7 +125,6 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const idleClock = useRef(0)
   const interactionClock = useRef(0)
   const readiness = useRef({ available: false, at: -10 })
-  const shardResonance = useRef(0)
   const savedPose = useRef(null)
   const group = useRef()
   const travel = useRef()
@@ -143,7 +147,9 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const anchor = useMemo(() => new Vector3(), [])
   const started = useRef(false)
   const gl = useThree((state) => state.gl)
-  const robotSource = useLoader(TextureLoader, '/images/expo/robot-head.svg')
+  // 3D robot model replaces the old flat SVG plane. The GLB is cached by
+  // useLoader; we only clone the scene graph so multiple mounts stay isolated.
+  const robotGltf = useLoader(modelLoader, '/images/expo/WhiteRobot-compressed.glb')
   const source = useLoader(geometryLoader, '/images/expo/crystal/shell.drc')
   const [normal, roughness] = useLoader(
     surfaceLoader,
@@ -153,12 +159,38 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     ],
     (loader) => loader.detectSupport(gl),
   )
-  const robot = useMemo(() => {
-    const texture = robotSource.clone()
-    texture.colorSpace = SRGBColorSpace
-    texture.needsUpdate = true
-    return texture
-  }, [robotSource])
+  const robotScene = useMemo(() => {
+    const scene = robotGltf.scene.clone(true)
+    // Wrap so we can center + scale without overwriting the GLB's local
+    // transforms. The wrapper also gives the primitive a stable pivot.
+    const wrapper = new Group()
+    wrapper.add(scene)
+    const box = new Box3().setFromObject(wrapper)
+    const size = box.getSize(new Vector3())
+    const center = box.getCenter(new Vector3())
+    // Center the model on the wrapper origin, then frame it at the same
+    // ~1.7-unit height the old flat robot plane occupied.
+    scene.position.sub(center)
+    const maxDim = Math.max(size.x, size.y, size.z) || 1
+    const targetSize = 1.7
+    wrapper.scale.setScalar(targetSize / maxDim)
+    // Preserve the original holographic-blue vibe: tint emissive, disable tone
+    // mapping so bright values survive into any bloom pass, and tag each mesh
+    // with renderOrder=10 to draw on top of the crystal shell like the old plane.
+    const tint = new Color(0.27, 0.57, 1.0)
+    wrapper.traverse((child) => {
+      if (child.isMesh && child.material) {
+        child.material = child.material.clone()
+        if ('emissive' in child.material) {
+          child.material.emissive = tint
+          child.material.emissiveIntensity = 0.7
+        }
+        child.material.toneMapped = false
+        child.renderOrder = 10
+      }
+    })
+    return wrapper
+  }, [robotGltf])
   const geometry = useMemo(() => {
     const copy = source.clone()
     copy.computeBoundingBox()
@@ -195,10 +227,16 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
       veins.dispose()
       glow.dispose()
       energy.dispose()
-      robot.dispose()
+      // Only dispose cloned materials; geometries stay owned by useLoader's cache.
+      robotScene.traverse((child) => {
+        if (child.isMesh && child.material) {
+          if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose?.())
+          else child.material.dispose?.()
+        }
+      })
       dust.dispose()
     },
-    [geometry, veins, glow, energy, robot, dust],
+    [geometry, veins, glow, energy, robotScene, dust],
   )
   useFrame(({ camera, size }, delta) => {
     const dt = animationDelta(delta)
@@ -217,10 +255,6 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const inDetails = detail && detail.state !== 'closed'
     if (!inDetails) idleClock.current += dt
     const time = interactionClock.current
-    if ((target.current.shardResonance ?? 0) !== shardResonance.current) {
-      shardResonance.current = target.current.shardResonance ?? 0
-      life.current.pulseAt = time
-    }
     const available = !inDetails && (pose?.progress ?? 1) >= 1 && !(pose?.exit > 0)
     if (available && !readiness.current.available) readiness.current.at = time
     readiness.current.available = available
@@ -292,7 +326,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const press = available && target.current.pressed && life.current.hitStrength ? .45 : 0
     const interactive = available && life.current.hitStrength > 0
     const control = gl.domElement.closest('[data-crystal-control]')
-    if (control) control.style.cursor = interactive ? 'pointer' : available && target.current.shardHover ? 'grab' : 'auto'
+    if (control) control.style.cursor = interactive ? 'pointer' : 'auto'
     cursorLight.current.position.set(lightPoint.x, lightPoint.y, 1.2)
     cursorLight.current.intensity = hover * 1.6
     glass.current.envMapIntensity = 2.2 + hover * .25
@@ -379,7 +413,6 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
       <group ref={detailGroup}>
       <group ref={idle}>
       <group ref={group}>
-      <CrystalShards journey={journey} compact={compact} prepareGlass={prepareGlass} target={target} />
       <pointLight ref={cursorLight} color='#75dfff' intensity={0} distance={4} decay={2} />
       <points ref={motes} geometry={dust}>
         <pointsMaterial color='#acdfff' map={glow} size={.055} transparent opacity={.18} depthWrite={false} blending={AdditiveBlending} />
@@ -430,7 +463,9 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
         </mesh>
         {/* Preserve the artwork's fixed alignment with the shell geometry. */}
         <group ref={robotMotion} rotation={[0, 0.12, 0.085, 'ZYX']}>
-          <mesh position={[0, 0.15, 0.65]} scale={[2, 2.3, 1]}>
+          {/* Backdrop glow halo — kept from the original so the 3D robot
+              still reads as a luminous figure inside the crystal. */}
+          <mesh position={[0, 0.15, 0.157]} scale={[2, 2.3, 1]}>
             <planeGeometry />
             <meshBasicMaterial
               ref={glowMaterial}
@@ -441,18 +476,12 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
               depthWrite={false}
             />
           </mesh>
-          <mesh position={[0, 0.18, 0.64]} scale={[1.7, 1.7, 1]} renderOrder={10}>
-            <planeGeometry />
-            <meshBasicMaterial
-              map={robot}
-              color={[0.27, 0.57, 1.5]}
-              alphaTest={0.1}
-              transparent
-              depthTest={false}
-              depthWrite={false}
-              toneMapped={false}
-            />
-          </mesh>
+          {/* 3D robot model replaces the old flat SVG plane. The wrapper is
+              already centered and scaled to ~1.7 units in robotScene. */}
+          <primitive
+            object={robotScene}
+            position={[0, 0.18, 0.167]}
+          />
         </group>
         <group>
           <lineSegments geometry={veins}>
