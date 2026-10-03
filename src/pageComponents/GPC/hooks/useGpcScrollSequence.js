@@ -684,12 +684,31 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       // The push in toward the Wheels footage. (Not on phones: see `lite`.)
       if (!lite) {
         tl.fromTo(film, { opacity: 0 }, { opacity: 1, duration: span(SEQUENCE.film) }, at(SEQUENCE.film));
-        tl.fromTo(
-          hero,
-          { x: 0, y: 0, scale: 1 },
-          { ...pushedIn, duration: span(dive), ease: "power2.in", immediateRender: false },
-          at(dive)
-        );
+       //--------------------------ch1----------------------------------
+        // tl.fromTo(
+        //   hero,
+        //   { x: 0, y: 0, scale: 1 },
+        //   { ...pushedIn, duration: span(dive), ease: "power2.in", immediateRender: false },
+        //   at(dive)
+        // );
+        if (!lite) {
+  tl.fromTo(film, { opacity: 0 }, { opacity: 1, duration: span(SEQUENCE.film) }, at(SEQUENCE.film));
+
+  // Constant zoom rate: scale grows geometrically (1 -> pushedIn.scale), and x/y follow the
+  // same progress so the screen still lands exactly on Wheels' picture.
+  const dolly = { t: 0 };
+  const applyDolly = () => {
+    const s = Math.pow(pushedIn.scale, dolly.t);
+    const u = (s - 1) / (pushedIn.scale - 1); // 0 -> 1, same shape as the scale
+    gsap.set(hero, { scale: s, x: pushedIn.x * u, y: pushedIn.y * u });
+  };
+  tl.fromTo(
+    dolly,
+    { t: 0 },
+    { t: 1, duration: span(dive), ease: "none", immediateRender: false, onUpdate: applyDolly },
+    at(dive)
+  );
+}
       }
 
       // The handoff: Wheels is full-screen underneath, so the hero fades away.
@@ -721,6 +740,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         if (!lite) release();
         Object.assign(live, { power: 1, outro: 0, film: 0, picture: null });
         hero.style.clipPath = "";
+        gsap.set(hero,{clearProps: "transform"});
         hero.style.opacity = ""; // never carried over into the next build: see the handoff above
         flash.removeAttribute("style");
       };
