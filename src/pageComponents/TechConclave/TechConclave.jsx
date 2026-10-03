@@ -187,7 +187,15 @@ function useIntroAnimation(ref) {
         .to(title, { autoAlpha: 1, x: 0, duration: 0.65, stagger: 0.08 })
         .to(
           cards,
-          { autoAlpha: 1, y: 0, duration: 0.45, stagger: 0.06 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.45,
+            stagger: 0.06,
+            // An inline transform left behind by the intro would beat the
+            // stylesheet's hover lift (.tc-card.tc-active), so cards never rose.
+            clearProps: 'transform',
+          },
           '-=0.25',
         )
         .to(meta, { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.08 }, '-=0.2')
@@ -824,7 +832,8 @@ const trackLight = (e) => {
   // Only execute for mouse/pointer devices, skip touch/mobile interactions
   if (e.pointerType === 'touch') return
 
-  const rect = e.currentTarget.getBoundingClientRect()
+  const light = e.currentTarget.querySelector('.tc-card-light')
+  const rect = (light || e.currentTarget).getBoundingClientRect()
   const x = e.clientX - rect.left
   const y = e.clientY - rect.top
   e.currentTarget.style.setProperty('--light-x', `${x}px`)
@@ -1863,11 +1872,33 @@ z-index: 100;
   opacity: 1;
 }
 
+/* cursor spotlight: a soft glow that follows the pointer (--light-x/--light-y,
+   written by trackLight), over the photo and clipped to the card's shape */
+.tc-card-light {
+  position: absolute;
+  inset: 0;
+  z-index: 11; /* above the photo (.tc-card-img is 10) */
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s var(--tc-ease);
+  background: radial-gradient(
+    180px circle at var(--light-x, 50%) var(--light-y, 50%),
+    rgba(255, 255, 255, 0.22),
+    transparent 70%
+  );
+}
+.tc-card:is(.tc-active, :focus-visible) .tc-card-light {
+  opacity: 1;
+}
+
 /* on mobile/tablet tiles the ring should trace the lower "body" shape
    (same box as the ::before glow), not the full square, or it would cut
    across the forehead the same way the old glow did */
 .tc-m-tile .tc-card-ring,
-.tc-t-speaker .tc-card-ring {
+.tc-t-speaker .tc-card-ring,
+.tc-m-tile .tc-card-light,
+.tc-t-speaker .tc-card-light {
   top: 26%;
   border-radius: 15%;
 }
