@@ -11,27 +11,65 @@ import ArtistPage from './artist/page'
 import TechConclave from '@/pageComponents/TechConclave/TechConclave'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import GPC from './gpc/page'
+import Accommodation from '@/pageComponents/Accomodation/Accommodation'
 
 export default function Home() {
-  // Touch screens: the scroller is 1px short of the screen on purpose. Chrome on Android treats a
-  // scroller that exactly fills the screen as the page itself and slides its address bar away as
-  // it scrolls; every time the bar moves the screen changes height, everything sized in dvh
-  // re-lays-out, and the sections below jump by a few hundred px mid-scroll. One px short, the
-  // bar stays put and the layout stays still.
   return (
     <div className='main-scroll relative h-dvh [@media(pointer:coarse)]:h-[calc(100dvh-1px)] w-full overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-black'>
       <Preloader />
       <SmoothScroll />
       <Navbar />
       <HeroFrameController>
-        <ArtistPage />
-        <GPC />
-        <WheelsExperience revealUnderlay />
-        <RobowarsPage />
-        <TechConclave />
-        <Expo />
-        <HorizontalGallery />
-        <Footer />
+        {/* Top/Hero fallback anchor */}
+        <div data-section-name="TATHVA-26" className="w-full" />
+
+        {/* <ProfilePage /> */}
+        {/* <ProshowCarousel /> */}
+
+        <div data-section-name="ARTISTS" className="w-full">
+          <ArtistPage />
+        </div>
+
+        <div data-section-name="GPC" className="w-full">
+          <GPC />
+        </div>
+
+        <div data-section-name="WHEELS" className="w-full">
+          <WheelsExperience revealUnderlay />
+        </div>
+
+        <div data-section-name="ROBOWARS" className="w-full">
+          <RobowarsPage />
+        </div>
+
+        {/* <Lead />
+        <Frontend />
+        <Backend />
+        <Uiux /> */}
+
+        <div data-section-name="ACCOMMODATION" className="w-full">
+          <Accommodation />
+        </div>
+
+        <div data-section-name="PASSES" className="w-full">
+          <TathvaPasses />
+        </div>
+
+        <div data-section-name="TECH CONCLAVE" className="w-full">
+          <TechConclave />
+        </div>
+
+        <div data-section-name="EXPO" className="w-full">
+          <Expo />
+        </div>
+
+        <div data-section-name="GALLERY" className="w-full">
+          <HorizontalGallery />
+        </div>
+
+        <div data-section-name="TATHVA-26" className="w-full">
+          <Footer />
+        </div>
       </HeroFrameController>
     </div>
   )

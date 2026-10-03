@@ -449,7 +449,8 @@ export default function HeroFrameController({ children }) {
   const heroInteractive = heroVisible && !unlocked
 
   return (
-    <NavbarScope>
+    <>
+      <NavbarScope>
       <div
         style={{
           position: 'relative',
@@ -491,7 +492,6 @@ export default function HeroFrameController({ children }) {
         </div>
 
         {pathname !== '/' && <Navbar />}
-        <TathvaMenu />
 
         {/* While locked, `children` stay mounted but hidden. `visibility: hidden` also hides
           position: fixed descendants (pinned sections, underlays), which overflow: hidden on the
@@ -523,6 +523,8 @@ export default function HeroFrameController({ children }) {
           }}
         />
       </div>
-    </NavbarScope>
+      </NavbarScope>
+      <TathvaMenu />
+    </>
   )
 }

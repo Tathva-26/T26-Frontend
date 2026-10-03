@@ -14,16 +14,16 @@ import { useUser } from '@/context/UserContext'
 
 const LOGIN_HREF = '/login'
 /**
- * Navbar
- * ------
- * Minimal, dark navigation bar with a vertical text-replacement hover
- * ("portal") on every link, including the Register CTA.
+- Navbar
+- ------
+- Minimal, dark navigation bar with a vertical text-replacement hover
+- ("portal") on every link, including the Register CTA.
  *
- * Fonts are self-hosted via next/font/google, scoped to this component
- * through CSS variables (--font-hammersmith / --font-instrument-serif).
- * If these fonts are already loaded globally elsewhere in the app (e.g.
- * in layout.jsx), you can remove the two calls below and just reference
- * the same variable names instead.
+- Fonts are self-hosted via next/font/google, scoped to this component
+- through CSS variables (--font-hammersmith / --font-instrument-serif).
+- If these fonts are already loaded globally elsewhere in the app (e.g.
+- in layout.jsx), you can remove the two calls below and just reference
+- the same variable names instead.
  */
 
 const hammersmithOne = Hammersmith_One({
@@ -64,16 +64,16 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v))
 const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4)
 
 /**
- * FlipText
- * --------
- * The portal animation itself, detached from any particular wrapper
- * element. Used directly inside nav links (via FlipLink) and inside the
- * Register CTA, which needs the line/arrow to sit outside the flip.
+- FlipText
+- --------
+- The portal animation itself, detached from any particular wrapper
+- element. Used directly inside nav links (via FlipLink) and inside the
+- Register CTA, which needs the line/arrow to sit outside the flip.
  *
- * Exposes trigger(event) via ref so a parent element (like the whole CTA
- * button) can start the animation on its own pointerenter, using this
- * span's position for the warp math. The span also wires its own
- * pointerenter as a sane default for plain nav-link usage.
+- Exposes trigger(event) via ref so a parent element (like the whole CTA
+- button) can start the animation on its own pointerenter, using this
+- span's position for the warp math. The span also wires its own
+- pointerenter as a sane default for plain nav-link usage.
  */
 const FlipText = React.forwardRef(function FlipText({ text, className }, ref) {
   const rootRef = useRef(null)
@@ -98,9 +98,9 @@ const FlipText = React.forwardRef(function FlipText({ text, className }, ref) {
       runningRef.current = true
 
       /*
-       * Capture the exact cursor X, relative to this span. Character
-       * centres come from layout offsets (not bounding rects) so they
-       * are unaffected by any transform left over from the previous run.
+- Capture the exact cursor X, relative to this span. Character
+- centres come from layout offsets (not bounding rects) so they
+- are unaffected by any transform left over from the previous run.
        */
       const pointerX = event.clientX - root.getBoundingClientRect().left
       const H = inc[0].offsetHeight // height of one row = travel distance
@@ -108,10 +108,10 @@ const FlipText = React.forwardRef(function FlipText({ text, className }, ref) {
         parseFloat(window.getComputedStyle(root).fontSize) * PORTAL_SIGMA_EM
 
       /*
-       * Per-character distance from the cursor and a smooth gaussian
-       * influence (1 under the cursor, falling off continuously). A
-       * cursor between two letters gives both neighbours nearly equal
-       * influence, so the warp originates between them.
+- Per-character distance from the cursor and a smooth gaussian
+- influence (1 under the cursor, falling off continuously). A
+- cursor between two letters gives both neighbours nearly equal
+- influence, so the warp originates between them.
        */
       const cells = []
       for (let i = 0; i < text.length; i++) {
@@ -125,10 +125,10 @@ const FlipText = React.forwardRef(function FlipText({ text, className }, ref) {
       }
 
       /*
-       * Draws one frame for BOTH copies from a single timeline value
-       * t (0..1). The incoming copy is the outgoing copy shifted one row
-       * down, with the identical warp, so together they form one
-       * continuous strip passing through the clipped window.
+- Draws one frame for BOTH copies from a single timeline value
+- t (0..1). The incoming copy is the outgoing copy shifted one row
+- down, with the identical warp, so together they form one
+- continuous strip passing through the clipped window.
        */
       const render = (t) => {
         for (let i = 0; i < text.length; i++) {
@@ -298,6 +298,7 @@ function MenuIcon() {
 export default function Navbar() {
   const navRef = useRef(null)
   const menuButtonRef = useRef(null)
+  const desktopMenuButtonRef = useRef(null)
   const registerFlipRef = useRef(null)
 
   /*
@@ -414,6 +415,20 @@ export default function Navbar() {
             <img src='/images/hero/tathvalogo.png' alt='Tathva' />
           </Link>
 
+          <button
+            ref={desktopMenuButtonRef}
+            type='button'
+            className='nb__desktop-menu'
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-controls='nb-mobile-menu'
+            onClick={() => {
+              window.__tathvaMenuToggle?.()
+            }}
+          >
+            <MenuIcon />
+          </button>
+
           <ul className='nb__links'>
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
@@ -494,8 +509,8 @@ export default function Navbar() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-padding-block: calc(18px - var(--scroll-progress, 0) * 10px);
-padding-inline: calc(24px - var(--scroll-progress, 0) * 8px);
+          padding-block: calc(18px - var(--scroll-progress, 0) * 10px);
+          padding-inline: calc(24px - var(--scroll-progress, 0) * 8px);
           background: rgba(8, 10, 14, calc(var(--scroll-progress, 0) * 0.05));
           -webkit-backdrop-filter: blur(calc(2px + var(--scroll-progress, 0) * 9px));
           font-family: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
@@ -540,6 +555,30 @@ padding-inline: calc(24px - var(--scroll-progress, 0) * 8px);
         .nb__mark img {
           height: calc(32px - var(--scroll-progress, 0) * 8px);
           width: auto;
+          display: block;
+        }
+
+        .nb__desktop-menu {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          background: none;
+          border: none;
+          color: #fff;
+          cursor: pointer;
+          flex-shrink: 0;
+          opacity: 0.9;
+          transition: opacity 0.25s ease;
+        }
+
+        .nb__desktop-menu:hover {
+          opacity: 1;
+        }
+
+        .nb__desktop-menu svg {
+          width: calc(25px - var(--scroll-progress, 0) * 4px);
+          height: auto;
           display: block;
         }
 
@@ -686,13 +725,13 @@ padding-inline: calc(24px - var(--scroll-progress, 0) * 8px);
           flex-shrink: 0;
         }
 
-.nb__cta-arrow {
-  width: calc(60px - var(--scroll-progress, 0) * 5px);  /* was 20px - ...4px */
-  height: auto;
-  display: block;
-  flex-shrink: 0;
-  transition: transform 0.35s ease;
-}
+        .nb__cta-arrow {
+          width: calc(60px - var(--scroll-progress, 0) * 5px);
+          height: auto;
+          display: block;
+          flex-shrink: 0;
+          transition: transform 0.35s ease;
+        }
 
         .nb__cta:hover .nb__cta-arrow {
           transform: translate(2px, -2px);
@@ -766,26 +805,33 @@ padding-inline: calc(24px - var(--scroll-progress, 0) * 8px);
         .nb-link:focus-visible,
         .nb__mark:focus-visible,
         .nb__menu:focus-visible,
+        .nb__desktop-menu:focus-visible,
         .nb__cta:focus-visible,
         .nb-mobile__cta:focus-visible {
           outline: 1px solid rgba(255, 255, 255, 0.65);
           outline-offset: 4px;
         }
 
-@media (max-width: 720px) {
-  .nb { padding-inline: 20px; }
-  .nb__links,
-  .nb__cta { display: none; }
-  .nb__right { display: flex; gap: 0; }
-  .nb__menu { display: flex; }
-  .nb-mobile { display: flex; }
-}
-  @media (max-width: 1023px), (hover: none) {
-  .nb,
-  .nb-mobile {
-    display: none !important;
-  }
-}
+        /* Show the mobile drawer modal on desktop too */
+        .nb-mobile {
+          display: flex;
+        }
+
+        @media (max-width: 720px) {
+          .nb { padding-inline: 20px; }
+          .nb__links,
+          .nb__cta,
+          .nb__desktop-menu { display: none; }
+          .nb__right { display: flex; gap: 0; }
+          .nb__menu { display: flex; }
+        }
+
+        @media (max-width: 1023px), (hover: none) {
+          .nb,
+          .nb-mobile {
+            display: none !important;
+          }
+        }
 
         @media (prefers-reduced-motion: reduce) {
           .nb__glow {
