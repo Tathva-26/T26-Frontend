@@ -18,11 +18,6 @@ const ASPECT_RATIO = 16 / 9
 
 const FRAME_PROGRESS_END = FRAME_SCROLL_VH / TOTAL_SCROLL_VH
 
-// The footage only moves while the page is scrolled, and there are several
-// screens of it: when the scroll has been still for this long partway through,
-// a "scroll to move the car" pop-up fades in. Any scroll hides it again.
-const SCROLL_HINT_IDLE_MS = 700
-
 const getFramePath = (index) => {
   const frameNum = (START_FRAME + index).toString().padStart(3, '0')
   return `/wheels/frames/ezgif-frame-${frameNum}.webp`
@@ -65,7 +60,6 @@ export default function WheelsExperience({ revealUnderlay = false }) {
   const wheelsLeftRef = useRef(null)
   const wheelsRightRef = useRef(null)
   const wheelsTickerRef = useRef(null)
-  const scrollHintRef = useRef(null)
 
   const tvContainerRef = useRef(null)
   const tvFrameRef = useRef(null)
@@ -579,34 +573,6 @@ export default function WheelsExperience({ revealUnderlay = false }) {
     }
     window.addEventListener('resize', handleResize)
 
-    // "Scroll to move the car" pop-up: see SCROLL_HINT_IDLE_MS.
-    let scrollHintTimer = 0
-    const setScrollHint = (shown) => {
-      if (scrollHintRef.current)
-        scrollHintRef.current.dataset.show = shown ? 'true' : 'false'
-    }
-    const queueScrollHint = (self) => {
-      setScrollHint(false)
-      window.clearTimeout(scrollHintTimer)
-      scrollHintTimer = window.setTimeout(() => {
-        const container = containerRef.current
-        if (!container) return
-        const viewportHeight =
-          scroller === window ? window.innerHeight : scroller.clientHeight
-        const scrollerTop =
-          scroller === window ? 0 : scroller.getBoundingClientRect().top
-        // Wheels has the screen to itself once it is a fifth of a screen
-        // into its pin: until then GPC is still fading out on top of it
-        // (--gpc-handoff in gpc.css).
-        const top = container.getBoundingClientRect().top - scrollerTop
-        const onScreen = top <= -viewportHeight * 0.2
-        // Nothing left to scroll for once the footage is nearly through.
-        const footageLeft = self.progress < FRAME_PROGRESS_END * 0.97
-        setScrollHint(onScreen && footageLeft)
-      }, SCROLL_HINT_IDLE_MS)
-    }
-
-    let handoffSnapStarted = false
     const trigger = ScrollTrigger.create({
       scroller,
       trigger: containerRef.current,
@@ -625,38 +591,6 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       scrub: 0,
       invalidateOnRefresh: true,
       onUpdate: (self) => {
-        queueScrollHint(self)
-
-        const lenis = window.__lenis
-        if (self.direction < 0 && self.progress < FRAME_PROGRESS_END) {
-          handoffSnapStarted = false
-        } else if (
-          revealUnderlay &&
-          lenis &&
-          !handoffSnapStarted &&
-          self.direction > 0 &&
-          self.progress >= FRAME_PROGRESS_END
-        ) {
-          // When the frame sequence reaches its final frame, land at the later
-          // of Wheels' fade completion and Robowars' timeline end. This is the
-          // exact fully revealed Robowars frame, rather than merely the point
-          // where its underlay first appears.
-          handoffSnapStarted = true
-          const robowarsTimeline = document.querySelector('[data-robowars-timeline]')
-          const scrollerRect = scroller === window ? null : scroller.getBoundingClientRect()
-          const scrollerBottom = scrollerRect ? scrollerRect.bottom : window.innerHeight
-          const robowarsEnd = robowarsTimeline
-            ? lenis.scroll + robowarsTimeline.getBoundingClientRect().bottom - scrollerBottom
-            : self.end
-          const target = Math.min(lenis.limit, Math.max(self.end, robowarsEnd))
-
-          lenis.scrollTo(target, {
-            duration: 0.9,
-            lock: true,
-            easing: (progress) => 1 - Math.pow(1 - progress, 3),
-          })
-        }
-
         if (self.progress <= FRAME_PROGRESS_END) {
           targetFrameRef.current =
             (self.progress / FRAME_PROGRESS_END) * (FRAME_COUNT - 1)
@@ -672,7 +606,6 @@ export default function WheelsExperience({ revealUnderlay = false }) {
     return () => {
       isActive = false
       cancelAnimationFrame(animationFrameId)
-      window.clearTimeout(scrollHintTimer)
       timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
       images.forEach((image) => {
         image.onload = null
@@ -694,15 +627,6 @@ export default function WheelsExperience({ revealUnderlay = false }) {
         @keyframes ticker-marquee {
           from { transform: translate3d(0, 0, 0); }
           to { transform: translate3d(-50%, 0, 0); }
-        }
-        @keyframes wheels-hint-wheel {
-          0% { transform: translateY(0); opacity: 0; }
-          25% { opacity: 1; }
-          70% { transform: translateY(7px); opacity: 0; }
-          100% { transform: translateY(7px); opacity: 0; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .wheels-hint-wheel { animation: none !important; opacity: 1 !important; }
         }
       `}</style>
       <div className='wheels-viewport sticky top-0 w-full h-dvh overflow-hidden'>
@@ -850,26 +774,6 @@ export default function WheelsExperience({ revealUnderlay = false }) {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* "Scroll to move the car" pop-up, shown by queueScrollHint while the scroll is idle */}
-        <div
-          ref={scrollHintRef}
-          data-show='false'
-          aria-hidden='true'
-          className="pointer-events-none absolute bottom-[92px] left-1/2 z-40 flex -translate-x-1/2 translate-y-3 scale-95 items-center gap-4 whitespace-nowrap rounded-2xl border border-[#a682d3]/60 bg-black/75 py-3.5 pr-7 pl-5 text-white font-['VCR_OSD_Mono',monospace] opacity-0 shadow-[0_0_28px_rgba(166,130,211,0.35)] backdrop-blur-md transition-[opacity,transform] duration-500 ease-out data-[show=true]:translate-y-0 data-[show=true]:scale-100 data-[show=true]:opacity-100 max-md:bottom-[calc(max(16px,env(safe-area-inset-bottom,16px))+52px)] max-md:gap-3 max-md:py-2.5 max-md:pr-5 max-md:pl-4"
-        >
-          <span className='relative block h-[30px] w-[19px] shrink-0 rounded-full border-2 border-[#a682d3] max-md:h-[24px] max-md:w-[15px]'>
-            <span className='wheels-hint-wheel absolute top-[5px] left-1/2 -ml-px block h-[6px] w-[2px] rounded-full bg-white animate-[wheels-hint-wheel_1.4s_ease-out_infinite]' />
-          </span>
-          <span className='flex flex-col gap-1.5 leading-none uppercase'>
-            <span className='text-[17px] tracking-[0.16em] max-md:text-[13px]'>
-              Scroll to move the car
-            </span>
-            <span className='text-[11px] tracking-[0.22em] text-[#a682d3] max-md:text-[9.5px]'>
-              Keep scrolling to drive on
-            </span>
-          </span>
         </div>
 
         {!isLoaded && (
