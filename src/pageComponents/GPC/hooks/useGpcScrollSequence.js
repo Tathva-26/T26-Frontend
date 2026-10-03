@@ -4,6 +4,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { POWER_LINE } from "@/lib/consoleScreen/spaceShooterScreen";
 import { CONSOLE_SCREEN_INSET, PULLBACK_OVERSHOOT, SEQUENCE } from "@/pageComponents/GPC/gpcConfig";
 import { createWheelsPreview } from "@/pageComponents/GPC/wheelsPreview";
+import { touchStop } from "@/lib/touchStop";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -37,8 +38,6 @@ const EXIT_REST = 0.15;
 // A swipe has to have been this far from GPC's resting spot before reaching it counts as an
 // arrival to stop at, so a finger wobbling on the spot doesn't keep getting stopped.
 const LITE_ARM_PX = 80;
-// How long the page stays stopped there once the finger is off the screen.
-const LITE_HALT_MS = 160;
 // Scroll has to be still this long before a page left part way between the last artist and GPC
 // is finished off to whichever of the two it was heading for.
 const LITE_SETTLE_IDLE_MS = 160;
@@ -525,55 +524,41 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       // Touch scrolling is native (the finger, then momentum) and stays that way; nothing here
       // runs against it while it is moving. Two things only:
       //   - a swipe that reaches GPC's resting spot, from the artists above or from the Wheels
-      //     transition below, stops dead there, however hard it was thrown. The scroller is
-      //     frozen for a moment, which is what ends the momentum, then handed straight back.
+      //     transition below, stops dead there, however hard it was thrown (see lib/touchStop).
       //   - a page left part way between the last artist and GPC, once it has come to rest, is
       //     eased the rest of the way to whichever it was heading for. A touch takes it back.
       let stopLite = null;
       if (lite) {
+        const stopper = touchStop(scroller);
         let last = scroller.scrollTop;
         let rested = last; // where the page last came to rest
         let armed = Math.abs(last - landing.end) > LITE_ARM_PX;
-        let halted = false;
         let settling = false;
-        let fingerDown = false;
-        let haltTimer = 0;
         let settleTimer = 0;
-
-        const letGo = () => {
-          if (fingerDown) {
-            haltTimer = window.setTimeout(letGo, LITE_HALT_MS);
-            return;
-          }
-          halted = false;
-          scroller.style.overflowY = "";
-          window.__lenis?.start();
-        };
-
-        const halt = () => {
-          const top = landing.end;
-          halted = true;
-          armed = false;
-          settling = false;
-          scroller.style.overflowY = "hidden";
-          const lenis = window.__lenis;
-          lenis?.stop();
-          lenis?.scrollTo(top, { immediate: true, force: true });
-          if (Math.abs(scroller.scrollTop - top) > 0.5) scroller.scrollTop = top;
-          last = rested = top;
-          window.clearTimeout(settleTimer);
-          window.clearTimeout(haltTimer);
-          haltTimer = window.setTimeout(letGo, LITE_HALT_MS);
-        };
 
         const settle = () => {
           const lenis = window.__lenis;
-          if (halted || fingerDown || settling || !lenis || lenis.isStopped || lenis.isLocked) return;
+          if (stopper.stopped || stopper.fingerDown || settling || !lenis || lenis.isStopped || lenis.isLocked) return;
           const scroll = scroller.scrollTop;
           const from = landing.start;
           const to = landing.end;
           const travelled = scroll - rested;
           rested = scroll;
+          // A swipe up out of the Wheels transition that died just short of the resting spot:
+          // finish it. (Left there, the next swipe would be stopped after moving a few px.)
+          if (armed && scroll > to + 0.5 && scroll - to < LITE_ARM_PX) {
+            settling = true;
+            lenis.scrollTo(to, {
+              duration: LITE_SETTLE_S,
+              easing: easeOut,
+              onComplete: () => {
+                settling = false;
+                armed = false;
+                last = rested = scroller.scrollTop;
+              },
+            });
+            return;
+          }
           if (scroll <= from + 2 || scroll >= to - 2) return;
           // Too little travel to tell which way it was going: whichever end is nearer.
           const down = Math.abs(travelled) >= LITE_INTENT_PX ? travelled > 0 : scroll - from > to - scroll;
@@ -595,7 +580,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
 
         const onScroll = () => {
           const scroll = scroller.scrollTop;
-          if (halted) {
+          if (stopper.stopped) {
             last = scroll;
             return;
           }
@@ -605,7 +590,10 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
             const swiped = Math.abs(scroll - last) < height;
             const reached = (last < top && scroll >= top) || (last > top && scroll <= top);
             if (armed && swiped && reached) {
-              halt();
+              armed = false;
+              window.clearTimeout(settleTimer);
+              stopper.stopAt(top);
+              last = rested = top;
               return;
             }
             if (Math.abs(scroll - top) > LITE_ARM_PX) armed = true;
@@ -614,13 +602,17 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
           settleSoon();
         };
         const onFingerDown = () => {
-          fingerDown = true;
           settling = false; // Lenis drops its glide as soon as the finger moves
         };
         const onFingerUp = (event) => {
-          fingerDown = event.touches.length > 0;
-          if (!fingerDown && !halted) settleSoon();
+          if (event.touches.length === 0 && !stopper.stopped) settleSoon();
         };
+        // Handed back after a stop (this section's or another's): in case it was let go a
+        // little off the spot.
+        const offRelease = stopper.onRelease(() => {
+          last = rested = scroller.scrollTop;
+          settleSoon();
+        });
 
         const passive = { passive: true };
         scroller.addEventListener("scroll", onScroll, passive);
@@ -628,16 +620,13 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         scroller.addEventListener("touchend", onFingerUp, passive);
         scroller.addEventListener("touchcancel", onFingerUp, passive);
         stopLite = () => {
-          window.clearTimeout(haltTimer);
           window.clearTimeout(settleTimer);
           scroller.removeEventListener("scroll", onScroll);
           scroller.removeEventListener("touchstart", onFingerDown);
           scroller.removeEventListener("touchend", onFingerUp);
           scroller.removeEventListener("touchcancel", onFingerUp);
-          if (halted) {
-            scroller.style.overflowY = "";
-            window.__lenis?.start();
-          }
+          offRelease();
+          stopper.dispose();
         };
       }
 
@@ -716,61 +705,8 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
 
       sync();
 
-      // TEMPORARY DIAGNOSTIC. Open the page with ?gpcdebug in the address and a small readout of
-      // what GPC is actually doing on this device is drawn in the corner, for problems that only
-      // show on a real phone. Remove once the phone issues are settled.
-      let stopDebug = null;
-      if (new URLSearchParams(window.location.search).has("gpcdebug")) {
-        const panel = document.createElement("pre");
-        panel.style.cssText =
-          "position:fixed;left:4px;top:60px;z-index:2147483647;margin:0;padding:4px 6px;max-width:92vw;" +
-          "font:10px/1.25 monospace;color:#0f0;background:rgba(0,0,0,.82);pointer-events:none;white-space:pre-wrap";
-        document.body.appendChild(panel);
-        let lastError = "none";
-        const onError = (event) => (lastError = String(event.message || event.reason).slice(0, 90));
-        window.addEventListener("error", onError);
-        window.addEventListener("unhandledrejection", onError);
-        const describe = (el) =>
-          el ? `${el.tagName.toLowerCase()}${el.dataset?.gpc ? `[gpc=${el.dataset.gpc}]` : ""}.${String(el.className).slice(0, 34)}` : "nothing";
-        const report = () => {
-          const heroStyle = getComputedStyle(hero);
-          const heroRect = hero.getBoundingClientRect();
-          const stageRect = stage.getBoundingClientRect();
-          const banner = hero.querySelector("img");
-          const canvases = [...hero.querySelectorAll("canvas")]
-            .map((c) => `${c.dataset.gpc || "cv"}:${c.width}x${c.height}`)
-            .join(" ");
-          const onTop = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
-          panel.textContent = [
-            `dpr ${window.devicePixelRatio} view ${window.innerWidth}x${window.innerHeight} coarse ${touchScreen} lite ${lite}`,
-            `scroll ${Math.round(scroller.scrollTop)} gpc ${Math.round(landing.start)}..${Math.round(landing.end)} outro ${tl.progress().toFixed(3)}`,
-            `lenis stop ${!!window.__lenis?.isStopped} lock ${!!window.__lenis?.isLocked} overflow "${scroller.style.overflowY}"`,
-            `layout ${layout?.mode} children ${hero.children.length}`,
-            `hero op ${heroStyle.opacity} vis ${heroStyle.visibility} disp ${heroStyle.display}`,
-            `hero tf ${heroStyle.transform.slice(0, 44)}`,
-            `hero clip ${heroStyle.clipPath.slice(0, 30)}`,
-            `hero box y ${Math.round(heroRect.top)} ${Math.round(heroRect.width)}x${Math.round(heroRect.height)} stage y ${Math.round(stageRect.top)}`,
-            `banner loaded ${banner?.complete} ${banner?.naturalWidth}x${banner?.naturalHeight}`,
-            `canvases ${canvases}`,
-            `screen power ${live.power} outro ${Number(live.outro).toFixed(2)} film ${Number(live.film).toFixed(2)}`,
-            `at centre: ${describe(onTop)}`,
-            `  its parent: ${describe(onTop?.parentElement)}`,
-            `error: ${lastError}`,
-          ].join("\n");
-        };
-        const timer = window.setInterval(report, 300);
-        report();
-        stopDebug = () => {
-          window.clearInterval(timer);
-          window.removeEventListener("error", onError);
-          window.removeEventListener("unhandledrejection", onError);
-          panel.remove();
-        };
-      }
-
       // What GSAP's own revert doesn't undo.
       return () => {
-        stopDebug?.();
         window.clearTimeout(gateTimer);
         window.clearTimeout(intentTimer);
         scroller.removeEventListener("wheel", onWheel, listen);
