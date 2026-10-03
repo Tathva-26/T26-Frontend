@@ -3,13 +3,13 @@
 import { startTransition, useEffect, useRef, useState } from 'react'
 import styles from './ProfilePage.module.css'
 import Galaxy from '../../components/Galaxy/Galaxy'
+import Navbar from '@/pageComponents/Navbar/Navbar'
+import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 
 const tathvaWhiteLogo =
   'https://www.figma.com/api/mcp/asset/c4b1e068-12d7-4e70-bc34-c2dad84d5388.png'
 
 const profileStorageKey = 'tathva-profile'
-const defaultAvatarSrc = '/images/profile-main-avatar.png'
-const maxAvatarBytes = 400 * 1024
 
 const initialProfile = {
   username: 'Username',
@@ -20,7 +20,6 @@ const initialProfile = {
   yearOfStudy: '2',
   district: 'Kozhikode',
   state: 'Kerala',
-  avatar: null,
 }
 
 const yearOfStudyOptions = ['1', '2', '3', '4']
@@ -77,9 +76,7 @@ export default function ProfilePage() {
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [validationErrors, setValidationErrors] = useState({})
   const [showSubmitError, setShowSubmitError] = useState(false)
-  const [avatarError, setAvatarError] = useState('')
   const profileModalRef = useRef(null)
-  const avatarInputRef = useRef(null)
 
   useEffect(() => {
     const savedProfile = window.localStorage.getItem(profileStorageKey)
@@ -142,40 +139,7 @@ export default function ProfilePage() {
     setDraftProfile(profile)
     setValidationErrors({})
     setShowSubmitError(false)
-    setAvatarError('')
     setIsEditorOpen(true)
-  }
-
-  function handleAvatarFileChange(event) {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
-
-    if (!file.type.startsWith('image/')) {
-      setAvatarError('Choose an image file')
-      return
-    }
-
-    if (file.size > maxAvatarBytes) {
-      setAvatarError('Image must be under 400KB')
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = () => {
-      setAvatarError('')
-      setDraftProfile((current) => ({
-        ...current,
-        avatar: reader.result,
-      }))
-    }
-    reader.onerror = () => setAvatarError('Could not read that image')
-    reader.readAsDataURL(file)
-  }
-
-  function removeAvatar() {
-    setAvatarError('')
-    setDraftProfile((current) => ({ ...current, avatar: null }))
   }
 
   function saveProfile(event) {
@@ -221,126 +185,123 @@ export default function ProfilePage() {
 
   return (
     <div className={styles.pageShell}>
-      <div className={styles.backdrop} aria-hidden='true'>
-        <Galaxy
-          mouseInteraction={false}
-          hue={0.76}
-          density={0.9}
-          glowIntensity={0.4}
-          saturation={0.7}
-          twinkleIntensity={0.4}
-          rotationSpeed={0.05}
-        />
-      </div>
+      <Galaxy
+        mouseInteraction={false}
+        hueShift={205}
+        density={0.9}
+        glowIntensity={0.35}
+        saturation={0.55}
+        twinkleIntensity={0.4}
+        rotationSpeed={0.05}
+      />
 
       <header className={styles.topbar}>
         <div className={styles.leftHeader}>
-          <div className={styles.brandWrap}>
-            <div className={styles.logoMark} aria-hidden='true'>
-              <img
-                src={tathvaWhiteLogo}
-                alt='Tathva logo'
-                className={styles.logoImage}
-              />
-            </div>
-          </div>
+          <div className={styles.brandWrap}></div>
         </div>
 
         <button type='button' className={styles.signOutButton}>
+          <span className={styles.signOutIcon} aria-hidden='true'>
+            <img src='/images/profile-avatar.png' alt='' />
+          </span>
           Sign out
         </button>
       </header>
 
       <main className={styles.contentWrap}>
-        <div className={styles.identityCard}>
-          <div className={styles.avatarGroup}>
-            <div className={styles.avatar} aria-label='User avatar'>
-              <img src={profile.avatar || defaultAvatarSrc} alt='' />
-            </div>
-          </div>
-
-          <div className={styles.usernameRow}>
-            <h1 className={styles.username}>{profile.username}</h1>
-            <button
-              type='button'
-              className={styles.nameEditButton}
-              aria-label='Edit profile'
-              title='Edit profile'
-              onClick={openProfileEditor}
-            >
-              <svg
-                className={styles.nameEditIcon}
-                viewBox='0 0 24 24'
-                fill='none'
-                xmlns='http://www.w3.org/2000/svg'
-                aria-hidden='true'
-              >
-                <path
-                  d='M12 20h9'
-                  stroke='currentColor'
-                  strokeWidth='1.8'
-                  strokeLinecap='round'
-                />
-                <path
-                  d='M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4L16.5 3.5Z'
-                  stroke='currentColor'
-                  strokeWidth='1.8'
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                />
-              </svg>
-            </button>
-          </div>
-
-          <label className={styles.emailField}>
-            <span className={styles.inputIcon} aria-hidden='true'>
-              <svg
-                viewBox='0 0 24 24'
-                fill='none'
-                xmlns='http://www.w3.org/2000/svg'
-              >
-                <path
-                  d='M4 7.5C4 6.39543 4.89543 5.5 6 5.5H18C19.1046 5.5 20 6.39543 20 7.5V16.5C20 17.6046 19.1046 18.5 18 18.5H6C4.89543 18.5 4 17.6046 4 16.5V7.5Z'
-                  stroke='currentColor'
-                  strokeWidth='1.8'
-                  strokeLinejoin='round'
-                />
-                <path
-                  d='M4.5 6.5L12 12.5L19.5 6.5'
-                  stroke='currentColor'
-                  strokeWidth='1.8'
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                />
-              </svg>
-            </span>
-            <span className={styles.emailText}>{profile.email}</span>
-          </label>
-
-          <p className={styles.infoNote}>
-            <span className={styles.infoNoteIcon} aria-hidden='true'>
-              !
-            </span>
-            <span>
-              Add a phone number below before you book anything
-              <span className={styles.highlight}>
-                {' '}
-                — registrations are rejected without one.
-              </span>
-            </span>
-          </p>
+        <div className='hidden lg:block'>
+          <Navbar />
         </div>
+        <TathvaMenu />
+        <div className={styles.avatarGroup}>
+          <div className={styles.avatar} aria-label='User avatar'>
+            <img src='/images/profile-main-avatar.png' alt='' />
+          </div>
+          <button
+            type='button'
+            className={styles.avatarEditButton}
+            aria-label='Edit profile'
+            onClick={openProfileEditor}
+          >
+            <svg
+              className={styles.avatarEditIcon}
+              viewBox='0 0 24 24'
+              fill='none'
+              xmlns='http://www.w3.org/2000/svg'
+              aria-hidden='true'
+            >
+              <path
+                d='M12 20h9'
+                stroke='currentColor'
+                strokeWidth='1.8'
+                strokeLinecap='round'
+              />
+              <path
+                d='M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4L16.5 3.5Z'
+                stroke='currentColor'
+                strokeWidth='1.8'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+              />
+            </svg>
+          </button>
+        </div>
+        <h1 className={styles.username}>{profile.username}</h1>
+
+        <label className={styles.emailField}>
+          <span className={styles.inputIcon} aria-hidden='true'>
+            <svg
+              viewBox='0 0 24 24'
+              fill='none'
+              xmlns='http://www.w3.org/2000/svg'
+            >
+              <path
+                d='M4 7.5C4 6.39543 4.89543 5.5 6 5.5H18C19.1046 5.5 20 6.39543 20 7.5V16.5C20 17.6046 19.1046 18.5 18 18.5H6C4.89543 18.5 4 17.6046 4 16.5V7.5Z'
+                stroke='currentColor'
+                strokeWidth='1.8'
+                strokeLinejoin='round'
+              />
+              <path
+                d='M4.5 6.5L12 12.5L19.5 6.5'
+                stroke='currentColor'
+                strokeWidth='1.8'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+              />
+            </svg>
+          </span>
+          <span className={styles.emailText}>{profile.email}</span>
+        </label>
+
+        <p className={styles.infoNote}>
+          <span>Add a phone number below before you book anything</span>
+          <span className={styles.highlight}>
+            {' '}
+            — registrations are rejected without one.
+          </span>
+        </p>
 
         <section className={styles.detailsSection}>
           <h2 className={styles.sectionTitle}>Your details</h2>
 
           <div className={styles.detailsGrid}>
-            {fieldRows.map(({ label, key }) => (
-              <div key={label} className={styles.fieldBlock}>
-                <span className={styles.fieldLabel}>{label}</span>
-                <div className={styles.fieldValue}>{profile[key]}</div>
-              </div>
-            ))}
+            {fieldRows.map(({ label, key }, index) => {
+              const isLast = index === fieldRows.length - 1
+              const isState = label === 'State'
+
+              return (
+                <div
+                  key={label}
+                  className={`${styles.fieldBlock} ${isState ? styles.stateField : ''}`.trim()}
+                >
+                  <label className={styles.fieldLabel}>{label}</label>
+                  <div className={styles.fieldValue}>{profile[key]}</div>
+                  {isLast && !isState && (
+                    <div className={styles.fieldSpacer} aria-hidden='true' />
+                  )}
+                </div>
+              )
+            })}
           </div>
         </section>
 
@@ -379,78 +340,6 @@ export default function ProfilePage() {
             <h2 id='profile-editor-title' className={styles.modalTitle}>
               Edit Profile
             </h2>
-
-            <div className={styles.avatarEditSection}>
-              <div className={styles.avatarEditPreview}>
-                <img
-                  src={draftProfile.avatar || defaultAvatarSrc}
-                  alt=''
-                />
-                <button
-                  type='button'
-                  className={styles.avatarEditOverlay}
-                  aria-label='Change profile photo'
-                  title='Change profile photo'
-                  onClick={() => avatarInputRef.current?.click()}
-                >
-                  <svg
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    xmlns='http://www.w3.org/2000/svg'
-                    aria-hidden='true'
-                  >
-                    <path
-                      d='M4 8.5c0-.83.67-1.5 1.5-1.5h1.6l.8-1.3c.27-.45.76-.7 1.28-.7h5.64c.52 0 1.01.25 1.28.7l.8 1.3h1.6c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5v-9Z'
-                      stroke='currentColor'
-                      strokeWidth='1.6'
-                      strokeLinejoin='round'
-                    />
-                    <circle
-                      cx='12'
-                      cy='13'
-                      r='3.1'
-                      stroke='currentColor'
-                      strokeWidth='1.6'
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <div className={styles.avatarEditActions}>
-                <button
-                  type='button'
-                  className={styles.avatarEditButtonText}
-                  onClick={() => avatarInputRef.current?.click()}
-                >
-                  Change photo
-                </button>
-                {draftProfile.avatar && (
-                  <button
-                    type='button'
-                    className={styles.avatarEditButtonText}
-                    onClick={removeAvatar}
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-
-              <input
-                ref={avatarInputRef}
-                type='file'
-                accept='image/*'
-                className={styles.avatarFileInput}
-                onChange={handleAvatarFileChange}
-                tabIndex={-1}
-              />
-
-              {avatarError && (
-                <p className={styles.avatarEditError} role='alert'>
-                  {avatarError}
-                </p>
-              )}
-            </div>
-
             <div className={styles.modalRows}>
               {modalRows.map(
                 (
