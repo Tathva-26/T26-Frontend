@@ -11,6 +11,7 @@ import ArtistPage from './artist/page'
 import TechConclave from '@/pageComponents/TechConclave/TechConclave'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import GPC from './gpc/page'
+import Accommodation from '@/pageComponents/Accomodation/Accommodation'
 
 export default function Home() {
   return (

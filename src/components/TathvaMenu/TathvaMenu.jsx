@@ -230,13 +230,17 @@ function TathvaMenuOverlay() {
 
   const timelineRef = useRef(null)
 
-  // Sync section name with route changes (e.g., navigating to /workshops)
-  useEffect(() => {
+  // Sync section name with route changes (e.g., navigating to /workshops).
+  // Done during render rather than in an effect, so the reset lands in the same
+  // render as the new route instead of cascading into a second one.
+  const [syncedPathname, setSyncedPathname] = useState(pathname)
+  if (syncedPathname !== pathname) {
+    setSyncedPathname(pathname)
     setActiveSectionName(basePageName)
     setIsOpen(false)
     setIsMobileOpen(false)
     setShowArrow(true)
-  }, [pathname, basePageName])
+  }
 
   // Scroll spy for dynamic multi-section scroll in page.js
   useEffect(() => {
