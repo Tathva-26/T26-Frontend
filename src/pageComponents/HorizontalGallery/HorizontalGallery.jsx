@@ -30,14 +30,14 @@ const GALLERY_GROUPS = [
       {
         id: 1,
         itemClass: 'w-[calc(var(--vh,1vh)*27)] aspect-[0.81/1]',
-        src: 'https://placehold.co/800x1000/18181b/c084fc?text=Placeholder+01',
+        src: '/images/HorizontalGallery/p3.webp',
         alt: 'Lando in casual clothes',
         extraClass: '-translate-y-16 md:-translate-y-24',
       },
       {
         id: 2,
         itemClass: 'w-[calc(var(--vh,1vh)*29.3)] aspect-square',
-        src: 'https://placehold.co/800x1000/18181b/a855f7?text=Placeholder+02',
+        src: '/images/HorizontalGallery/p2.webp',
         alt: 'Lando in tux',
         extraClass: 'translate-y-16 md:translate-y-24',
       },
@@ -48,10 +48,10 @@ const GALLERY_GROUPS = [
   {
     type: 'featured',
     id: 3,
-    quote: 'Tathva message 1',
+   
     quotePosition: 'top',
     itemClass: 'w-[calc(var(--vh,1vh)*65.48)] aspect-[1.1/1]',
-    src: 'https://placehold.co/1200x1000/18181b/e879f9?text=Placeholder+03',
+    src: '/images/HorizontalGallery/p1.webp',
     alt: 'Lando lifting trophy',
   },
 
@@ -63,7 +63,7 @@ const GALLERY_GROUPS = [
         id: 4,
         itemClass:
           'w-[calc(var(--vh,1vh)*31.75)] h-[calc(var(--vh,1vh)*28.75)]',
-        src: 'https://placehold.co/800x1000/18181b/c084fc?text=Placeholder+04',
+        src: '/images/HorizontalGallery/p4.webp',
         alt: 'Lando playing golf',
         extraClass: '-translate-y-20 md:-translate-y-28',
       },
@@ -71,7 +71,7 @@ const GALLERY_GROUPS = [
         id: 5,
         itemClass:
           'h-[calc(var(--vh,1vh)*20.96)] w-[calc(var(--vh,1vh)*21.98)]',
-        src: 'https://placehold.co/800x1000/18181b/a855f7?text=Placeholder+05',
+        src: '/images/HorizontalGallery/p5.webp',
         alt: 'Lando in helmet',
         extraClass: 'translate-y-12 md:translate-y-20',
       },
@@ -86,7 +86,7 @@ const GALLERY_GROUPS = [
         id: 6,
         itemClass:
           'w-[calc(var(--vh,1vh)*21.38)] h-[calc(var(--vh,1vh)*26.48)]',
-        src: 'https://placehold.co/800x1000/18181b/e879f9?text=Placeholder+06',
+        src: '/images/HorizontalGallery/p8.webp',
         alt: 'Lando gala',
         extraClass: '-translate-y-16 md:-translate-y-24',
       },
@@ -94,7 +94,7 @@ const GALLERY_GROUPS = [
         id: 7,
         itemClass:
           'w-[calc(var(--vh,1vh)*20.74)] h-[calc(var(--vh,1vh)*20.74)]',
-        src: 'https://placehold.co/800x1000/18181b/c084fc?text=Placeholder+07',
+        src: '/images/HorizontalGallery/p7.webp',
         alt: 'Lando battersea',
         extraClass: 'translate-y-16 md:translate-y-24',
       },
@@ -105,10 +105,10 @@ const GALLERY_GROUPS = [
   {
     type: 'featured',
     id: 8,
-    quote: 'Tathva message 2',
+    
     quotePosition: 'bottom',
     itemClass: 'w-[calc(var(--vh,1vh)*60.95)] h-[calc(var(--vh,1vh)*60.95)]',
-    src: 'https://placehold.co/1200x1200/18181b/a855f7?text=Placeholder+08',
+    src: '/images/HorizontalGallery/p6.webp',
     alt: 'Lando taking photo',
   },
 
@@ -120,19 +120,21 @@ const GALLERY_GROUPS = [
         id: 9,
         itemClass:
           'h-[calc(var(--vh,1vh)*24.91)] w-[calc(var(--vh,1vh)*27.42)]',
-        src: 'https://placehold.co/800x1000/18181b/e879f9?text=Placeholder+09',
+        src: '/images/HorizontalGallery/p9.webp',
         alt: 'Lando austria',
         extraClass: '-translate-y-20 md:-translate-y-28',
       },
       {
         id: 10,
         itemClass: 'w-[calc(var(--vh,1vh)*31.69)] h-[calc(var(--vh,1vh)*30.9)]',
-        src: 'https://placehold.co/800x1000/18181b/c084fc?text=Placeholder+10',
+        src: '/images/HorizontalGallery/p10.webp',
         alt: 'Lando US',
         extraClass: 'translate-y-12 md:translate-y-20',
       },
     ],
   },
+
+
 ]
 
 const MOBILE_CONFIG = {
@@ -535,7 +537,7 @@ export default function HorizontalGallery({ coordinatedEntrance = false }) {
                         md:mb-6
                       '
                     >
-                      &ldquo;{group.quote}&rdquo;
+                     
                     </p>
                   )}
 
@@ -580,7 +582,6 @@ export default function HorizontalGallery({ coordinatedEntrance = false }) {
                         md:mt-6
                       '
                     >
-                      &ldquo;{group.quote}&rdquo;
                     </p>
                   )}
                 </div>

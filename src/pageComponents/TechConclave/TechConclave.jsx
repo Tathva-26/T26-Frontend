@@ -11,7 +11,7 @@ const person1 = '/images/techconclave/person2.png'
 const person2 = '/images/techconclave/person1.png'
 const robot = '/images/techconclave/robot.png'
 const logo = '/images/techconclave/logo.png'
-
+const ted='/images/techconclave/tedx.png'
 /*
   ── HOW THIS FILE IS ORGANISED ───────────────────────────────────────────
   DesktopPoster  → your existing, pixel-tuned layout for 1280×800 / 1440×900.
@@ -48,41 +48,27 @@ const box = (x, y, w, h) => ({
   height: `${(h / FH) * 100}%`,
 })
 
-/* badge text is placeholder metadata — swap in real session names / roles */
+/* Only 2 speakers now (both purple), STACKED VERTICALLY: one card on top,
+   the other directly below it, same size, same column. The photo box is
+   taller than its black shape so the head pops out above the shape.
+   Tweak the numbers here to resize / move the pair on desktop. */
 const womanTiles = [
-  { color: '#000000', shape: [668, 25, 158, 163], img: [668, 18, 158, 170] },
-  { color: '#000000', shape: [668, 243, 158, 163], img: [668, 236, 158, 170] },
-  { color: '#000000', shape: [668, 461, 158, 163], img: [668, 454, 158, 170] },
+  { color: '#000000', shape: [760, 60, 210, 240], img: [760, 20, 210, 280] },
 ]
 
 const manTiles = [
-  { color: '#000000', shape: [870, 40, 158, 160], img: [870, 8, 158, 194] },
-  { color: '#000000', shape: [870, 257, 158, 161], img: [870, 225, 158, 195] },
-  { color: '#000000', shape: [870, 475, 158, 161], img: [870, 443, 158, 195] },
+  { color: '#000000', shape: [760, 350, 210, 240], img: [760, 310, 210, 280] },
 ]
-
-/* 5 speakers: 2 purple (row 1), 3 red (row 2 + centered row 3) */
-const centerTile = {
-  color: '#000000',
-  shape: [769, 475, 158, 161], // centred between the two columns, row 3
-  img: [769, 443, 158, 195],
-}
 
 const deskSpeakers = [
   { tile: womanTiles[0], src: person1, glow: 'purple', col: 'tc-col-left' },
   { tile: manTiles[0], src: person2, glow: 'purple', col: 'tc-col-right' },
-  { tile: womanTiles[1], src: person1, glow: 'red', col: 'tc-col-left' },
-  { tile: manTiles[1], src: person2, glow: 'red', col: 'tc-col-right' },
-  { tile: centerTile, src: person2, glow: 'red', col: '' },
 ]
 
-/* used by both the mobile and tablet flex-wrap grids (2 + 2 + 1) */
+/* used by both the mobile and tablet grids (now just 2, stacked) */
 const gridSpeakers = [
   { ...womanTiles[0], img: person1, glow: 'purple' },
   { ...manTiles[0], img: person2, glow: 'purple' },
-  { ...womanTiles[1], img: person1, glow: 'red' },
-  { ...manTiles[1], img: person2, glow: 'red' },
-  { ...manTiles[2], img: person2, glow: 'red' },
 ]
 
 const Plus = ({ style, rotate = 0 }) => (
@@ -251,7 +237,7 @@ function useIntroAnimation(ref) {
    so it can't disturb the poster's own layout or animations.
    ──────────────────────────────────────────────────────────────────────── */
 
-/* ── EDIT THESE: one entry per speaker card, in card order (index 0-4).
+/* ── EDIT THESE: one entry per speaker card, in card order (index 0-1).
       `side` is the preferred side for the leader line on roomy screens. ── */
 const SPEAKERS = [
   {
@@ -262,24 +248,6 @@ const SPEAKERS = [
   },
   {
     name: 'Speaker Two',
-    role: 'Role · Organisation',
-    bio: 'A short description of the speaker and what they will talk about at Tech Conclave.',
-    side: 'right',
-  },
-  {
-    name: 'Speaker Three',
-    role: 'Role · Organisation',
-    bio: 'A short description of the speaker and what they will talk about at Tech Conclave.',
-    side: 'left',
-  },
-  {
-    name: 'Speaker Four',
-    role: 'Role · Organisation',
-    bio: 'A short description of the speaker and what they will talk about at Tech Conclave.',
-    side: 'right',
-  },
-  {
-    name: 'Speaker Five',
     role: 'Role · Organisation',
     bio: 'A short description of the speaker and what they will talk about at Tech Conclave.',
     side: 'right',
@@ -998,7 +966,12 @@ function DesktopPoster() {
           src={robot}
           alt='Waving robot'
         />
-      
+      <img
+  className='tc-ted-d tc-deco tc-animate-meta'
+  style={box(492, 400, 180, 180)}
+  src={ted}
+  alt='TEDx'
+/>
         {/* right column */}
         <div
           className='tc-abs tc-hero-heading'
@@ -1069,10 +1042,12 @@ function MobilePoster() {
         {/* ── visual group: title + illustration + eyebrow ── */}
         <div className='tc-m-panel tc-m-panel--visual'>
           <div className='tc-m-titlewrap'>
-            <h1 className='tc-m-title tc-animate-title'>
-              <span className='tc-m-tech'>TECH</span>
-              <span className='tc-m-conclave'>CONCLAVE</span>
-            </h1>
+           <h1 className='tc-m-title tc-animate-title'>
+  <span className='tc-m-tech'>TECH</span>
+  <span className='tc-m-conclave-row'>
+    <span className='tc-m-conclave'>CONCLAVE</span>
+  </span>
+</h1>
           </div>
 
           <div className='tc-m-hero'>
@@ -1087,7 +1062,7 @@ function MobilePoster() {
 
             <div
               className='tc-abs tc-m-people'
-              style={mbox(215, -9, 174, 231)}
+              style={mbox(270, 10, 112, 240)}
               role='list'
               aria-label='Speakers'
             >
@@ -1118,6 +1093,17 @@ function MobilePoster() {
               src={robot}
               alt='Waving robot'
             />
+
+            {/* TEDx: pinned to the pink block's top-right corner (block =
+                x 30–310, y 270–340 on the 424×335 scene). Width is a % of the
+                scene, height follows via aspect-ratio, so it scales with it. */}
+            <img
+              className='tc-m-ted tc-deco'
+              style={{ ...mbox(200, 275, 100, 100), height: 'auto' }}
+              src={ted}
+              alt='TEDx'
+            />
+
           </div>
 
           <p className='tc-m-eyebrow tc-animate-meta'>
@@ -1178,11 +1164,13 @@ function TabletPoster() {
     >
       <section className='tc-t-stage' aria-label='Tech Conclave, October 10-11'>
         <div className='tc-t-visual'>
-          <h1 className='tc-t-title tc-animate-title'>
-            <span className='tc-t-tech'>TECH</span>
-            <span className='tc-t-conclave'>CONCLAVE</span>
-          </h1>
-
+         <h1 className='tc-t-title tc-animate-title'>
+  <span className='tc-t-tech'>TECH</span>
+  <span className='tc-t-conclave-row'>
+    <span className='tc-t-conclave'>CONCLAVE</span>
+    <img className='tc-t-ted tc-deco' src={ted} alt='TEDx' />
+  </span>
+</h1>
           <div className='tc-t-art'>
             <div
               className='tc-t-abs tc-t-block tc-deco'
@@ -1194,7 +1182,7 @@ function TabletPoster() {
             />
             <div
               className='tc-t-abs tc-t-speakers'
-              style={mbox(215, -9, 174, 231)}
+              style={mbox(250, 14, 112, 240)}
               role='list'
               aria-label='Speakers'
             >
@@ -1394,6 +1382,7 @@ html, body { margin: 0; padding: 0; }
 
 .tc-m-titlewrap {
   position: relative;
+  z-index: 100;
   width: 100%;
   display: flex;
   justify-content: center; /* Horizontally center title block */
@@ -1543,17 +1532,20 @@ text-align: center;
   max-height: none !important;
 }
 
-/* the actual "flex-wrap" grid: 2 columns, 3 rows, from wrapping flex items */
+/* the speaker stack: 2 cards, ONE ABOVE THE OTHER (single column) */
 .tc-m-people {
   display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 18px;
-  margin-left: 20px !important;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 16px;
+  margin-left: 0 !important;
 }
 
 .tc-m-tile {
-  flex: 0 0 calc(44% - 9px);
+  flex: 0 0 auto;
+  width: 100%;
   aspect-ratio: 1 / 1;
   position: relative;
   overflow: visible !important;
@@ -1643,6 +1635,8 @@ text-align: center;
   gap: 0;
   margin: 0;
   line-height: 0.88;
+  position: relative;
+z-index: 100;
 }
 
 .tc-t-tech {
@@ -1682,12 +1676,15 @@ text-align: center;
 .tc-t-plus { z-index: 2; }
 .tc-t-robot { z-index: 2; }
 
- .tc-t-speakers {
+/* the speaker stack: 2 cards, ONE ABOVE THE OTHER (single column) */
+.tc-t-speakers {
   display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 19px;
-  transform:translateX(46px)
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 16px;
+  transform: translateX(30px);
 }
 .tc-t-speaker:is(.tc-active, :focus-visible) {
   z-index: 10;
@@ -1695,7 +1692,8 @@ text-align: center;
 
 .tc-t-speaker {
   position: relative;
-  flex: 0 0 calc(44% - 10px);
+  flex: 0 0 auto;
+  width: 100%;
   aspect-ratio: 1 / 1;
   overflow: visible !important;
 }
@@ -1972,4 +1970,60 @@ text-align: center;
    (Placed last so it wins over the shared .tc-page min-height.) */
 .tc-page.tc-mobile-only { min-height: 0; }
 
+/* ===================== TEDx LOGO ===================== */
+/* desktop: sits to the right of the CONCLAVE word, next to the drone */
+.tc-ted-d {
+  position: absolute;
+  display: block;
+  object-fit: contain;
+  z-index: 6;
+  rotate: -90deg;
+}
+
+/* mobile: the row only wraps the CONCLAVE word now (the logo no longer
+   lives in the title) */
+.tc-m-conclave-row {
+  position: relative;
+  display: block;
+  width: fit-content;
+  align-self: center;
+   z-index: 20;
+}
+/* mobile logo: a square box inside .tc-m-hero, pinned to the pink block's
+   top-right corner. left/top/width are % of the scene (set inline), height
+   comes from aspect-ratio, so it keeps its place at every phone width.
+   object-fit keeps the PNG undistorted; rotate matches the desktop logo —
+   delete that line if your PNG is already vertical. */
+.tc-m-ted {
+  position: absolute;
+  z-index: 6;
+  display: block;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  max-width: none;
+}
+
+/* tablet: same idea, with its own tunable values */
+.tc-t-conclave-row {
+  position: relative;
+  display: block;
+  width: fit-content;
+  align-self: flex-start;
+  z-index:20;
+}
+.tc-t-ted {
+  position: absolute;
+  z-index:21;
+  left: 30%;
+  top: 900%;
+  height: 70%;
+  width: auto;
+  margin-left: clamp(4px, 1.2vw, 10px);
+  object-fit: contain;
+  max-width: none;
+  /* match the CONCLAVE text's own translateY(-9px) */
+  transform: translateY(200px);
+  transform: translateX(75px);
+
+}
 `
