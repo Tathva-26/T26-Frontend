@@ -54,7 +54,6 @@ function ExpoTransitionContent() {
     const page = element.querySelector('[data-expo-page]')
     const plane = element.querySelector('[data-expo-plane]')
     const slot = element.querySelector('[data-expo-slot]')
-    const mist = element.querySelector('[data-expo-mist]')
     const lines = element.querySelector('[data-expo-connectors]')
     const copy = page.querySelectorAll(`.${expoStyles.title}, .${expoStyles.intro}, .${expoStyles.description}, .${expoStyles.explore}`)
     const explore = page.querySelector('[data-expo-explore]')
@@ -82,7 +81,7 @@ function ExpoTransitionContent() {
         .filter((rect) => rect.width > viewport.width * .8 && rect.top >= 0 && rect.top < 10 && rect.height < viewport.height * .2)
       // Measure against the last viewport of TechConclave, independent of scroll.
       // On tall phone posters the robot is above that viewport: its column still
-      // supplies the origin, with mist covering the lower emergence point.
+      // supplies the origin for the lower-viewport emergence point.
       const sourceY = source ? source.top + source.height * .55 - (tcBox.bottom - viewport.height) : viewport.height * .6
       geometry.current = {
         width: viewport.width,
@@ -134,16 +133,6 @@ function ExpoTransitionContent() {
       // Keep opacity in CSS so the ready state can hide the illustration when
       // the model loads, even if scrolling is paused at that moment.
       gsap.set(fallback, { '--journey-fallback-opacity': pose.opacity, width: box.slotWidth, height: box.slotHeight, x: x - box.slotWidth / 2, y: y - box.slotHeight / 2, scale: pose.scale * 8 / (8 - pose.depth), rotationX: pose.pitch * 180 / Math.PI })
-      const veil = exit > 0 ? Math.sin(exit * Math.PI) : Math.sin(Math.PI * Math.min(1, Math.max(0, (entry - .04) / .66)))
-      gsap.set(mist, { opacity: veil * .48, '--veil-drift': `${progress * -18}%` })
-      gsap.set(tc, { filter: `blur(${veil * 3}px) saturate(${1 - veil * .35})` })
-      // Erode the poster through a fixed cloud field, rather than opening a
-      // geometric window around the incoming exhibit. Alpha thresholds are
-      // deterministic so reversing scroll reconstructs the same poster.
-      const dissolve = Math.min(1, Math.max(0, (entry - .16) / .36))
-      const cloudMask = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640"><filter id="cloud"><feTurbulence type="fractalNoise" baseFrequency=".012 .018" numOctaves="3" seed="7"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 4 4 4 0 ${2 - dissolve * 14}"/></filter><rect width="100%" height="100%" filter="url(#cloud)"/></svg>`
-      tc.style.maskImage = dissolve === 0 ? 'none' : `url("data:image/svg+xml,${encodeURIComponent(cloudMask)}")`
-      tc.style.maskSize = '100% 100%'
       page.style.pointerEvents = available ? 'auto' : 'none'
       gsap.set(lines, { scale: 1 - exit * .65, transformOrigin: `${box.endX}px ${box.endY}px` })
       if (state !== 'ready' || crystal.current.dataset.expoRenderer === 'fallback') {
@@ -166,7 +155,7 @@ function ExpoTransitionContent() {
           scroller: scroller || undefined,
           start: 'bottom bottom', end: () => `+=${plane.clientHeight * scrollUnit * duration}`,
           // Lenis already smooths input. Additional scrub lag can leave the
-          // exit clouds onscreen while the gallery has advanced underneath.
+          // transition onscreen while the gallery has advanced underneath.
           scrub: true, invalidateOnRefresh: true, anticipatePin: 1,
           // Upstream Artist/Wheels pins register in effects after this layout
           // effect. Measure Expo after their pin spacing has been applied.
@@ -208,8 +197,6 @@ function ExpoTransitionContent() {
       resize.disconnect()
       readiness.disconnect()
       context.revert()
-      tc.style.removeProperty('mask-image')
-      tc.style.removeProperty('mask-size')
       page.style.removeProperty('pointer-events')
       delete element.dataset.expoProgress
       delete element.dataset.expoStart
@@ -229,7 +216,6 @@ function ExpoTransitionContent() {
       <div data-conclave><TechConclave /></div>
       <Expo sharedCrystal={animated} />
       {animated && <div className={styles.plane} data-expo-plane>
-        <div className={styles.mist} data-expo-mist aria-hidden='true' />
         <div ref={crystal} className={styles.crystal}>
           <Crystal3D journey={journey} onProject={projectModel} preload />
         </div>
