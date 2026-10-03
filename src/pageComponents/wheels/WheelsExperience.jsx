@@ -12,6 +12,7 @@ import {
   TV_ART_STYLE,
   getRobowarsTvScreenRect,
 } from './robowarsHandoff'
+import { holdLoader } from '@/lib/loadGate'
 // import styles from "./WheelsExperience.module.css";
 
 const ASPECT_RATIO = 16 / 9
@@ -249,6 +250,9 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       return true
     }
 
+    // The preloader stays up until the footage is in: scrubbing it while
+    // frames are still arriving is what makes Wheels stutter.
+    const releaseLoader = holdLoader('wheels frames')
     for (let index = 0; index < FRAME_COUNT; index += 1) {
       const image = new Image()
       image.src = getFramePath(index)
@@ -267,6 +271,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
         if (loadedCount === FRAME_COUNT) {
           setIsLoaded(true)
           ScrollTrigger.refresh()
+          releaseLoader()
         }
       }
       image.onload = () => handleImageLoad(index)
@@ -671,6 +676,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
 
     return () => {
       isActive = false
+      releaseLoader()
       cancelAnimationFrame(animationFrameId)
       window.clearTimeout(scrollHintTimer)
       timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))

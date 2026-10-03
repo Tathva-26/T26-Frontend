@@ -288,8 +288,37 @@ export default function HeroFrameController({ children }) {
       setUnlocked(false);
     };
 
+    // Touch screens: the same, as a pull down on W1 while the page is already at the very top.
+    let touchY = 0;
+    let pulled = 0;
+    const handleTouchStart = (e) => {
+      touchY = e.touches[0].clientY;
+      pulled = 0;
+    };
+    const handleTouchMove = (e) => {
+      const y = e.touches[0].clientY;
+      const moved = y - touchY; // finger down = pulling the page down
+      touchY = y;
+      if (mainScroll.scrollTop > 0 || moved <= 0) {
+        pulled = 0;
+        return;
+      }
+      pulled += moved;
+      if (pulled < MOBILE_SWIPE_THRESHOLD) return;
+      pulled = 0;
+      window.__lenis?.scrollTo(0, { immediate: true });
+      mobileCooldownUntilRef.current = performance.now() + MOBILE_SWIPE_COOLDOWN_MS;
+      setUnlocked(false);
+    };
+
     mainScroll.addEventListener("wheel", handleWheel, { passive: false });
-    return () => mainScroll.removeEventListener("wheel", handleWheel);
+    mainScroll.addEventListener("touchstart", handleTouchStart, { passive: true });
+    mainScroll.addEventListener("touchmove", handleTouchMove, { passive: true });
+    return () => {
+      mainScroll.removeEventListener("wheel", handleWheel);
+      mainScroll.removeEventListener("touchstart", handleTouchStart);
+      mainScroll.removeEventListener("touchmove", handleTouchMove);
+    };
   }, [unlocked]);
 
   // Hero is visually empty (portal fully open, matching Frame) once it's not the front panel,

@@ -4,6 +4,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { POWER_LINE } from "@/lib/consoleScreen/spaceShooterScreen";
 import { CONSOLE_SCREEN_INSET, PULLBACK_OVERSHOOT, SEQUENCE } from "@/pageComponents/GPC/gpcConfig";
 import { createWheelsPreview } from "@/pageComponents/GPC/wheelsPreview";
+import { touchStop } from "@/lib/touchStop";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -92,6 +93,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       const flash = find("flash");
       const letters = stage.querySelectorAll('[data-gpc="letter"]');
       if (!hero || !screen || !consoleBox || !label || !tagline || !film || !flash) return undefined;
+      hero.style.opacity = ""; // see the handoff at the end: nothing may start out faded
 
       // Measured now, while nothing is transformed yet (this whole callback is
       // reverted and re-run whenever the layout changes size or mode).
@@ -145,10 +147,9 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         scale: picture.height / filmHeight,
       };
 
-      // The footage canvas, sharp at any zoom.
-      film.width = window.innerWidth <= FILM_SMALL.below ? FILM_SMALL.width : FILM_RATIO.width;
-      film.height = (film.width * FILM_RATIO.height) / FILM_RATIO.width;
-      const filmContext = film.getContext("2d");
+      // The footage canvas, sharp at any zoom. (Phones never zoom, so they do without it: the
+      // console's own screen shows the footage, and this one stays hidden and unallocated.)
+      let filmContext = null;
       let filmShown = null;
       const box = { width: Math.round(hole.w), height: Math.round(filmHeight) };
       gsap.set(film, {
@@ -476,7 +477,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         if (live.film <= 0) return;
         const image = wheels.image();
         live.picture = image;
-        if (image && image !== filmShown) {
+        if (filmContext && image && image !== filmShown) {
           filmContext.drawImage(image, 0, 0, film.width, film.height);
           filmShown = image;
         }
@@ -512,7 +513,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       // The handoff: Wheels is full-screen underneath, so the hero fades away.
       tl.to(hero, { pointerEvents: "none", duration: 0.01 }, at(handoff))
         .to(hero, { opacity: 0, duration: span(handoff) * 0.85 }, at(handoff))
-        .set(hero, { opacity: 0 }, 100);
+        .set({}, {}, 100);
 
       sync();
 
@@ -531,6 +532,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         release();
         Object.assign(live, { power: 1, outro: 0, film: 0, picture: null });
         hero.style.clipPath = "";
+        hero.style.opacity = ""; // never carried over into the next build: see the handoff above
         flash.removeAttribute("style");
       };
     },
