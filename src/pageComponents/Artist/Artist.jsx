@@ -172,9 +172,9 @@ function useScrubCrossfade(
       })
       if (bgs.length > 1) gsap.set(bgs.slice(1), { autoAlpha: 0 })
       if (ports.length > 1)
-        gsap.set(ports.slice(1), { yPercent: 100, autoAlpha: 0 })
+        gsap.set(ports.slice(1), { autoAlpha: 0 })
       if (boards.length > 1)
-        gsap.set(boards.slice(1), { yPercent: 100, autoAlpha: 0 })
+        gsap.set(boards.slice(1), { autoAlpha: 0 })
 
       const total = timelineTotal(count)
       const artistStops = Array.from(
@@ -458,11 +458,11 @@ function useScrubCrossfade(
         if (ports[i] && ports[i + 1]) {
           tl.to(
             ports[i],
-            { yPercent: PORTRAIT_EXIT, autoAlpha: 0, ease: PORTRAIT_EASE },
+            { autoAlpha: 0, ease: PORTRAIT_EASE },
             t,
           ).to(
             ports[i + 1],
-            { yPercent: 0, autoAlpha: 1, ease: PORTRAIT_EASE },
+            { autoAlpha: 1, ease: PORTRAIT_EASE },
             t,
           )
         }
@@ -471,11 +471,11 @@ function useScrubCrossfade(
         if (boards[i] && boards[i + 1]) {
           tl.to(
             boards[i],
-            { yPercent: PORTRAIT_EXIT, autoAlpha: 0, ease: PORTRAIT_EASE },
+            { autoAlpha: 0, ease: PORTRAIT_EASE },
             t,
           ).to(
             boards[i + 1],
-            { yPercent: 0, autoAlpha: 1, ease: PORTRAIT_EASE },
+            { autoAlpha: 1, ease: PORTRAIT_EASE },
             t,
           )
         }
