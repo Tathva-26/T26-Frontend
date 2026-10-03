@@ -7,7 +7,6 @@ import { NoToneMapping, PMREMGenerator } from "three";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import CrystalOptics from './CrystalOptics'
 import CrystalModel from "./CrystalModel";
-import ConclaveVeil from "./ConclaveVeil";
 import { interactionTargets, localPointer } from "./crystalGeometry.mjs";
 
 function SceneEnvironment({ shared }) {
@@ -137,7 +136,6 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
         <Suspense fallback={null}>
           <SceneEnvironment shared={!!journey} />
           <CrystalModel target={target} compact={compact} onReady={onReady} onMood={reportMood} journey={journey} onProject={onProject} />
-          {journey && <ConclaveVeil journey={journey} />}
         </Suspense>
       </Canvas>
       <span ref={feedback} aria-live='polite' style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)' }} />

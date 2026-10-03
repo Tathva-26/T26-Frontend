@@ -136,7 +136,6 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const cursorLight = useRef()
   const fractures = useRef()
   const motes = useRef()
-  const mist = useRef()
   const energyMaterial = useRef()
   const life = useRef({ hover: 0, hitStrength: 0, lastRay: -1, lastHit: -10, activation: 0, charge: 0, sectors: 0, pulseAt: -10, awakeUntil: -10, awake: false, vx: 0, vy: 0 })
   const intersections = useRef([])
@@ -205,7 +204,6 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const energy = useMemo(() => createEnergy(), [])
   const energyUniforms = useMemo(() => ({ map: { value: energy }, brightness: { value: 1 } }), [energy])
   const veinUniforms = useMemo(() => ({ time: { value: 0 }, hover: { value: 0 }, pulse: { value: 0 }, pointer: { value: new Vector3() } }), [])
-  const mistUniforms = useMemo(() => ({ time: { value: 0 }, opacity: { value: 0 } }), [])
   const dust = useMemo(() => {
     const positions = []
     for (let i = 0; i < 48; i++) {
@@ -388,9 +386,6 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     motes.current.rotation.z = Math.sin(time * .12) * .12
     motes.current.position.y = Math.sin(time * .23) * .10
     motes.current.material.opacity = .18 * influence
-    mist.current.position.x = Math.sin(time * .16) * .22
-    mist.current.material.uniforms.time.value = time
-    mist.current.material.uniforms.opacity.value = .10 * influence * (1 - hover * .45)
     if (onProject && influence > .01) {
       travel.current.updateWorldMatrix(true, true)
       projectedAnchors.forEach((point) => {
@@ -417,12 +412,6 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
       <points ref={motes} geometry={dust}>
         <pointsMaterial color='#acdfff' map={glow} size={.055} transparent opacity={.18} depthWrite={false} blending={AdditiveBlending} />
       </points>
-      <mesh ref={mist} position={[0, -.4, -.9]} scale={[4.5, 2.2, 1]}>
-        <planeGeometry />
-        <shaderMaterial transparent depthWrite={false} blending={AdditiveBlending} uniforms={mistUniforms}
-          vertexShader={'varying vec2 vUv; void main(){vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }'}
-          fragmentShader={'uniform float time,opacity; varying vec2 vUv; float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);} float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);} void main(){vec2 p=vUv*vec2(5.,2.)+vec2(time*.06,-time*.015);float n=noise(p)*.65+noise(p*2.1)*.35; float feather=smoothstep(0.,.18,vUv.x)*smoothstep(0.,.18,1.-vUv.x)*smoothstep(0.,.22,vUv.y)*smoothstep(0.,.22,1.-vUv.y);float band=exp(-pow((vUv.y-.5-sin(vUv.x*6.+time*.12)*.12)*4.,2.));gl_FragColor=vec4(.20,.43,.65,opacity*feather*band*smoothstep(.24,.72,n));\n#include <colorspace_fragment>\n}'} />
-      </mesh>
       <group>
         <mesh
           geometry={geometry}
