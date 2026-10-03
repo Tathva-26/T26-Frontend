@@ -79,6 +79,12 @@ const HOLD = 0.5
 const STEP = 1 + HOLD // one transition plus the hold that follows it
 // Touch screens: how far inside an artist's hold a settling page is brought.
 const TOUCH_HOLD_INSET = 0.06
+// Touch screens: which way a page left between two artists was heading is read
+// off how far it has travelled since it last rested, at least this many px.
+// (Not off its last movement: a finger wobbles as it lifts, and momentum can
+// tick back a pixel as it dies; either would send the page back the way it
+// came.)
+const TOUCH_INTENT_PX = 24
 const timelineTotal = (count) => HOLD + Math.max(0, count - 1) * STEP
 // Scroll spent on one timeline unit. 100dvh per unit = a full screen of wheel
 // for each transition, half a screen for each hold.
@@ -168,6 +174,8 @@ function useScrubCrossfade(
       // Set when the scroll comes into this section from outside it, to the
       // side it came in through; taken (and cleared) by the next snap.
       let enteredFrom = null // 'top' | 'bottom' | null
+      // Touch screens: where the page last came to rest (see TOUCH_INTENT_PX).
+      let touchRest = null
 
       const tl = gsap.timeline({
         defaults: { duration: 1 },
@@ -203,13 +211,17 @@ function useScrubCrossfade(
                 // and one left mid-way between two artists is eased onto the
                 // one it was heading for. A new touch takes over at once.
                 if (touchScreen) {
+                  const scroll = trigger.scroll()
+                  const travelled = touchRest === null ? 0 : scroll - touchRest
+                  touchRest = scroll
                   const time = here() * total
                   const index = Math.min(count - 1, Math.floor(time / STEP))
                   if (index >= count - 1 || time - index * STEP <= HOLD)
                     return here()
+                  // Too little travel to tell: whichever artist is nearer.
                   const forward =
-                    trigger.direction !== 0
-                      ? trigger.direction > 0
+                    Math.abs(travelled) >= TOUCH_INTENT_PX
+                      ? travelled > 0
                       : time - index * STEP - HOLD > 0.5
                   // Just inside the hold, not on its very edge.
                   const targetTime = forward
@@ -218,9 +230,11 @@ function useScrubCrossfade(
                   const lenis = window.__lenis
                   if (!lenis) return targetTime / total
                   if (!lenis.isStopped && !lenis.isLocked) {
-                    lenis.scrollTo(
+                    touchRest =
                       trigger.start +
-                        (trigger.end - trigger.start) * (targetTime / total),
+                      (trigger.end - trigger.start) * (targetTime / total)
+                    lenis.scrollTo(
+                      touchRest,
                       {
                         duration: 0.45,
                         easing: (progress) => 1 - Math.pow(1 - progress, 3),

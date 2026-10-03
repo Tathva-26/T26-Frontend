@@ -41,8 +41,12 @@ const LITE_ARM_PX = 80;
 const LITE_HALT_MS = 160;
 // Scroll has to be still this long before a page left part way between the last artist and GPC
 // is finished off to whichever of the two it was heading for.
-const LITE_SETTLE_IDLE_MS = 140;
+const LITE_SETTLE_IDLE_MS = 160;
 const LITE_SETTLE_S = 0.45;
+// Which way it was heading is read off how far the page has travelled since it last rested, and
+// it has to be at least this far to count. (Not off the last movement: a finger wobbles as it
+// lifts and momentum can tick back a pixel as it dies, and either would turn the page around.)
+const LITE_INTENT_PX = 24;
 
 const easeOut = (progress) => 1 - Math.pow(1 - progress, 3);
 
@@ -519,7 +523,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       let stopLite = null;
       if (lite) {
         let last = scroller.scrollTop;
-        let heading = 0;
+        let rested = last; // where the page last came to rest
         let armed = Math.abs(last - landing.end) > LITE_ARM_PX;
         let halted = false;
         let settling = false;
@@ -547,7 +551,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
           lenis?.stop();
           lenis?.scrollTo(top, { immediate: true, force: true });
           if (Math.abs(scroller.scrollTop - top) > 0.5) scroller.scrollTop = top;
-          last = top;
+          last = rested = top;
           window.clearTimeout(settleTimer);
           window.clearTimeout(haltTimer);
           haltTimer = window.setTimeout(letGo, LITE_HALT_MS);
@@ -557,15 +561,21 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
           const lenis = window.__lenis;
           if (halted || fingerDown || settling || !lenis || lenis.isStopped || lenis.isLocked) return;
           const scroll = scroller.scrollTop;
-          if (scroll <= landing.start + 2 || scroll >= landing.end - 2) return;
+          const from = landing.start;
+          const to = landing.end;
+          const travelled = scroll - rested;
+          rested = scroll;
+          if (scroll <= from + 2 || scroll >= to - 2) return;
+          // Too little travel to tell which way it was going: whichever end is nearer.
+          const down = Math.abs(travelled) >= LITE_INTENT_PX ? travelled > 0 : scroll - from > to - scroll;
           settling = true;
-          lenis.scrollTo(heading < 0 ? landing.start : landing.end, {
+          lenis.scrollTo(down ? to : from, {
             duration: LITE_SETTLE_S,
             easing: easeOut,
             onComplete: () => {
               settling = false;
               armed = false;
-              last = scroller.scrollTop;
+              last = rested = scroller.scrollTop;
             },
           });
         };
@@ -582,7 +592,6 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
           }
           const top = landing.end;
           if (!settling) {
-            if (scroll !== last) heading = scroll > last ? 1 : -1;
             // (A jump of a screen or more in one step is the page being sent somewhere, not a swipe.)
             const swiped = Math.abs(scroll - last) < height;
             const reached = (last < top && scroll >= top) || (last > top && scroll <= top);
