@@ -9,6 +9,7 @@ import React, {
 } from 'react'
 import { Hammersmith_One, Instrument_Serif } from 'next/font/google'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useUser } from '@/context/UserContext'
 
 const LOGIN_HREF = '/login'
@@ -306,10 +307,21 @@ export default function Navbar() {
    * The label can only settle after the session is known, because the session
    * is an httpOnly cookie the server render cannot see.
    */
-  const { isSignedIn, user } = useUser()
-  const ctaLabel = isSignedIn
-    ? (user?.name || '').trim().split(/\s+/)[0] || 'Profile'
-    : 'Register'
+  const { isSignedIn, user, signOut } = useUser()
+  const pathname = usePathname()
+  // On the profile page the CTA is the way out, so it signs out in place.
+  const signingOut = isSignedIn && pathname === '/profile'
+  const ctaLabel = signingOut
+    ? 'Sign out'
+    : isSignedIn
+      ? (user?.name || '').trim().split(/\s+/)[0] || 'Profile'
+      : 'Register'
+  const onCtaClick = signingOut
+    ? (event) => {
+        event.preventDefault()
+        signOut('/')
+      }
+    : undefined
 
   // Signed out, the CTA goes to the login page (and still works without JS).
   // Signed in, it shows the first name and goes to the profile.
@@ -414,6 +426,7 @@ export default function Navbar() {
         <div className='nb__right'>
           <Link
             href={ctaHref}
+            onClick={onCtaClick}
             className='nb__cta'
             onPointerEnter={(event) => registerFlipRef.current?.trigger(event)}
           >
@@ -463,7 +476,7 @@ export default function Navbar() {
           <Link
             href={ctaHref}
             className='nb-mobile__cta'
-            onClick={closeMenu}
+            onClick={signingOut ? onCtaClick : closeMenu}
             tabIndex={menuOpen ? 0 : -1}
           >
             {ctaLabel}

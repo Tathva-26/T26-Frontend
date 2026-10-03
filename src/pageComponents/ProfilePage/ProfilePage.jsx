@@ -176,15 +176,17 @@ export default function ProfilePage() {
   }
 
   const background = (
-    <Galaxy
-      mouseInteraction={false}
-      hueShift={205}
-      density={0.9}
-      glowIntensity={0.35}
-      saturation={0.55}
-      twinkleIntensity={0.4}
-      rotationSpeed={0.05}
-    />
+    <div className={styles.backdrop}>
+      <Galaxy
+        mouseInteraction={false}
+        hueShift={205}
+        density={0.9}
+        glowIntensity={0.35}
+        saturation={0.55}
+        twinkleIntensity={0.4}
+        rotationSpeed={0.05}
+      />
+    </div>
   );
 
   if (isLoading) {
@@ -216,19 +218,6 @@ export default function ProfilePage() {
   return (
     <div className={styles.pageShell}>
       {background}
-
-      <header className={styles.topbar}>
-        <div className={styles.leftHeader}>
-          <div className={styles.brandWrap}></div>
-        </div>
-
-        <button type="button" className={styles.signOutButton} onClick={() => signOut('/')}>
-          <span className={styles.signOutIcon} aria-hidden="true">
-            <img src={avatar || '/images/profile-avatar.png'} alt="" />
-          </span>
-          Sign out
-        </button>
-      </header>
 
       <main className={styles.contentWrap}>
         <div className='hidden lg:block'>
@@ -364,6 +353,14 @@ export default function ProfilePage() {
             </div>
           )}
         </section>
+        <div className={styles.signOutRow}>
+          <button type="button" className={styles.signOutButton} onClick={() => signOut('/')}>
+            <span className={styles.signOutIcon} aria-hidden="true">
+              <img src={avatar || '/images/profile-avatar.png'} alt="" />
+            </span>
+            Sign out
+          </button>
+        </div>
       </main>
 
       {isEditorOpen && (
