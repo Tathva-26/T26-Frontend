@@ -188,10 +188,10 @@ const MOBILE_CONFIG = {
   },
 }
 
-export default function HorizontalGallery() {
-  const containerRef = useRef(null)
-  const sectionRef = useRef(null)
-  const trackRef = useRef(null)
+export default function HorizontalGallery({ coordinatedEntrance = false }) {
+  const containerRef = useRef(null);
+  const sectionRef = useRef(null);
+  const trackRef = useRef(null);
 
   /* -----------------------------------------
      VIEWPORT HEIGHT VARIABLE
@@ -254,7 +254,6 @@ export default function HorizontalGallery() {
           track.getBoundingClientRect().width - vw,
           0,
         )
-
         /*
           CONTINUOUS DIAGONAL EXIT (no stop-then-go)
 
@@ -282,15 +281,22 @@ export default function HorizontalGallery() {
           scrollTrigger: {
             scroller,
             trigger: container,
-            start: 'top bottom',
-            end: 'bottom top',
+            // Use the bridge's exact release coordinate rather than deriving
+            // a second entrance from overlapping sticky/pinned geometry.
+            start: () => coordinatedEntrance && Number.isFinite(openingScroll()) ? openingScroll() : 'top bottom',
+            end: coordinatedEntrance ? () => openingScroll() + container.offsetHeight - window.innerHeight : 'bottom top',
             // Lenis already smooths the scroll position, so `true` tracks it
             // directly instead of adding a second layer of lag.
             scrub: true,
             invalidateOnRefresh: true,
+            // The Expo bridge establishes its upstream pin spacing first.
+            refreshPriority: coordinatedEntrance ? -20 : 0,
+            onRefresh: (self) => {
+              container.dataset.galleryStart = self.start;
+              container.dataset.galleryEnd = self.end;
+            },
           },
         })
-
         /* Horizontal movement: one linear tween over the entire range */
         tl.to(track, { x: -scrollAmount, duration: range, ease: 'none' }, 0)
 
@@ -339,8 +345,12 @@ export default function HorizontalGallery() {
       }
     }, container)
 
-    return () => ctx.revert()
-  }, [])
+    return () => {
+      ctx.revert();
+      delete container.dataset.galleryStart;
+      delete container.dataset.galleryEnd;
+    };
+  }, [coordinatedEntrance]);
 
   return (
     <div ref={containerRef} className='relative w-full shrink-0'>
@@ -720,5 +730,5 @@ export default function HorizontalGallery() {
         </div>
       </section>
     </div>
-  )
+  );
 }

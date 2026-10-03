@@ -1,107 +1,92 @@
 'use client'
 
-import Image from 'next/image'
-import { useRef } from 'react'
+import { useCallback, useLayoutEffect, useRef } from 'react'
 import Crystal3D from './Crystal3D'
 import styles from './Expo.module.css'
+import { expoJourney } from './expoJourney.mjs'
+import { measureExpoLabels, expoLeaderPaths } from './expoLeaders.mjs'
+import FallbackShards from './FallbackShards'
+import { ExpoDetailsProvider, useExpoDetails } from './ExpoDetails'
 
-export default function Expo() {
-  const details = useRef(null)
+export default function Expo(props) {
+  const context = useExpoDetails()
+  return context ? <ExpoContent {...props} /> : <ExpoDetailsProvider><ExpoContent {...props} /></ExpoDetailsProvider>
+}
+
+function ExpoContent({ sharedCrystal = false }) {
+  const details = useExpoDetails()
+  const stage = useRef(null)
+  const layout = useRef(null)
+  const journey = useRef(expoJourney(1))
+  const leaders = useRef([])
+  const project = useCallback((points) => {
+    if (!layout.current) return
+    expoLeaderPaths(points, layout.current).forEach((path, index) => leaders.current[index]?.setAttribute('d', path))
+  }, [])
+  useLayoutEffect(() => {
+    if (sharedCrystal) return
+    let disposed = false
+    const measure = () => {
+      const box = stage.current.getBoundingClientRect()
+      const slot = stage.current.querySelector('[data-expo-slot]').getBoundingClientRect()
+      stage.current.style.setProperty('--expo-slot-left', `${slot.left - box.left}px`)
+      stage.current.style.setProperty('--expo-slot-top', `${slot.top - box.top}px`)
+      stage.current.style.setProperty('--expo-slot-width', `${slot.width}px`)
+      stage.current.style.setProperty('--expo-slot-height', `${slot.height}px`)
+      layout.current = { width: box.width, height: box.height, slotWidth: slot.width, slotHeight: slot.height,
+        endX: slot.left - box.left + slot.width / 2, endY: slot.top - box.top + slot.height / 2,
+        startX: slot.left - box.left + slot.width / 2, startY: slot.top - box.top + slot.height / 2,
+        labels: measureExpoLabels(stage.current, box) }
+      journey.current = { ...expoJourney(1), layout: layout.current }
+      project([[-.25, -.18], [.27, -.10], [.25, .18], [-.12, .30]].map(([dx, dy]) => ({
+        x: (layout.current.endX + dx * slot.width) / box.width * 2 - 1,
+        y: 1 - (layout.current.endY + dy * slot.height) / box.height * 2,
+      })))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(stage.current)
+    document.fonts.ready.then(() => { if (!disposed) measure() })
+    return () => { disposed = true; observer.disconnect() }
+  }, [sharedCrystal, project])
 
   return (
-    <main className={styles.page}>
-      <section className={styles.stage} aria-labelledby='expo-title'>
-        <h1 id='expo-title' className={styles.title}>
+    <section className={styles.page} data-expo-page>
+      <section ref={stage} className={styles.stage} aria-labelledby='expo-title'>
+        <h1 id='expo-title' className={styles.title} data-expo-title>
           <span className={styles.desktopTitle}>EXPO</span>
-          <svg
-            className={styles.mobileTitle}
-            viewBox='0 0 360 76'
-            role='img'
-            aria-label='EXPO'
-          >
-            <g fill='currentColor' transform='translate(18 4) skewX(-12)'>
-              <path d='M43 9H105L93 22H55L48 30H84L72 43H36L29 51H69L57 65H0Z' />
-              <path d='M114 9H134L144 27L174 9H196L158 36L174 65H153L140 44L108 65H85L127 35Z' />
-              <path
-                fillRule='evenodd'
-                d='M204 9H259L275 24L248 45H213L193 65H174ZM215 22L203 34H235L250 22Z'
-              />
-              <path
-                fillRule='evenodd'
-                d='M286 9H330L349 27L310 65H265L247 48ZM289 23L268 46L275 51H305L326 29L319 23Z'
-              />
-            </g>
-          </svg>
         </h1>
+        <FallbackShards />
 
-        <p className={styles.intro}>
+        <p className={styles.intro} data-expo-intro>
           Tathva’26 Expo is all about technology,
-          <br />
           the trending, the innovations, the age-old,
-          <br />
           and many more.
         </p>
-        <svg
-          className={styles.desktopLines}
-          viewBox='0 0 1440 710'
-          preserveAspectRatio='none'
-          aria-hidden='true'
-        >
-          <path d='M408 204H523L666 338 M935 335L1044 397L951 453 M715 542L666 622H574' />
+        <svg data-expo-connectors className={styles.desktopLines} aria-hidden='true'>
+          {[0, 1, 2].map(index => <path key={index} ref={node => { leaders.current[index] = node }} />)}
         </svg>
-        <svg
-          className={styles.mobileLines}
-          viewBox='0 0 390 870'
-          preserveAspectRatio='none'
-          aria-hidden='true'
-        >
-          <path d='M131 337L154 275L208 306 M157 565L79 650 M205 564L247 627H271' />
-        </svg>
-        <div className={styles.crystalSlot}>
-          <Crystal3D />
+        <div className={styles.crystalSlot} data-expo-slot>
+        <button className={styles.fallbackActivate} aria-label='Explore the Tathva crystal' aria-haspopup='dialog' onClick={event => details.open(event.currentTarget)} />
         </div>
-        <p className={styles.description}>
+        {!sharedCrystal && <div className={styles.standaloneCrystal}><Crystal3D journey={journey} onProject={project} preload /></div>}
+        <p className={styles.description} data-expo-description>
           National Institute of
-          <br />
           Technology, Calicut.
-          <br />
           presents Tathva Expo-
-          <br />
           Asia’s largest student-
-          <br />
           run Tech Startup Expo.
         </p>
         <button
-          className={styles.explore}
-          onClick={() => details.current?.showModal()}
+          className={styles.explore} data-expo-explore
+          onClick={event => details.open(event.currentTarget)}
           aria-haspopup='dialog'
         >
           <span>EXPLORE</span>
         </button>
 
-        <dialog
-          ref={details}
-          className={styles.details}
-          onClick={(event) => {
-            if (event.target === event.currentTarget) details.current.close()
-          }}
-        >
-          <form method='dialog'>
-            <button aria-label='Close Expo details' className={styles.close}>
-              ×
-            </button>
-          </form>
-          <p className={styles.eyebrow}>TATHVA ’26 / NIT CALICUT</p>
-          <h2>Ideas take shape.</h2>
-          <p>
-            Explore technology, meet the innovators, and discover what comes
-            next at Tathva Expo.
-          </p>
-          <p className={styles.detailsNote}>
-            Exhibitor and programme details will be announced here.
-          </p>
-        </dialog>
+
       </section>
-    </main>
+    </section>
   )
 }
