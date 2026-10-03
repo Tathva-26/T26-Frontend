@@ -22,7 +22,6 @@ import { journeyScreenPoint } from './expoJourney.mjs'
 import { detailMotion } from './expoDetailMotion.mjs'
 import { useExpoDetails } from './ExpoDetails'
 import { springStep, fractureSector, animationDelta, pulseStrength } from './crystalInteraction.mjs'
-import CrystalShards from './CrystalShards'
 
 const geometryLoader = new DRACOLoader()
   .setDecoderPath('/images/expo/decoders/draco/')
@@ -120,7 +119,6 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const idleClock = useRef(0)
   const interactionClock = useRef(0)
   const readiness = useRef({ available: false, at: -10 })
-  const shardResonance = useRef(0)
   const savedPose = useRef(null)
   const group = useRef()
   const travel = useRef()
@@ -217,10 +215,6 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const inDetails = detail && detail.state !== 'closed'
     if (!inDetails) idleClock.current += dt
     const time = interactionClock.current
-    if ((target.current.shardResonance ?? 0) !== shardResonance.current) {
-      shardResonance.current = target.current.shardResonance ?? 0
-      life.current.pulseAt = time
-    }
     const available = !inDetails && (pose?.progress ?? 1) >= 1 && !(pose?.exit > 0)
     if (available && !readiness.current.available) readiness.current.at = time
     readiness.current.available = available
@@ -292,7 +286,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const press = available && target.current.pressed && life.current.hitStrength ? .45 : 0
     const interactive = available && life.current.hitStrength > 0
     const control = gl.domElement.closest('[data-crystal-control]')
-    if (control) control.style.cursor = interactive ? 'pointer' : available && target.current.shardHover ? 'grab' : 'auto'
+    if (control) control.style.cursor = interactive ? 'pointer' : 'auto'
     cursorLight.current.position.set(lightPoint.x, lightPoint.y, 1.2)
     cursorLight.current.intensity = hover * 1.6
     glass.current.envMapIntensity = 2.2 + hover * .25
@@ -379,7 +373,6 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
       <group ref={detailGroup}>
       <group ref={idle}>
       <group ref={group}>
-      <CrystalShards journey={journey} compact={compact} prepareGlass={prepareGlass} target={target} />
       <pointLight ref={cursorLight} color='#75dfff' intensity={0} distance={4} decay={2} />
       <points ref={motes} geometry={dust}>
         <pointsMaterial color='#acdfff' map={glow} size={.055} transparent opacity={.18} depthWrite={false} blending={AdditiveBlending} />

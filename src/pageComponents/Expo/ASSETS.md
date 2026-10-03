@@ -249,19 +249,14 @@ It approximates the raster artwork; it is not an exact 3D reconstruction.
 used only for loading, reduced motion and renderer failure. No temporary Figma
 URLs are referenced at runtime.
 
-Six code-built faceted shards share one 80-triangle geometry and physical
-material in an instanced mesh; compact devices use four. Their transforms are
-static relative to the crystal group, with visibility tied to existing journey
-weights. Matrix uploads stop once the reveal weight settles. SVG facets supply
-decorations when WebGL is unavailable. No new animation timeline, dependencies,
+Surrounding shards removed; central crystal only. No new animation timeline, dependencies,
 postprocessing or render target was added. Existing scroll curves and durations
-are unchanged. The Figma motion export had empty animation targets, so no new
-shard motion was inferred from its two-second cohort.
+are unchanged.
 
 Leaders use measured resting text/button bounds and four projected crystal
 anchors. Portrait leaders route outside the text; the right-hand desktop leader
 forms the reference triangle. Standalone Expo now shares the same viewport scene
-framing, so decorative shards are not clipped to the crystal slot.
+framing.
 
 Scoped lint and motion/interaction scripts passed. Browser checks covered
 320/390 px phones, 667 px landscape, 820 px tablet and desktop, modal/Escape,
