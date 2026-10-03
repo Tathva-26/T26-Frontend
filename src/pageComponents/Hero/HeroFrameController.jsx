@@ -9,6 +9,15 @@ import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
 // (Just under 1.0 so a smoothed wheel scroll that stops a few px short still triggers it.)
 const AUTO_ENTER_PROGRESS = 0.995;
 
+// Mobile only (see handleFrameScroll / swapTo): Frame reports a raw delta on every touchmove
+// tick, which jitters in both directions within a single continuous swipe and can even spike
+// right at a hero<->frame handoff (the panel that just became active hasn't re-anchored its own
+// touch baseline yet). These tune how much accumulated same-direction movement counts as a real
+// swipe, and how long to ignore further transitions after one fires.
+const MOBILE_SWIPE_THRESHOLD = 40; // px
+const MOBILE_SWIPE_COOLDOWN_MS = 400; // ms
+const MOBILE_GESTURE_IDLE_MS = 150; // gap between deltas long enough to treat as a new gesture
+
 // Same breakpoint Hero uses for its mobile layout.
 const MOBILE_QUERY = "(max-width: 768px)";
 const subscribeMobile = (cb) => {
@@ -38,6 +47,11 @@ export default function HeroFrameController({ children }) {
   const [hasReachedContent, setHasReachedContent] = useState(false);
   // wrapper around `children`, observed so ScrollTrigger can re-measure when content settles
   const contentRef = useRef(null);
+  // Mobile swipe debounce state (see constants above). Unused on desktop.
+  const mobileCooldownUntilRef = useRef(0);
+  const mobileTouchAccumRef = useRef(0);
+  const mobileTouchDirRef = useRef(0);
+  const mobileTouchLastAtRef = useRef(0);
 
   useEffect(() => {
     sectionRef.current = section;
@@ -45,12 +59,22 @@ export default function HeroFrameController({ children }) {
 
   // Hero <-> Frame. Frame is already painted underneath and the open portal looks exactly like
   // it, so the swap is just showing/hiding the Hero panel (no waiting for a repaint).
-  const swapTo = useCallback((target) => {
-    if (sectionRef.current === target) return;
-    sectionRef.current = target;
-    setSection(target);
-    setHeroVisible(target === "hero");
-  }, []);
+  const swapTo = useCallback(
+    (target) => {
+      if (sectionRef.current === target) return;
+      // Mobile only: ignore a transition that lands within the cooldown window of the last one
+      // (see handleFrameScroll) — this is what stops a single noisy swipe from bouncing the
+      // panel back and forth.
+      if (isMobile && performance.now() < mobileCooldownUntilRef.current) return;
+      sectionRef.current = target;
+      setSection(target);
+      setHeroVisible(target === "hero");
+      if (isMobile) {
+        mobileCooldownUntilRef.current = performance.now() + MOBILE_SWIPE_COOLDOWN_MS;
+      }
+    },
+    [isMobile]
+  );
 
   // Hero -> Frame.
   const enterFrame = useCallback(() => swapTo("frame"), [swapTo]);
@@ -74,14 +98,45 @@ export default function HeroFrameController({ children }) {
 
   const handleFrameScroll = useCallback(
     (deltaY) => {
-      if (deltaY < 0) {
-        returnToHero();
-      } else if (deltaY > 0) {
+      if (!isMobile) {
+        if (deltaY < 0) {
+          returnToHero();
+        } else if (deltaY > 0) {
+          setUnlocked(true);
+          setHasReachedContent(true);
+        }
+        return;
+      }
+
+      // Mobile: accumulate same-direction movement instead of acting on every raw touchmove
+      // delta — see the MOBILE_* constants above for why.
+      const now = performance.now();
+      if (now < mobileCooldownUntilRef.current) return;
+      if (now - mobileTouchLastAtRef.current > MOBILE_GESTURE_IDLE_MS) {
+        mobileTouchAccumRef.current = 0;
+        mobileTouchDirRef.current = 0;
+      }
+      mobileTouchLastAtRef.current = now;
+
+      const dir = deltaY > 0 ? 1 : deltaY < 0 ? -1 : 0;
+      if (dir === 0) return;
+      if (dir !== mobileTouchDirRef.current) {
+        mobileTouchDirRef.current = dir;
+        mobileTouchAccumRef.current = 0;
+      }
+      mobileTouchAccumRef.current += Math.abs(deltaY);
+      if (mobileTouchAccumRef.current < MOBILE_SWIPE_THRESHOLD) return;
+
+      mobileTouchAccumRef.current = 0;
+      if (dir < 0) {
+        returnToHero(); // swapTo applies its own cooldown
+      } else {
         setUnlocked(true);
         setHasReachedContent(true);
+        mobileCooldownUntilRef.current = now + MOBILE_SWIPE_COOLDOWN_MS;
       }
     },
-    [returnToHero]
+    [returnToHero, isMobile]
   );
 
   // Lenis and ScrollTrigger need a nudge when the wrapper's height changes or children mount.

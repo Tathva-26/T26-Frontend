@@ -2,10 +2,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { useGSAP } from '@gsap/react'
-// MotionPathPlugin ships inside the installed `gsap` package (all
-// GSAP plugins are free since 3.13), so no new dependency is needed.
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
+import { useGSAP } from '@gsap/react'
+import { animateBird, TRAIL_START, TRAIL_END, FLIGHT_PATH } from './birdFlight'
 import styles from './Hero.module.css'
 
 // Register once at module level so ScrollTrigger.refresh() is safe to
@@ -298,6 +297,27 @@ export const Hero = ({
     return undefined
   }, [isActive])
 
+  // Mobile only: iOS Low Power Mode and some Android browsers silently block or suspend
+  // <video> autoplay/decode, which shows the poster or a blank frame instead of the loop.
+  // Retry play() once on the first touch, and again whenever the tab regains visibility.
+  useEffect(() => {
+    if (!isMobile) return undefined
+    const retryPlayback = () => {
+      if (!isActive) return
+      videoRef.current?.play().catch(() => {})
+      portalVideoRef.current?.play().catch(() => {})
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') retryPlayback()
+    }
+    window.addEventListener('touchstart', retryPlayback, { once: true, passive: true })
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('touchstart', retryPlayback)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [isMobile, isActive])
+
   // Enter click: ripple at the click point, then animate the hero
   // scroll runway to its end (portal zoom), then let the page scroll
   // naturally to the Frame section below.
@@ -496,6 +516,9 @@ export const Hero = ({
 
     let lastKey = ''
     let refreshTimer = 0
+    // Mobile only (see the check below): last viewport size we actually acted on.
+    let lastMobileViewportW = 0
+    let lastMobileViewportH = 0
 
     const updateDesignScale = () => {
       const designWidth = scene.offsetWidth
@@ -507,6 +530,23 @@ export const Hero = ({
       }
 
       const mobileMode = window.matchMedia('(max-width: 768px)').matches
+
+      // Mobile only: the URL bar hiding/showing while scrolling fires ResizeObserver
+      // notifications that only change viewport HEIGHT by a small amount. Rebuilding every
+      // ScrollTrigger tween mid-gesture for that (invalidateOnRefresh below) is what makes the
+      // scene jump/flash, so ignore height-only changes under this threshold. A real rotation
+      // or breakpoint change still goes through (width changes, or a big enough height jump).
+      if (mobileMode) {
+        if (
+          lastMobileViewportW &&
+          viewportWidth === lastMobileViewportW &&
+          Math.abs(viewportHeight - lastMobileViewportH) < 140
+        ) {
+          return
+        }
+        lastMobileViewportW = viewportWidth
+        lastMobileViewportH = viewportHeight
+      }
 
       const key = `${designWidth}|${designHeight}|${viewportWidth}|${viewportHeight}|${mobileMode}`
       if (key === lastKey) return
@@ -783,6 +823,7 @@ export const Hero = ({
         let lastFrameImgOpacity = -1
         let lastWrapOpacity = -1
         let lastGirlHidden = false
+        let lastGirlOpacity = -1
         const syncPortalFrame = () => {
           const portalEl = portalRef.current
           if (!portalEl) return
@@ -821,7 +862,21 @@ export const Hero = ({
           // The girl layer is scaled up to 15.55x (desktop) / 60x (mobile) by the time the
           // portal is fully open, which keeps a huge decoded texture alive for nothing (it's
           // fully covered by the portal/Frame by then). Drop it once covered, restore on the way back.
-          if (girlRef.current) {
+          if (girlRef.current && isMobile) {
+            // Mobile only: 60x (vs. desktop's 15.55x) is well past typical mobile GPU
+            // compositing budgets, a likely contributor to the mobile-only flicker. Fade her
+            // out earlier and drop her a bit sooner than desktop's flat p>=0.9 cutoff.
+            const go = 1 - gsap.utils.clamp(0, 1, (p - 0.55) / 0.25) // 1 at p<=0.55, 0 at p>=0.8
+            if (go !== lastGirlOpacity) {
+              lastGirlOpacity = go
+              girlRef.current.style.opacity = go
+            }
+            const hideGirl = p >= 0.8
+            if (hideGirl !== lastGirlHidden) {
+              lastGirlHidden = hideGirl
+              girlRef.current.style.visibility = hideGirl ? 'hidden' : 'visible'
+            }
+          } else if (girlRef.current) {
             const hideGirl = p >= 0.9
             if (hideGirl !== lastGirlHidden) {
               lastGirlHidden = hideGirl
@@ -943,74 +998,15 @@ export const Hero = ({
         }
       }
 
-      // Bird flight — flies along the combined trail (both segments merged
-      // with bridge + extension beyond the trail end). The outer .bird div
-      // is positioned by MotionPath; the inner birdFlipper handles the
-      // mirror flip; the innermost img does the wing-flap via CSS.
-      //
-      // Behaviour:
-      //  • Starts facing left (scaleX -1)
-      //  • Gradually flips to right around the curve turnaround (~5s)
-      //  • After the first trail segment (~7s), drops behind the island
-      //  • Continues through bridge, second segment, and extension
-      //  • Stops ~2-3s after the visible trail ends
-      if (
-        birdRef.current &&
-        birdFlipperRef.current &&
-        trailPathRef.current &&
-        birdLayerRef.current
-      ) {
-        const reduceMotion = window.matchMedia?.(
-          '(prefers-reduced-motion: reduce)',
-        ).matches
-        const flightDuration = 11
-        const baseMotionPath = {
+      // Follow the original route, then exit and rejoin outside the viewport.
+      if (birdRef.current && birdFlipperRef.current && trailPathRef.current && birdLayerRef.current) {
+        return animateBird({
           path: trailPathRef.current,
-          align: trailPathRef.current,
-          alignOrigin: [0.5, 0.5],
-        }
-        if (!reduceMotion) {
-          const flight = gsap.timeline()
-          // 1. Motion path along the combined curve (outer container only)
-          flight.fromTo(
-            birdRef.current,
-            {
-              motionPath: { ...baseMotionPath, start: 0, end: 0 },
-            },
-            {
-              motionPath: { ...baseMotionPath, start: 0, end: 1 },
-              duration: flightDuration,
-              ease: 'sine.inOut',
-            },
-            0,
-          )
-          // 2. Initial orientation: facing left (scaleX: -1)
-          flight.set(
-            birdFlipperRef.current,
-            { scaleX: -1, transformOrigin: '50% 50%' },
-            0,
-          )
-          // 3. Gradual flip to facing right around the turnaround (~5.0s to ~6.6s)
-          flight.fromTo(
-            birdFlipperRef.current,
-            { scaleX: -1, transformOrigin: '50% 50%' },
-            { scaleX: 1, duration: 2.0, ease: 'sine.inOut' },
-            4.5,
-          )
-          // 4. After the first trail segment, send only the bird layer
-          // behind the island (~6s) — the trail stays in front.
-          flight.set(birdLayerRef.current, { zIndex: 0 }, 6.0)
-        } else {
-          // Static pose: park the bird at the end facing right, behind island.
-          gsap.set(birdRef.current, {
-            motionPath: { ...baseMotionPath, start: 1, end: 1 },
-          })
-          gsap.set(birdFlipperRef.current, {
-            scaleX: 1,
-            transformOrigin: '50% 50%',
-          })
-          gsap.set(birdLayerRef.current, { zIndex: 0 })
-        }
+          bird: birdRef.current,
+          flipper: birdFlipperRef.current,
+          layer: birdLayerRef.current,
+          viewport: viewportRef.current,
+        })
       }
     },
     { scope: scrollerRef, dependencies: [isMobile], revertOnUpdate: true },
@@ -1258,13 +1254,17 @@ export const Hero = ({
                 >
                   {/* Visible trail strokes (two segments with gap) */}
                   <path
-                    d='M560.523 361.761C293.335 280.614 -343.389 227.67 237.506 62.9024'
+                    data-flight-trail=''
+                    style={{ visibility: 'hidden' }}
+                    d={TRAIL_START}
                     stroke='#7787FF'
                     strokeWidth='1.11538'
                     strokeLinecap='round'
                   />
                   <path
-                    d='M379.513 43.6052C484.905 18.8653 490.756 16.8861 507.085 0.557739'
+                    data-flight-trail=''
+                    style={{ visibility: 'hidden' }}
+                    d={TRAIL_END}
                     stroke='#7787FF'
                     strokeWidth='1.11538'
                     strokeLinecap='round'
@@ -1273,14 +1273,14 @@ export const Hero = ({
                                         segment 1 → smooth bridge → segment 2 → extension */}
                   <path
                     ref={trailPathRef}
-                    d='M560.523 361.761C293.335 280.614 -343.389 227.67 237.506 62.9024C290 54 340 47 379.513 43.6052C484.905 18.8653 490.756 16.8861 507.085 0.557739C518 -8 530 -18 545 -30'
+                    d={FLIGHT_PATH}
                     stroke='none'
                     fill='none'
                   />
                 </svg>
               </div>
               <div ref={birdLayerRef} className={styles.birdLayer}>
-                <div ref={birdRef} className={styles.bird}>
+                <div ref={birdRef} className={styles.bird} style={{ visibility: 'hidden' }}>
                   <div ref={birdFlipperRef} className={styles.birdFlipper}>
                     <img
                       className={styles.birdImg}
