@@ -842,20 +842,6 @@ function ArtistContent({
       />
 
       <svg className='connector-overlay' aria-hidden='true'>
-        <ConnectorArrow
-          ref={(el) => onRegisterConnector?.(connectorBaseIndex + 0, el)}
-          slideRef={slideRef}
-          bend={1}
-          getFrom={() => avatarRef.current}
-          getTo={() => secondaryRef.current}
-        />
-        <ConnectorArrow
-          ref={(el) => onRegisterConnector?.(connectorBaseIndex + 1, el)}
-          slideRef={slideRef}
-          bend={-1}
-          getFrom={() => secondaryRef.current}
-          getTo={() => primaryRef.current}
-        />
         {artist.avatar2 ? (
           <>
             <ConnectorArrow
@@ -888,13 +874,29 @@ function ArtistContent({
             />
           </>
         ) : (
-          <ConnectorArrow
-            ref={(el) => onRegisterConnector?.(connectorBaseIndex + 2, el)}
-            slideRef={slideRef}
-            bend={1}
-            getFrom={() => primaryRef.current}
-            getTo={getNextAvatar}
-          />
+          <>
+            <ConnectorArrow
+              ref={(el) => onRegisterConnector?.(connectorBaseIndex + 0, el)}
+              slideRef={slideRef}
+              bend={1}
+              getFrom={() => avatarRef.current}
+              getTo={() => secondaryRef.current}
+            />
+            <ConnectorArrow
+              ref={(el) => onRegisterConnector?.(connectorBaseIndex + 1, el)}
+              slideRef={slideRef}
+              bend={-1}
+              getFrom={() => secondaryRef.current}
+              getTo={() => primaryRef.current}
+            />
+            <ConnectorArrow
+              ref={(el) => onRegisterConnector?.(connectorBaseIndex + 2, el)}
+              slideRef={slideRef}
+              bend={1}
+              getFrom={() => primaryRef.current}
+              getTo={getNextAvatar}
+            />
+          </>
         )}
       </svg>
 
@@ -1368,7 +1370,7 @@ export default function App() {
           bottom: 0;
           left: 5%;
           width: 90%;
-          height: 85vh;
+          height: 100%;
           max-width: none;
           object-fit: contain;
           object-position: bottom;
@@ -1376,10 +1378,13 @@ export default function App() {
         }
 
         .artist-portrait--day3 {
-          left: -4%;
+          position: absolute;
           bottom: 0;
+          left: -4%;
           width: 91%;
-          height: 76%;
+          height: 100%;
+          object-fit: contain;
+          object-position: bottom;
         }
 
         /* -------------------------------------------------------------
@@ -1564,7 +1569,7 @@ export default function App() {
           height: 34%;
           aspect-ratio: auto;
           border-radius: 12px;
-          object-position: 70% center;
+          object-position: center top;
         }
         .slide--day-2-artists .slide__secondary {
           top: 55%;
