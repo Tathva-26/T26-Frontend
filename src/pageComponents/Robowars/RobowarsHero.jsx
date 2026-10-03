@@ -444,8 +444,20 @@ export default function RobowarsHero({ leadInVh = 0 }) {
         // A gesture whose peak speed (px/s) exceeded this counts as "hard"
         // for snapping purposes. Below it, scroll behaves exactly as before
         // — free, 1:1 scrubbing — so a deliberate scroll-and-read never gets
-        // yanked anywhere.
+        // yanked anywhere. This only means anything for wheel/trackpad
+        // input, which Lenis itself smooths (`smoothWheel`) — self.getVelocity()
+        // is reading Lenis's own eased output.
         const HARD_SCROLL_VELOCITY = 2200
+
+        // Touch screens scroll natively — Lenis's `syncTouch` is off (see
+        // SmoothScroll), so a swipe's momentum is driven by the OS, not
+        // Lenis, and there's no Lenis-smoothed velocity for it to read a
+        // "hard flick" off of the way wheel input has. Gating on
+        // HARD_SCROLL_VELOCITY there means the gate just never opens, so
+        // every touch gesture is instead treated as reaching for whichever
+        // beat it's closest to once it comes to rest (same reasoning as the
+        // Artist section's touch handling).
+        const touchScreen = window.matchMedia('(pointer: coarse)').matches
 
         const buildTimeline = (root) => {
           const timeline = gsap.timeline({
@@ -474,7 +486,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
                 snapTo: (value, trigger) => {
                   const velocity = peakVelocity
                   peakVelocity = 0
-                  if (velocity < HARD_SCROLL_VELOCITY) {
+                  if (!touchScreen && velocity < HARD_SCROLL_VELOCITY) {
                     return value
                   }
 
