@@ -465,7 +465,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
         <group ref={robotMotion} rotation={[0, 0.12, 0.085, 'ZYX']}>
           {/* Backdrop glow halo — kept from the original so the 3D robot
               still reads as a luminous figure inside the crystal. */}
-          <mesh position={[0, 0.15, -0.18]} scale={[2, 2.3, 1]}>
+          <mesh position={[0, 0.15, 0.157]} scale={[2, 2.3, 1]}>
             <planeGeometry />
             <meshBasicMaterial
               ref={glowMaterial}
@@ -480,7 +480,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
               already centered and scaled to ~1.7 units in robotScene. */}
           <primitive
             object={robotScene}
-            position={[0, 0.18, -0.05]}
+            position={[0, 0.18, 0.167]}
           />
         </group>
         <group>
