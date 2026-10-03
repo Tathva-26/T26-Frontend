@@ -150,6 +150,18 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         return { x: hole.x, y: centerY - h / 2, w: hole.w, h, wash: Math.pow(1 - open, 1.2) * 0.95, edge: (1 - open) * 0.9 };
       }
 
+      // Phones and tablets get none of the camera moves: no TV entry / exit, and no push into the
+      // console's screen at the end. Each of those zooms the whole hero, a full-screen layer, to
+      // several times its size; at a phone's pixel density that is a picture far bigger than its
+      // GPU will hold, and once it has given up on it the hero is left painted black, which is
+      // how GPC came back as a blank after being scrolled past once. There GPC is simply the
+      // finished hero: it scrolls in over the last artist, and back out, like any other section;
+      // at the end the console announces Wheels, plays its footage on its own small screen, and
+      // the hero fades out over Wheels, at its real size throughout. It still can't be skipped:
+      // see "PHONES: STOPS" below.
+      const touchScreen = window.matchMedia("(pointer: coarse)").matches;
+      const lite = touchScreen;
+
       // Out: the footage canvas and the push-in zoom target.
       const wheels = preview();
       const picture = wheels.pinnedPicture(width, height);
@@ -160,35 +172,31 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         scale: picture.height / filmHeight,
       };
 
-      // The footage canvas, sharp at any zoom.
-      film.width = window.innerWidth <= FILM_SMALL.below ? FILM_SMALL.width : FILM_RATIO.width;
-      film.height = (film.width * FILM_RATIO.height) / FILM_RATIO.width;
-      const filmContext = film.getContext("2d");
+      // The footage canvas, sharp at any zoom. (Phones never zoom, so they do without it: the
+      // console's own screen shows the footage, and this one stays hidden and unallocated.)
+      let filmContext = null;
       let filmShown = null;
-      const box = { width: Math.round(hole.w), height: Math.round(filmHeight) };
-      gsap.set(film, {
-        ...box,
-        transformOrigin: "0 0",
-        x: hole.x,
-        y: centerY - filmHeight / 2,
-        scaleX: hole.w / box.width,
-        scaleY: filmHeight / box.height,
-        visibility: "visible",
-      });
+      if (!lite) {
+        film.width = window.innerWidth <= FILM_SMALL.below ? FILM_SMALL.width : FILM_RATIO.width;
+        film.height = (film.width * FILM_RATIO.height) / FILM_RATIO.width;
+        filmContext = film.getContext("2d");
+        const box = { width: Math.round(hole.w), height: Math.round(filmHeight) };
+        gsap.set(film, {
+          ...box,
+          transformOrigin: "0 0",
+          x: hole.x,
+          y: centerY - filmHeight / 2,
+          scaleX: hole.w / box.width,
+          scaleY: filmHeight / box.height,
+          visibility: "visible",
+        });
+      }
 
       // Handoff: where Wheels is already stuck underneath.
       const travel = trackBox.height - height;
       const lead = wheels.section ? trackBox.bottom - wheels.section.getBoundingClientRect().top - height : 0;
       const handoff = [gsap.utils.clamp(SEQUENCE.diveStart + 10, 99, 100 * (1 - lead / travel)), 100];
       const dive = [SEQUENCE.diveStart, handoff[0]];
-
-      // Phones and tablets get none of the TV entry / exit: zooming a clipped, full-screen layer
-      // and holding the scroll while it plays is too heavy for them. There GPC is simply the
-      // finished hero, and it scrolls in over the last artist, and back out, like any other
-      // section. It still can't be skipped: see "PHONES: STOPS" below. The scroll-driven outro
-      // into Wheels (further down) is kept.
-      const touchScreen = window.matchMedia("(pointer: coarse)").matches;
-      const lite = touchScreen;
 
       // ── Entry state: the camera is inside the console's screen, which still shows the Artist page ──
       if (lite) {
@@ -659,7 +667,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         if (live.film <= 0) return;
         const image = wheels.image();
         live.picture = image;
-        if (image && image !== filmShown) {
+        if (filmContext && image && image !== filmShown) {
           filmContext.drawImage(image, 0, 0, film.width, film.height);
           filmShown = image;
         }
@@ -681,16 +689,18 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       tl.to(label, { opacity: 0, duration: LABEL_FADE }, at(SEQUENCE.outro) - LABEL_FADE)
         .to(consoleBox, { pointerEvents: "none", duration: 0.01 }, at(SEQUENCE.outro))
         .fromTo(live, { outro: 0 }, { outro: 1, duration: span(SEQUENCE.outro) }, at(SEQUENCE.outro))
-        .fromTo(live, { film: 0 }, { film: 1, duration: span(SEQUENCE.film) }, at(SEQUENCE.film))
-        .fromTo(film, { opacity: 0 }, { opacity: 1, duration: span(SEQUENCE.film) }, at(SEQUENCE.film));
+        .fromTo(live, { film: 0 }, { film: 1, duration: span(SEQUENCE.film) }, at(SEQUENCE.film));
 
-      // The push in toward the Wheels footage.
-      tl.fromTo(
-        hero,
-        { x: 0, y: 0, scale: 1 },
-        { ...pushedIn, duration: span(dive), ease: "power2.in", immediateRender: false },
-        at(dive)
-      );
+      // The push in toward the Wheels footage. (Not on phones: see `lite`.)
+      if (!lite) {
+        tl.fromTo(film, { opacity: 0 }, { opacity: 1, duration: span(SEQUENCE.film) }, at(SEQUENCE.film));
+        tl.fromTo(
+          hero,
+          { x: 0, y: 0, scale: 1 },
+          { ...pushedIn, duration: span(dive), ease: "power2.in", immediateRender: false },
+          at(dive)
+        );
+      }
 
       // The handoff: Wheels is full-screen underneath, so the hero fades away.
       tl.to(hero, { pointerEvents: "none", duration: 0.01 }, at(handoff))
