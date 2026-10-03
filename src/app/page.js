@@ -7,14 +7,12 @@ import Lead from '@/pageComponents/Team/Lead'
 import Frontend from '@/pageComponents/Team/Frontend'
 import Backend from '@/pageComponents/Team/Backend'
 import Uiux from '@/pageComponents/Team/UIUX'
-import Accommodation from '@/pageComponents/Accomodation/Accommodation'
 import TechConclaveExpoTransition from '@/pageComponents/Expo/TechConclaveExpoTransition'
 import HorizontalGallery from '@/pageComponents/HorizontalGallery/HorizontalGallery'
 import Expo from '@/pageComponents/Expo/Expo'
 import Footer from '@/pageComponents/Footer/Footer'
 import RobowarsPage from './robowars/page'
 import SmoothScroll from '@/components/SmoothScroll'
-import TathvaPasses from '@/pageComponents/TathvaPasses/TathvaPasses'
 import ArtistPage from './artist/page'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import GPC from './gpc/page'
@@ -52,8 +50,6 @@ export default function Home() {
         <Frontend />
         <Backend />
         <Uiux /> */}
-        <Accommodation />
-        <TathvaPasses />
         <TechConclaveExpoTransition />
         <Footer />
       </HeroFrameController>
