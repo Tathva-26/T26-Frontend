@@ -22,6 +22,19 @@ const [RADIUS_X, RADIUS_Y] = CONSOLE_SCREEN_INSET.radius.split("/").map((part) =
 // How long the "[CLICK TO PLAY]" prompt takes to fade out, in % of the scroll.
 const LABEL_FADE = 2;
 
+// Leaving GPC upwards plays the entry backwards, this many times faster.
+const EXIT_SPEED = 1.8;
+// The wheel (or a finger) has to be quiet for this long before whatever is scrolled next counts
+// as a new gesture rather than the tail of the one that brought the page here.
+const GESTURE_GAP_MS = 180;
+// How much upward scroll, in one gesture, it takes to leave GPC from its resting spot.
+const EXIT_INTENT_PX = 40;
+// Where the page is left after exiting, as a share of the screen above the point where GPC
+// starts to slide in: inside the last artist's hold, so nothing there moves.
+const EXIT_REST = 0.15;
+
+const easeOut = (progress) => 1 - Math.pow(1 - progress, 3);
+
 const at = ([start]) => start;
 const span = ([start, end]) => end - start;
 
@@ -47,6 +60,12 @@ function holeClip(width, height, { x, y, w, h }) {
  * (which was showing the Artist page), the picture switches off, the screen
  * switches on to the game, the title flickers on and the tagline slides in.
  * The outro (Wheels transition, dive, handoff) remains scroll-driven.
+ *
+ * Going back up is the same thing in reverse. Scrolling up through the outro
+ * stops dead at GPC's resting spot however hard it was scrolled, and the rest
+ * of that gesture is swallowed. Only a fresh scroll up from there leaves: the
+ * screen switches back on to the Artist page, the camera pushes into it, and
+ * the page is handed back to the last artist.
  *
  * `sequence` is a ref holding the values the console's screen canvas reads
  * every frame: { power, outro, film, picture }.
@@ -158,14 +177,25 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence }) {
       // Plays once GPC has landed (see `land` below): the camera pulls back out of the console's
       // screen, which was showing the Artist page; that picture switches off like an old TV; the
       // screen switches on to the game; the title flickers on and the tagline slides in.
-      let phase = "idle"; // idle -> landing -> playing -> done
+      let phase = "idle"; // idle -> landing -> playing -> done -> exiting -> idle
+      // State of the hold / gate / brake / exit helpers further down. Declared up here because
+      // the landing trigger can call into them as soon as it is created.
+      const touchScreen = window.matchMedia("(pointer: coarse)").matches;
+      let gated = false;
+      let gateTimer = 0;
+      let touching = false;
+      let braking = false;
+      let intent = 0; // upward scroll collected over one gesture while at rest
+      let intentTimer = 0;
       const entryTl = gsap.timeline({
         paused: true,
         onUpdate: sync,
+        // The scroll that brought the page here may still be going: swallow the rest of it.
         onComplete: () => {
           phase = "done";
-          window.__lenis?.start();
+          gate();
         },
+        onReverseComplete: leave,
       });
 
       // Pull back. Quick at first, easing as the hero comes to rest.
@@ -230,41 +260,191 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence }) {
         onLeaveBack: reset,
       });
 
+      // ── HOLD / GATE ──
+      // Hold: the page can't be scrolled by the user at all. Lenis swallows the wheel while it is
+      // stopped; a touch fling is native momentum it has no say over, so on touch screens the
+      // scroller itself is also frozen (programmatic scrolling still works).
+      function hold() {
+        window.__lenis?.stop();
+        if (touchScreen) scroller.style.overflowY = "hidden";
+      }
+      function release() {
+        if (touchScreen) scroller.style.overflowY = "";
+        window.__lenis?.start();
+      }
+
+      // Gate: a hold that lasts until the current gesture has died down (see GESTURE_GAP_MS), so
+      // the tail of one scroll can't be read as the start of the next.
+      function gate() {
+        gated = true;
+        hold();
+        armGate();
+      }
+      function armGate() {
+        window.clearTimeout(gateTimer);
+        gateTimer = window.setTimeout(openGate, GESTURE_GAP_MS);
+      }
+      function openGate() {
+        if (touching) {
+          armGate();
+          return;
+        }
+        gated = false;
+        intent = 0;
+        release();
+      }
+      function dropGate() {
+        window.clearTimeout(gateTimer);
+        gated = false;
+        intent = 0;
+      }
+
       function play() {
         phase = "playing";
-        window.__lenis?.stop();
-        entryTl.restart();
+        hold();
+        entryTl.timeScale(1).restart();
       }
 
       function land() {
         if (phase !== "idle") return;
         phase = "landing";
+        dropGate();
+        hold();
         const lenis = window.__lenis;
         if (!lenis) {
+          scroller.scrollTop = landing.end;
           play();
           return;
         }
-        lenis.scrollTo(landing.end, {
-          duration: 0.9,
-          lock: true,
-          force: true,
-          easing: (progress) => 1 - Math.pow(1 - progress, 3),
-          onComplete: play,
-        });
+        lenis.scrollTo(landing.end, { duration: 0.9, lock: true, force: true, easing: easeOut, onComplete: play });
       }
 
       function reset() {
         if (phase === "idle") return;
         phase = "idle";
-        entryTl.pause(0);
+        dropGate();
+        // Paused before the speed is put back: a positive timeScale on a reversed timeline
+        // would set it playing forwards again.
+        entryTl.pause(0).timeScale(1);
         sync();
-        window.__lenis?.start();
+        release();
       }
+
+      // ── BRAKE ──
+      // GPC at rest is the top of its own scroll. Anything that carries the page above it (a hard
+      // scroll up out of the Wheels transition, a drag) is put straight back and swallowed, so
+      // the page can never drift out between GPC and the artists; the only way up is exit().
+      function brake() {
+        if (braking || phase !== "done") return;
+        const top = landing.end;
+        const scroll = scroller.scrollTop;
+        if (scroll >= top - 0.5 || scroll < landing.start) return;
+        braking = true;
+        hold();
+        const lenis = window.__lenis;
+        lenis?.scrollTo(top, { immediate: true, force: true });
+        if (scroller.scrollTop < top - 0.5) scroller.scrollTop = top;
+        gate();
+        braking = false;
+      }
+
+      // ── EXIT ──
+      // A fresh scroll up at rest: the entry plays backwards, then the page glides up to the last
+      // artist, which is what the console's screen has just zoomed into, so nothing visibly moves.
+      function exit() {
+        if (phase !== "done") return;
+        phase = "exiting";
+        dropGate();
+        hold();
+        entryTl.timeScale(EXIT_SPEED).reverse();
+      }
+
+      function leave() {
+        if (phase !== "exiting") return;
+        phase = "idle";
+        entryTl.pause(0).timeScale(1); // paused first: see reset()
+        sync();
+        const target = Math.max(0, landing.start - height * EXIT_REST);
+        const lenis = window.__lenis;
+        if (!lenis) {
+          scroller.scrollTop = target;
+          gate();
+          return;
+        }
+        // Gated on arrival too: the rest of the gesture must not scroll on through the artists.
+        lenis.scrollTo(target, { duration: 0.6, lock: true, force: true, easing: easeOut, onComplete: gate });
+      }
+
+      // At rest: on GPC's resting spot with nothing else (the game, a modal) holding the page.
+      const atRest = () =>
+        phase === "done" && !gated && !window.__lenis?.isStopped && scroller.scrollTop <= landing.end + 1;
+
+      function pullUp(amount, event) {
+        // Kept from Lenis and the browser, so the page doesn't start sliding before it exits.
+        if (event.cancelable) event.preventDefault();
+        event.stopImmediatePropagation();
+        intent += amount;
+        window.clearTimeout(intentTimer);
+        intentTimer = window.setTimeout(() => (intent = 0), GESTURE_GAP_MS);
+        if (intent >= EXIT_INTENT_PX) exit();
+      }
+
+      function onWheel(event) {
+        if (event.ctrlKey) return;
+        if (gated) {
+          armGate();
+          return;
+        }
+        if (event.deltaY >= 0 || !atRest()) return;
+        // deltaMode 1 is lines (Firefox with a mouse wheel), not px.
+        pullUp(-event.deltaY * (event.deltaMode === 1 ? 16 : 1), event);
+      }
+
+      let touchY = 0;
+      function onTouchStart(event) {
+        touching = true;
+        touchY = event.touches[0].clientY;
+        intent = 0;
+      }
+      function onTouchMove(event) {
+        const y = event.touches[0].clientY;
+        const moved = y - touchY; // finger down = scrolling up
+        touchY = y;
+        if (gated) {
+          armGate();
+          return;
+        }
+        if (moved <= 0 || !atRest()) return;
+        pullUp(moved, event);
+      }
+      function onTouchEnd(event) {
+        touching = event.touches.length > 0;
+        if (gated) armGate();
+      }
+
+      function onKeyDown(event) {
+        if (!["ArrowUp", "PageUp", "Home"].includes(event.key) || !atRest()) return;
+        if (event.target instanceof Element && event.target.closest("input, textarea, select, [contenteditable]")) return;
+        event.preventDefault();
+        exit();
+      }
+
+      // Capture, so these run before Lenis' own listeners on the same element.
+      const listen = { capture: true, passive: false };
+      scroller.addEventListener("wheel", onWheel, listen);
+      scroller.addEventListener("touchstart", onTouchStart, { capture: true, passive: true });
+      scroller.addEventListener("touchmove", onTouchMove, listen);
+      scroller.addEventListener("touchend", onTouchEnd, { capture: true, passive: true });
+      scroller.addEventListener("touchcancel", onTouchEnd, { capture: true, passive: true });
+      scroller.addEventListener("scroll", brake, { passive: true });
+      window.addEventListener("keydown", onKeyDown);
+      // Lenis reports each step it takes before the frame is painted; the native event is a frame late.
+      const offLenisScroll = window.__lenis?.on("scroll", brake);
 
       // Already at or past the landing spot (reloaded or re-measured mid-page): show it finished.
       if (landing.scroll() >= landing.end) {
         phase = "done";
-        entryTl.progress(1);
+        entryTl.progress(1, true);
       }
 
       // ── SCROLL-DRIVEN OUTRO ──
@@ -336,7 +516,17 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence }) {
 
       // What GSAP's own revert doesn't undo.
       return () => {
-        window.__lenis?.start();
+        window.clearTimeout(gateTimer);
+        window.clearTimeout(intentTimer);
+        scroller.removeEventListener("wheel", onWheel, listen);
+        scroller.removeEventListener("touchstart", onTouchStart, { capture: true });
+        scroller.removeEventListener("touchmove", onTouchMove, listen);
+        scroller.removeEventListener("touchend", onTouchEnd, { capture: true });
+        scroller.removeEventListener("touchcancel", onTouchEnd, { capture: true });
+        scroller.removeEventListener("scroll", brake);
+        window.removeEventListener("keydown", onKeyDown);
+        offLenisScroll?.();
+        release();
         Object.assign(live, { power: 1, outro: 0, film: 0, picture: null });
         hero.style.clipPath = "";
         flash.removeAttribute("style");

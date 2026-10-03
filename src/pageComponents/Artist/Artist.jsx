@@ -109,6 +109,8 @@ function useScrubCrossfade(
   // position where that artist is shown whole (see scrollToIndex below).
   const scrollForIndex = useRef(null)
   // null means the user has not landed on an artist yet (e.g. entering from W1).
+  // -1 / `count` mean the section was last left through its top / bottom, so
+  // coming back in lands on the first / last artist, not one further along.
   const settledArtistIndex = useRef(null)
 
   useLayoutEffect(() => {
@@ -173,25 +175,41 @@ function useScrubCrossfade(
             // (especially GPC) can take over without being pulled back here.
             snap: {
               snapTo: (value, trigger) => {
-                if (snappingWithLenis) {
-                  return gsap.utils.clamp(
+                const here = () =>
+                  gsap.utils.clamp(
                     0,
                     1,
                     (trigger.scroll() - trigger.start) / (trigger.end - trigger.start),
                   )
+                // Still gliding to an artist. If Lenis is no longer locked the
+                // glide was cut short by something stopping it (GPC holding
+                // the page), and it will never report back: carry on as usual.
+                if (snappingWithLenis && window.__lenis?.isLocked) return here()
+                snappingWithLenis = false
+
+                // Arriving from a neighbouring section (the glide down from
+                // W1, GPC handing the page back) and already resting inside
+                // the first / last artist's hold: that artist is whole and
+                // still, so just take it as settled instead of scrolling on.
+                // (`value` is where ScrollTrigger reckons the scroll would
+                // coast to; returning it would send the page there, so these
+                // return where the page actually is.)
+                const settled = settledArtistIndex.current
+                const time = here() * total
+                if ((settled === null || settled < 0) && time <= HOLD) {
+                  settledArtistIndex.current = 0
+                  return here()
+                }
+                if (settled !== null && settled >= count && time >= total - HOLD) {
+                  settledArtistIndex.current = count - 1
+                  return here()
                 }
 
                 const direction = trigger.direction
                 if (direction > 0) {
-                  pendingArtistIndex =
-                    settledArtistIndex.current === null
-                      ? 0
-                      : settledArtistIndex.current + 1
+                  pendingArtistIndex = settled === null ? 0 : settled + 1
                 } else if (direction < 0) {
-                  pendingArtistIndex =
-                    settledArtistIndex.current === null
-                      ? count - 1
-                      : settledArtistIndex.current - 1
+                  pendingArtistIndex = settled === null ? count - 1 : settled - 1
                 } else {
                   // On the homepage the Artists trigger can first become
                   // active in the same frame that content is unlocked from
@@ -217,10 +235,18 @@ function useScrubCrossfade(
                 // section instead of snapping back to an artist.
                 if (pendingArtistIndex < 0 || pendingArtistIndex >= count) {
                   pendingArtistIndex = null
-                  return value
+                  // Lenis is already carrying the page where the user sent
+                  // it; don't have ScrollTrigger tween it somewhere as well.
+                  return window.__lenis ? here() : value
                 }
 
                 const lenis = window.__lenis
+                // Something else is holding the page (a locked glide, GPC):
+                // a scrollTo would be dropped and never report back.
+                if (lenis && (lenis.isStopped || lenis.isLocked)) {
+                  pendingArtistIndex = null
+                  return here()
+                }
                 if (lenis) {
                   const targetIndex = pendingArtistIndex
                   const target =
@@ -239,11 +265,7 @@ function useScrubCrossfade(
                   })
                   // Lenis owns the home scroller; avoid a competing native
                   // ScrollTrigger scroll tween.
-                  return gsap.utils.clamp(
-                    0,
-                    1,
-                    (trigger.scroll() - trigger.start) / (trigger.end - trigger.start),
-                  )
+                  return here()
                 }
 
                 return artistStops[pendingArtistIndex]
@@ -263,6 +285,12 @@ function useScrubCrossfade(
             },
           }),
           invalidateOnRefresh: true,
+          onLeave: () => {
+            settledArtistIndex.current = count
+          },
+          onLeaveBack: () => {
+            settledArtistIndex.current = -1
+          },
           onUpdate: (self) => {
             if (onIndexChange) {
               // Which artist is showing, counting the holds: the label flips
