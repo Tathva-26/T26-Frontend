@@ -130,9 +130,14 @@ function ExpoTransitionContent() {
       // Keep opacity in CSS so the ready state can hide the illustration when
       // the model loads, even if scrolling is paused at that moment.
       gsap.set(fallback, { '--journey-fallback-opacity': pose.opacity, width: box.slotWidth, height: box.slotHeight, x: x - box.slotWidth / 2, y: y - box.slotHeight / 2, scale: pose.scale * 8 / (8 - pose.depth), rotationX: pose.pitch * 180 / Math.PI })
-      const veil = exit > 0 ? Math.sin(exit * Math.PI) : Math.sin(Math.PI * Math.min(1, Math.max(0, (entry - .04) / .66)))
-      gsap.set(mist, { opacity: veil * .48, '--veil-drift': `${progress * -18}%` })
-      gsap.set(tc, { filter: `blur(${veil * 3}px) saturate(${1 - veil * .35})` })
+      if (plane.clientWidth >= 768) {
+        const veil = exit > 0 ? Math.sin(exit * Math.PI) : Math.sin(Math.PI * Math.min(1, Math.max(0, (entry - .04) / .66)))
+        gsap.set(mist, { opacity: veil * .48, '--veil-drift': `${progress * -18}%` })
+        gsap.set(tc, { filter: `blur(${veil * 3}px) saturate(${1 - veil * .35})` })
+      } else {
+        gsap.set(mist, { opacity: 0 })
+        gsap.set(tc, { clearProps: 'filter' })
+      }
       // Erode the poster through a fixed cloud field, rather than opening a
       // geometric window around the incoming exhibit. Alpha thresholds are
       // deterministic so reversing scroll reconstructs the same poster.

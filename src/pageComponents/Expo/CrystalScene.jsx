@@ -63,6 +63,7 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
   const pointer = useRef(null);
   const [dpr, setDpr] = useState(1);
   const [compact, setCompact] = useState(true);
+  const [mobile, setMobile] = useState(false);
   const controlsRect = (element) => element.closest('[data-expo-progress]')?.querySelector('[data-expo-slot]')?.getBoundingClientRect() || element.getBoundingClientRect();
 
   const reset = () => {
@@ -113,15 +114,23 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
 
   useEffect(() => {
     const query = window.matchMedia("(pointer: coarse), (max-width: 767px)");
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
     const resize = () => {
       const modestHardware = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) || (navigator.deviceMemory && navigator.deviceMemory <= 4);
       const small = query.matches || modestHardware;
+      setMobile(mobileQuery.matches);
       setCompact(Boolean(small));
       setDpr(Math.min(window.devicePixelRatio || 1, small ? 1 : window.innerWidth < 1200 ? 1.25 : 1.5));
     };
-    resize(); query.addEventListener("change", resize);
+    resize();
+    query.addEventListener("change", resize);
+    mobileQuery.addEventListener("change", resize);
     window.addEventListener('resize', resize);
-    return () => { query.removeEventListener("change", resize); window.removeEventListener('resize', resize); };
+    return () => {
+      query.removeEventListener("change", resize);
+      mobileQuery.removeEventListener("change", resize);
+      window.removeEventListener('resize', resize);
+    };
   }, []);
 
   return (
@@ -137,7 +146,7 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
         <Suspense fallback={null}>
           <SceneEnvironment shared={!!journey} />
           <CrystalModel target={target} compact={compact} onReady={onReady} onMood={reportMood} journey={journey} onProject={onProject} />
-          {journey && <ConclaveVeil journey={journey} />}
+          {journey && !mobile && <ConclaveVeil journey={journey} />}
         </Suspense>
       </Canvas>
       <span ref={feedback} aria-live='polite' style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)' }} />
