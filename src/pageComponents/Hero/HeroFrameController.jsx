@@ -27,6 +27,28 @@ const MOBILE_SWIPE_THRESHOLD = 40 // px
 const MOBILE_SWIPE_COOLDOWN_MS = 400 // ms
 const MOBILE_GESTURE_IDLE_MS = 150 // gap between deltas long enough to treat as a new gesture
 
+// Desktop only: a trackpad flick keeps firing wheel events for a second or more after the portal
+// has opened. Frame must not read that tail as a fresh scroll-down, or one big scroll from Hero
+// would carry straight through W1 into the next section. Frame ignores downward wheel input until
+// the wheel has been quiet for this long, so W1 always gets to be seen and takes its own gesture.
+const FRAME_GESTURE_GAP_MS = 140
+// ...and never sooner than this after Frame took over, however the wheel reports its events
+// (a free-spinning mouse wheel can leave gaps longer than the one above mid-spin).
+const FRAME_MIN_DWELL_MS = 500
+
+// Frame -> content. Leaving W1 is a single eased glide down to the first section rather than
+// whatever the wheel happened to deliver, and it is locked, so a hard scroll can't carry past it.
+const CONTENT_GLIDE_S = 1.2
+// The glide stops this far inside the first section, so that section's own scroll logic sees
+// the page arrive (at exactly its top edge it isn't "in" it yet).
+const CONTENT_GLIDE_INSET_PX = 4
+// Touch screens: how long the page has to be still before it counts as at rest, and how far it
+// has to have travelled since it last rested for that to count as a direction.
+const TOUCH_IDLE_MS = 160
+const TOUCH_INTENT_PX = 24
+const easeInOut = (t) =>
+  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+
 // Same breakpoint Hero uses for its mobile layout.
 const MOBILE_QUERY = '(max-width: 768px)'
 const subscribeMobile = (cb) => {
@@ -114,7 +136,9 @@ export default function HeroFrameController({ children }) {
   // Once Frame is showing and the user keeps scrolling down, stop intercepting the wheel and
   // let normal page scroll reach `children`. Scrolling back up to the very top re-locks.
   const [unlocked, setUnlocked] = useState(false)
-  // `children` are heavy, so they only mount once the user first unlocks past Frame.
+  // `children` are heavy. They mount, hidden, right after the first paint, while the preloader
+  // is still up: it waits for everything in them to load (see Loading.jsx), so their cost is
+  // paid behind it rather than as dropped frames in the middle of a scroll.
   const [hasReachedContent, setHasReachedContent] = useState(false)
   // wrapper around `children`, observed so ScrollTrigger can re-measure when content settles
   const contentRef = useRef(null)
@@ -123,6 +147,10 @@ export default function HeroFrameController({ children }) {
   const mobileTouchAccumRef = useRef(0)
   const mobileTouchDirRef = useRef(0)
   const mobileTouchLastAtRef = useRef(0)
+  // Desktop Frame wheel gate (see FRAME_GESTURE_GAP_MS). Closed whenever Frame has just taken over.
+  const frameGateClosedRef = useRef(false)
+  const frameLastWheelAtRef = useRef(0)
+  const frameEnteredAtRef = useRef(0)
 
   useEffect(() => {
     sectionRef.current = section
@@ -138,6 +166,11 @@ export default function HeroFrameController({ children }) {
       // panel back and forth.
       if (isMobile && performance.now() < mobileCooldownUntilRef.current) return
       sectionRef.current = target
+      if (target === 'frame') {
+        frameGateClosedRef.current = true
+        frameLastWheelAtRef.current = performance.now()
+        frameEnteredAtRef.current = performance.now()
+      }
       setSection(target)
       setHeroVisible(target === 'hero')
       if (isMobile) {
@@ -170,11 +203,21 @@ export default function HeroFrameController({ children }) {
   }, [enterFrame])
 
   const handleFrameScroll = useCallback(
-    (deltaY) => {
+    (deltaY, timeStamp) => {
       if (!isMobile) {
+        // When the wheel event happened, not when it got handled: events held up behind a busy
+        // main thread arrive in a burst, and must not look like a pause followed by a new gesture.
+        const now = timeStamp ?? performance.now()
+        const quietFor = now - frameLastWheelAtRef.current
+        frameLastWheelAtRef.current = now
         if (deltaY < 0) {
           returnToHero()
         } else if (deltaY > 0) {
+          if (frameGateClosedRef.current) {
+            if (quietFor < FRAME_GESTURE_GAP_MS) return
+            if (now - frameEnteredAtRef.current < FRAME_MIN_DWELL_MS) return
+            frameGateClosedRef.current = false
+          }
           setUnlocked(true)
           setHasReachedContent(true)
         }
@@ -217,6 +260,102 @@ export default function HeroFrameController({ children }) {
     window.__lenis?.resize()
     if (hasReachedContent) ScrollTrigger.refresh()
   }, [unlocked, hasReachedContent])
+
+  // Mount `children` behind the preloader. (A frame late, so Hero gets its first paint first.)
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setHasReachedContent(true))
+    return () => cancelAnimationFrame(frame)
+  }, [])
+
+  // Frame <-> content. The stretch of scroll between W1 and the first section is never left to
+  // the wheel: going down it is one eased, locked glide onto that section (see CONTENT_GLIDE_S),
+  // going up the same glide back to W1, so the page can't be left hanging half way between the
+  // two and a hard scroll can't carry past either. Defined after the effect above, which has
+  // already let Lenis and ScrollTrigger re-measure the now-unclipped page.
+  useEffect(() => {
+    if (!unlocked) return undefined
+    const lenis = window.__lenis
+    if (!lenis) return undefined
+
+    const glide = (direction) => {
+      const content = contentRef.current
+      const scroller = content?.closest('.main-scroll')
+      if (!content || !scroller || lenis.isLocked || lenis.isStopped) return
+      const scroll = scroller.scrollTop
+      // cheap way out for every scroll further down the page
+      if (scroll > scroller.clientHeight * 2) return
+      const top =
+        scroll +
+        content.getBoundingClientRect().top -
+        scroller.getBoundingClientRect().top
+      if (scroll >= top || (direction < 0 && scroll <= 0)) return
+      lenis.scrollTo(direction < 0 ? 0 : top + CONTENT_GLIDE_INSET_PX, {
+        duration: CONTENT_GLIDE_S,
+        easing: easeInOut,
+        lock: true,
+        force: true,
+      })
+    }
+
+    // Just unlocked: glide down. A couple of frames late, so that when `children` have to mount
+    // at this very moment the dropped frames aren't counted as part of the glide.
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        lenis.resize()
+        glide(1)
+      })
+    })
+    // Scrolled back up out of the first section (or dragged into the gap): finish the trip.
+    // Not while a finger is down: a native drag can't be taken over until it is released.
+    // Touch screens scroll natively (finger, then momentum), and a scripted glide run against
+    // that makes the page judder. There nothing is done while the page is moving: once it has
+    // come to rest in the gap with the finger off, it is eased (not locked, a touch takes it
+    // back) to whichever of the two it was taken towards since it last rested.
+    const touchScreen = window.matchMedia('(pointer: coarse)').matches
+    let idle = 0
+    let rested = 0
+    const settle = () => {
+      const content = contentRef.current
+      const scroller = content?.closest('.main-scroll')
+      if (!content || !scroller) return
+      if (lenis.isTouching || lenis.isLocked || lenis.isStopped) return
+      const scroll = scroller.scrollTop
+      const travelled = scroll - rested
+      rested = scroll
+      if (scroll > scroller.clientHeight * 2) return
+      const top =
+        scroll +
+        content.getBoundingClientRect().top -
+        scroller.getBoundingClientRect().top
+      if (scroll <= 0 || scroll >= top) return
+      const down =
+        Math.abs(travelled) >= TOUCH_INTENT_PX
+          ? travelled > 0
+          : scroll > top / 2
+      lenis.scrollTo(down ? top + CONTENT_GLIDE_INSET_PX : 0, {
+        duration: 0.5,
+        easing: easeInOut,
+      })
+    }
+    const settleSoon = () => {
+      window.clearTimeout(idle)
+      idle = window.setTimeout(settle, TOUCH_IDLE_MS)
+    }
+    const offScroll = lenis.on('scroll', () => {
+      if (touchScreen) settleSoon()
+      else if (!lenis.isTouching && lenis.direction !== 0)
+        glide(lenis.direction)
+    })
+    const scrollerEl = contentRef.current?.closest('.main-scroll')
+    if (touchScreen)
+      scrollerEl?.addEventListener('touchend', settleSoon, { passive: true })
+    return () => {
+      cancelAnimationFrame(frame)
+      window.clearTimeout(idle)
+      scrollerEl?.removeEventListener('touchend', settleSoon)
+      offScroll()
+    }
+  }, [unlocked])
 
   // `children` mount AFTER the page's load event, so ScrollTrigger's own auto-refresh has already
   // run. Images / videos / fonts inside them keep changing the layout after that, leaving every
@@ -264,6 +403,30 @@ export default function HeroFrameController({ children }) {
       e.preventDefault()
       // stop Lenis carrying leftover momentum into the locked state
       window.__lenis?.scrollTo(0, { immediate: true })
+      setUnlocked(false)
+    }
+
+    // Touch screens: the same, as a pull down on W1 while the page is already at the very top.
+    let touchY = 0
+    let pulled = 0
+    const handleTouchStart = (e) => {
+      touchY = e.touches[0].clientY
+      pulled = 0
+    }
+    const handleTouchMove = (e) => {
+      const y = e.touches[0].clientY
+      const moved = y - touchY // finger down = pulling the page down
+      touchY = y
+      if (mainScroll.scrollTop > 0 || moved <= 0) {
+        pulled = 0
+        return
+      }
+      pulled += moved
+      if (pulled < MOBILE_SWIPE_THRESHOLD) return
+      pulled = 0
+      window.__lenis?.scrollTo(0, { immediate: true })
+      mobileCooldownUntilRef.current =
+        performance.now() + MOBILE_SWIPE_COOLDOWN_MS
       setUnlocked(false)
     }
 

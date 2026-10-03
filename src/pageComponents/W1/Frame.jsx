@@ -58,15 +58,15 @@ const mobileCards = [
   {
     number: '01',
     title: 'WORKSHOPS',
-    description: (
-      <>
-        HANDS ON
-        <br />
-        MINDS ON
-        <br />
-        REAL WORLD
-      </>
-    ),
+    // description: (
+    //   <>
+    //     HANDS ON
+    //     <br />
+    //     MINDS ON
+    //     <br />
+    //     REAL WORLD
+    //   </>
+    // ),
     image: 'https://c.animaapp.com/UqxAlqQL/img/group-34@2x.png',
     position: 'absolute top-0 left-px w-[143px] h-[401px]',
     titleClass:
@@ -79,15 +79,15 @@ const mobileCards = [
   {
     number: '02',
     title: 'COMPETITIONS',
-    description: (
-      <>
-        THINK
-        <br />
-        SOLVE
-        <br />
-        BUILD
-      </>
-    ),
+    // description: (
+    //   <>
+    //     THINK
+    //     <br />
+    //     SOLVE
+    //     <br />
+    //     BUILD
+    //   </>
+    // ),
     image: 'https://c.animaapp.com/UqxAlqQL/img/group-35@2x.png',
     position: 'absolute top-px left-[174px] w-[143px] h-[401px]',
     titleClass:
@@ -100,15 +100,15 @@ const mobileCards = [
   {
     number: '03',
     title: 'LECTURES',
-    description: (
-      <>
-        LEARN
-        <br />
-        GAIN PERSPECTIVE
-        <br />
-        GROW
-      </>
-    ),
+    // description: (
+    //   <>
+    //     LEARN
+    //     <br />
+    //     GAIN PERSPECTIVE
+    //     <br />
+    //     GROW
+    //   </>
+    // ),
     image: 'https://c.animaapp.com/UqxAlqQL/img/group-36@2x.png',
     position: 'absolute top-[419px] left-0 w-[143px] h-[401px]',
     titleClass:
@@ -121,15 +121,15 @@ const mobileCards = [
   {
     number: '04',
     title: 'HACKATHONS',
-    description: (
-      <>
-        CODE
-        <br />
-        COLLABORATE
-        <br />
-        CREATE
-      </>
-    ),
+    // description: (
+    //   <>
+    //     CODE
+    //     <br />
+    //     COLLABORATE
+    //     <br />
+    //     CREATE
+    //   </>
+    // ),
     image: 'https://c.animaapp.com/UqxAlqQL/img/group-37@2x.png',
     position: 'absolute top-[419px] left-[174px] w-[143px] h-[401px]',
     titleClass:
@@ -342,7 +342,7 @@ export const Frame = ({ onScrollUp, onScroll, isActive }) => {
     const handleWheel = (e) => {
       if (typeof onScroll === 'function') {
         e.preventDefault()
-        onScroll(e.deltaY)
+        onScroll(e.deltaY, e.timeStamp)
       } else if (e.deltaY < 0 && typeof onScrollUp === 'function') {
         e.preventDefault()
         onScrollUp()

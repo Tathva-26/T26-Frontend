@@ -548,8 +548,9 @@ export default function RobowarsHero({ leadInVh = 0 }) {
       {/* Scroll range of the robots/title animation: the section minus the lead-in */}
       <div
         ref={timelineRef}
-        aria-hidden='true'
-        className='pointer-events-none absolute inset-x-0 bottom-0 h-(--robowars-h)'
+        data-robowars-timeline
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-(--robowars-h)"
       />
 
       <h1 id='robowars-title' className='sr-only'>
