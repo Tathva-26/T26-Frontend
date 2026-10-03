@@ -23,6 +23,8 @@ const assetPathPrefix = '/images/artist'
 const artists = [
   {
     name: 'Day 2 Artists',
+    description:
+      'Day 2 turns the volume all the way up! Hip-hop swagger, show-stopping vocals and stage lights blazing. Bring your loudest energy, because you will be singing along till your voice gives out!',
     background: `${assetPathPrefix}/21bbf.svg`,
     portrait: `${assetPathPrefix}/day2_main.svg`,
     portraitClassName: 'artist-portrait artist-portrait--arijit',
@@ -33,6 +35,8 @@ const artists = [
   },
   {
     name: 'Day 3 Artists',
+    description:
+      'Day 3 is the grand finale! A full squad takes over the stage with massive beats and even bigger energy. Sing it out, jump it out, and make it a night you will never forget!',
     background: `${assetPathPrefix}/bef85.svg`,
     portrait: `${assetPathPrefix}/day3.svg`,
     portraitClassName: 'artist-portrait artist-portrait--day3',
@@ -62,10 +66,7 @@ function ScheduleCard({ artist, activeIndex = 0, onSelectDay }) {
           </button>
         ))}
       </div>
-      <p>
-        Brace yourselves for a magical night as the legendary {artist.name}{' '}
-        takes the stage. Get ready to sing, sway, and make memories!
-      </p>
+      <p>{artist.description}</p>
     </div>
   )
 }
