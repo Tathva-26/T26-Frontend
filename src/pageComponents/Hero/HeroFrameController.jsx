@@ -60,6 +60,11 @@ export default function HeroFrameController({ children }) {
   const [heroVisible, setHeroVisible] = useState(true);
   // latest progress of Hero's portal animation (0..1)
   const heroProgressRef = useRef(0);
+  // After Frame -> Hero, Hero is parked at the END of its runway (progress ~1) and its scrubbed
+  // timeline lags the scroll, so for a moment after the user starts scrolling back it still reports
+  // ~1. Without this guard that reads as "portal full" and bounces straight back into Frame.
+  // Cleared once the portal has genuinely moved back; Wheeling/swiping down at the end still works.
+  const needsRearmRef = useRef(false);
 
   // Once Frame is showing and the user keeps scrolling down, stop intercepting the wheel and
   // let normal page scroll reach `children`. Scrolling back up to the very top re-locks.
@@ -79,6 +84,20 @@ export default function HeroFrameController({ children }) {
   const frameGateClosedRef = useRef(false);
   const frameLastWheelAtRef = useRef(0);
   const frameEnteredAtRef = useRef(0);
+
+  // By default ScrollTrigger does a FULL refresh (revert every pin/animation, re-measure, re-apply)
+  // when the tab becomes visible again. With this many sections that takes long enough to see, and it
+  // lands right as Chrome repaints its dropped tiles, so pinned content flashes over Hero. Keep the
+  // load/resize refreshes, drop only the tab-visibility one (the lighter re-sync lives below).
+  // Must run in an effect: at module level it executes during SSR / before the plugin is registered,
+  // which is what threw "Cannot read properties of undefined (reading 'length')".
+  useEffect(() => {
+    try {
+      ScrollTrigger.config({ autoRefreshEvents: "DOMContentLoaded,load,resize" });
+    } catch (e) {
+      /* older GSAP without this option: keep the default behaviour */
+    }
+  }, []);
 
   useEffect(() => {
     sectionRef.current = section;
@@ -113,11 +132,18 @@ export default function HeroFrameController({ children }) {
 
   // Frame -> Hero. Hero is still parked at the end of its runway (portal fully open, which
   // looks exactly like Frame), so scrolling up just plays the portal back.
-  const returnToHero = useCallback(() => swapTo("hero"), [swapTo]);
+  const returnToHero = useCallback(() => {
+    needsRearmRef.current = true;
+    swapTo("hero");
+  }, [swapTo]);
 
   const handleHeroProgress = useCallback(
     (progress) => {
       heroProgressRef.current = progress;
+      if (needsRearmRef.current) {
+        if (progress < AUTO_ENTER_PROGRESS - 0.03) needsRearmRef.current = false;
+        return;
+      }
       if (sectionRef.current === "hero" && progress >= AUTO_ENTER_PROGRESS) enterFrame();
     },
     [enterFrame]

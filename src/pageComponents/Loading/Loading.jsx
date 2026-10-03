@@ -441,20 +441,20 @@ export default function Preloader({ onComplete }) {
                   className='font-mono tracking-[3.5px]'
                 >
                   <textPath href='#textPathOuter'>
-                    GRAPHIC DESIGN &nbsp;&nbsp;•&nbsp;&nbsp; PERFORMANCE
-                    OPTIMIZATION &nbsp;&nbsp;•&nbsp;&nbsp; A/B TESTING
-                    &nbsp;&nbsp;•&nbsp;&nbsp; CMS INTEGRATION
-                    &nbsp;&nbsp;•&nbsp;&nbsp; APP DESIGN
+                    GRAPHIC DESIGN &nbsp;&nbsp;•&nbsp;&nbsp; TATHVA'26
+                    OPTIMIZATION &nbsp;&nbsp;•&nbsp;&nbsp; WORKSHOPS
+                    &nbsp;&nbsp;•&nbsp;&nbsp; EXHIBITS
+                    &nbsp;&nbsp;•&nbsp;&nbsp; COMPETITIONS
                     &nbsp;&nbsp;•&nbsp;&nbsp; ANIMATION
-                    &nbsp;&nbsp;•&nbsp;&nbsp; PRODUCT STRATEGY
-                    &nbsp;&nbsp;•&nbsp;&nbsp; USABILITY TESTING
-                    &nbsp;&nbsp;•&nbsp;&nbsp; UX &nbsp;&nbsp;•&nbsp;&nbsp;
-                    PROTOTYPING &nbsp;&nbsp;•&nbsp;&nbsp; VISUAL DESIGN
-                    &nbsp;&nbsp;•&nbsp;&nbsp; INFORMATION ARCHITECTURE
-                    &nbsp;&nbsp;•&nbsp;&nbsp; FRONT-END
-                    &nbsp;&nbsp;•&nbsp;&nbsp; BACK-END &nbsp;&nbsp;•&nbsp;&nbsp;
-                    BRAND IDENTITY &nbsp;&nbsp;•&nbsp;&nbsp; CROSS-BROWSER
-                    &nbsp;&nbsp;•&nbsp;&nbsp; UI &nbsp;&nbsp;•&nbsp;&nbsp;
+                    &nbsp;&nbsp;•&nbsp;&nbsp; FESTIVITIES
+                    &nbsp;&nbsp;•&nbsp;&nbsp; PROSHOW
+                    &nbsp;&nbsp;•&nbsp;&nbsp; DESIGN &nbsp;&nbsp;•&nbsp;&nbsp;
+                    ARTISTS &nbsp;&nbsp;•&nbsp;&nbsp; CREATORS
+                    &nbsp;&nbsp;•&nbsp;&nbsp; DEVELOPERS
+                    &nbsp;&nbsp;•&nbsp;&nbsp; INNOVATORS
+                    &nbsp;&nbsp;•&nbsp;&nbsp; WHEELS &nbsp;&nbsp;•&nbsp;&nbsp;
+                    IDENTITY &nbsp;&nbsp;•&nbsp;&nbsp; ROBOTS
+                    &nbsp;&nbsp;•&nbsp;&nbsp; EXPO &nbsp;&nbsp;•&nbsp;&nbsp;
                     INTERACTIVE EXPERIENCE &nbsp;&nbsp;•&nbsp;&nbsp;
                   </textPath>
                 </text>
