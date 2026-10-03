@@ -155,6 +155,10 @@ function useScrubCrossfade(
       )
       let pendingArtistIndex = null
       let snappingWithLenis = false
+      // Where the page was last settled on an artist. ScrollTrigger can ask
+      // to snap again once a glide has ended without the user having scrolled
+      // at all; that must not count as another gesture and skip an artist.
+      let restingScroll = null
 
       const tl = gsap.timeline({
         defaults: { duration: 1 },
@@ -186,6 +190,11 @@ function useScrubCrossfade(
                 // the page), and it will never report back: carry on as usual.
                 if (snappingWithLenis && window.__lenis?.isLocked) return here()
                 snappingWithLenis = false
+                if (
+                  restingScroll !== null &&
+                  Math.abs(trigger.scroll() - restingScroll) < 2
+                )
+                  return here()
 
                 // Arriving from a neighbouring section (the glide down from
                 // W1, GPC handing the page back) and already resting inside
@@ -198,10 +207,12 @@ function useScrubCrossfade(
                 const time = here() * total
                 if ((settled === null || settled < 0) && time <= HOLD) {
                   settledArtistIndex.current = 0
+                  restingScroll = trigger.scroll()
                   return here()
                 }
                 if (settled !== null && settled >= count && time >= total - HOLD) {
                   settledArtistIndex.current = count - 1
+                  restingScroll = trigger.scroll()
                   return here()
                 }
 
@@ -261,6 +272,7 @@ function useScrubCrossfade(
                       settledArtistIndex.current = targetIndex
                       pendingArtistIndex = null
                       snappingWithLenis = false
+                      restingScroll = trigger.scroll()
                     },
                   })
                   // Lenis owns the home scroller; avoid a competing native

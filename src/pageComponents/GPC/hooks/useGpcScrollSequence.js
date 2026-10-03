@@ -253,13 +253,19 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       // over the last artist, the scroll glides to the exact spot where its stage is fully in
       // view, then is held still (Lenis stopped) while the entry plays out, so the whole
       // transition is seen. Scrolling back above GPC re-arms it for the next time.
-      const landing = ScrollTrigger.create({
+      // When the page is already scrolled past GPC as this is built (a reload or a re-measure
+      // mid-page), ScrollTrigger fires onEnter / onLeave from inside create(), before `landing`
+      // exists. Those are ignored; where the page already is gets settled right after the
+      // listeners are in place (see "Already there" below).
+      let landing = null;
+      landing = ScrollTrigger.create({
         scroller,
         trigger: track,
         start: "top bottom",
         end: "top top",
-        onEnter: land,
-        onLeaveBack: reset,
+        onEnter: () => landing && land(),
+        onLeave: () => landing && arrive(),
+        onLeaveBack: () => landing && reset(),
       });
 
       // ── HOLD / GATE ──
@@ -311,6 +317,11 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         if (phase !== "idle") return;
         phase = "landing";
         dropGate();
+        // Touch screens scroll natively, under the finger and then on momentum, and a scripted
+        // glide run against that makes the page judder. There the drag is left alone: nothing of
+        // GPC shows while it slides in (its screen, a hole, covers the view), and the entry
+        // starts once the drag has brought it all the way up (see arrive()).
+        if (touchScreen) return;
         hold();
         const lenis = window.__lenis;
         if (!lenis) {
@@ -319,6 +330,15 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
           return;
         }
         lenis.scrollTo(landing.end, { duration: 0.9, lock: true, force: true, easing: easeOut, onComplete: play });
+      }
+
+      // Touch screens: GPC has been dragged fully into view. Stop the page there, once, and play.
+      function arrive() {
+        if (!touchScreen || phase !== "landing") return;
+        hold();
+        window.__lenis?.scrollTo(landing.end, { immediate: true, force: true });
+        if (Math.abs(scroller.scrollTop - landing.end) > 0.5) scroller.scrollTop = landing.end;
+        play();
       }
 
       function reset() {
@@ -338,6 +358,9 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       // the page can never drift out between GPC and the artists; the only way up is exit().
       function brake() {
         if (braking || phase !== "done") return;
+        // Touch screens: put back once per gesture. Correcting a native drag on every scroll
+        // event is a tug of war with the finger, which is what judder is.
+        if (touchScreen && gated) return;
         const top = landing.end;
         const scroll = scroller.scrollTop;
         if (scroll >= top - 0.5 || scroll < landing.start) return;
@@ -443,10 +466,14 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       // Lenis reports each step it takes before the frame is painted; the native event is a frame late.
       const offLenisScroll = window.__lenis?.on("scroll", brake);
 
-      // Already at or past the landing spot (reloaded or re-measured mid-page): show it finished.
+      window.__gpcDbg = () => ({ phase, gated, touchScreen, start: landing.start, end: landing.end, scroll: landing.scroll(), prog: landing.progress, active: landing.isActive }); // DEBUG
+      // Already there. At or past the landing spot: show the entry finished. Part way in
+      // (GPC sliding over the last artist): finish landing as if it had just been scrolled to.
       if (landing.scroll() >= landing.end) {
         phase = "done";
         entryTl.progress(1, true);
+      } else if (landing.scroll() > landing.start) {
+        land();
       }
 
       // ── SCROLL-DRIVEN OUTRO ──

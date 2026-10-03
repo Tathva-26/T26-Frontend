@@ -229,8 +229,11 @@ export default function HeroFrameController({ children }) {
     });
     // Scrolled back up out of the first section (or dragged into the gap): finish the trip.
     // Not while a finger is down: a native drag can't be taken over until it is released.
+    // Wheel / trackpad only. Touch screens scroll natively (finger, then momentum), and a
+    // scripted glide run against that makes the page judder, so there the gap scrolls freely.
+    const touchScreen = window.matchMedia("(pointer: coarse)").matches;
     const offScroll = lenis.on("scroll", () => {
-      if (lenis.isTouching || lenis.direction === 0) return;
+      if (touchScreen || lenis.isTouching || lenis.direction === 0) return;
       glide(lenis.direction);
     });
     return () => {
