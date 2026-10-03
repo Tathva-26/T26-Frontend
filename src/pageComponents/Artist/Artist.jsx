@@ -23,6 +23,7 @@ const assetPathPrefix = '/images/artist'
 const artists = [
   {
     name: 'Day 2 Artists',
+    performers: ['Vedan', 'Akasa', 'Gabri', 'Stic'],
     background: `${assetPathPrefix}/21bbf.svg`,
     portrait: `${assetPathPrefix}/day2_main.svg`,
     portraitClassName: 'artist-portrait artist-portrait--arijit',
@@ -33,6 +34,8 @@ const artists = [
   },
   {
     name: 'Day 3 Artists',
+    performers: ['Sachet-Parampara', 'Thamarassery Churam', 'DJ noise'],
+    performersPerLine: 1,
     background: `${assetPathPrefix}/bef85.svg`,
     portrait: `${assetPathPrefix}/day3.svg`,
     portraitClassName: 'artist-portrait artist-portrait--day3',
@@ -63,8 +66,10 @@ function ScheduleCard({ artist, activeIndex = 0, onSelectDay }) {
         ))}
       </div>
       <p>
-        Brace yourselves for a magical night as the legendary {artist.name}{' '}
-        takes the stage. Get ready to sing, sway, and make memories!
+        Brace yourselves for a magical night as the legendary
+        <br />
+        {artist.performers.join(', ')} take the stage. Get ready to sing,
+        sway, and make memories!
       </p>
     </div>
   )
@@ -802,6 +807,25 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
   )
 })
 
+function ArtistName({ artist, className }) {
+  if (artist.performers) {
+    return (
+      <div className={`artist-names-container ${className}`}>
+        {artist.performers.map((performer, idx) => (
+          <span
+            key={idx}
+            className={`artist-single-name artist-single-name--${idx}`}
+          >
+            {performer}
+          </span>
+        ))}
+      </div>
+    )
+  }
+
+  return <h2 className={className}>{artist.name}</h2>
+}
+
 function ArtistContent({
   artist,
   onRegisterConnector,
@@ -922,7 +946,7 @@ function ArtistContent({
         />
       )}
 
-      <h2 className='slide__name'>{artist.name}</h2>
+      <ArtistName artist={artist} className='slide__name' />
     </div>
   )
 }
@@ -1147,7 +1171,10 @@ function ArtistMobile() {
               <div className='mobile-stage'>
                 <ArtistBoard artist={artist} />
               </div>
-              <h2 className='mobile-name'>{artist.name}</h2>
+              <ArtistName
+                artist={artist}
+                className={`mobile-name${artist.performersPerLine === 1 ? ' mobile-name--raised' : ''}`}
+              />
               <p className='mobile-desc'>
                 Brace yourselves for a magical night as the legendary{' '}
                 {artist.name} takes the stage. Get ready to sing, sway, and make
@@ -1393,8 +1420,8 @@ export default function App() {
         .schedule-card {
           position: absolute;
           z-index: 3;
-          top: 25%;
-          right: -5%;
+          top: 20%;
+          right: -8%;
           width: min(320px, 50%);
           min-width: 260px;
           overflow: hidden;
@@ -1594,10 +1621,33 @@ export default function App() {
           aspect-ratio: 1;
           border-radius: 50%;
         }
-        .slide--day-2-artists .slide__name {
-          top: 10%;
-          left: 40%;
-        }
+
+        /* Day 2: Individual name placement between pictures */
+/* Day 2: Individual name placement between pictures */
+.slide--day-2-artists .artist-single-name--1 {
+  /* Vedan: between top-left avatar and top avatar2, above secondary */
+  top: 37%;
+  left: 25%;
+  transform: rotate(-7deg);
+}
+.slide--day-2-artists .artist-single-name--0 {
+  /* Akasa: right of avatar2, above primary */
+  top: 34%;
+  left: 77%;
+  transform: rotate(5deg);
+}
+.slide--day-2-artists .artist-single-name--2 {
+  /* Gabri: between secondary and primary, below avatar2 */
+  top: 64%;
+  left: 52%;
+  transform: rotate(-6deg);
+}
+.slide--day-2-artists .artist-single-name--3 {
+  /* Stic: below primary */
+  top: 80%;
+  left: 80%;
+  transform: rotate(4deg);
+}
 
         /* --- DAY 3 SPECIFIC LAYOUT --- */
         .slide--day-3-artists .slide__avatar {
@@ -1612,19 +1662,44 @@ export default function App() {
           top: 10%;
           left: 68%;
         }
-        .slide--day-3-artists .slide__name {
-          top: 65%;
-          left: 65%;
-        }
+
+        /* Day 3: Individual name placement between pictures */
+/* Day 3: Individual name placement between pictures */
+.slide--day-3-artists .artist-single-name--0 {
+  /* Sachet-Parampara: between avatar and primary, above secondary */
+  top: 22%;
+  left: 25%;
+  transform: rotate(-6deg);
+}
+.slide--day-3-artists .artist-single-name--1 {
+  /* Thamarassery Churam: right of secondary, below primary */
+  top: 63%;
+  left: 60%;
+  transform: rotate(-8deg);
+}
+.slide--day-3-artists .artist-single-name--2 {
+  /* DJ noise: below avatar, left of secondary */
+  top: 69%;
+  left: 6%;
+  transform: rotate(4deg);
+}
 
         .slide__name {
           position: absolute;
+          inset: 0;
           z-index: 3;
           margin: 0;
+          pointer-events: none;
+        }
+
+        .artist-single-name {
+          position: absolute;
           color: white;
           font-family: 'La Belle Aurore:Regular', cursive;
-          font-size: clamp(28px, 3.2vw, 52px);
-          transform: rotate(-10deg);
+          font-size: clamp(24px, 2.5vw, 42px);
+          white-space: nowrap;
+          pointer-events: auto;
+          line-height: 1;
         }
 
         .connector-overlay {
@@ -1825,6 +1900,20 @@ export default function App() {
             font-size: clamp(6px, 12vw, 66px);
             line-height: 0.95;
             text-transform: uppercase;
+          }
+
+          .mobile-name--raised {
+            top: 24px;
+          }
+
+          .mobile-name .artist-single-name {
+            position: static;
+            display: block;
+            color: inherit;
+            font-family: inherit;
+            font-size: inherit;
+            transform: none;
+            line-height: inherit;
           }
 
           .mobile-desc {
