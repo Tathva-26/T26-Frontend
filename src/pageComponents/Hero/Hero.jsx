@@ -25,7 +25,6 @@ const assetBase = '/images/hero/'
 // The portal is drawn by this video; it sits over a hole cut in the scene (the real Frame shows
 // through the hole) and fades out as the portal grows. PORTAL_IMG_FADE_END = portal progress (0..1) at which it is fully gone.
 const PORTAL_VIDEO = 'portalloop.mp4' // small, low-res, muted, seamless loop
-const PORTAL_POSTER = 'img.png' // shown until the first video frame is ready
 const PORTAL_IMG_FADE_END = 0.85
 
 // Decorative PNG frame around the portal. It sits inside the portal div, so it zooms with it.
@@ -1389,7 +1388,6 @@ export const Hero = ({
               <video
                 ref={portalVideoRef}
                 src={`${assetBase}${PORTAL_VIDEO}`}
-                poster={`${assetBase}${PORTAL_POSTER}`}
                 autoPlay
                 loop
                 muted
