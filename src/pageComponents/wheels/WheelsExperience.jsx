@@ -611,6 +611,10 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       }, SCROLL_HINT_IDLE_MS)
     }
 
+    // Touch screens scroll natively, on momentum. A scripted glide started in
+    // the middle of that fights it for the page and shows as a jump, so the
+    // landing below is for wheel / trackpad only.
+    const touchScreen = window.matchMedia('(pointer: coarse)').matches
     let handoffSnapStarted = false
     const trigger = ScrollTrigger.create({
       scroller,
@@ -638,6 +642,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
         } else if (
           revealUnderlay &&
           lenis &&
+          !touchScreen &&
           !handoffSnapStarted &&
           self.direction > 0 &&
           self.progress >= FRAME_PROGRESS_END
