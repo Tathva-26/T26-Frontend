@@ -2329,37 +2329,6 @@ export default function WorkshopsPage() {
           </div>
         </section>
 
-        {/* SEARCH BAR & CATEGORY FILTERS */}
-        <section className='mb-10 w-full flex flex-col items-center'>
-          {/* SEARCH INPUT */}
-          <div className='relative mb-5 w-[clamp(280px,45vw,720px)] max-w-[90vw]'>
-            <input
-              type='text'
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder='Search'
-              className='h-8 w-full rounded-[58.807px] bg-white pl-5 pr-11 text-xs font-medium text-slate-900 placeholder:text-slate-500 shadow-[0_2px_20px_rgba(255,255,255,0.15)] transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500'
-            />
-
-            {/* SEARCH ICON */}
-            <div className='absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600'>
-              <svg
-                className='w-4 h-4 sm:w-4.5 sm:h-4.5'
-                fill='none'
-                viewBox='0 0 24 24'
-                stroke='currentColor'
-                strokeWidth='2.5'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
-                />
-              </svg>
-            </div>
-          </div>
-        </section>
-
         {/* WORKSHOP CARDS GRID */}
         <section className='relative w-full'>
           {filteredWorkshops.length === 0 ? (
@@ -2462,7 +2431,7 @@ export default function WorkshopsPage() {
                                   if (el) cardRefs.current[workshop.id] = el
                                   else delete cardRefs.current[workshop.id]
                                 }}
-                                className='relative aspect-[0.9825] w-full overflow-hidden bg-[#0d101c]'
+                                className='relative aspect-[0.9] w-full overflow-hidden bg-[#0d101c]'
                                 style={{
                                   transformStyle: 'preserve-3d',
                                   transformOrigin: 'center center',
@@ -2503,82 +2472,121 @@ export default function WorkshopsPage() {
                                     className='workshop-pulse-overlay pointer-events-none absolute inset-0 z-10'
                                   />
 
-                                  {/* CARD VISUAL ARTWORK */}
-                                  <div
-                                    className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-[#08090e]'
-                                    style={{
-                                      maskImage:
-                                        "url('/images/workshops/workshop-card-image.png')",
-                                      WebkitMaskImage:
-                                        "url('/images/workshops/workshop-card-image.png')",
-                                      maskPosition: 'center',
-                                      WebkitMaskPosition: 'center',
-                                      maskRepeat: 'no-repeat',
-                                      WebkitMaskRepeat: 'no-repeat',
-                                      maskSize: '100% 100%',
-                                      WebkitMaskSize: '100% 100%',
-                                    }}
-                                  >
-                                    <div className='absolute inset-0 p-5 '>
-                                      <Image
-                                        src='/images/workshops/astronaut-outline.png'
-                                        alt='Astronaut Outline'
-                                        fill
-                                        sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                                        className='object-contain object-center'
-                                      />
+                                  {/* ORIGINAL CARD SHAPE — kept at its original
+                                      proportions so the mask, cutout and border
+                                      artwork are not stretched */}
+                                  <div className='absolute inset-x-0 top-0 aspect-[0.9825]'>
+                                    {/* CARD VISUAL ARTWORK */}
+                                    <div
+                                      className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-[#08090e]'
+                                      style={{
+                                        maskImage:
+                                          "url('/images/workshops/workshop-card-image.png')",
+                                        WebkitMaskImage:
+                                          "url('/images/workshops/workshop-card-image.png')",
+                                        maskPosition: 'center',
+                                        WebkitMaskPosition: 'center',
+                                        maskRepeat: 'no-repeat',
+                                        WebkitMaskRepeat: 'no-repeat',
+                                        maskSize: '100% 100%',
+                                        WebkitMaskSize: '100% 100%',
+                                      }}
+                                    >
+                                      <div className='absolute inset-0 p-5 '>
+                                        <Image
+                                          src='/images/workshops/astronaut-outline.png'
+                                          alt='Astronaut Outline'
+                                          fill
+                                          sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                                          className='object-contain object-center'
+                                        />
+                                      </div>
+
+                                      {/* ▼ FIXED: straight wipe instead of ellipse (no rounded top) */}
+                                      <div className='absolute inset-0 transition-all duration-500 ease-in-out group-hover:duration-[1500ms] [clip-path:ellipse(150%_110%_at_50%_-110%)] group-hover:[clip-path:ellipse(150%_110%_at_50%_100%)]'>
+                                        <Image
+                                          src={workshop.image}
+                                          alt={workshop.fullTitle}
+                                          fill
+                                          sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                                          className='object-cover object-center transition-transform duration-500 group-hover:duration-[1500ms] ease-out'
+                                        />
+                                      </div>
                                     </div>
 
-                                    {/* ▼ FIXED: straight wipe instead of ellipse (no rounded top) */}
-                                    <div className='absolute inset-0 transition-all duration-500 ease-in-out group-hover:duration-[1500ms] [clip-path:ellipse(150%_110%_at_50%_-110%)] group-hover:[clip-path:ellipse(150%_110%_at_50%_100%)]'>
-                                      <Image
-                                        src={workshop.image}
-                                        alt={workshop.fullTitle}
-                                        fill
-                                        sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                                        className='object-cover object-center transition-transform duration-500 group-hover:duration-[1500ms] ease-out'
-                                      />
+                                    {/* BACKGROUND CUTOUT OUTSIDE THE BORDER */}
+                                    <div
+                                      className='pointer-events-none absolute inset-0 z-15 bg-[#08090e]'
+                                      style={{
+                                        clipPath:
+                                          'polygon(32.18% 90.64%, 100% 90.64%, 100% 100%, 23.29% 100%, 24.64% 99%)',
+                                      }}
+                                    />
+
+                                    {/* DATE (unchanged position) */}
+                                    <div className='absolute inset-x-0 bottom-0 z-20 h-[13.5%]'>
+                                      <div className='absolute bottom-[80%] right-[1.1%] flex flex-col items-end leading-none'>
+                                        <span className='mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#ffffff]'>
+                                          {workshop.dateMonth}
+                                        </span>
+                                        <span className='text-[8.07cqw] font-bold text-white'>
+                                          {workshop.dateDay}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    <div className='pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30'>
+                                      <svg
+                                        preserveAspectRatio='none'
+                                        overflow='visible'
+                                        className='workshop-card-border absolute inset-[-0.38%] h-full w-full stroke-[#ffffff]'
+                                        viewBox='0 0 135.239 135.639'
+                                        fill='none'
+                                        xmlns='http://www.w3.org/2000/svg'
+                                      >
+                                        <path
+                                          d='M0.510216 132.629V61.5188V3.01022C0.510216 1.6295 1.62951 0.510216 3.01022 0.510216H132.229C133.61 0.510216 134.729 1.6295 134.729 3.01022V120.427C134.729 121.808 133.61 122.927 132.229 122.927H43.5146C42.7568 122.927 42.04 123.271 41.5655 123.862L33.2653 134.195C32.7907 134.785 32.0739 135.129 31.3162 135.129H3.01022C1.6295 135.129 0.510216 134.01 0.510216 132.629Z'
+                                          strokeWidth='1.02043'
+                                        />
+                                      </svg>
                                     </div>
                                   </div>
 
-                                  {/* BACKGROUND CUTOUT OUTSIDE THE BORDER */}
+                                  {/* EXTRA LABEL SPACE — continues the cutout
+                                      colour below the original card shape so the
+                                      title has room to wrap onto two lines */}
                                   <div
-                                    className='pointer-events-none absolute inset-0 z-15 bg-[#08090e]'
-                                    style={{
-                                      clipPath:
-                                        'polygon(32.18% 90.64%, 100% 90.64%, 100% 100%, 23.29% 100%, 24.64% 99%)',
-                                    }}
+                                    className='pointer-events-none absolute inset-x-0 bottom-0 z-15 bg-[#08090e]'
+                                    style={{ top: 'calc(100cqw / 0.9825)' }}
                                   />
 
-                                  {/* FIGMA CARD LABELS */}
-                                  <div className='absolute inset-x-0 bottom-0 z-20 h-[13.5%]'>
-                                    <p className='absolute bottom-[9%] left-[29.73%] right-[26.82%] text-right text-[5.5cqw] font-bold leading-[normal] text-white'>
+                                  {/* TITLE — max 2 lines. Line 1 sits beside the
+                                      notch, line 2 starts at the card's left edge */}
+                                  <div
+                                    className='absolute left-0 right-0 z-20 text-right'
+                                    style={{
+                                      top: 'calc(100cqw / 0.9825 * 0.9064 + 2.5cqw)',
+                                      paddingLeft: '1cqw',
+                                      paddingRight: '4cqw',
+                                      maxHeight: '13.2cqw',
+                                      overflow: 'hidden',
+                                    }}
+                                  >
+                                    {/* Invisible spacer: pushes only the FIRST
+                                        line to the right of the notch. Line 2
+                                        wraps underneath it and starts at the
+                                        left edge. */}
+                                    <span
+                                      aria-hidden='true'
+                                      style={{
+                                        float: 'left',
+                                        width: '33cqw',
+                                        height: '6.6cqw',
+                                      }}
+                                    />
+                                    <p className='m-0 break-words text-[5.5cqw] font-bold leading-[1.2] text-white'>
                                       Workshop
                                     </p>
-                                    <div className='absolute bottom-[80%] right-[1.1%] flex flex-col items-end leading-none'>
-                                      <span className='mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#ffffff]'>
-                                        {workshop.dateMonth}
-                                      </span>
-                                      <span className='text-[8.07cqw] font-bold text-white'>
-                                        {workshop.dateDay}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  <div className='pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30'>
-                                    <svg
-                                      preserveAspectRatio='none'
-                                      overflow='visible'
-                                      className='workshop-card-border absolute inset-[-0.38%] h-full w-full stroke-[#ffffff]'
-                                      viewBox='0 0 135.239 135.639'
-                                      fill='none'
-                                      xmlns='http://www.w3.org/2000/svg'
-                                    >
-                                      <path
-                                        d='M0.510216 132.629V61.5188V3.01022C0.510216 1.6295 1.62951 0.510216 3.01022 0.510216H132.229C133.61 0.510216 134.729 1.6295 134.729 3.01022V120.427C134.729 121.808 133.61 122.927 132.229 122.927H43.5146C42.7568 122.927 42.04 123.271 41.5655 123.862L33.2653 134.195C32.7907 134.785 32.0739 135.129 31.3162 135.129H3.01022C1.6295 135.129 0.510216 134.01 0.510216 132.629Z'
-                                        strokeWidth='1.02043'
-                                      />
-                                    </svg>
                                   </div>
                                 </div>
                               </div>

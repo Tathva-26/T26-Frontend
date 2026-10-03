@@ -2190,37 +2190,6 @@ export default function LecturesPage() {
           </div>
         </section>
 
-        {/* SEARCH BAR & CATEGORY FILTERS */}
-        <section className='mb-10 w-full flex flex-col items-center'>
-          {/* SEARCH INPUT */}
-          <div className='relative mb-5 w-[clamp(280px,45vw,720px)] max-w-[90vw]'>
-            <input
-              type='text'
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder='Search'
-              className='h-8 w-full rounded-[58.807px] bg-white pl-5 pr-11 text-xs font-medium text-slate-900 placeholder:text-slate-500 shadow-[0_2px_20px_rgba(255,255,255,0.15)] transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500'
-            />
-
-            {/* SEARCH ICON */}
-            <div className='absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600'>
-              <svg
-                className='w-4 h-4 sm:w-4.5 sm:h-4.5'
-                fill='none'
-                viewBox='0 0 24 24'
-                stroke='currentColor'
-                strokeWidth='2.5'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
-                />
-              </svg>
-            </div>
-          </div>
-        </section>
-
         {/* LECTURE CARDS GRID */}
         <section className='relative w-full'>
           {filteredLectures.length === 0 ? (
