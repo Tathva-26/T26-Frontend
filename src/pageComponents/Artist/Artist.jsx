@@ -103,11 +103,15 @@ function gpcOverlapPx() {
 
 function useScrubCrossfade(
   ref,
-  { bgRefs, portraitRefs, boardRefs, onIndexChange, snap = false },
+  { bgRefs, portraitRefs, boardRefs, onIndexChange, snap = true },
 ) {
   // Set while the timeline is alive: maps an artist index to the scroll
   // position where that artist is shown whole (see scrollToIndex below).
   const scrollForIndex = useRef(null)
+  // null means the user has not landed on an artist yet (e.g. entering from W1).
+  // -1 / `count` mean the section was last left through its top / bottom, so
+  // coming back in lands on the first / last artist, not one further along.
+  const settledArtistIndex = useRef(null)
 
   useLayoutEffect(() => {
     const section = ref.current
@@ -145,6 +149,12 @@ function useScrubCrossfade(
         gsap.set(boards.slice(1), { yPercent: 100, autoAlpha: 0 })
 
       const total = timelineTotal(count)
+      const artistStops = Array.from(
+        { length: count },
+        (_, index) => (HOLD / 2 + index * STEP) / total,
+      )
+      let pendingArtistIndex = null
+      let snappingWithLenis = false
 
       const tl = gsap.timeline({
         defaults: { duration: 1 },
@@ -156,8 +166,131 @@ function useScrubCrossfade(
           // last artist is already held still when GPC starts pulling back
           // out of it. (A function so it is re-read on every refresh.)
           end: () => `bottom bottom+=${gpcOverlapPx()}`,
-          scrub: 0.8,
+          // Let the snap tween itself carry the crossfade; a second scrub lag
+          // made the visible artist continue changing after the scroll settled.
+          scrub: true,
+          ...(snap && {
+            // Settle on the fully visible hold for each artist. Leave the
+            // ranges beyond the first/last artist free so adjacent sections
+            // (especially GPC) can take over without being pulled back here.
+            snap: {
+              snapTo: (value, trigger) => {
+                const here = () =>
+                  gsap.utils.clamp(
+                    0,
+                    1,
+                    (trigger.scroll() - trigger.start) / (trigger.end - trigger.start),
+                  )
+                // Still gliding to an artist. If Lenis is no longer locked the
+                // glide was cut short by something stopping it (GPC holding
+                // the page), and it will never report back: carry on as usual.
+                if (snappingWithLenis && window.__lenis?.isLocked) return here()
+                snappingWithLenis = false
+
+                // Arriving from a neighbouring section (the glide down from
+                // W1, GPC handing the page back) and already resting inside
+                // the first / last artist's hold: that artist is whole and
+                // still, so just take it as settled instead of scrolling on.
+                // (`value` is where ScrollTrigger reckons the scroll would
+                // coast to; returning it would send the page there, so these
+                // return where the page actually is.)
+                const settled = settledArtistIndex.current
+                const time = here() * total
+                if ((settled === null || settled < 0) && time <= HOLD) {
+                  settledArtistIndex.current = 0
+                  return here()
+                }
+                if (settled !== null && settled >= count && time >= total - HOLD) {
+                  settledArtistIndex.current = count - 1
+                  return here()
+                }
+
+                const direction = trigger.direction
+                if (direction > 0) {
+                  pendingArtistIndex = settled === null ? 0 : settled + 1
+                } else if (direction < 0) {
+                  pendingArtistIndex = settled === null ? count - 1 : settled - 1
+                } else {
+                  // On the homepage the Artists trigger can first become
+                  // active in the same frame that content is unlocked from
+                  // W1. ScrollTrigger may report direction 0 for that first
+                  // snap; choosing the nearest stop then can land on artist 1
+                  // after a large unlock delta. The first unresolved snap is
+                  // always Arijit, independent of the sampled progress.
+                  pendingArtistIndex =
+                    settledArtistIndex.current === null
+                      ? 0
+                      : artistStops.reduce(
+                          (nearest, point, index) =>
+                            Math.abs(point - value) <
+                            Math.abs(artistStops[nearest] - value)
+                              ? index
+                              : nearest,
+                          0,
+                        )
+                }
+
+                // Advance exactly one artist per completed scroll gesture.
+                // At either edge, let the page continue into the neighboring
+                // section instead of snapping back to an artist.
+                if (pendingArtistIndex < 0 || pendingArtistIndex >= count) {
+                  pendingArtistIndex = null
+                  // Lenis is already carrying the page where the user sent
+                  // it; don't have ScrollTrigger tween it somewhere as well.
+                  return window.__lenis ? here() : value
+                }
+
+                const lenis = window.__lenis
+                // Something else is holding the page (a locked glide, GPC):
+                // a scrollTo would be dropped and never report back.
+                if (lenis && (lenis.isStopped || lenis.isLocked)) {
+                  pendingArtistIndex = null
+                  return here()
+                }
+                if (lenis) {
+                  const targetIndex = pendingArtistIndex
+                  const target =
+                    trigger.start +
+                    (trigger.end - trigger.start) * artistStops[targetIndex]
+                  snappingWithLenis = true
+                  lenis.scrollTo(target, {
+                    duration: 0.7,
+                    lock: true,
+                    easing: (progress) => 1 - Math.pow(1 - progress, 3),
+                    onComplete: () => {
+                      settledArtistIndex.current = targetIndex
+                      pendingArtistIndex = null
+                      snappingWithLenis = false
+                    },
+                  })
+                  // Lenis owns the home scroller; avoid a competing native
+                  // ScrollTrigger scroll tween.
+                  return here()
+                }
+
+                return artistStops[pendingArtistIndex]
+              },
+              delay: 0.1,
+              duration: { min: 0.45, max: 0.85 },
+              ease: 'power2.out',
+              onComplete: () => {
+                if (pendingArtistIndex !== null) {
+                  settledArtistIndex.current = pendingArtistIndex
+                  pendingArtistIndex = null
+                }
+              },
+              onInterrupt: () => {
+                pendingArtistIndex = null
+              },
+            },
+          }),
           invalidateOnRefresh: true,
+          onLeave: () => {
+            settledArtistIndex.current = count
+          },
+          onLeaveBack: () => {
+            settledArtistIndex.current = -1
+          },
           onUpdate: (self) => {
             if (onIndexChange) {
               // Which artist is showing, counting the holds: the label flips
@@ -239,7 +372,9 @@ function useScrubCrossfade(
   // a plain smooth scroll.
   return useCallback(
     (idx) => {
-      const target = scrollForIndex.current?.(idx)
+      const targetIndex = Math.trunc(idx)
+      settledArtistIndex.current = targetIndex
+      const target = scrollForIndex.current?.(targetIndex)
       if (target == null) return
       const scroller = ref.current?.closest('.main-scroll')
       if (window.__lenis) window.__lenis.scrollTo(target)
