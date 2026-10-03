@@ -218,6 +218,7 @@ function TathvaMenuOverlay() {
   const [activeSectionName, setActiveSectionName] = useState(basePageName)
   const [isOpen, setIsOpen] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [showArrow, setShowArrow] = useState(true)
 
   const rootRef = useRef(null)
   const panelRef = useRef(null)
@@ -234,9 +235,9 @@ function TathvaMenuOverlay() {
     setActiveSectionName(basePageName)
     setIsOpen(false)
     setIsMobileOpen(false)
+    setShowArrow(true)
   }, [pathname, basePageName])
 
-  // Scroll spy for dynamic multi-section scroll in page.js
   // Scroll spy for dynamic multi-section scroll in page.js
   useEffect(() => {
     const isHomePage = pathname === '/' || pathname === '/hero'
@@ -252,7 +253,6 @@ function TathvaMenuOverlay() {
       const scrollTop = scroller ? scroller.scrollTop : window.scrollY
       const sections = document.querySelectorAll('[data-section-name]')
 
-      // At the very top (hero) or nothing tagged: show the page name
       if (scrollTop < 5 || !sections.length) {
         setActiveSectionName(basePageName)
         return
@@ -262,7 +262,6 @@ function TathvaMenuOverlay() {
       const viewHeight = scroller ? scroller.clientHeight : window.innerHeight
       const line = viewTop + viewHeight * 0.2
 
-      // Pick the section that is under the line (closest top above the line)
       let current = null
       let bestTop = -Infinity
       sections.forEach((sec) => {
@@ -282,11 +281,9 @@ function TathvaMenuOverlay() {
       if (rafId === null) rafId = requestAnimationFrame(update)
     }
 
-    // Capture phase catches scroll on .main-scroll or the window
     document.addEventListener('scroll', onScroll, true)
     window.addEventListener('resize', onScroll)
 
-    // Small delay ensures dynamic client sub-components are fully mounted
     timeoutId = setTimeout(update, 150)
 
     return () => {
@@ -356,6 +353,10 @@ function TathvaMenuOverlay() {
 
       const tl = gsap.timeline({
         paused: true,
+        onReverseComplete: () => {
+          // Arrow only shows again after the panel is fully closed and tucked away
+          setShowArrow(true)
+        },
       })
 
       timelineRef.current = tl
@@ -432,9 +433,13 @@ function TathvaMenuOverlay() {
     if (timeline.isActive()) return
 
     if (!isOpen) {
+      // Instantly hide the arrow when opening begins
+      setShowArrow(false)
       timeline.play()
       setIsOpen(true)
     } else {
+      // Ensure the arrow stays hidden while closing
+      setShowArrow(false)
       timeline.reverse()
       setIsOpen(false)
     }
@@ -934,6 +939,7 @@ function TathvaMenuOverlay() {
         aria-label={isOpen ? 'Close menu' : 'Open menu'}
         aria-expanded={isOpen}
         className='
+          group
           pointer-events-auto
           absolute
           left-1/2
@@ -976,11 +982,34 @@ function TathvaMenuOverlay() {
           draggable={false}
           className='pointer-events-none absolute -right-2 top-1/2 h-full w-[195px] -translate-y-5.25 select-none object-contain'
         />
+
         {/* Current page or scrolled section name */}
         <span
           className={`${michroma.className} pointer-events-none absolute inset-0 flex select-none items-center justify-center text-[9px] leading-none tracking-[3px] text-white -translate-y-[5px] transition-all duration-200`}
         >
           {activeSectionName}
+        </span>
+
+        {/* Downward indicator chevron (only reappears once closing completes) */}
+        <span
+          className={`pointer-events-none absolute -bottom-3.5 left-1/2 flex -translate-x-1/2 items-center justify-center transition-all duration-300 ${
+            showArrow
+              ? 'opacity-80 scale-100 group-hover:opacity-100 group-hover:translate-y-0.5'
+              : 'opacity-0 scale-75 pointer-events-none -translate-y-1'
+          }`}
+          aria-hidden='true'
+        >
+          <svg
+            className='h-3.5 w-3.5 text-white/70 group-hover:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2.5'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+          >
+            <path d='M6 9l6 6 6-6' />
+          </svg>
         </span>
       </button>
 
