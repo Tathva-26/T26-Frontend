@@ -35,9 +35,9 @@
  * render, so the sections after GPC are never measured against wrong ones.
  */
 .gpc-track {
-  /* More travel = the same scroll covers less of the sequence, so the
-     cinematic plays out slower under the cursor/wheel/swipe. */
-  --gpc-travel: 1000vh;
+  /* Only the outro/dive/handoff is scroll-driven now;
+     the intro auto-plays on viewport entry. */
+  --gpc-travel: 150vh;
   --gpc-handoff: 20vh;
   --gpc-lead: 0px;
   position: relative;
@@ -53,11 +53,11 @@
     z-index: 11;
   }
 
-  /* 18% of the travel: up to the end of SEQUENCE.entry.off in gpcConfig.js. */
+  /* No entry overlap needed: intro is auto-played, not scroll-driven. */
   @media (min-width: 769px) {
     .main-scroll .gpc-track {
-      --gpc-lead: 72vh;
-      --gpc-travel: 1800vh;
+      --gpc-lead: 0px;
+      --gpc-travel: 200vh;
     }
   }
 }

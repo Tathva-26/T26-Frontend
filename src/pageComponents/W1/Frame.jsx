@@ -325,7 +325,7 @@ export const Frame = ({ onScrollUp, onScroll, isActive }) => {
     const handleWheel = (e) => {
       if (typeof onScroll === "function") {
         e.preventDefault();
-        onScroll(e.deltaY);
+        onScroll(e.deltaY, e.timeStamp);
       } else if (e.deltaY < 0 && typeof onScrollUp === "function") {
         e.preventDefault();
         onScrollUp();
