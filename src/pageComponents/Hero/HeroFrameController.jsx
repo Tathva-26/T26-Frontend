@@ -136,9 +136,8 @@ export default function HeroFrameController({ children }) {
   // Once Frame is showing and the user keeps scrolling down, stop intercepting the wheel and
   // let normal page scroll reach `children`. Scrolling back up to the very top re-locks.
   const [unlocked, setUnlocked] = useState(false)
-  // `children` are heavy. They mount, hidden, right after the first paint, while the preloader
-  // is still up: it waits for everything in them to load (see Loading.jsx), so their cost is
-  // paid behind it rather than as dropped frames in the middle of a scroll.
+  // `children` are heavy, so they only mount once the user has got as far as Frame
+  // (see CONTENT_PREMOUNT_DELAY_MS), or unlocks past it before that.
   const [hasReachedContent, setHasReachedContent] = useState(false)
   // wrapper around `children`, observed so ScrollTrigger can re-measure when content settles
   const contentRef = useRef(null)
@@ -164,6 +163,15 @@ export default function HeroFrameController({ children }) {
       // Mobile only: ignore a transition that lands within the cooldown window of the last one
       // (see handleFrameScroll) — this is what stops a single noisy swipe from bouncing the
       // panel back and forth.
+      if (isMobile && performance.now() < mobileCooldownUntilRef.current) return
+      sectionRef.current = target
+      if (target === 'frame') {
+        frameGateClosedRef.current = true
+        frameLastWheelAtRef.current = performance.now()
+        frameEnteredAtRef.current = performance.now()
+      }
+      setSection(target)
+      setHeroVisible(target === 'hero')
       if (isMobile && performance.now() < mobileCooldownUntilRef.current) return
       sectionRef.current = target
       if (target === 'frame') {
