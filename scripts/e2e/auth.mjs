@@ -34,6 +34,14 @@ const hydrated = async (selector = 'body') => {
   return false
 }
 
+const waitFor = async (expression, tries = 80) => {
+  for (let i = 0; i < tries; i += 1) {
+    if (await s.evaluate(expression).catch(() => false)) return true
+    await settle(250)
+  }
+  return false
+}
+
 const bodyText = () => s.evaluate('document.body.innerText')
 const path = () => s.evaluate('window.location.pathname')
 const setMockSession = (value) =>
@@ -93,21 +101,32 @@ await hydrated('.nb__cta')
 await settle(1200)
 
 cta = await s.evaluate(readCta)
-check('signed-out CTA still has a no-JS destination', cta.href, '/profile')
+// Signed out the CTA is a real link to the login page, so it still works
+// without JS rather than depending on a click handler.
+check('signed-out CTA links to the login page', cta.href, '/login')
 check('signed-out CTA prompts to register', cta.text.includes('Register'), true)
 
 // A signed-out visitor must never be told their session expired.
 check('no false expiry notice', (await bodyText()).includes('session expired'), false)
 
-/* ---- clicking it signs in and lands on the profile ---- */
+/* ---- the CTA leads to the login page, which starts the sign-in ---- */
 
 await s.evaluate(`document.querySelector('.nb__cta').click(); true`)
+check('CTA opens the login page', await waitFor(`window.location.pathname === '/login'`), true)
+check('login page offers Google', await waitFor(`!!document.querySelector('.tv-google')`), true)
+await hydrated('.tv-google')
+
+await s.evaluate(`document.querySelector('.tv-google').click(); true`)
 for (let i = 0; i < 60; i += 1) {
   if ((await path().catch(() => '')) === '/profile') break
   await settle(300)
 }
 check('sign-in ends on the profile', await path(), '/profile')
 check('session persisted through the redirect', await s.evaluate(`sessionStorage.getItem('tathva-mock-signed-in')`), 'true')
+
+/* already signed in, the login page has nothing to do and steps aside */
+await s.goto(`${BASE}/login`)
+check('login redirects when already signed in', await waitFor(`window.location.pathname === '/profile'`), true)
 
 /* ---- a successful callback redirects rather than dead-ending ---- */
 
