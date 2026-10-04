@@ -8,8 +8,14 @@ at phase 1.2 on desktop and 1.4 on mobile; departure lasts .45 phase units.
 
 - Homepage crystal loading starts within 1200 px of the viewport. Standalone
   `/expo` still requests it immediately. Readiness includes a GPU warm-up frame.
-- A late model is admitted while hidden or during the settled hold, never
-  halfway through a tumble or detail animation.
+- A late model becomes visible as soon as its shell renders. There is no
+  phase admission gate. Reduced motion retains the 3D scene with idle motion
+  suppressed. The image is only a loading/error placeholder.
+- Edge lighting owns its own world-position varying, independent of Three's
+  transmission define, including instanced reflection-only compact shards.
+- Context loss keeps the canvas mounted; restoration rebuilds the scene.
+  Shader failures are reported rather than silently marked ready; Retry 3D
+  is available for a real loading/renderer failure.
 - Desktop poster masks reuse 33 deterministic thresholds. Compact viewport
   transitions omit poster blur/masks and hide DOM mist when the model is live.
 - Cloud shaders use two noise octaves on compact hardware and four otherwise;
