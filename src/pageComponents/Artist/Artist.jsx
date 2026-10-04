@@ -153,6 +153,12 @@ function useScrubCrossfade(
       const bgs = (bgRefs?.current || []).filter(Boolean)
       const ports = (portraitRefs?.current || []).filter(Boolean)
       const boards = (boardRefs?.current || []).filter(Boolean)
+      const portraitImages = ports.map((port) =>
+        port.querySelector('.artist-portrait'),
+      )
+      const boardMarquees = boards.map((board) =>
+        board.querySelector('.board-marquee'),
+      )
       const count = Math.max(bgs.length, boards.length, ports.length)
       if (count < 2) return
       // The wide layout's section also wraps the phone layout, so on a phone
@@ -183,6 +189,12 @@ function useScrubCrossfade(
       if (bgs.length > 1) gsap.set(bgs.slice(1), { autoAlpha: 0 })
       if (ports.length > 1) gsap.set(ports.slice(1), { autoAlpha: 0 })
       if (boards.length > 1) gsap.set(boards.slice(1), { autoAlpha: 0 })
+      gsap.set(portraitImages.slice(1).filter(Boolean), {
+        y: -PORTRAIT_EXIT,
+      })
+      gsap.set(boardMarquees.slice(1).filter(Boolean), {
+        y: -PORTRAIT_EXIT,
+      })
 
       const total = timelineTotal(count)
       const artistStops = Array.from(
@@ -477,15 +489,32 @@ function useScrubCrossfade(
             { autoAlpha: 1, ease: PORTRAIT_EASE },
             t,
           )
+          if (portraitImages[i] && portraitImages[i + 1]) {
+            tl.to(portraitImages[i], { y: PORTRAIT_EXIT, ease: PORTRAIT_EASE }, t)
+              .fromTo(
+                portraitImages[i + 1],
+                { y: -PORTRAIT_EXIT },
+                { y: 0, ease: PORTRAIT_EASE, immediateRender: false },
+                t,
+              )
+          }
         }
 
-        // Synchronized vertical sliding animation matching the left side portraits
         if (boards[i] && boards[i + 1]) {
           tl.to(boards[i], { autoAlpha: 0, ease: PORTRAIT_EASE }, t).to(
             boards[i + 1],
             { autoAlpha: 1, ease: PORTRAIT_EASE },
             t,
           )
+          if (boardMarquees[i] && boardMarquees[i + 1]) {
+            tl.to(boardMarquees[i], { y: PORTRAIT_EXIT, ease: PORTRAIT_EASE }, t)
+              .fromTo(
+                boardMarquees[i + 1],
+                { y: -PORTRAIT_EXIT },
+                { y: 0, ease: PORTRAIT_EASE, immediateRender: false },
+                t,
+              )
+          }
         }
       }
 
