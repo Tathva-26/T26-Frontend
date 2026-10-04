@@ -20,21 +20,21 @@ gsap.registerPlugin(ScrollTrigger, useGSAP)
 
 // Figma: "Calm Serif" — used for the main serif headline
 const calmSerif = localFont({
-  src: '../../../public/fonts/calm-serif-demo.otf',
+  src: '../../../public/fonts/calm-serif-demo.woff2',
   variable: '--font-calm-serif-local',
   display: 'swap',
 })
 
 // Figma: "Alata" — used for date, arena specs, prize text
 const alata = localFont({
-  src: '../../../public/fonts/alata-regular.ttf',
+  src: '../../../public/fonts/alata-regular.woff2',
   variable: '--font-alata-local',
   display: 'swap',
 })
 
 // "Bowlby One SC" — used for ROBO WARS headline
 const bowlbyOneSC = localFont({
-  src: '../../../public/fonts/BowlbyOneSC-Regular.ttf',
+  src: '../../../public/fonts/BowlbyOneSC-Regular.woff2',
   variable: '--font-bowlby-one-sc-local',
   display: 'swap',
 })
@@ -213,7 +213,7 @@ function MobileFrame({ containerRef }) {
         alt=''
         fill
         priority
-        sizes='100vw'
+        sizes='(max-width: 767px) 100vw, 0px'
         draggable={false}
         className='object-cover'
       />
