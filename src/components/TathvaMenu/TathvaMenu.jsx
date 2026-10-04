@@ -376,7 +376,7 @@ function TathvaMenuOverlay() {
       tl.to(
         panelRef.current,
         {
-          height: 300,
+          height: 385,
           duration: 0.5,
           ease: 'power2.inOut',
         },
@@ -387,7 +387,7 @@ function TathvaMenuOverlay() {
       tl.to(
         panelRef.current,
         {
-          width: () => Math.min(440, window.innerWidth * 0.92),
+          width: () => Math.min(580, window.innerWidth * 0.92),
           duration: 0.55,
           ease: 'expo.out',
         },
@@ -398,7 +398,7 @@ function TathvaMenuOverlay() {
       tl.to(
         dividerRef.current,
         {
-          height: 235,
+          height: 320,
           opacity: 1,
           duration: 0.35,
           ease: 'power3.out',
@@ -750,7 +750,7 @@ function TathvaMenuOverlay() {
             flex-col
             items-center
             justify-center
-            gap-[6px]
+            gap-[26px]
             px-4
             py-6
           '
@@ -853,7 +853,7 @@ function TathvaMenuOverlay() {
             flex-col
             items-center
             justify-center
-            gap-[6px]
+            gap-[26px]
             px-4
             py-6
           '
