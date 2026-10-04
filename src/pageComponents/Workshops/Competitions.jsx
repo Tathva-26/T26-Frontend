@@ -56,8 +56,8 @@ const MAX_TRANSLATE = 15
 const MAX_TILT = 3
 const HOVER_SCALE = 1.07
 const LIFT_Z = 18
-const REST_SHADOW = '0 4px 16px -3px rgba(0,0,0,0.45)'
-const HOVER_SHADOW = '0 20px 34px -9px rgba(0,0,0,0.58)'
+const REST_SHADOW = 'none'
+const HOVER_SHADOW = 'none'
 const ENTER_DURATION = 0.95
 const MOVE_DURATION = 1.92
 const LEAVE_DURATION = 0.6
@@ -2095,9 +2095,7 @@ export default function CompetitionsPage() {
                                         width: '33cqw',
                                         height: '6.6cqw',
                                       }}
-                                    >
-                                      {competition.fee}
-                                    </span>
+                                    />
                                     <p className='m-0 break-words text-[5.5cqw] font-bold leading-[1.2] text-white'>
                                       {competition.fullTitle || competition.title}
                                     </p>
