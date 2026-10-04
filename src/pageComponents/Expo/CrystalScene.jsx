@@ -76,7 +76,7 @@ function RenderBudget({ compact, degraded, onQuality }) {
   return null;
 }
 
-export default function CrystalScene({ active, reduced, onReady, onFailure, onLost, onRestored, journey, onProject }) {
+export default function CrystalScene({ active, reduced, onReady, onFailure, onLost, onRestored, journey, onProject, transition }) {
   const shaderFailed = useRef(false);
   const target = useRef({ tiltX: 0, tiltY: 0, x: 0, y: 0, active: false, pressed: false, activation: 0, keyboard: false });
   const feedback = useRef(null);
@@ -159,7 +159,7 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
         <Suspense fallback={null}>
           <SceneEnvironment shared={!!journey} />
           <CrystalModel target={target} reduced={reduced} compact={compact || degraded} onReady={() => { if (!shaderFailed.current) onReady(); }} onMood={reportMood} journey={journey} onProject={onProject} />
-          {journey && <ConclaveVeil journey={journey} compact={compact || degraded} />}
+          {transition && journey && <ConclaveVeil journey={journey} compact={compact || degraded} />}
         </Suspense>
       </Canvas>
       <span ref={feedback} aria-live='polite' style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)' }} />

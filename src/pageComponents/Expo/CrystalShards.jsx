@@ -35,6 +35,14 @@ export default function CrystalShards({ journey, compact, reduced, prepareGlass,
     const reveal = (pose ? (pose.exit != null ? 1 - pose.exit : pose.interaction) : 1) * (1 - Math.min(1, (detail?.value ?? 0) / .42))
     const available = (pose?.progress ?? 1) >= 1 && !(pose?.exit > 0) && (!detail || detail.state === 'closed')
     const input = target.current
+    mesh.current.visible = reveal > .005
+    if (!mesh.current.visible) {
+      // Consume input while occluded so closing details cannot replay a click.
+      activation.current = input.activation
+      input.shardHover = false
+      picking.hit = -1
+      return
+    }
     const pending = input.activation !== activation.current
     const count = compact ? 4 : 6
     mesh.current.count = count
@@ -88,7 +96,6 @@ export default function CrystalShards({ journey, compact, reduced, prepareGlass,
       mesh.current.computeBoundingSphere()
       boundsAt.current = time
     }
-    mesh.current.visible = reveal > .005
   })
   return <instancedMesh name='expo-shards' ref={mesh} args={[geometry, undefined, 6]} frustumCulled={false}>
     <meshPhysicalMaterial color='#a9bbff' metalness={.1} roughness={.08} transmission={.85} thickness={.25} ior={1.5} envMapIntensity={4.5} onBeforeCompile={prepareGlass} flatShading />

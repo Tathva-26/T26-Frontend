@@ -20,6 +20,8 @@ export default function ConclaveVeil({ journey, compact }) {
     const live = material.current.uniforms
     const pose = journey.current
     mesh.current.visible = pose.exit != null ? pose.exit > .16 && pose.exit < 1 : pose.progress > .03 && pose.progress < .72
+    // During the reading hold and detail view there is no cloud pass to update.
+    if (!mesh.current.visible) return
     live.uTime.value = clock.elapsedTime
     live.uProgress.value = pose.progress
     live.uExit.value = pose.exit ?? 0
@@ -64,7 +66,8 @@ export default function ConclaveVeil({ journey, compact }) {
           color=mix(color,cloudColor,smoothstep(0.,.20,uExit));
           float rim=smoothstep(.36,.48,cloud)*(1.-smoothstep(.48,.62,cloud));
           color+=vec3(.12,.20,.25)*rim*envelope;
-          float thinning=1.-smoothstep(.25,.46,uProgress)*.75;
+          // Keep the bank present through the poster's .40-.56 opacity fade.
+          float thinning=1.-smoothstep(.42,.68,uProgress)*.75;
           if(uExit>0.)thinning=.85;
           gl_FragColor=vec4(color,front*envelope*.96*thinning);
           #include <colorspace_fragment>

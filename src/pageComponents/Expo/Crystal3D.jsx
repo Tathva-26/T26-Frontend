@@ -14,7 +14,7 @@ class SceneBoundary extends Component {
   render() { return this.state.failed ? null : this.props.children; }
 }
 
-export default function Crystal3D({ journey, onProject, preload = false }) {
+export default function Crystal3D({ journey, onProject, preload = false, transition = false }) {
   const wrapper = useRef(null);
   const [visible, setVisible] = useState(false);
   const [requested, setRequested] = useState(preload);
@@ -64,7 +64,7 @@ export default function Crystal3D({ journey, onProject, preload = false }) {
       {!failed && requested && (
         <div className={styles.canvas}>
           <SceneBoundary key={generation} onFailure={onFailure}>
-            <CrystalScene reduced={reduced} active={awake && (visible || !ready)} onReady={onReady} onFailure={onFailure} onLost={onLost} onRestored={onRestored} journey={journey} onProject={onProject} />
+            <CrystalScene reduced={reduced} active={awake && (visible || !ready)} onReady={onReady} onFailure={onFailure} onLost={onLost} onRestored={onRestored} journey={journey} onProject={onProject} transition={transition} />
           </SceneBoundary>
         </div>
       )}

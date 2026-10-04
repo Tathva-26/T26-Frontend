@@ -43,18 +43,6 @@
 .crystal[data-expo-renderer='fallback'] [data-crystal-control] { visibility: hidden; }
 .crystal[data-expo-renderer='fallback'] img { opacity: var(--journey-fallback-opacity, 1); }
 .animated:has([data-crystal-state='ready']):not(:has([data-expo-renderer='fallback'])) [data-expo-fallback-shards] { visibility: hidden; }
-.mist {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  background: linear-gradient(115deg, transparent 8%, #9cb8cc55 38%, #556c9455 62%, transparent 94%);
-  transform: translateY(var(--veil-drift, 0%));
-  filter: blur(16px);
-  mix-blend-mode: screen;
-}
 .connectors {
   position: absolute;
   inset: 0;
@@ -66,9 +54,5 @@
   opacity: 0;
 }
 .connectors path { vector-effect: non-scaling-stroke; }
-@media (max-width: 767px) {
-  .mist { filter: blur(14px); }
-}
-.bridge[data-expo-compact='true']:has([data-expo-renderer='model']) .mist { visibility: hidden; }
 
 .animated:has([data-crystal-state="ready"]):not(:has([data-expo-renderer="fallback"])) [data-expo-slot] button { display: none; }

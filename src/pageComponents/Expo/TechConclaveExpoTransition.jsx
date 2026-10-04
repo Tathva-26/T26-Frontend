@@ -20,8 +20,6 @@ const subscribeMotion = (callback) => {
 }
 const motionSnapshot = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const serverSnapshot = () => false
-// Reuse deterministic noise masks; update only when its threshold changes.
-const cloudMasks = Array.from({ length: 33 }, (_, index) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640"><filter id="cloud"><feTurbulence type="fractalNoise" baseFrequency=".012 .018" numOctaves="3" seed="7"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 4 4 4 0 ${2 - index / 32 * 14}"/></filter><rect width="100%" height="100%" filter="url(#cloud)"/></svg>`)}")`)
 
 export default function TechConclaveExpoTransition() {
   return <ExpoDetailsProvider><ExpoTransitionContent /></ExpoDetailsProvider>
@@ -59,7 +57,6 @@ function ExpoTransitionContent() {
     const page = element.querySelector('[data-expo-page]')
     const plane = element.querySelector('[data-expo-plane]')
     const slot = element.querySelector('[data-expo-slot]')
-    const mist = element.querySelector('[data-expo-mist]')
     const lines = element.querySelector('[data-expo-connectors]')
     const copy = page.querySelectorAll(`.${expoStyles.title}, .${expoStyles.intro}, .${expoStyles.description}, .${expoStyles.explore}`)
     const explore = page.querySelector('[data-expo-explore]')
@@ -71,7 +68,6 @@ function ExpoTransitionContent() {
     const scroller = document.querySelector('.main-scroll')
     const mobile = plane.clientWidth < 768
     element.dataset.expoCompact = String(mobile)
-    let maskIndex = -1
     const exitStart = mobile ? 1.4 : 1.2
     const duration = exitStart + .45
     const scrollUnit = mobile ? 1.5 : 2.4
@@ -142,19 +138,8 @@ function ExpoTransitionContent() {
       // Keep opacity in CSS so the ready state can hide the illustration when
       // the model loads, even if scrolling is paused at that moment.
       gsap.set(fallback, { '--journey-fallback-opacity': pose.opacity, width: box.slotWidth, height: box.slotHeight, x: x - box.slotWidth / 2, y: y - box.slotHeight / 2, scale: pose.scale * 8 / (8 - pose.depth), rotationX: pose.pitch * 180 / Math.PI })
-      const veil = exit > 0 ? Math.sin(exit * Math.PI) : Math.sin(Math.PI * Math.min(1, Math.max(0, (entry - .04) / .66)))
-      gsap.set(mist, { opacity: veil * .48, '--veil-drift': `${progress * -18}%` })
-      if (!mobile) gsap.set(tc, { filter: `blur(${veil * 3}px) saturate(${1 - veil * .35})` })
-      // Erode the poster through a fixed cloud field, rather than opening a
-      // geometric window around the incoming exhibit. Alpha thresholds are
-      // deterministic so reversing scroll reconstructs the same poster.
-      const dissolve = Math.min(1, Math.max(0, (entry - .16) / .36))
-      const nextMask = dissolve === 0 ? -1 : Math.round(dissolve * 32)
-      if (!mobile && nextMask !== maskIndex) {
-        tc.style.maskImage = nextMask < 0 ? 'none' : cloudMasks[nextMask]
-        tc.style.maskSize = '100% 100%'
-        maskIndex = nextMask
-      }
+      // ConclaveVeil owns the cloud field; the poster only needs a compositor
+      // opacity fade, without another noise filter or full-screen blur pass.
       page.style.pointerEvents = available ? 'auto' : 'none'
       gsap.set(lines, { scale: 1 - exit * .65, transformOrigin: `${box.endX}px ${box.endY}px` })
       if (state !== 'ready' || crystal.current.dataset.expoRenderer === 'fallback') {
@@ -218,8 +203,6 @@ function ExpoTransitionContent() {
       resize.disconnect()
       readiness.disconnect()
       context.revert()
-      tc.style.removeProperty('mask-image')
-      tc.style.removeProperty('mask-size')
       page.style.removeProperty('pointer-events')
       delete element.dataset.expoProgress
       delete element.dataset.expoStart
@@ -240,9 +223,8 @@ function ExpoTransitionContent() {
       <div data-conclave><TechConclave /></div>
       <Expo sharedCrystal={animated} />
       {animated && <div className={styles.plane} data-expo-plane>
-        <div className={styles.mist} data-expo-mist aria-hidden='true' />
         <div ref={crystal} className={styles.crystal}>
-          <Crystal3D journey={journey} onProject={projectModel} />
+          <Crystal3D journey={journey} onProject={projectModel} transition />
         </div>
         <svg className={styles.connectors} data-expo-connectors aria-hidden='true'>
           {[0, 1, 2].map((index) => <path key={index} ref={(node) => { paths.current[index] = node }} />)}
