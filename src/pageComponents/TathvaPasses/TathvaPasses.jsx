@@ -110,7 +110,7 @@ export default function TathvaPasses() {
             type='button'
             onClick={handlePrev}
             aria-label='Previous ticket'
-            className='group absolute left-2 sm:left-4 md:left-6 lg:left-8 top-1/2 -translate-y-1/2 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14'
+            className='group absolute left-2 sm:left-4 md:left-6 lg:left-8 top-full mt-4 sm:top-1/2 sm:mt-0 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14'
           >
             <svg
               className='h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:-translate-x-0.5'
@@ -174,7 +174,7 @@ export default function TathvaPasses() {
             type='button'
             onClick={handleNext}
             aria-label='Next ticket'
-            className='group absolute right-2 sm:right-4 md:right-6 lg:right-8 top-1/2 -translate-y-1/2 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14'
+            className='group absolute right-2 sm:right-4 md:right-6 lg:right-8 top-full mt-4 sm:top-1/2 sm:mt-0 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14'
           >
             <svg
               className='h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:translate-x-0.5'
