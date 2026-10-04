@@ -74,7 +74,7 @@ const FOCUS_EDGE_HIGHLIGHT_LEFT = 'rgba(255,255,255,0.11)'
 
 // Surrounding-card "make room" response — Step 4
 const GRID_GAP_PX = 32
-const MAX_SURROUND_DISPLACEMENT = 0
+const MAX_SURROUND_DISPLACEMENT = 100
 const FALLOFF_STRENGTH = 0.4
 const NEAR_LAG = 0.001
 const FAR_LAG = 0.015
@@ -116,6 +116,7 @@ const STAGGER_MIN_ROW_SIZE = 3
 // Step 8 — subtle focus field / surrounding quieting
 const QUIET_OPACITY = 0.9
 const QUIET_BRIGHTNESS = 0.94
+const COLUMN_MATE_BRIGHTNESS = 0.5 // cards sharing the focal card's column (see setSlotLevel)
 const FOCAL_OPACITY = 1
 const FOCAL_BRIGHTNESS = 1
 const FOCUS_FIELD_DURATION = 0.6
@@ -145,7 +146,7 @@ const PULSE_LEAVE_FADE = 0.5
 // from the hovered card). See the "── Step 11: global dark focus overlay ──"
 // block below for how it integrates with the existing hover lifecycle.
 const FOCUS_OVERLAY_Z = 15 // between resting card z-index (1) and focused card z-index (20)
-const FOCUS_OVERLAY_COLOR = 'transparent'
+const FOCUS_OVERLAY_COLOR = 'rgba(4, 5, 9, 0.56)'
 const FOCUS_PULSE_DURATION = 1.7 // slow, cinematic expansion from the hovered card
 const FOCUS_PULSE_EASE = 'power2.out'
 const FOCUS_CLEAR_DURATION = 1.6 // clearing pulse that reverses the dark state
@@ -270,7 +271,7 @@ export default function WorkshopsPage() {
   const floatRefs = useRef({})
   const cardRefs = useRef({})
   const frontFaceRefs = useRef({})
-  const descRefs = useRef({})
+  const artRefs = useRef({})
   const isFinePointer = useRef(true)
   const prefersReducedMotion = useRef(false)
   const focusedIdRef = useRef(null)
@@ -523,16 +524,43 @@ export default function WorkshopsPage() {
     applyRestingStagger()
   }
 
+  // The focal card's whole column is lifted above the dark overlay (a
+  // column is its own stacking context because of its scroll-offset
+  // transform), so slot z-index alone isn't enough.
+  const setSlotLevel = (slotEl, raised) => {
+    if (!slotEl) return
+    slotEl.style.zIndex = raised ? '20' : '1'
+    const columnEl = slotEl.parentElement
+    if (columnEl) columnEl.style.zIndex = raised ? '20' : ''
+  }
+
   const applyFocusField = (focalId) => {
+    const focalSlot = slotRefs.current[focalId]
+    const focalColumn = focalSlot ? focalSlot.parentElement : null
+
     Object.keys(cardRefs.current).forEach((otherId) => {
       const cardEl = cardRefs.current[otherId]
       if (!cardEl) return
 
       const isFocal = String(otherId) === String(focalId)
+      const otherSlot = slotRefs.current[otherId]
+      // Neighbours in the focal column ride above the overlay with the focal
+      // card, so they are dimmed directly to match the rest of the page.
+      const isColumnMate =
+        !isFocal &&
+        focalColumn &&
+        otherSlot &&
+        otherSlot.parentElement === focalColumn
+      const brightness = isFocal
+        ? FOCAL_BRIGHTNESS
+        : isColumnMate
+          ? COLUMN_MATE_BRIGHTNESS
+          : QUIET_BRIGHTNESS
+
       gsap.killTweensOf(cardEl, 'opacity,filter')
       gsap.to(cardEl, {
         opacity: isFocal ? FOCAL_OPACITY : QUIET_OPACITY,
-        filter: `brightness(${isFocal ? FOCAL_BRIGHTNESS : QUIET_BRIGHTNESS})`,
+        filter: `brightness(${brightness})`,
         duration: FOCUS_FIELD_DURATION,
         ease: EASE,
         overwrite: 'auto',
@@ -642,29 +670,19 @@ export default function WorkshopsPage() {
 
     focusEngagedRef.current = false
 
-    const maxRadius = Math.max(focusMaxRadiusRef.current, 1)
-    const currentReveal = gsap.getProperty(overlayEl, '--focus-reveal') || 0
-
     if (focusTweenRef.current) {
       focusTweenRef.current.kill()
       focusTweenRef.current = null
     }
 
-    gsap.set(overlayEl, {
-      '--focus-x': focusOriginRef.current.x,
-      '--focus-y': focusOriginRef.current.y,
-    })
-
-    const revealRatio = Math.min(currentReveal / maxRadius, 1) || 0
-    const duration = Math.max(FOCUS_CLEAR_DURATION * revealRatio, 0.35)
-
     focusTweenRef.current = gsap.to(overlayEl, {
-      '--focus-hole': Math.max(currentReveal, maxRadius * 0.05),
-      duration,
-      ease: FOCUS_CLEAR_EASE,
+      opacity: 0,
+      duration: 0.45,
+      ease: 'power2.out',
       overwrite: 'auto',
       onComplete: () => {
         focusTweenRef.current = null
+
         gsap.set(overlayEl, {
           opacity: 0,
           '--focus-reveal': 0,
@@ -1335,7 +1353,7 @@ export default function WorkshopsPage() {
       overwrite: 'auto',
     })
 
-    slotEl.style.zIndex = '20'
+    setSlotLevel(slotEl, true)
 
     const wasFieldActive = fieldActiveRef.current
 
@@ -1391,17 +1409,6 @@ export default function WorkshopsPage() {
     }
 
     startCallout(id, slotEl, workshop)
-
-    const descEl = descRefs.current[id]
-    if (descEl && workshop.description) {
-      gsap.killTweensOf(descEl)
-      gsap.set(descEl, { text: '' })
-      gsap.to(descEl, {
-        text: workshop.description,
-        duration: Math.min(1.5, workshop.description.length * 0.02),
-        ease: 'none',
-      })
-    }
   }
 
   const handleCardMove = (id, e) => {
@@ -1478,15 +1485,9 @@ export default function WorkshopsPage() {
       })
     }
 
-    slotEl.style.zIndex = '1'
+    setSlotLevel(slotEl, false)
     resetCardActivation(id)
     stopCardPulse(id)
-
-    const descEl = descRefs.current[id]
-    if (descEl) {
-      gsap.killTweensOf(descEl)
-      gsap.set(descEl, { text: '' })
-    }
 
     if (String(focusedIdRef.current) === String(id)) {
       fadeOutCallout()
@@ -1528,7 +1529,7 @@ export default function WorkshopsPage() {
         overwrite: 'auto',
       })
 
-      if (slotEl) slotEl.style.zIndex = '1'
+      setSlotLevel(slotEl, false)
     })
 
     Object.keys(floatRefs.current).forEach((cardId) => {
@@ -1551,13 +1552,128 @@ export default function WorkshopsPage() {
     startFocusClearPulse()
   }
 
+  // ── Click → Zoom → Navigate handler ──
+  const handleCardClick = (e, id, href, displayImage) => {
+    if (isNavigatingRef.current) {
+      e.preventDefault()
+      return
+    }
+
+    if (prefersReducedMotion.current) {
+      isNavigatingRef.current = true
+      router.push(href)
+      return
+    }
+
+    e.preventDefault()
+    isNavigatingRef.current = true
+
+    // Remove callout, activation wave, pulse, dark focus overlay
+    hardResetCallout()
+    resetCardActivation(id)
+    stopCardPulse(id, { fade: false })
+    stopTicker()
+    hardResetFocusOverlay()
+    focusedIdRef.current = null
+
+    const cardEl = cardRefs.current[id]
+    const targetEl = artRefs.current[id] || frontFaceRefs.current[id] || cardEl
+
+    if (!targetEl) {
+      router.push(href)
+      return
+    }
+
+    // Lock the clicked card's hover transforms
+    if (cardEl) gsap.killTweensOf(cardEl)
+
+    const rect = targetEl.getBoundingClientRect()
+
+    setActiveTransition({
+      id,
+      href,
+      displayImage,
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+      },
+    })
+  }
+
+  // ── Zoom animation effect ──
+  useEffect(() => {
+    if (!activeTransition) return undefined
+
+    const { id, href } = activeTransition
+    const overlayEl = transitionOverlayRef.current
+    const imgEl = transitionImgRef.current
+    const clickedCard = cardRefs.current[id]
+
+    if (!overlayEl) return undefined
+
+    if (clickedCard) gsap.set(clickedCard, { opacity: 0 })
+
+    const tl = gsap.timeline()
+    transitionTlRef.current = tl
+
+    // Page content recedes while the picture expands to fill the viewport.
+    // (Applied to <main>, not the page root, so the fixed navbar and
+    // background are never given a transform.)
+    if (pageRef.current) {
+      const mainRect = pageRef.current.getBoundingClientRect()
+      gsap.set(pageRef.current, {
+        transformOrigin: `50% ${window.innerHeight / 2 - mainRect.top}px`,
+      })
+      tl.to(
+        pageRef.current,
+        { opacity: 0, scale: 0.94, duration: 0.8, ease: 'power3.inOut' },
+        0,
+      )
+    }
+
+    tl.to(
+      overlayEl,
+      {
+        left: 0,
+        top: 0,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        borderRadius: '0px',
+        boxShadow: '0 0 0px rgba(0,0,0,0)',
+        duration: 0.8,
+        ease: 'power3.inOut',
+      },
+      0,
+    )
+    tl.to(imgEl, { opacity: 0, duration: 0.22, ease: 'power2.in' }, 0.18)
+
+    if (imgEl) {
+      tl.to(imgEl, { scale: 1.08, duration: 0.8, ease: 'power3.inOut' }, 0)
+    }
+
+    tl.to(imgEl, { opacity: 0, duration: 0.25, ease: 'power2.inOut' }, 0.8)
+
+    tl.add(() => {
+      router.push(href)
+    }, 1.05)
+
+    return () => {
+      if (transitionTlRef.current) {
+        transitionTlRef.current.kill()
+        transitionTlRef.current = null
+      }
+    }
+  }, [activeTransition, router])
+
   useEffect(() => {
     fieldActiveRef.current = false
     focusedIdRef.current = null
     stopTicker()
 
     if (pageRef.current) {
-      gsap.set(pageRef.current, { opacity: 1, scale: 1 })
+      gsap.set(pageRef.current, { clearProps: 'opacity,transform,transformOrigin' })
     }
 
     Object.values(cardRefs.current).forEach((cardEl) => {
@@ -1587,9 +1703,7 @@ export default function WorkshopsPage() {
       }
     })
     Object.values(slotRefs.current).forEach((slotEl) => {
-      if (slotEl) {
-        slotEl.style.zIndex = '1'
-      }
+      if (slotEl) setSlotLevel(slotEl, false)
     })
     Object.values(floatRefs.current).forEach((floatEl) => {
       if (floatEl) {
@@ -1900,7 +2014,20 @@ export default function WorkshopsPage() {
       </div>
 
       {/* MAIN CONTAINER */}
-      <main className='relative z-10 px-4 sm:px-6 lg:px-8 pt-4'>
+      <main
+        ref={pageRef}
+        className='relative z-10 px-4 sm:px-6 lg:px-8 pt-4'
+      >
+        {/* Step 11 — global dark focus overlay. Lives inside <main> so the
+            raised focal column (z 20) sits above it (z 15) while every other
+            column sits below. Purely visual; never blocks pointer events. */}
+        <div
+          ref={focusOverlayRef}
+          aria-hidden='true'
+          className='workshop-focus-overlay pointer-events-none absolute inset-0'
+          style={{ zIndex: FOCUS_OVERLAY_Z, opacity: 0 }}
+        />
+
         {/* HERO COSMIC EXPLOSION BANNER */}
         <div className='relative w-full overflow-hidden group mb-8'>
           <div className='relative aspect-[677/197] w-full'>
@@ -2048,6 +2175,8 @@ export default function WorkshopsPage() {
                             }}
                             style={{
                               zIndex: 1,
+                              background: 'rgba(0, 0, 0, 0.001)',
+                              perspective: '1000px',
                               transformOrigin: 'center center',
                               willChange: 'transform',
                             }}
@@ -2056,7 +2185,14 @@ export default function WorkshopsPage() {
                             }
                             onMouseMove={(e) => handleCardMove(workshop.id, e)}
                             onMouseLeave={() => handleCardLeave(workshop.id)}
-                            onClick={() => router.push(`/workshops/${workshop.id}`)}
+                            onClick={(e) =>
+                              handleCardClick(
+                                e,
+                                workshop.id,
+                                `/workshops/${workshop.id}`,
+                                workshop.image,
+                              )
+                            }
                           >
                             {/* Static hit area to prevent hover flicker during 3D tilt */}
                             <div className='absolute inset-0 z-50' />
@@ -2093,14 +2229,29 @@ export default function WorkshopsPage() {
                                     else
                                       delete frontFaceRefs.current[workshop.id]
                                   }}
-                                  className='relative flex flex-col justify-between w-full h-full'
+                                  className='relative flex flex-col justify-between'
                                   style={{
+                                    width: 'calc(100% - 3px)',
+                                    height: 'calc(100% - 5px)',
                                     transformStyle: 'preserve-3d',
                                     borderTop: `1px solid ${REST_EDGE_HIGHLIGHT_TOP}`,
                                     borderLeft: `1px solid ${REST_EDGE_HIGHLIGHT_LEFT}`,
                                   }}
                                 >
-                                  {/* Step 9 — digital activation pixelated overlay (removed) */}
+                                  {/* Step 9 — digital activation pixelated overlay */}
+                                  <div
+                                    ref={(el) => {
+                                      if (el)
+                                        activationOverlayRefs.current[
+                                          workshop.id
+                                        ] = el
+                                      else
+                                        delete activationOverlayRefs.current[
+                                          workshop.id
+                                        ]
+                                    }}
+                                    className='workshop-activation-overlay pointer-events-none absolute inset-0 z-10'
+                                  />
 
                                   {/* Step 10 — continuous digital pulse overlay */}
                                   <div
@@ -2120,11 +2271,13 @@ export default function WorkshopsPage() {
                                       proportions so the mask, cutout and border
                                       artwork are not stretched */}
                                   <div className='absolute inset-x-0 top-0 aspect-[0.9825]'>
-                                    {/* CARD VISUAL ARTWORK — the real event
-                                        picture, shown directly (no placeholder
-                                        silhouette, no wipe-in). Hovering fades
-                                        in a typewriter description over it. */}
+                                    {/* CARD VISUAL ARTWORK — the real event picture, shown directly.
+                                        The description now lives in the hover callout. */}
                                     <div
+                                      ref={(el) => {
+                                        if (el) artRefs.current[workshop.id] = el
+                                        else delete artRefs.current[workshop.id]
+                                      }}
                                       className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-[#08090e]'
                                       style={{
                                         maskImage:
@@ -2146,25 +2299,6 @@ export default function WorkshopsPage() {
                                         sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
                                         className='object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105'
                                       />
-
-                                      {/* Typewriter description, revealed on hover */}
-                                      <div className='pointer-events-none absolute inset-0 z-10 flex items-start opacity-0 transition-opacity duration-500 group-hover:opacity-100'>
-                                        <div
-                                          className='w-full px-[6%] pb-[14%] pt-[10%]'
-                                          style={{
-                                            background:
-                                              'linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 70%, transparent 100%)',
-                                          }}
-                                        >
-                                          <p
-                                            ref={(el) => {
-                                              if (el) descRefs.current[workshop.id] = el
-                                              else delete descRefs.current[workshop.id]
-                                            }}
-                                            className='m-0 text-[4.2cqw] font-bold leading-[1.4] text-white/90'
-                                          />
-                                        </div>
-                                      </div>
                                     </div>
 
                                     {/* BACKGROUND CUTOUT OUTSIDE THE BORDER */}
@@ -2248,31 +2382,167 @@ export default function WorkshopsPage() {
         {/* GSAP OVERLAYS AND PORTALS */}
         {mounted &&
           createPortal(
-            <>
-              {/* Step 11 — global dark focus overlay */}
-              <div
-                ref={focusOverlayRef}
-                className='workshop-focus-overlay pointer-events-none fixed inset-0 z-10'
+            <div
+              ref={calloutOverlayRef}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                pointerEvents: 'none',
+                zIndex: 9999,
+                overflow: 'hidden',
+              }}
+              aria-hidden='true'
+            >
+              <svg
                 style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  pointerEvents: 'none',
+                }}
+              >
+                <path
+                  ref={calloutPathRef}
+                  fill='none'
+                  stroke='rgba(255,255,255,0.5)'
+                  strokeWidth='1'
+                  strokeLinecap='butt'
+                  strokeLinejoin='miter'
+                  style={{ opacity: 0 }}
+                />
+              </svg>
+
+              <div
+                ref={calloutLabelRef}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: `${CALLOUT_LABEL_WIDTH}px`,
                   opacity: 0,
-                  backgroundColor: FOCUS_OVERLAY_COLOR,
-                  maskImage: `radial-gradient(
-                    circle at var(--focus-x, 50%) var(--focus-y, 50%),
-                    transparent calc(var(--focus-hole, 0px) - ${FOCUS_MASK_EDGE}px),
-                    rgba(0,0,0,1) calc(var(--focus-hole, 0px) + ${FOCUS_MASK_EDGE}px),
-                    rgba(0,0,0,1) calc(var(--focus-reveal, 0px) - ${FOCUS_MASK_EDGE}px),
-                    transparent calc(var(--focus-reveal, 0px) + ${FOCUS_MASK_EDGE}px)
-                  )`,
-                  WebkitMaskImage: `radial-gradient(
-                    circle at var(--focus-x, 50%) var(--focus-y, 50%),
-                    transparent calc(var(--focus-hole, 0px) - ${FOCUS_MASK_EDGE}px),
-                    rgba(0,0,0,1) calc(var(--focus-hole, 0px) + ${FOCUS_MASK_EDGE}px),
-                    rgba(0,0,0,1) calc(var(--focus-reveal, 0px) - ${FOCUS_MASK_EDGE}px),
-                    transparent calc(var(--focus-reveal, 0px) + ${FOCUS_MASK_EDGE}px)
-                  )`,
+                  textAlign: calloutSide === 'left' ? 'right' : 'left',
+                  willChange: 'transform, opacity',
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: '-24px -32px',
+                    background:
+                      'radial-gradient(ellipse at center, rgba(6, 7, 12, 0.32) 0%, rgba(6, 7, 12, 0.16) 48%, rgba(6, 7, 12, 0) 78%)',
+                    pointerEvents: 'none',
+                    zIndex: -1,
+                    borderRadius: '9999px',
+                  }}
+                  aria-hidden='true'
+                />
+
+                {calloutWorkshop && (
+                  <>
+                    <div
+                      ref={calloutTitleRef}
+                      style={{
+                        fontSize: '1.18rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.04em',
+                        color: '#ffffff',
+                        textTransform: 'uppercase',
+                        lineHeight: 1.25,
+                        textShadow:
+                          '0 1px 3px rgba(0,0,0,0.98), 0 2px 10px rgba(0,0,0,0.9)',
+                      }}
+                    />
+                    <div
+                      ref={calloutMetaRef}
+                      style={{
+                        marginTop: '8px',
+                        fontFamily:
+                          'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+                        fontSize: '0.72rem',
+                        letterSpacing: '0.04em',
+                        color: 'rgba(255,255,255,0.72)',
+                        lineHeight: 1.45,
+                        textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+                      }}
+                    />
+                    <div
+                      style={{
+                        marginTop: '12px',
+                        marginBottom: '12px',
+                        width: '32px',
+                        height: '1px',
+                        background: 'rgba(255,255,255,0.32)',
+                        marginLeft: calloutSide === 'left' ? 'auto' : 0,
+                      }}
+                    />
+                    <div
+                      ref={calloutDescRef}
+                      style={{
+                        fontSize: '1.04rem',
+                        fontWeight: 450,
+                        letterSpacing: '0.012em',
+                        color: 'rgba(255,255,255,0.95)',
+                        lineHeight: 1.54,
+                        textShadow:
+                          '0 1px 3px rgba(0,0,0,0.98), 0 2px 8px rgba(0,0,0,0.9), 0 0 16px rgba(0,0,0,0.7)',
+                      }}
+                    />
+                    <div
+                      ref={calloutPriceRef}
+                      style={{
+                        marginTop: '16px',
+                        fontFamily:
+                          'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+                        fontSize: '0.96rem',
+                        fontWeight: 600,
+                        letterSpacing: '0.03em',
+                        color: '#ffffff',
+                        textShadow: '0 1px 4px rgba(0,0,0,0.95)',
+                      }}
+                    />
+                  </>
+                )}
+              </div>
+            </div>,
+            document.body,
+          )}
+
+        {/* Click-zoom transition layer */}
+        {mounted &&
+          activeTransition &&
+          createPortal(
+            <div
+              ref={transitionOverlayRef}
+              style={{
+                position: 'fixed',
+                left: `${activeTransition.rect.left}px`,
+                top: `${activeTransition.rect.top}px`,
+                width: `${activeTransition.rect.width}px`,
+                height: `${activeTransition.rect.height}px`,
+                zIndex: 99999,
+                overflow: 'hidden',
+                borderRadius: '6px',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+                pointerEvents: 'none',
+                willChange: 'left, top, width, height, border-radius',
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                ref={transitionImgRef}
+                src={activeTransition.displayImage}
+                alt=''
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block',
+                  transformOrigin: 'center center',
+                  willChange: 'transform',
                 }}
               />
-            </>,
+            </div>,
             document.body,
           )}
       </main>
@@ -2297,67 +2567,96 @@ export default function WorkshopsPage() {
             filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.95));
           }
         }
-        .workshop-pulse-overlay {
-          background: radial-gradient(
-            circle calc(var(--pulse-radius) * 1px) at calc(var(--pulse-x) * 1%)
-              calc(var(--pulse-y) * 1%),
-            rgba(255, 255, 255, var(--pulse-alpha)) 0%,
+        .workshop-focus-overlay {
+          background: ${FOCUS_OVERLAY_COLOR};
+          -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+          -webkit-mask-image: radial-gradient(
+            circle at calc(var(--focus-x, 0) * 1px) calc(var(--focus-y, 0) * 1px),
+            transparent 0px,
+            transparent calc(var(--focus-hole, 0) * 1px),
+            black calc(var(--focus-hole, 0) * 1px + ${FOCUS_MASK_EDGE}px),
+            black calc(var(--focus-reveal, 0) * 1px),
+            transparent calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
             transparent 100%
           );
-          mix-blend-mode: overlay;
+          mask-image: radial-gradient(
+            circle at calc(var(--focus-x, 0) * 1px) calc(var(--focus-y, 0) * 1px),
+            transparent 0px,
+            transparent calc(var(--focus-hole, 0) * 1px),
+            black calc(var(--focus-hole, 0) * 1px + ${FOCUS_MASK_EDGE}px),
+            black calc(var(--focus-reveal, 0) * 1px),
+            transparent calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
+            transparent 100%
+          );
+        }
+
+        .workshop-pulse-overlay {
+          overflow: hidden;
+          opacity: 0;
+          border-radius: inherit;
+          background: radial-gradient(
+            circle at
+              calc(var(--pulse-x, 50) * 1%)
+              calc(var(--pulse-y, 50) * 1%),
+            rgba(255, 255, 255, var(--pulse-alpha, 0)) 0%,
+            rgba(255, 255, 255, 0)
+              calc(var(--pulse-radius, 0) * 1%)
+          );
         }
 
         .workshop-activation-overlay {
-          background:
-            radial-gradient(
-              circle ${ACTIVATION_RING_SPREAD}px at calc(var(--activation-x))
-                calc(var(--activation-y)),
-              rgba(255, 255, 255, 0)
-                calc(
-                  (var(--activation-progress) * 100%) -
-                    ${ACTIVATION_RING_BAND}px
-                ),
-              rgba(255, 255, 255, ${ACTIVATION_GLOW_ALPHA})
-                calc(var(--activation-progress) * 100%),
-              rgba(255, 255, 255, 0)
-                calc(
-                  (var(--activation-progress) * 100%) +
-                    ${ACTIVATION_RING_BAND}px
-                )
-            ),
+          overflow: hidden;
+          opacity: 0;
+          border-radius: inherit;
+        }
+
+        .workshop-activation-overlay::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(
+            circle at var(--activation-x, 50%) var(--activation-y, 50%),
+            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% - ${ACTIVATION_RING_BAND}%),
+            rgba(255, 255, 255, ${ACTIVATION_GLOW_ALPHA}) calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
+            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% + ${ACTIVATION_RING_BAND}%)
+          );
+          mix-blend-mode: screen;
+        }
+
+        .workshop-activation-overlay::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image:
             repeating-linear-gradient(
               0deg,
-              transparent,
-              transparent ${ACTIVATION_GRID_CELL - 1}px,
-              rgba(255, 255, 255, ${ACTIVATION_GRID_ALPHA})
-                ${ACTIVATION_GRID_CELL}px
+              rgba(255, 255, 255, 0.9) 0px,
+              rgba(255, 255, 255, 0.9) 1px,
+              transparent 1px,
+              transparent ${ACTIVATION_GRID_CELL}px
             ),
             repeating-linear-gradient(
               90deg,
-              transparent,
-              transparent ${ACTIVATION_GRID_CELL - 1}px,
-              rgba(255, 255, 255, ${ACTIVATION_GRID_ALPHA})
-                ${ACTIVATION_GRID_CELL}px
+              rgba(255, 255, 255, 0.9) 0px,
+              rgba(255, 255, 255, 0.9) 1px,
+              transparent 1px,
+              transparent ${ACTIVATION_GRID_CELL}px
             );
-          mask-image: radial-gradient(
-            circle ${ACTIVATION_RING_SPREAD}px at calc(var(--activation-x))
-              calc(var(--activation-y)),
-            rgba(0, 0, 0, 1)
-              calc(
-                (var(--activation-progress) * 100%) - ${ACTIVATION_GRID_BAND}px
-              ),
-            rgba(0, 0, 0, 0) calc(var(--activation-progress) * 100%)
-          );
-          -webkit-mask-image: radial-gradient(
-            circle ${ACTIVATION_RING_SPREAD}px at calc(var(--activation-x))
-              calc(var(--activation-y)),
-            rgba(0, 0, 0, 1)
-              calc(
-                (var(--activation-progress) * 100%) - ${ACTIVATION_GRID_BAND}px
-              ),
-            rgba(0, 0, 0, 0) calc(var(--activation-progress) * 100%)
-          );
+          opacity: ${ACTIVATION_GRID_ALPHA};
           mix-blend-mode: overlay;
+          -webkit-mask-image: radial-gradient(
+            circle at var(--activation-x, 50%) var(--activation-y, 50%),
+            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% - ${ACTIVATION_GRID_BAND}%),
+            black calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
+            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% + ${ACTIVATION_GRID_BAND}%)
+          );
+          mask-image: radial-gradient(
+            circle at var(--activation-x, 50%) var(--activation-y, 50%),
+            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% - ${ACTIVATION_GRID_BAND}%),
+            black calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
+            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% + ${ACTIVATION_GRID_BAND}%)
+          );
         }
       `}</style>
 
