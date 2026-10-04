@@ -412,7 +412,7 @@ export default function Navbar() {
 
         <div className='nb__left'>
           <Link href='/' className='nb__mark' aria-label='Home'>
-            <img src='/images/hero/tathvalogo.png' alt='Tathva' />
+            <img src='https://cdn-next-main.tathva.org/images/hero/tathvalogo.png' alt='Tathva' />
           </Link>
 
           <button
@@ -448,7 +448,7 @@ export default function Navbar() {
             <span className='nb__cta-line' aria-hidden='true' />
             <FlipText ref={registerFlipRef} text={ctaLabel} />
             <img
-              src='/images/hero/regarrow.svg'
+              src='https://cdn-next-main.tathva.org/images/hero/regarrow.svg'
               alt=''
               className='nb__cta-arrow'
             />

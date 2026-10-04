@@ -12,9 +12,9 @@ export const GAME = {
 export const SMALL_SCREEN = { unitsPerPixel: 1.7, minWidth: 500 };
 
 export const SPRITE_PATHS = {
-  ship: "/images/GPC/space-shooter/spaceship.png",
-  enemy: "/images/GPC/space-shooter/enemy2.png",
-  bullet: "/images/GPC/space-shooter/bullet.png",
+  ship: "https://cdn-next-main.tathva.org/images/GPC/space-shooter/spaceship.png",
+  enemy: "https://cdn-next-main.tathva.org/images/GPC/space-shooter/enemy2.png",
+  bullet: "https://cdn-next-main.tathva.org/images/GPC/space-shooter/bullet.png",
 };
 
 export const SHIP = {

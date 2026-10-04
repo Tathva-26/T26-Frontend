@@ -8,11 +8,11 @@ export const proshowArtists = [
     date: "09 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "/images/proshow/artist-1.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-1.svg",
     track: {
       title: "Starboy",
       artist: "The Weeknd",
-      src: "/audio/proshow/track-1.wav",
+      src: "https://cdn-next-main.tathva.org/audio/proshow/track-1.wav",
     },
   },
   {
@@ -21,11 +21,11 @@ export const proshowArtists = [
     date: "09 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "/images/proshow/artist-2.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-2.svg",
     track: {
       title: "Placeholder Two",
       artist: "Nova",
-      src: "/audio/proshow/track-2.wav",
+      src: "https://cdn-next-main.tathva.org/audio/proshow/track-2.wav",
     },
   },
   {
@@ -34,11 +34,11 @@ export const proshowArtists = [
     date: "10 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "/images/proshow/artist-3.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-3.svg",
     track: {
       title: "Placeholder Three",
       artist: "Zephyr",
-      src: "/audio/proshow/track-3.wav",
+      src: "https://cdn-next-main.tathva.org/audio/proshow/track-3.wav",
     },
   },
   {
@@ -47,11 +47,11 @@ export const proshowArtists = [
     date: "10 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "/images/proshow/artist-4.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-4.svg",
     track: {
       title: "Placeholder Four",
       artist: "Kairos",
-      src: "/audio/proshow/track-4.wav",
+      src: "https://cdn-next-main.tathva.org/audio/proshow/track-4.wav",
     },
   },
   {
@@ -60,11 +60,11 @@ export const proshowArtists = [
     date: "11 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "/images/proshow/artist-5.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-5.svg",
     track: {
       title: "Placeholder Five",
       artist: "Lumen",
-      src: "/audio/proshow/track-5.wav",
+      src: "https://cdn-next-main.tathva.org/audio/proshow/track-5.wav",
     },
   },
   {
@@ -73,11 +73,11 @@ export const proshowArtists = [
     date: "11 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "/images/proshow/artist-6.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-6.svg",
     track: {
       title: "Placeholder Six",
       artist: "Orbit",
-      src: "/audio/proshow/track-6.wav",
+      src: "https://cdn-next-main.tathva.org/audio/proshow/track-6.wav",
     },
   },
   {
@@ -86,11 +86,11 @@ export const proshowArtists = [
     date: "12 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "/images/proshow/artist-7.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-7.svg",
     track: {
       title: "Placeholder Seven",
       artist: "Solara",
-      src: "/audio/proshow/track-7.wav",
+      src: "https://cdn-next-main.tathva.org/audio/proshow/track-7.wav",
     },
   },
 ];

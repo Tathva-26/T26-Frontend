@@ -28,7 +28,7 @@ const competitionsStyles = `
 
 @font-face {
   font-family: 'Competitions Fragment Serif';
-  src: url('/fonts/PPFragment-SerifExtraBold.otf') format('opentype');
+  src: url('https://cdn-next-main.tathva.org/fonts/PPFragment-SerifExtraBold.otf') format('opentype');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -50,7 +50,7 @@ const CARD_LABEL = 'Competition'
 
 // `picture` is non-null on every event in production today, but the field is
 // nullable and next/image requires a src.
-const FALLBACK_IMAGE = '/images/workshops/workshop-astronaut.jpg'
+const FALLBACK_IMAGE = 'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
 
 // Tunable hover-response constants — focal card (Step 3 movement unchanged)
 const MAX_TRANSLATE = 15
@@ -1778,7 +1778,7 @@ export default function CompetitionsPage() {
         <div className='relative w-full overflow-hidden group mb-8'>
           <div className='relative aspect-[677/197] w-full'>
             <Image
-              src='/images/competitions/cosmic-banner.png'
+              src='https://cdn-next-main.tathva.org/images/competitions/cosmic-banner.webp'
               alt="Tathva '26 Competitions Cosmic Supernova Banner"
               fill
               priority
@@ -2017,9 +2017,9 @@ export default function CompetitionsPage() {
                                       className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-slate-900'
                                       style={{
                                         maskImage:
-                                          "url('/images/competitions/competition-card-image.png')",
+                                          "url('https://cdn-next-main.tathva.org/images/competitions/competition-card-image.png')",
                                         WebkitMaskImage:
-                                          "url('/images/competitions/competition-card-image.png')",
+                                          "url('https://cdn-next-main.tathva.org/images/competitions/competition-card-image.png')",
                                         maskPosition: 'center',
                                         WebkitMaskPosition: 'center',
                                         maskRepeat: 'no-repeat',
@@ -2084,7 +2084,7 @@ export default function CompetitionsPage() {
 
                                     <div className='pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30'>
                                       <img
-                                        src='/images/competitions/competition-card-border.svg'
+                                        src='https://cdn-next-main.tathva.org/images/competitions/competition-card-border.svg'
                                         alt=''
                                         className='absolute inset-[-0.38%] h-full w-full'
                                       />

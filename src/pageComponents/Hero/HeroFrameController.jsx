@@ -62,7 +62,7 @@ const getIsMobile = () => window.matchMedia(MOBILE_QUERY).matches
 const getIsMobileServer = () => false
 
 // --- Ready gate: keep a black cover up until the first-view hero images are decoded ---
-const HERO_BASE = '/images/hero/'
+const HERO_BASE = 'https://cdn-next-main.tathva.org/images/hero/'
 const READY_TIMEOUT_MS = 1500 // never leave the user on black longer than this
 
 const preloadImage = (src) =>
@@ -99,9 +99,9 @@ export default function HeroFrameController({ children }) {
     let cancelled = false
 
     const CRITICAL = [
-      'bg.png',
-      'islandv2.png',
-      'rockyground.png',
+      'bg.webp',
+      'islandv2.webp',
+      'rockyground.webp',
       'girl4.webp',
       isMobile ? 'tathva_mobile.svg' : 'tathva_text.svg',
     ]

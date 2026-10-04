@@ -495,7 +495,7 @@ function TathvaMenuOverlay() {
           className="pointer-events-auto inline-flex items-center"
         >
           <img
-            src="/images/hero/tathvalogo.png"
+            src="https://cdn-next-main.tathva.org/images/hero/tathvalogo.png"
             alt="Tathva"
             className="h-8 w-auto object-contain"
           />
@@ -675,7 +675,7 @@ function TathvaMenuOverlay() {
               `}
             >
               <img
-                src="/images/menu/leftwave.png"
+                src="https://cdn-next-main.tathva.org/images/menu/leftwave.png"
                 alt=""
                 draggable={false}
                 className="
@@ -695,7 +695,7 @@ function TathvaMenuOverlay() {
               <PortalText text={item.label} />
 
               <img
-                src="/images/menu/rightwave.png"
+                src="https://cdn-next-main.tathva.org/images/menu/rightwave.png"
                 alt=""
                 draggable={false}
                 className="
@@ -787,7 +787,7 @@ function TathvaMenuOverlay() {
               "
             >
               <img
-                src='/images/menu/leftwave.png'
+                src='https://cdn-next-main.tathva.org/images/menu/leftwave.png'
                 alt=''
                 draggable={false}
                 className='
@@ -807,7 +807,7 @@ function TathvaMenuOverlay() {
               <PortalText text={item.label} />
 
               <img
-                src='/images/menu/rightwave.png'
+                src='https://cdn-next-main.tathva.org/images/menu/rightwave.png'
                 alt=''
                 draggable={false}
                 className='
@@ -890,7 +890,7 @@ function TathvaMenuOverlay() {
               "
             >
               <img
-                src='/images/menu/leftwave.png'
+                src='https://cdn-next-main.tathva.org/images/menu/leftwave.png'
                 alt=''
                 draggable={false}
                 className='
@@ -910,7 +910,7 @@ function TathvaMenuOverlay() {
               <PortalText text={item.label} />
 
               <img
-                src='/images/menu/rightwave.png'
+                src='https://cdn-next-main.tathva.org/images/menu/rightwave.png'
                 alt=''
                 draggable={false}
                 className='
@@ -965,7 +965,7 @@ function TathvaMenuOverlay() {
       >
         {/* Center Base Image */}
         <img
-          src='/images/menu/tathva.svg'
+          src='https://cdn-next-main.tathva.org/images/menu/tathva.svg'
           alt='Tathva 26'
           draggable={false}
           className='pointer-events-none block h-auto w-full select-none object-contain'
@@ -973,7 +973,7 @@ function TathvaMenuOverlay() {
 
         {/* Left Wing (aligned over the center image) */}
         <img
-          src='/images/menu/tleft.svg'
+          src='https://cdn-next-main.tathva.org/images/menu/tleft.svg'
           alt=''
           draggable={false}
           className='pointer-events-none absolute -left-2 top-1/2 h-full w-[195px] -translate-y-5.25 select-none object-contain'
@@ -981,7 +981,7 @@ function TathvaMenuOverlay() {
 
         {/* Right Wing (aligned over the center image) */}
         <img
-          src='/images/menu/tright.svg'
+          src='https://cdn-next-main.tathva.org/images/menu/tright.svg'
           alt=''
           draggable={false}
           className='pointer-events-none absolute -right-2 top-1/2 h-full w-[195px] -translate-y-5.25 select-none object-contain'

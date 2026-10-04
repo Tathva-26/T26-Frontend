@@ -27,10 +27,10 @@ import { useExpoDetails } from './ExpoDetails'
 import { springStep, fractureSector, animationDelta, pulseStrength } from './crystalInteraction.mjs'
 
 const geometryLoader = new DRACOLoader()
-  .setDecoderPath('/images/expo/decoders/draco/')
+  .setDecoderPath('https://cdn-next-main.tathva.org/images/expo/decoders/draco/')
   .setWorkerLimit(1)
 const surfaceLoader = new KTX2Loader()
-  .setTranscoderPath('/images/expo/decoders/basis/')
+  .setTranscoderPath('https://cdn-next-main.tathva.org/images/expo/decoders/basis/')
   .setWorkerLimit(1)
 // Reuse the Draco worker pool for any Draco-compressed GLB payloads.
 const modelLoader = new GLTFLoader().setDRACOLoader(geometryLoader)
@@ -149,13 +149,13 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const gl = useThree((state) => state.gl)
   // 3D robot model replaces the old flat SVG plane. The GLB is cached by
   // useLoader; we only clone the scene graph so multiple mounts stay isolated.
-  const robotGltf = useLoader(modelLoader, '/images/expo/WhiteRobot-compressed.glb')
-  const source = useLoader(geometryLoader, '/images/expo/crystal/shell.drc')
+  const robotGltf = useLoader(modelLoader, 'https://cdn-next-main.tathva.org/images/expo/WhiteRobot-compressed.glb')
+  const source = useLoader(geometryLoader, 'https://cdn-next-main.tathva.org/images/expo/crystal/shell.drc')
   const [normal, roughness] = useLoader(
     surfaceLoader,
     [
-      '/images/expo/crystal/shell-normal.ktx2',
-      '/images/expo/crystal/shell-roughness.ktx2',
+      'https://cdn-next-main.tathva.org/images/expo/crystal/shell-normal.ktx2',
+      'https://cdn-next-main.tathva.org/images/expo/crystal/shell-roughness.ktx2',
     ],
     (loader) => loader.detectSupport(gl),
   )

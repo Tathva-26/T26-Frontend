@@ -6,12 +6,12 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const background = '/images/techconclave/background.png'
-const person1 = '/images/techconclave/person2.png'
-const person2 = '/images/techconclave/person1.png'
-const robot = '/images/techconclave/robot.png'
-const logo = '/images/techconclave/logo.png'
-const ted='/images/techconclave/tedx.png'
+const background = 'https://cdn-next-main.tathva.org/images/techconclave/background.webp'
+const person1 = 'https://cdn-next-main.tathva.org/images/techconclave/person2.webp'
+const person2 = 'https://cdn-next-main.tathva.org/images/techconclave/person1.webp'
+const robot = 'https://cdn-next-main.tathva.org/images/techconclave/robot.webp'
+const logo = 'https://cdn-next-main.tathva.org/images/techconclave/logo.png'
+const ted='https://cdn-next-main.tathva.org/images/techconclave/tedx.png'
 /*
   ── HOW THIS FILE IS ORGANISED ───────────────────────────────────────────
   DesktopPoster  → your existing, pixel-tuned layout for 1280×800 / 1440×900.

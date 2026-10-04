@@ -12,7 +12,7 @@ import { interactionTargets, localPointer } from "./crystalGeometry.mjs";
 
 function SceneEnvironment({ shared }) {
   const { gl, scene, camera, size } = useThree();
-  const environment = useLoader(EXRLoader, "/images/expo/crystal/studio.exr");
+  const environment = useLoader(EXRLoader, "https://cdn-next-main.tathva.org/images/expo/crystal/studio.exr");
   useEffect(() => {
     const generator = new PMREMGenerator(gl);
     const target = generator.fromEquirectangular(environment);

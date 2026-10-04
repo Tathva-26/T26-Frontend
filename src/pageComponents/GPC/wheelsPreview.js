@@ -13,7 +13,7 @@ import {
 // is read from its element. If Wheels changes how it works, this is the one
 // file in GPC to update.
 const WHEELS_VIEWPORT = ".wheels-viewport";
-const framePath = (index) => `/wheels/frames/ezgif-frame-${String(START_FRAME + index).padStart(3, "0")}.webp`;
+const framePath = (index) => `https://cdn-next-main.tathva.org/wheels/frames/ezgif-frame-${String(START_FRAME + index).padStart(3, "0")}.webp`;
 
 // On narrow screens Wheels slides its picture left by this many px per frame.
 const NARROW_SCREEN = 768;

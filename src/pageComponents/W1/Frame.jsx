@@ -434,12 +434,12 @@ function DesktopView() {
       <TathvaMenu />
       <div className='absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-500 pointer-events-none z-10 page-overlay' />
       <img
-        src='/images/menu/border_left.png'
+        src='https://cdn-next-main.tathva.org/images/menu/border_left.png'
         alt=''
         className='absolute left-[30px] top-1/2 -translate-y-1/2 h-[50%] max-h-[350px] w-auto pointer-events-none z-50'
       />
       <img
-        src='/images/menu/border_right.png'
+        src='https://cdn-next-main.tathva.org/images/menu/border_right.png'
         alt=''
         className='absolute right-[30px] top-1/2 -translate-y-1/2 h-[50%] max-h-[350px] w-auto pointer-events-none z-50'
       />

@@ -197,7 +197,7 @@
   pointer-events: none;
   will-change: transform;
   backface-visibility: hidden;
-  /* TODO(perf): bake this into bgrocks.png (multiply RGB by 0.55), then delete the filter. */
+  /* TODO(perf): bake this into bgrocks.webp (multiply RGB by 0.55), then delete the filter. */
   filter: brightness(0.55);
   width: max(88.3125rem, calc(100vw / var(--design-scale, 1))) !important;
 }

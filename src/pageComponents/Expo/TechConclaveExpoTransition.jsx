@@ -73,7 +73,7 @@ function ExpoTransitionContent() {
       if (disposed) return
       const viewport = plane.getBoundingClientRect()
       const destination = slot.getBoundingClientRect()
-      const robot = [...tc.querySelectorAll('img[src="/images/techconclave/robot.png"]')]
+      const robot = [...tc.querySelectorAll('img[src="https://cdn-next-main.tathva.org/images/techconclave/robot.webp"]')]
         .find((image) => image.getBoundingClientRect().width > 0)
       const source = robot?.getBoundingClientRect()
       const tcBox = tc.getBoundingClientRect()

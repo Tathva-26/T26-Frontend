@@ -26,7 +26,7 @@ const SCROLL_HINT_IDLE_MS = 700
 
 const getFramePath = (index) => {
   const frameNum = (START_FRAME + index).toString().padStart(3, '0')
-  return `/wheels/frames/ezgif-frame-${frameNum}.webp`
+  return `https://cdn-next-main.tathva.org/wheels/frames/ezgif-frame-${frameNum}.webp`
 }
 
 // =========================================================================
@@ -160,7 +160,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       const animH = animW / ASPECT_RATIO
       const tvTop = Math.max(16, Math.min(32, vpH * 0.03))
 
-      // Native screen in tv.png: X=205..1466 (W=1262), Y=282..816 (H=535), Total=1672x941
+      // Native screen in tv.webp: X=205..1466 (W=1262), Y=282..816 (H=535), Total=1672x941
       const animTop = tvTop + (282 / 535) * animH
       const animCenterY = animTop + animH / 2
 
@@ -730,7 +730,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
           {/* TV Outer Frame: scaled and positioned around the animation viewport */}
           <img
             ref={tvFrameRef}
-            src='/wheels/tv.png'
+            src='https://cdn-next-main.tathva.org/wheels/tv.webp'
             alt='TV'
             className='absolute pointer-events-none select-none z-10 opacity-0'
             style={TV_ART_STYLE}
@@ -781,12 +781,12 @@ export default function WheelsExperience({ revealUnderlay = false }) {
                 className='flex max-w-[65%] flex-col will-change-transform max-md:max-w-[58%]'
               >
                 <img
-                  src='/wheels/Wheels.svg'
+                  src='https://cdn-next-main.tathva.org/wheels/Wheels.svg'
                   alt='Wheels'
                   className='block w-[clamp(180px,24vw,334px)] h-auto object-contain opacity-95 max-md:w-[clamp(130px,38vw,190px)]'
                 />
                 <img
-                  src='/wheels/Auto Show.svg'
+                  src='https://cdn-next-main.tathva.org/wheels/Auto%20Show.svg'
                   alt='Auto Show'
                   className='block w-[clamp(100px,13vw,183px)] h-auto mt-2 object-contain opacity-95 max-md:w-[clamp(72px,21vw,105px)] max-md:mt-1'
                 />

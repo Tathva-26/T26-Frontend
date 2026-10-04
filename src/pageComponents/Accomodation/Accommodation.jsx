@@ -131,7 +131,8 @@ const accommodationStyles = `
 
 @media (max-width: 900px) {
   .accommodation-page {
-    height: 100%;
+    height: auto;
+    min-height: 100vh;
     overflow-y: auto;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto 1fr;
@@ -224,19 +225,19 @@ const HOSTELS = [
     id: 1,
     name: 'Mega Hostel Boys II',
     location: 'West Campus, NIT Calicut',
-    image: '/images/accommodation/sample.svg',
+    image: 'https://cdn-next-main.tathva.org/images/accommodation/sample.svg',
   },
   {
     id: 2,
     name: 'Mega Hostel Boys II',
     location: 'West Campus, NIT Calicut',
-    image: '/images/accommodation/sample.svg',
+    image: 'https://cdn-next-main.tathva.org/images/accommodation/sample.svg',
   },
   {
     id: 3,
     name: 'Mega Hostel Boys II',
     location: 'West Campus, NIT Calicut',
-    image: '/images/accommodation/sample.svg',
+    image: 'https://cdn-next-main.tathva.org/images/accommodation/sample.svg',
   },
 ]
 

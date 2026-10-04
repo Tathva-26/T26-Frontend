@@ -23,7 +23,7 @@ const USE_CLIP_HOLE =
 
 
 
-const assetBase = '/images/hero/'
+const assetBase = 'https://cdn-next-main.tathva.org/images/hero/'
 
 // Size of the blue spark that replaces the bird (design-space rem). The sprite is drawn
 // heading right with its tail on the left; birdOrientation rotates it along the flight path.
@@ -45,7 +45,7 @@ const PORTAL_IMG_FADE_END = 0.85
 //                    (fadeEnd optional: defaults to PORTAL_IMG_FADE_END)
 //   aboveVideo       true = over the portal video, false = under it
 const PORTAL_FRAME = {
-  src: 'frame.png',
+  src: 'frame.webp',
   scale: 1.2,
   offsetX: 0,
   offsetY: 3,
@@ -1082,7 +1082,7 @@ export const Hero = ({
             <div
               ref={backgroundRef}
               className={styles.background}
-              style={{ backgroundImage: `url(${assetBase}bg.png)` }}
+              style={{ backgroundImage: `url(${assetBase}bg.webp)` }}
               aria-hidden='true'
             />
 
@@ -1102,7 +1102,7 @@ export const Hero = ({
                 className={styles.island}
                 alt=''
                 aria-hidden='true'
-                src={`${assetBase}islandv2.png`}
+                src={`${assetBase}islandv2.webp`}
               />
               {/* Back copy of the trail: shows only AFTER the curve (cometFlight.js sizes
                   the clip rect to the island's leftmost point, where the comet passes
@@ -1215,7 +1215,7 @@ export const Hero = ({
                 className={styles.ground}
                 alt=''
                 aria-hidden='true'
-                src={`${assetBase}rockyground.png`}
+                src={`${assetBase}rockyground.webp`}
               />
             </div>
 
@@ -1230,7 +1230,7 @@ export const Hero = ({
               }}
               alt=''
               aria-hidden='true'
-              src={`${assetBase}bgrocks.png`}
+              src={`${assetBase}bgrocks.webp`}
             />
 
             <div

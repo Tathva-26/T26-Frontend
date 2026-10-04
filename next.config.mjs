@@ -18,6 +18,7 @@ const nextConfig = {
       { protocol: 'https', hostname: imageHost },
       // Static assets moved out of public/.
       { protocol: 'https', hostname: 'cdn-next.tathva.org' },
+      { protocol: 'https', hostname: 'cdn-next-main.tathva.org' },
       // Google avatars, used until a user uploads their own picture.
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
     ],

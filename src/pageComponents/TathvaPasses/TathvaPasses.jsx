@@ -29,7 +29,7 @@ const PASS_ARTWORK = [
     date: 'OCT 11 2026',
     price: 'Rs. 1400/-',
     details: 'PROSHOW',
-    src: '/images/tickets/day3pass.png',
+    src: 'https://cdn-next-main.tathva.org/images/tickets/day3pass.webp',
     alt: 'Tathva Pass Day 3 - Oct 11 2026',
     match: /\bday\s*3\b/i,
   },
@@ -39,7 +39,7 @@ const PASS_ARTWORK = [
     date: 'OCT 9 2026',
     price: 'Rs. 600/-',
     details: 'WHEELS | ROBOWARS | INFORMALS',
-    src: '/images/tickets/day1pass.png',
+    src: 'https://cdn-next-main.tathva.org/images/tickets/day1pass.webp',
     alt: 'Tathva Pass Day 1 - Oct 9 2026',
     match: /\bday\s*1\b/i,
   },
@@ -49,7 +49,7 @@ const PASS_ARTWORK = [
     date: 'OCT ALL 2026',
     price: 'Rs. 1999/-',
     details: 'PROSHOW',
-    src: '/images/tickets/day2pass.png',
+    src: 'https://cdn-next-main.tathva.org/images/tickets/day2pass.webp',
     alt: 'Tathva Pass Day 2 - Oct 2026',
     match: /\b(all\s*days?|day\s*all)\b/i,
   },
@@ -115,7 +115,7 @@ export default function TathvaPasses() {
       ------------------------------------------------------------- */}
       {/* <div className='pointer-events-none absolute left-1 sm:left-4 md:left-8 top-[55%] sm:top-1/2 z-20 -translate-y-1/2'>
         <img
-          src='/images/tickets/leftrod.svg'
+          src='https://cdn-next-main.tathva.org/images/tickets/leftrod.svg'
           alt=''
           className='h-[55vh] sm:h-[65vh] max-h-[580px] w-auto object-contain drop-shadow-[0_0_15px_rgba(138,56,245,0.8)]'
         />
@@ -123,7 +123,7 @@ export default function TathvaPasses() {
 
       {/* <div className='pointer-events-none absolute right-1 sm:right-4 md:right-8 top-[55%] sm:top-1/2 z-20 -translate-y-1/2'>
         <img
-          src='/images/tickets/rightrod.svg'
+          src='https://cdn-next-main.tathva.org/images/tickets/rightrod.svg'
           alt=''
           className='h-[55vh] sm:h-[65vh] max-h-[580px] w-auto object-contain drop-shadow-[0_0_15px_rgba(138,56,245,0.8)]'
         />
@@ -132,7 +132,7 @@ export default function TathvaPasses() {
       {/* -------------------------------------------------------------
           HERO TITLE & SUBTITLE (AKIRA EXPANDED FONT)
       ------------------------------------------------------------- */}
-      <div className='relative z-10 my-0 sm:my-auto flex w-full flex-col items-center justify-center px-4 pt-24 sm:pt-24 md:pt-20 text-center'>
+      <div className='relative z-10 my-0 sm:my-auto flex w-full flex-col items-center justify-center px-4 pt-24 sm:pt-24 md:pt-20 pb-10 sm:pb-14 text-center'>
         <h1
           className='text-4xl font-black tracking-[0.12em] text-white sm:text-5xl md:text-6xl lg:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]'
           style={{ fontFamily: "'Akira Expanded', 'Orbitron', sans-serif" }}

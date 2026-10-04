@@ -564,7 +564,7 @@ export default function Preloader({ onComplete }) {
             {/* CORE LOGO */}
             <div className='absolute w-[120px] h-[120px] flex items-center justify-center [transform-style:preserve-3d] will-change-transform animate-gimbal-core'>
               <img
-                src='/images/hero/tathvalogo.png'
+                src='https://cdn-next-main.tathva.org/images/hero/tathvalogo.png'
                 alt=''
                 draggable={false}
                 className='w-full h-full object-contain select-none'
