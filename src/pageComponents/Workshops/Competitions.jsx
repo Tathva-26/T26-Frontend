@@ -2065,23 +2065,6 @@ export default function CompetitionsPage() {
                                       }}
                                     />
 
-                                    {/* PRICE & DATE (unchanged position) */}
-                                    <div className='absolute inset-x-0 bottom-0 z-20 h-[13.5%]'>
-                                      <div className='absolute bottom-[80%] left-[3%] leading-none'>
-                                        <span className='text-[4.28cqw] font-extrabold text-white'>
-                                          {competition.fee}
-                                        </span>
-                                      </div>
-                                      <div className='absolute bottom-[80%] right-[1.1%] flex flex-col items-end leading-none'>
-                                        <span className='mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#fbebec]'>
-                                          {competition.dateMonth}
-                                        </span>
-                                        <span className='text-[8.07cqw] font-bold text-white'>
-                                          {competition.dateDay}
-                                        </span>
-                                      </div>
-                                    </div>
-
                                     <div className='pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30'>
                                       <img
                                         src='/images/competitions/competition-card-border.svg'
@@ -2124,7 +2107,7 @@ export default function CompetitionsPage() {
                                       }}
                                     />
                                     <p className='m-0 break-words text-[5.5cqw] font-bold leading-[1.2] text-white'>
-                                      Competition
+                                      {competition.fullTitle || competition.title}
                                     </p>
                                   </div>
                                 </div>
