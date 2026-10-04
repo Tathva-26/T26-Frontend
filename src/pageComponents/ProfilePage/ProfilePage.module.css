@@ -345,6 +345,42 @@
   color: rgba(255, 255, 255, 0.96);
 }
 
+.detailsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.detailsHeader .sectionTitle {
+  margin: 0;
+}
+
+.editButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(var(--violet), 0.4);
+  background: rgba(var(--violet), 0.1);
+  color: rgba(214, 190, 255, 0.92);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.editButton:hover {
+  background: rgba(var(--violet), 0.22);
+}
+
+.editButtonIcon {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
 .detailsGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -736,6 +772,7 @@
     gap: 0.9rem;
   }
 
+  .detailsHeader,
   .bookingsHeader {
     flex-direction: column;
     gap: 0.7rem;
