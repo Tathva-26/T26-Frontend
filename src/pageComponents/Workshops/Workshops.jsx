@@ -2032,7 +2032,7 @@ export default function WorkshopsPage() {
         <div className='relative w-full overflow-hidden group mb-8'>
           <div className='relative aspect-[677/197] w-full'>
             <Image
-              src='https://cdn-next-main.tathva.org/images/workshops/cosmic-banner.webp'
+              src='https://cdn-next-main.tathva.org/images/workshops/cosmic-banner.webp?v=2'
               alt="Tathva '26 Workshops Cosmic Supernova Banner"
               fill
               priority
