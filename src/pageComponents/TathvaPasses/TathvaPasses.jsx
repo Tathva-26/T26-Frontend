@@ -144,6 +144,19 @@ export default function TathvaPasses() {
 
               const isCenter = offset === 0
               const isLeft = offset === -1
+              const isRight = offset === 1
+
+              /* Three slots, so a fourth pass has nowhere of its own: it
+                 parks in the right slot, behind the real right card. Both
+                 used to carry z-10, which left paint order — i.e. array
+                 order — to break the tie, and the spare covered the right
+                 card on three of every four steps. Layering each slot
+                 explicitly keeps the spare behind wherever it lands. */
+              const layer = isCenter
+                ? 'z-30'
+                : isLeft || isRight
+                  ? 'z-20'
+                  : 'z-10'
 
               return (
                 <div
@@ -152,13 +165,13 @@ export default function TathvaPasses() {
                     vibrate()
                     setChosenIndex(index)
                   }}
-                  className={`absolute left-1/2 top-1/2 cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${
+                  className={`absolute left-1/2 top-1/2 cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${layer} ${
                     isCenter
                       ? // Dead centre, elevated a bit more on desktop for the hero look.
-                        'z-30 -translate-x-1/2 -translate-y-1/2 sm:-translate-y-[58%] md:-translate-y-[62%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
+                        '-translate-x-1/2 -translate-y-1/2 sm:-translate-y-[58%] md:-translate-y-[62%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
                       : isLeft
-                        ? 'z-10 -translate-x-1/2 sm:-translate-x-[95%] md:-translate-x-[100%] lg:-translate-x-[105%] -translate-y-[66%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
-                        : 'z-10 -translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] -translate-y-[34%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        ? '-translate-x-1/2 sm:-translate-x-[95%] md:-translate-x-[100%] lg:-translate-x-[105%] -translate-y-[66%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        : '-translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] -translate-y-[34%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
                   }`}
                 >
                   <div className='relative w-[260px] sm:w-[420px] md:w-[540px] lg:w-[640px] xl:w-[700px]'>
