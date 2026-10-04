@@ -1,7 +1,18 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import './w1.css'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
+
+// Mobile/tablet cards are keyed by title rather than route id, and "HACKATHONS"
+// is legacy copy with no page of its own — closest real destination is Competitions.
+const ROUTE_BY_TITLE = {
+  WORKSHOPS: '/workshops',
+  COMPETITIONS: '/competitions',
+  LECTURES: '/lectures',
+  PASSES: '/passes',
+  HACKATHONS: '/competitions',
+}
 
 // Desktop Constants
 const desktopAssetBase = 'https://c.animaapp.com/Dp7bguVy/img'
@@ -151,6 +162,7 @@ function ActivityCard({
   index,
   anySelected,
   customStyle,
+  router,
 }) {
   const positionClass =
     customStyle?.position !== undefined ? customStyle.position : card.position
@@ -173,6 +185,7 @@ function ActivityCard({
       onClick={(e) => {
         e.stopPropagation()
         onSelect(card.number)
+        router.push(ROUTE_BY_TITLE[card.title] || '/')
       }}
     >
       <div className='w-full h-full relative'>
@@ -204,6 +217,7 @@ function ActivityCard({
 }
 
 function MobileView() {
+  const router = useRouter()
   const [selectedCard, setSelectedCard] = useState(null)
   const [scale, setScale] = useState(1)
   const [viewType, setViewType] = useState('mobile') // 'mobile' | 'tablet-portrait' | 'tablet-landscape'
@@ -297,6 +311,7 @@ function MobileView() {
                 onClick={(e) => {
                   e.stopPropagation()
                   setSelectedCard(card.id)
+                  router.push(`/${card.id}`)
                 }}
               >
                 <div className='w-full h-full relative'>
@@ -383,6 +398,7 @@ function MobileView() {
                   anySelected={selectedCard !== null}
                   selected={selectedCard === card.number}
                   onSelect={setSelectedCard}
+                  router={router}
                   customStyle={{
                     position: 'absolute w-[143px] h-[401px]',
                     style: { top: `${topPos}px`, left: `${leftPos}px` },
@@ -424,6 +440,7 @@ function MobileView() {
                 anySelected={selectedCard !== null}
                 selected={selectedCard === card.number}
                 onSelect={setSelectedCard}
+                router={router}
               />
             ))}
           </section>
@@ -434,6 +451,7 @@ function MobileView() {
 }
 
 function DesktopView() {
+  const router = useRouter()
   return (
     <main
       className='hidden min-[1285px]:flex events-container bg-[url(https://c.animaapp.com/Dp7bguVy/img/frame-48.png)] bg-cover bg-[50%_50%] w-full h-[max(697px,100svh)] relative items-center justify-center overflow-hidden'
@@ -465,6 +483,7 @@ function DesktopView() {
                 index === 0 ? '' : index === 2 ? 'ml-[44.9px]' : 'ml-[57.9px]'
               }`}
               style={{ animationDelay: `${index * 0.15}s` }}
+              onClick={() => router.push(`/${card.id}`)}
             >
               <div className='w-full h-full relative event-card-inner cursor-pointer'>
                 <img

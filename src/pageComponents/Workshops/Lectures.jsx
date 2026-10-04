@@ -1776,7 +1776,7 @@ export default function LecturesPage() {
         <div className='relative w-full overflow-hidden group mb-8'>
           <div className='relative aspect-[677/197] w-full'>
             <Image
-              src='https://cdn-next-main.tathva.org/images/lectures/cosmic-banner.webp'
+              src='/images/lectures/asteria-observatory-hall.png'
               alt="Tathva '26 Lectures Cosmic Supernova Banner"
               fill
               priority
