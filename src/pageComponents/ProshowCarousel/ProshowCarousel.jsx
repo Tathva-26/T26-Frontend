@@ -160,13 +160,13 @@ const carouselStyles = `
   will-change: transform;
 }
 .proshow-carousel .smokeFar {
-  -webkit-mask-image: url("/images/proshow/celestial-smoke-a.png");
-  mask-image: url("/images/proshow/celestial-smoke-a.png");
+  -webkit-mask-image: url("https://cdn-next-main.tathva.org/images/proshow/celestial-smoke-a.png");
+  mask-image: url("https://cdn-next-main.tathva.org/images/proshow/celestial-smoke-a.png");
   animation: driftFar 140s ease-in-out infinite alternate;
 }
 .proshow-carousel .smokeNear {
-  -webkit-mask-image: url("/images/proshow/celestial-smoke-b.png");
-  mask-image: url("/images/proshow/celestial-smoke-b.png");
+  -webkit-mask-image: url("https://cdn-next-main.tathva.org/images/proshow/celestial-smoke-b.webp");
+  mask-image: url("https://cdn-next-main.tathva.org/images/proshow/celestial-smoke-b.webp");
   animation: driftNear 100s ease-in-out infinite alternate;
 }
 .proshow-carousel .darkFar  { background: rgb(80, 72, 188);  opacity: 0.38; }

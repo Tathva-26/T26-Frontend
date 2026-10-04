@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { mountAuroraOverlay } from "@/lib/nightScene/auroraOverlay";
 
 /**
- * Animated aurora light layered on top of the real banner.png photo via
+ * Animated aurora light layered on top of the real banner.webp photo via
  * mix-blend-mode: screen - adds moving light without redrawing the scene.
  * `paused` stops it while something else (the game overlay) covers it.
  */

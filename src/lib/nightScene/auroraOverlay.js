@@ -16,7 +16,7 @@ const FEATHER_LAYERS = 6;
 const FEATHER_WIDEST = 1.2;
 const FEATHER_NARROWEST = 0.3;
 
-// Positioned over where the aurora already sits in banner.png (upper-right
+// Positioned over where the aurora already sits in banner.webp (upper-right
 // sky, above the ridgeline).
 const AURORA_RAYS = [
   { angle: -16, xRatio: 0.55, widthRatio: 0.26, hue: 285, alpha: 0.4, speed: 0.28 },
@@ -55,7 +55,7 @@ function drawAuroraRay(ctx, ray, w, h, index, t) {
 
 /**
  * Animated aurora drawn on a transparent canvas, meant to sit via CSS
- * mix-blend-mode: screen on top of the real banner.png photo - it adds
+ * mix-blend-mode: screen on top of the real banner.webp photo - it adds
  * moving light over the aurora already in the image rather than redrawing
  * the scene. Empty canvas area stays fully transparent.
  *

@@ -81,7 +81,7 @@ export function UiuxCard({
     >
       {/* Base Torn Sunburst Card Element */}
       <img
-        src="/images/lead-card.png"
+        src="https://cdn-next-main.tathva.org/images/lead-card.webp"
         alt={name}
         className="w-full h-full object-contain pointer-events-none"
       />

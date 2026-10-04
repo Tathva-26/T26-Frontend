@@ -107,7 +107,7 @@ export default function ContactUs() {
   return (
     <div className={styles.page}>
       {/* <Link className={styles.brand} href="/" aria-label="Tathva home">
-        <Image src="/images/contact-us/tathva-logo.png" alt="Tathva" fill priority sizes="55px" />
+        <Image src="https://cdn-next-main.tathva.org/images/contact-us/tathva-logo.png" alt="Tathva" fill priority sizes="55px" />
       </Link> */}
 
       <main className={styles.main}>

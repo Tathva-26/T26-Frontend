@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-const assetBaseUrl = "/images/ticket/";
+const assetBaseUrl = "https://cdn-next-main.tathva.org/images/ticket/";
 
 const navigationItems = [
   {
@@ -143,7 +143,7 @@ const ticketAssets = [
   {
     className:
       "top-[65px] left-0 w-[1105px] h-[567px] aspect-[1.95] absolute object-cover",
-    src: "image-221.png",
+    src: "image-221.webp",
     alt: "Tathva event pass artwork",
   },
   {

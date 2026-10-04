@@ -35,11 +35,11 @@ export default function SignupPage({
         <section className="tv-card" aria-labelledby="signup-title">
           <div className="tv-crest">
             <span className="tv-border-box">
-              <Image src="/images/menu/border_left.png" alt="" className="tv-border" width={64} height={360} />
+              <Image src="https://cdn-next-main.tathva.org/images/menu/border_left.png" alt="" className="tv-border" width={64} height={360} />
             </span>
             <span className="tv-crest-text" aria-hidden="true">TATHVA 2026</span>
             <span className="tv-border-box">
-              <Image src="/images/menu/border_right.png" alt="" className="tv-border" width={64} height={360} />
+              <Image src="https://cdn-next-main.tathva.org/images/menu/border_right.png" alt="" className="tv-border" width={64} height={360} />
             </span>
           </div>
 

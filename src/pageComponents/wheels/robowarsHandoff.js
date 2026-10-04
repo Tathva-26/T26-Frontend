@@ -41,7 +41,7 @@ export const ROBOWARS_TV_SCREEN = {
   height: TV_SCREEN_HEIGHT,
 };
 
-// tv.png (1672x941, screen hole at 205..1466 x 282..816) stretched around a 16:9 screen.
+// tv.webp (1672x941, screen hole at 205..1466 x 282..816) stretched around a 16:9 screen.
 export const TV_ART_STYLE = {
   left: "-16.244%",
   top: "-52.710%",

@@ -87,7 +87,7 @@ export default function Footer() {
       <style>{`
         @font-face {
           font-family: 'Akira Expanded';
-          src: url('/fonts/AkiraExpanded.otf') format('opentype');
+          src: url('https://cdn-next-main.tathva.org/fonts/AkiraExpanded.otf') format('opentype');
           font-weight: 800;
           font-style: normal;
           font-display: swap;

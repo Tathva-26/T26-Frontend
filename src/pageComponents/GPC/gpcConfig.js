@@ -5,10 +5,10 @@ export const STAGE = { width: 1413, height: 698 };
 export const STACKED_MAX_ASPECT = 1.2;
 
 export const ASSETS = {
-  banner: "/images/GPC/hero/banner.png",
-  dragon: "/images/GPC/hero/dragon.png",
-  console: "/images/GPC/hero/console.png",
-  exit: "/images/GPC/game/exit.png",
+  banner: "https://cdn-next-main.tathva.org/images/GPC/hero/banner.webp",
+  dragon: "https://cdn-next-main.tathva.org/images/GPC/hero/dragon.png",
+  console: "https://cdn-next-main.tathva.org/images/GPC/hero/console.webp",
+  exit: "https://cdn-next-main.tathva.org/images/GPC/game/exit.png",
 };
 
 // Desktop banner band, in Stage design units. It spans the full section
@@ -45,7 +45,7 @@ export const CLICK_TO_PLAY = { top: 25, fontSize: 3.1 };
 // Updated to match your exact folder structure: /images/GPC/frames/
 export const DRAGON_FRAMES = Array.from(
   { length: 60 },
-  (_, i) => `/images/GPC/frames/ezgif-frame-${String(i + 1).padStart(3, "0")}.webp`
+  (_, i) => `https://cdn-next-main.tathva.org/images/GPC/frames/ezgif-frame-${String(i + 1).padStart(3, "0")}.webp`
 );
 
 export const DRAGON_FPS = 60;

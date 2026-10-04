@@ -49,7 +49,8 @@ const accommodationStyles = `
 
 @media (max-width: 900px) {
   .accommodation-page {
-    height: 100%;
+    height: auto;
+    min-height: 100vh;
     overflow-y: auto;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto 1fr;

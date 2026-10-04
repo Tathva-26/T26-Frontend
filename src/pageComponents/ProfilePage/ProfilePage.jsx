@@ -233,7 +233,7 @@ export default function ProfilePage() {
           <div className={styles.avatar} aria-label="User avatar">
             {/* `picture` is null until an upload, and the Google avatar on the
                 session stands in before the bundled placeholder. */}
-            <img src={avatar || '/images/profile-main-avatar.png'} alt="" />
+            <img src={avatar || 'https://cdn-next-main.tathva.org/images/profile-main-avatar.png'} alt="" />
           </div>
           <button
             type="button"
@@ -361,7 +361,7 @@ export default function ProfilePage() {
         <div className={styles.signOutRow}>
           <button type="button" className={styles.signOutButton} onClick={() => signOut('/')}>
             <span className={styles.signOutIcon} aria-hidden="true">
-              <img src={avatar || '/images/profile-avatar.png'} alt="" />
+              <img src={avatar || 'https://cdn-next-main.tathva.org/images/profile-avatar.png'} alt="" />
             </span>
             Sign out
           </button>
@@ -385,7 +385,7 @@ export default function ProfilePage() {
             <div className={styles.modalRows}>
               <section className={styles.avatarEditSection} aria-label="Profile picture">
                 <div className={styles.avatarEditPreview}>
-                  <img src={previewUrl || avatar || '/images/profile-main-avatar.png'} alt="" />
+                  <img src={previewUrl || avatar || 'https://cdn-next-main.tathva.org/images/profile-main-avatar.png'} alt="" />
                   <button
                     type="button"
                     className={styles.avatarEditOverlay}

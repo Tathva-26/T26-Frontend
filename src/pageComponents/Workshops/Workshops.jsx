@@ -29,7 +29,7 @@ const workshopsStyles = `
 
 @font-face {
   font-family: 'Workshops Fragment Serif';
-  src: url('/fonts/PPFragment-SerifExtraBold.otf') format('opentype');
+  src: url('https://cdn-next-main.tathva.org/fonts/PPFragment-SerifExtraBold.otf') format('opentype');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -51,7 +51,7 @@ const CARD_LABEL = 'Workshop'
 
 // `picture` is non-null on every event in production today, but the field is
 // nullable and next/image requires a src.
-const FALLBACK_IMAGE = '/images/workshops/workshop-astronaut.jpg'
+const FALLBACK_IMAGE = 'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
 
 // Tunable hover-response constants — focal card (Step 3 movement unchanged)
 const MAX_TRANSLATE = 15
@@ -1777,7 +1777,7 @@ export default function WorkshopsPage() {
           <Link href='/' className='flex items-center gap-3 group'>
             <div className='relative h-8 sm:h-9 w-9 sm:w-10 flex items-center justify-center'>
               <Image
-                src='/images/workshops/tathva-emblem.png'
+                src='https://cdn-next-main.tathva.org/images/workshops/tathva-emblem.png'
                 alt='Tathva Logo'
                 width={40}
                 height={36}
@@ -1915,7 +1915,7 @@ export default function WorkshopsPage() {
         <div className='relative w-full overflow-hidden group mb-8'>
           <div className='relative aspect-[677/197] w-full'>
             <Image
-              src='/images/workshops/cosmic-banner.png'
+              src='https://cdn-next-main.tathva.org/images/workshops/cosmic-banner.webp'
               alt="Tathva '26 Workshops Cosmic Supernova Banner"
               fill
               priority
@@ -2138,9 +2138,9 @@ export default function WorkshopsPage() {
                                       className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-[#08090e]'
                                       style={{
                                         maskImage:
-                                          "url('/images/workshops/workshop-card-image.png')",
+                                          "url('https://cdn-next-main.tathva.org/images/workshops/workshop-card-image.png')",
                                         WebkitMaskImage:
-                                          "url('/images/workshops/workshop-card-image.png')",
+                                          "url('https://cdn-next-main.tathva.org/images/workshops/workshop-card-image.png')",
                                         maskPosition: 'center',
                                         WebkitMaskPosition: 'center',
                                         maskRepeat: 'no-repeat',

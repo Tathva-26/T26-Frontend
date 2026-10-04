@@ -28,7 +28,7 @@ const lecturesStyles = `
 
 @font-face {
   font-family: 'Lectures Fragment Serif';
-  src: url('/fonts/PPFragment-SerifExtraBold.otf') format('opentype');
+  src: url('https://cdn-next-main.tathva.org/fonts/PPFragment-SerifExtraBold.otf') format('opentype');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -50,7 +50,7 @@ const CARD_LABEL = 'Lecture'
 
 // `picture` is non-null on every event in production today, but the field is
 // nullable and next/image requires a src.
-const FALLBACK_IMAGE = '/images/workshops/workshop-astronaut.jpg'
+const FALLBACK_IMAGE = 'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
 
 // Tunable hover-response constants — focal card (Step 3 movement unchanged)
 const MAX_TRANSLATE = 15
@@ -1776,7 +1776,7 @@ export default function LecturesPage() {
         <div className='relative w-full overflow-hidden group mb-8'>
           <div className='relative aspect-[677/197] w-full'>
             <Image
-              src='/images/lectures/cosmic-banner.png'
+              src='https://cdn-next-main.tathva.org/images/lectures/cosmic-banner.webp'
               alt="Tathva '26 Lectures Cosmic Supernova Banner"
               fill
               priority
@@ -2010,9 +2010,9 @@ export default function LecturesPage() {
                                       className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-slate-900'
                                       style={{
                                         maskImage:
-                                          "url('/images/lectures/lecture-card-image.png')",
+                                          "url('https://cdn-next-main.tathva.org/images/lectures/lecture-card-image.png')",
                                         WebkitMaskImage:
-                                          "url('/images/lectures/lecture-card-image.png')",
+                                          "url('https://cdn-next-main.tathva.org/images/lectures/lecture-card-image.png')",
                                         maskPosition: 'center',
                                         WebkitMaskPosition: 'center',
                                         maskRepeat: 'no-repeat',
@@ -2060,7 +2060,7 @@ export default function LecturesPage() {
 
                                     <div className='pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30'>
                                       <img
-                                        src='/images/lectures/lecture-card-border.svg'
+                                        src='https://cdn-next-main.tathva.org/images/lectures/lecture-card-border.svg'
                                         alt=''
                                         className='absolute inset-[-0.38%] h-full w-full'
                                       />

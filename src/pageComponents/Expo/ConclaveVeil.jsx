@@ -8,7 +8,7 @@ import { TextureLoader, Vector2 } from 'three'
 // crystal, using the actual TechConclave background for refracted fragments.
 export default function ConclaveVeil({ journey }) {
   const material = useRef(null)
-  const background = useLoader(TextureLoader, '/images/techconclave/background.png')
+  const background = useLoader(TextureLoader, 'https://cdn-next-main.tathva.org/images/techconclave/background.webp')
   const uniforms = useMemo(() => ({
     uTime: { value: 0 }, uProgress: { value: 0 }, uExit: { value: 0 },
     uAspect: { value: 1 }, uImageAspect: { value: background.image.width / background.image.height },

@@ -39,7 +39,7 @@ const bowlbyOneSC = localFont({
   display: 'swap',
 })
 
-const ASSET_ROOT = '/images/Robowars'
+const ASSET_ROOT = 'https://cdn-next-main.tathva.org/images/Robowars'
 const FRAME_WIDTH = ROBOWARS_FRAME_WIDTH
 const FRAME_HEIGHT = ROBOWARS_FRAME_HEIGHT
 const MOBILE_FRAME_WIDTH = 412
@@ -100,7 +100,7 @@ function DesktopFrame({ className, scale = 'desktop', containerRef }) {
       className={`absolute left-1/2 top-1/2 aspect-[1413/697] -translate-x-1/2 -translate-y-1/2 [container-type:size] ${className}`}
     >
       <Image
-        src={`${ASSET_ROOT}/arena-bg.png`}
+        src={`${ASSET_ROOT}/arena-bg.webp`}
         alt=''
         fill
         priority={!isTablet}
@@ -120,7 +120,7 @@ function DesktopFrame({ className, scale = 'desktop', containerRef }) {
       >
         <div className='absolute' style={TV_ART_STYLE}>
           <Image
-            src='/wheels/tv.png'
+            src='https://cdn-next-main.tathva.org/wheels/tv.webp'
             alt=''
             fill
             sizes='440px'
@@ -131,7 +131,7 @@ function DesktopFrame({ className, scale = 'desktop', containerRef }) {
       </div>
 
       <Art
-        src='arena-left-robot.svg'
+        src='arena-left-robot.webp'
         alt=''
         x={isTablet ? -28 : -14}
         y={isTablet ? 108 : 109}
@@ -141,7 +141,7 @@ function DesktopFrame({ className, scale = 'desktop', containerRef }) {
         className='robowars-motion robowars-robot robowars-left-robot pointer-events-none'
       />
       <Art
-        src='arena-right-robot.svg'
+        src='arena-right-robot.webp'
         alt=''
         x={1047}
         y={isTablet ? 59 : 60}
@@ -209,7 +209,7 @@ function MobileFrame({ containerRef }) {
       className='absolute left-1/2 top-1/2 aspect-[412/594] w-screen -translate-x-1/2 -translate-y-1/2 [container-type:size] md:hidden'
     >
       <Image
-        src={`${ASSET_ROOT}/mobile-background.png`}
+        src={`${ASSET_ROOT}/mobile-background.webp`}
         alt=''
         fill
         priority
@@ -219,7 +219,7 @@ function MobileFrame({ containerRef }) {
       />
 
       <Art
-        src='arena-left-robot.svg'
+        src='arena-left-robot.webp'
         alt=''
         x={-54}
         y={34}
@@ -231,7 +231,7 @@ function MobileFrame({ containerRef }) {
         className='robowars-motion robowars-robot robowars-left-robot pointer-events-none'
       />
       <Art
-        src='arena-right-robot.svg'
+        src='arena-right-robot.webp'
         alt=''
         x={240}
         y={42}

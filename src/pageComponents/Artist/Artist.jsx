@@ -18,31 +18,31 @@ import { touchStop } from '@/lib/touchStop'
 
 gsap.registerPlugin(ScrollTrigger, EasePack)
 
-const assetPathPrefix = '/images/artist'
+const assetPathPrefix = 'https://cdn-next-main.tathva.org/images/artist'
 
 const artists = [
   {
     name: 'Day 2 Artists',
     description:
       'Day 2 turns the volume all the way up! Hip-hop swagger, show-stopping vocals and stage lights blazing. Bring your loudest energy, because you will be singing along till your voice gives out!',
-    background: `${assetPathPrefix}/21bbf.svg`,
-    portrait: `${assetPathPrefix}/day2_main.svg`,
+    background: `${assetPathPrefix}/21bbf.webp`,
+    portrait: `${assetPathPrefix}/day2_main.webp`,
     portraitClassName: 'artist-portrait artist-portrait--arijit',
-    cardPortrait: `${assetPathPrefix}/day2_anim_1.svg`,
-    cardSecondary: `${assetPathPrefix}/day2_anim_2.svg`,
-    avatar: `${assetPathPrefix}/day2_anim_3.svg`,
-    avatar2: `${assetPathPrefix}/day2_anim_4.svg`,
+    cardPortrait: `${assetPathPrefix}/day2_anim_1.webp`,
+    cardSecondary: `${assetPathPrefix}/day2_anim_2.webp`,
+    avatar: `${assetPathPrefix}/day2_anim_3.webp`,
+    avatar2: `${assetPathPrefix}/day2_anim_4.webp`,
   },
   {
     name: 'Day 3 Artists',
     description:
       'Day 3 is the grand finale! A full squad takes over the stage with massive beats and even bigger energy. Sing it out, jump it out, and make it a night you will never forget!',
-    background: `${assetPathPrefix}/bef85.svg`,
-    portrait: `${assetPathPrefix}/day3.svg`,
+    background: `${assetPathPrefix}/bef85.webp`,
+    portrait: `${assetPathPrefix}/day3.webp`,
     portraitClassName: 'artist-portrait artist-portrait--day3',
-    cardPortrait: `${assetPathPrefix}/day3_anim_2.svg`,
-    cardSecondary: `${assetPathPrefix}/day3_anim_3.svg`,
-    avatar: `${assetPathPrefix}/day3_anim_1.svg`,
+    cardPortrait: `${assetPathPrefix}/day3_anim_2.webp`,
+    cardSecondary: `${assetPathPrefix}/day3_anim_3.webp`,
+    avatar: `${assetPathPrefix}/day3_anim_1.webp`,
   },
 ]
 
@@ -1185,7 +1185,7 @@ export default function App() {
       <style jsx global>{`
         @font-face {
           font-family: 'VCR OSD Mono';
-          src: url('/fonts/VCR_OSD_MONO.ttf') format('truetype');
+          src: url('https://cdn-next-main.tathva.org/fonts/VCR_OSD_MONO.ttf') format('truetype');
           font-weight: 400;
           font-style: normal;
           font-display: swap;
@@ -1193,7 +1193,7 @@ export default function App() {
 
         @font-face {
           font-family: 'Bebas Neue';
-          src: url('/fonts/BebasNeue-Regular.ttf') format('truetype');
+          src: url('https://cdn-next-main.tathva.org/fonts/BebasNeue-Regular.ttf') format('truetype');
           font-weight: 400;
           font-style: normal;
           font-display: swap;
@@ -1201,7 +1201,7 @@ export default function App() {
 
         @font-face {
           font-family: 'Space Grotesk';
-          src: url('/fonts/SpaceGrotesk-Variable.ttf') format('truetype');
+          src: url('https://cdn-next-main.tathva.org/fonts/SpaceGrotesk-Variable.ttf') format('truetype');
           font-weight: 100 900;
           font-style: normal;
           font-display: swap;
