@@ -40,6 +40,18 @@ function releaseCrystalDecoders() {
 }
 
 function prepareGlass(shader) {
+  // Own this varying: Three's vWorldPosition exists only with transmission.
+  // Reflection-only shards still need positions for the blue/pink edge lighting.
+  shader.vertexShader = 'varying vec3 vExpoWorldPosition;\n' + shader.vertexShader
+  shader.fragmentShader = 'varying vec3 vExpoWorldPosition;\n' + shader.fragmentShader
+  shader.vertexShader = shader.vertexShader.replace('#include <project_vertex>', `
+    vec4 expoPosition = vec4(transformed, 1.);
+    #ifdef USE_INSTANCING
+      expoPosition = instanceMatrix * expoPosition;
+    #endif
+    vExpoWorldPosition = (modelMatrix * expoPosition).xyz;
+    #include <project_vertex>
+  `)
   // Three clears the transmission buffer to half-alpha white on a transparent
   // canvas. Replace only those empty samples with navy, avoiding a chalk-white
   // border while keeping the DOM background transparent outside the crystal.
@@ -53,7 +65,7 @@ function prepareGlass(shader) {
   )
   shader.fragmentShader = shader.fragmentShader.replace(
     'vec3 outgoingLight = totalDiffuse + totalSpecular + totalEmissiveRadiance;',
-    'float edge = pow(1. - abs(dot(normal, normalize(vViewPosition))), 1.3); vec3 edgeTint = mix(vec3(.65,.82,1.),vec3(1.,.35,.85),smoothstep(.2,1.5,vWorldPosition.x-vWorldPosition.y*.3)); float pink = exp(-8.*pow(vWorldPosition.x-.75,2.)-2.*pow(vWorldPosition.y+.6,2.)); vec3 rimGlow = (vec3(.012,.035,.075)+vec3(.45,.045,.32)*pink)*edge; vec3 outgoingLight = totalDiffuse + totalSpecular * mix(.24,1.25,edge) * edgeTint + totalEmissiveRadiance + rimGlow;',
+    'float edge = pow(clamp(1. - abs(dot(normal, normalize(vViewPosition))), 0., 1.), 1.3); vec3 edgeTint = mix(vec3(.65,.82,1.),vec3(1.,.35,.85),smoothstep(.2,1.5,vExpoWorldPosition.x-vExpoWorldPosition.y*.3)); float pink = exp(-8.*pow(vExpoWorldPosition.x-.75,2.)-2.*pow(vExpoWorldPosition.y+.6,2.)); vec3 rimGlow = (vec3(.012,.035,.075)+vec3(.45,.045,.32)*pink)*edge; vec3 outgoingLight = totalDiffuse + totalSpecular * mix(.24,1.25,edge) * edgeTint + totalEmissiveRadiance + rimGlow;',
   )
 }
 
@@ -114,7 +126,7 @@ function createEnergy() {
   return texture
 }
 
-export default function CrystalModel({ target, compact = false, onReady, onMood, journey, onProject }) {
+export default function CrystalModel({ target, compact = false, reduced = false, onReady, onMood, journey, onProject }) {
   const details = useExpoDetails()
   const detailGroup = useRef()
   const idleClock = useRef(0)
@@ -220,8 +232,9 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     detailGroup.current.scale.setScalar(1)
     detailGroup.current.rotation.set(motion.pitch, 0, motion.roll)
     const inDetails = detail && detail.state !== 'closed'
-    if (!inDetails) idleClock.current += dt
+    if (!inDetails && !reduced) idleClock.current += dt
     const time = interactionClock.current
+    const visualTime = reduced ? 0 : time
     if ((target.current.shardResonance ?? 0) !== shardResonance.current) {
       shardResonance.current = target.current.shardResonance ?? 0
       life.current.pulseAt = time
@@ -230,7 +243,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     if (available && !readiness.current.available) readiness.current.at = time
     readiness.current.available = available
     const readyAge = time - readiness.current.at
-    const readyPulse = available && readyAge < 1.2 ? Math.sin(Math.PI * Math.max(0, readyAge) / 1.2) ** 2 : 0
+    const readyPulse = !reduced && available && readyAge < 1.2 ? Math.sin(Math.PI * Math.max(0, readyAge) / 1.2) ** 2 : 0
     const detailRoot = dom.current?.root
     // eslint-disable-next-line react-hooks/immutability -- Cached DOM node, updated outside React in the R3F frame loop.
     if (detailRoot && detailRoot.dataset.expoReady !== String(available)) detailRoot.dataset.expoReady = String(available)
@@ -289,7 +302,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const awake = time < life.current.awakeUntil && influence > .8
     if (awake !== life.current.awake) { life.current.awake = awake; onMood?.(awake) }
     const age = Math.max(0, time - life.current.pulseAt)
-    const pulse = pulseStrength(time, life.current.pulseAt) * influence
+    const pulse = reduced ? 0 : pulseStrength(time, life.current.pulseAt) * influence
     const bits = life.current.sectors
     const traceLevel = ((bits & 1) + ((bits >> 1) & 1) + ((bits >> 2) & 1) + ((bits >> 3) & 1)) * .32
     const chargeLevel = Math.max(life.current.charge, traceLevel)
@@ -308,11 +321,11 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     // Warm the hidden canvas once so GPU upload/readiness can finish before entry.
     // After that first render, offscreen/transparent journey poses stay hidden.
     travel.current.visible = !started.current || !pose || pose.opacity > .005
-    const breath = Math.sin(time * 1.15) * .065 + Math.sin(time * .47) * .025
+    const breath = Math.sin(visualTime * 1.15) * .065 + Math.sin(visualTime * .47) * .025
     glowMaterial.current.opacity = .8 + (breath + hover * .12 + chargeLevel * .15 + (awake ? .25 : 0)) * influence + breath * detailAmount * .18 + Math.sin((pose?.exit ?? 0) * Math.PI) * .2
     // Press feedback lives on the inner shell and its fractures, never a screen-space halo.
     energyMaterial.current.uniforms.brightness.value = 1.6 + (breath + hover * .18 + chargeLevel * .25) * influence + pulse * 1.2 + readyPulse * .65 + press + surge * 1.6 + breath * detailAmount * .18
-    fractures.current.uniforms.time.value = time
+    fractures.current.uniforms.time.value = visualTime
     fractures.current.uniforms.hover.value = hover
     fractures.current.uniforms.pulse.value = pulse + readyPulse * .25 + press * .4 + surge * .65
     fractures.current.uniforms.pointer.value.copy(lightPoint)
@@ -354,15 +367,15 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     idle.current.position.y = (Math.sin(idleTime * .85) * .035 + Math.sin(idleTime * .31) * .012) * influence
     idle.current.rotation.set(Math.sin(idleTime * .48) * .055 * influence, (Math.sin(idleTime * .24) * .18 + Math.sin(idleTime * .53) * .035) * influence, Math.sin(idleTime * .39) * .045 * influence)
     robotMotion.current.rotation.set(
-      MathUtils.damp(robotMotion.current.rotation.x, (.035 * Math.sin(time * .43) - body.rotation.x * .35 + lightPoint.y * hover * .055 + Math.sin(age * 9) * pulse * .09) * influence, 2.8, dt),
-      .12 + MathUtils.damp(robotMotion.current.rotation.y - .12, (awake ? -.12 : .065 * Math.sin(time * .35) - body.rotation.y * .30 + lightPoint.x * hover * .10) * influence, 2.8, dt),
-      .085 + Math.sin(time * .42) * .035 * influence, 'ZYX')
-    robotMotion.current.position.y = Math.sin(time * .67 + .8) * .025 * influence
-    motes.current.rotation.z = Math.sin(time * .12) * .12
-    motes.current.position.y = Math.sin(time * .23) * .10
+      MathUtils.damp(robotMotion.current.rotation.x, (.035 * Math.sin(visualTime * .43) - body.rotation.x * .35 + lightPoint.y * hover * .055 + Math.sin(age * 9) * pulse * .09) * influence, 2.8, dt),
+      .12 + MathUtils.damp(robotMotion.current.rotation.y - .12, (awake ? -.12 : .065 * Math.sin(visualTime * .35) - body.rotation.y * .30 + lightPoint.x * hover * .10) * influence, 2.8, dt),
+      .085 + Math.sin(visualTime * .42) * .035 * influence, 'ZYX')
+    robotMotion.current.position.y = Math.sin(visualTime * .67 + .8) * .025 * influence
+    motes.current.rotation.z = Math.sin(visualTime * .12) * .12
+    motes.current.position.y = Math.sin(visualTime * .23) * .10
     motes.current.material.opacity = .18 * influence
-    mist.current.position.x = Math.sin(time * .16) * .22
-    mist.current.material.uniforms.time.value = time
+    mist.current.position.x = Math.sin(visualTime * .16) * .22
+    mist.current.material.uniforms.time.value = visualTime
     mist.current.material.uniforms.opacity.value = .10 * influence * (1 - hover * .45)
     if (onProject && influence > .01 && time - projectedAt.current >= (compact ? 1 / 20 : 1 / 30)) {
       projectedAt.current = time
@@ -378,7 +391,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const firstFrame = () => {
     if (started.current) return
     started.current = true
-    // onAfterRender fires only after the mesh/texture has reached the renderer.
+    // Readiness belongs to the glass shell, not the independent inner glow.
     onReady()
   }
 
@@ -387,7 +400,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
       <group ref={detailGroup}>
       <group ref={idle}>
       <group ref={group}>
-      <CrystalShards journey={journey} compact={compact} prepareGlass={prepareGlass} target={target} />
+      <CrystalShards journey={journey} compact={compact} reduced={reduced} prepareGlass={prepareGlass} target={target} />
       <pointLight ref={cursorLight} color='#75dfff' intensity={0} distance={4} decay={2} />
       <points ref={motes} geometry={dust}>
         <pointsMaterial color='#acdfff' map={glow} size={.055} transparent opacity={.18} depthWrite={false} blending={AdditiveBlending} />
@@ -403,7 +416,6 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
           geometry={geometry}
           scale={[0.96, 0.97, 0.48]}
           position={[0, 0, -0.3]}
-          onAfterRender={firstFrame}
         >
           <shaderMaterial
             ref={energyMaterial}
@@ -418,7 +430,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
             }
           />
         </mesh>
-        <mesh ref={shell} geometry={geometry}>
+        <mesh ref={shell} geometry={geometry} onAfterRender={firstFrame}>
           <meshPhysicalMaterial
             ref={glass}
             color='#b9d0f4'

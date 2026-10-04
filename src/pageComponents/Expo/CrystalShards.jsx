@@ -14,7 +14,7 @@ const SHARDS = [
   [2.65, -.65, -.2, .36, -.65], [-.55, -1.8, .1, .14, -.65],
 ]
 
-export default function CrystalShards({ journey, compact, prepareGlass, target }) {
+export default function CrystalShards({ journey, compact, reduced, prepareGlass, target }) {
   const details = useExpoDetails()
   const mesh = useRef()
   const geometry = useMemo(() => new IcosahedronGeometry(1, 1), [])
@@ -29,6 +29,7 @@ export default function CrystalShards({ journey, compact, prepareGlass, target }
     const dt = animationDelta(delta)
     timer.current += dt
     const time = timer.current
+    const visualTime = reduced ? 0 : time
     const pose = journey?.current
     const detail = details?.progress.current
     const reveal = (pose ? (pose.exit != null ? 1 - pose.exit : pose.interaction) : 1) * (1 - Math.min(1, (detail?.value ?? 0) / .42))
@@ -51,7 +52,7 @@ export default function CrystalShards({ journey, compact, prepareGlass, target }
       activation.current = input.activation
       if (available && !input.keyboard && picking.hit >= 0) {
         const shard = state.current[picking.hit]
-        shard.spin += Math.PI
+        if (!reduced) shard.spin += Math.PI
         shard.pulse = 1
         input.shardResonance = (input.shardResonance ?? 0) + 1
       }
@@ -71,8 +72,8 @@ export default function CrystalShards({ journey, compact, prepareGlass, target }
       shard.spin = MathUtils.damp(shard.spin, 0, 3, dt)
       shard.pulse = MathUtils.damp(shard.pulse, 0, 4, dt)
       const motion = available ? 1 : Math.max(0, 1 - (detail?.value ?? 0) * 5) * (pose?.interaction ?? 1)
-      dummy.position.set(x + shard.x * motion, y + (shard.y + Math.sin(time * .8 + index) * .025) * motion, z)
-      dummy.rotation.set(.4 + shard.y * motion, index * .8 + (shard.spin + Math.sin(time * .5 + index) * .06) * motion, angle - shard.x * motion)
+      dummy.position.set(x + shard.x * motion, y + (shard.y + Math.sin(visualTime * .8 + index) * .025) * motion, z)
+      dummy.rotation.set(.4 + shard.y * motion, index * .8 + (shard.spin + Math.sin(visualTime * .5 + index) * .06) * motion, angle - shard.x * motion)
       const scale = reveal * (1 + shard.hover * .04 + shard.pulse * .04)
       dummy.scale.set(size * .55 * scale, size * 1.5 * scale, size * .48 * scale)
       dummy.updateMatrix()

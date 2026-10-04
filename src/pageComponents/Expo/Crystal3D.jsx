@@ -4,8 +4,6 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { Component, useCallback, useEffect, useRef, useState } from "react";
 import styles from "./Expo.module.css";
-import { canRevealCrystal } from './expoRenderBudget.mjs';
-import { useExpoDetails } from './ExpoDetails';
 
 const CrystalScene = dynamic(() => import("./CrystalScene"), { ssr: false });
 
@@ -24,10 +22,12 @@ export default function Crystal3D({ journey, onProject, preload = false }) {
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [awake, setAwake] = useState(true);
-  const [admitted, setAdmitted] = useState(false);
-  const details = useExpoDetails();
+  const [generation, setGeneration] = useState(0);
   const onReady = useCallback(() => setReady(true), []);
   const onFailure = useCallback(() => { setFailed(true); setReady(false); }, []);
+  const onLost = useCallback(() => setReady(false), []);
+  const onRestored = useCallback(() => { setReady(false); setGeneration(value => value + 1); }, []);
+  const retry = () => { setFailed(false); setReady(false); setGeneration(value => value + 1); };
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -53,29 +53,18 @@ export default function Crystal3D({ journey, onProject, preload = false }) {
     };
   }, []);
 
-  useEffect(() => {
-    if (!ready || admitted || failed || reduced) return;
-    let frame;
-    const reveal = () => {
-      if (canRevealCrystal(journey?.current, details?.progress.current.state)) setAdmitted(true);
-      else frame = requestAnimationFrame(reveal);
-    };
-    reveal();
-    return () => cancelAnimationFrame(frame);
-  }, [ready, admitted, failed, reduced, journey, details]);
-
-  // Keep the illustration visible while loading, without treating a slow
-  // download/background tab as a fatal error. Actual loader/context failures
-  // still select the fallback through SceneBoundary and ContextEvents.
+  // The illustration is a loading placeholder. Every device uses the live
+  // scene once ready; real failures expose Retry rather than a static exhibit.
 
   return (
-    <div ref={wrapper} className={`${styles.crystal} ${admitted && !failed && !reduced ? styles.ready : ""}`} data-crystal-state={failed ? "fallback" : reduced ? "reduced-motion" : admitted ? "ready" : "loading"}>
+    <div ref={wrapper} className={`${styles.crystal} ${ready && !failed ? styles.ready : ""}`} data-crystal-state={failed ? "error" : ready ? "ready" : "loading"}>
       <Image data-expo-fallback-image className={styles.fallback} src="/images/expo/crystal-figma.webp" alt="A cyan Tathva robot glowing inside a dark, faceted crystal" width={492} height={507} priority unoptimized />
       <span id="crystal-instructions" className={styles.hint}>Move your pointer or gently drag the crystal to tilt it. Click or tap the crystal to explore Expo. Trace its fractures to wake the robot. Vertical swipes scroll the page. When focused, arrows tilt, Enter or Space activates, and Escape resets.</span>
-      {!failed && !reduced && requested && (
+      {failed && <button className={styles.retry} onClick={retry}>Retry 3D crystal</button>}
+      {!failed && requested && (
         <div className={styles.canvas}>
-          <SceneBoundary onFailure={onFailure}>
-            <CrystalScene active={awake && (visible || !ready)} onReady={onReady} onFailure={onFailure} journey={journey} onProject={onProject} />
+          <SceneBoundary key={generation} onFailure={onFailure}>
+            <CrystalScene reduced={reduced} active={awake && (visible || !ready)} onReady={onReady} onFailure={onFailure} onLost={onLost} onRestored={onRestored} journey={journey} onProject={onProject} />
           </SceneBoundary>
         </div>
       )}

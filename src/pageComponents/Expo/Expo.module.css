@@ -57,6 +57,7 @@
 .ready .fallback {
   opacity: 0;
 }
+.crystal[data-crystal-state='error'] .fallback { display: none; }
 .canvas canvas {
   touch-action: pan-y pinch-zoom;
   outline: none;
@@ -73,6 +74,7 @@
   overflow: hidden;
   clip-path: inset(50%);
 }
+.retry { position: absolute; bottom: 12%; left: 40%; z-index: 6; padding: 10px 16px; color: #fff; background: #183b50; border: 1px solid #91dcff; cursor: pointer; pointer-events: auto; }
 @media (min-width: 768px) and (max-width: 1023px) {
  .title { left: 30%; top: 10%; } .desktopTitle { font-size: 17vw; }
  .intro { left: 9%; top: 25%; width: 22%; } .crystalSlot { left: 25%; top: 25%; width: 48%; height: 65%; }

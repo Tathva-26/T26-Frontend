@@ -41,13 +41,26 @@ function SceneEnvironment({ shared }) {
   return null;
 }
 
-function ContextEvents({ onFailure }) {
+function ContextEvents({ onFailure, onLost, onRestored, shaderFailed }) {
   const gl = useThree((state) => state.gl);
   useEffect(() => {
     const canvas = gl.domElement;
-    canvas.addEventListener("webglcontextlost", onFailure);
-    return () => canvas.removeEventListener("webglcontextlost", onFailure);
-  }, [gl, onFailure]);
+    const lost = event => { event.preventDefault(); onLost(); };
+    const previous = gl.debug.onShaderError;
+    gl.debug.onShaderError = (context, program, vertex, fragment) => {
+      shaderFailed.current = true;
+      console.error('Expo crystal shader failed:', context.getProgramInfoLog(program), context.getShaderInfoLog(fragment));
+      previous?.(context, program, vertex, fragment);
+      onFailure();
+    };
+    canvas.addEventListener("webglcontextlost", lost);
+    canvas.addEventListener("webglcontextrestored", onRestored);
+    return () => {
+      canvas.removeEventListener("webglcontextlost", lost);
+      canvas.removeEventListener("webglcontextrestored", onRestored);
+      gl.debug.onShaderError = previous;
+    };
+  }, [gl, onFailure, onLost, onRestored, shaderFailed]);
   return null;
 }
 
@@ -63,7 +76,8 @@ function RenderBudget({ compact, degraded, onQuality }) {
   return null;
 }
 
-export default function CrystalScene({ active, onReady, onFailure, journey, onProject }) {
+export default function CrystalScene({ active, reduced, onReady, onFailure, onLost, onRestored, journey, onProject }) {
+  const shaderFailed = useRef(false);
   const target = useRef({ tiltX: 0, tiltY: 0, x: 0, y: 0, active: false, pressed: false, activation: 0, keyboard: false });
   const feedback = useRef(null);
   const reportMood = (awake) => { if (feedback.current) feedback.current.textContent = awake ? 'The robot awakens.' : ''; };
@@ -135,7 +149,7 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
   return (
     <div style={{ width: "100%", height: "100%", touchAction: "pan-y pinch-zoom" }} tabIndex={0} onKeyDown={keyboard} onBlur={reset} onPointerDown={down} onPointerMove={update} onPointerUp={release} onPointerCancel={release} onPointerLeave={reset} onLostPointerCapture={reset} aria-describedby="crystal-instructions" data-crystal-control role="button" aria-haspopup="dialog" aria-label="Interactive Tathva crystal">
       <Canvas dpr={degraded ? Math.min(dpr, 1) : dpr} frameloop={active ? "always" : "never"} camera={{ fov: 32, position: [0, 0, 7], near: .1, far: 30 }} gl={{ alpha: true, antialias: true, powerPreference: "low-power" }} onCreated={({ gl }) => { gl.setClearColor(0, 0); gl.toneMapping = NoToneMapping; gl.transmissionResolutionScale = .75; }} fallback={null}>
-        <ContextEvents onFailure={onFailure} />
+        <ContextEvents onFailure={onFailure} onLost={onLost} onRestored={onRestored} shaderFailed={shaderFailed} />
         <RenderBudget compact={compact} degraded={degraded} onQuality={setDegraded} />
         <CrystalOptics compact={compact || degraded} />
         <ambientLight intensity={.08} />
@@ -144,7 +158,7 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
         {/* Readiness includes every asset needed for the entrance, not just the shell. */}
         <Suspense fallback={null}>
           <SceneEnvironment shared={!!journey} />
-          <CrystalModel target={target} compact={compact || degraded} onReady={onReady} onMood={reportMood} journey={journey} onProject={onProject} />
+          <CrystalModel target={target} reduced={reduced} compact={compact || degraded} onReady={() => { if (!shaderFailed.current) onReady(); }} onMood={reportMood} journey={journey} onProject={onProject} />
           {journey && <ConclaveVeil journey={journey} compact={compact || degraded} />}
         </Suspense>
       </Canvas>

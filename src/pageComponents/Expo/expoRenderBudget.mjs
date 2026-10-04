@@ -10,8 +10,3 @@ export function sampleFrameBudget(state, delta) {
   return { seconds: 0, frames: 0, strikes, recoveries,
     degraded: strikes >= 2 ? true : recoveries >= 4 ? false : state.degraded }
 }
-
-export function canRevealCrystal(pose, detailState = 'closed') {
-  if (detailState !== 'closed') return false
-  return !pose || pose.opacity < .01 || (pose.progress >= 1 && pose.exit == null)
-}
