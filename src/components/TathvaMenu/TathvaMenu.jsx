@@ -23,6 +23,7 @@ const leftMenu = [
   { label: 'HOME', href: '/' },
   { label: 'ACCOMMODATION', href: '/accommodation' },
   { label: 'LECTURES', href: '/lectures' },
+  { label: 'CONTACT', href: '/contact' },
   // { label: 'PROSHOW', href: '/proshow' },
 ]
 
@@ -31,7 +32,6 @@ const rightMenu = [
   { label: 'WORKSHOPS', href: '/workshops' },
   { label: 'PASSES', href: '/passes' },
   { label: 'COMPETITIONS', href: '/competitions' },
-  { label: 'CONTACT', href: '/contact' },
 ]
 
 /* -----------------------------------------------------------------------
@@ -376,7 +376,7 @@ function TathvaMenuOverlay() {
       tl.to(
         panelRef.current,
         {
-          height: 385,
+          height: 300,
           duration: 0.5,
           ease: 'power2.inOut',
         },
@@ -387,7 +387,7 @@ function TathvaMenuOverlay() {
       tl.to(
         panelRef.current,
         {
-          width: () => Math.min(580, window.innerWidth * 0.92),
+          width: () => Math.min(440, window.innerWidth * 0.92),
           duration: 0.55,
           ease: 'expo.out',
         },
@@ -398,7 +398,7 @@ function TathvaMenuOverlay() {
       tl.to(
         dividerRef.current,
         {
-          height: 320,
+          height: 235,
           opacity: 1,
           duration: 0.35,
           ease: 'power3.out',
@@ -750,7 +750,7 @@ function TathvaMenuOverlay() {
             flex-col
             items-center
             justify-center
-            gap-[18px]
+            gap-[6px]
             px-4
             py-6
           '
@@ -853,7 +853,7 @@ function TathvaMenuOverlay() {
             flex-col
             items-center
             justify-center
-            gap-[18px]
+            gap-[6px]
             px-4
             py-6
           '
