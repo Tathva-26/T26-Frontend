@@ -104,7 +104,7 @@ export default function TathvaPasses() {
             Mobile: Vertical rotation (Top/Center/Bottom) with middle largest
             Desktop: Horizontal rotation (Left/Center/Right)
         ------------------------------------------------------------- */}
-        <div className='relative mt-56 sm:mt-10 md:mt-14 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
+        <div className='relative mt-64 sm:mt-16 md:mt-20 lg:mt-24 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
           {/* Left Arrow Button (Previous) */}
           <button
             type='button'
@@ -145,8 +145,8 @@ export default function TathvaPasses() {
                     isCenter
                       ? 'z-30 -translate-x-1/2 -translate-y-[52%] sm:-translate-y-[58%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
                       : isLeft
-                        ? 'z-10 -translate-x-1/2 sm:-translate-x-[95%] md:-translate-x-[100%] lg:-translate-x-[105%] -translate-y-[100%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
-                        : 'z-10 -translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] translate-y-[20%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        ? 'z-10 -translate-x-1/2 sm:-translate-x-[95%] md:-translate-x-[100%] lg:-translate-x-[105%] -translate-y-[66%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        : 'z-10 -translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] -translate-y-[34%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
                   }`}
                 >
                   <div className='relative w-[260px] sm:w-[420px] md:w-[540px] lg:w-[640px] xl:w-[700px]'>
@@ -198,22 +198,22 @@ export default function TathvaPasses() {
           */}
         <div className='relative z-30 mt-8 flex min-h-[210px] w-full max-w-[320px] flex-col justify-center sm:mt-10 sm:min-h-[230px] sm:max-w-[420px] md:max-w-[460px] rounded-2xl border border-white/15 bg-black/35 px-6 py-6 backdrop-blur-sm shadow-[0_0_50px_rgba(91,99,230,0.35)]'>
           {loading ? (
-            <p className='text-center text-sm tracking-[0.18em] text-white/60'>
+            <p className='text-center text-base sm:text-lg tracking-[0.18em] text-white/60'>
               CHECKING AVAILABILITY…
             </p>
           ) : active ? (
             <>
-              <p className='mb-3 text-center text-sm sm:text-base font-semibold tracking-[0.18em] text-white'>
+              <p className='mb-3 text-center text-lg sm:text-xl font-semibold tracking-[0.18em] text-white'>
                 {active.fullTitle}
                 {active.priceInPaise !== null && ` · ${active.fee}`}
               </p>
-              <div className='[&_button]:py-3 [&_button]:text-xl sm:[&_button]:text-2xl'>
+              <div className='[&_button]:py-3 [&_button]:text-2xl sm:[&_button]:text-3xl [&_dl]:text-sm'>
                 <Checkout event={active} />
               </div>
             </>
           ) : (
             /* No pass events from the backend yet, so there is nothing to sell. */
-            <p className='text-center text-sm leading-relaxed tracking-[0.14em] text-white/60'>
+            <p className='text-center text-base sm:text-lg leading-relaxed tracking-[0.14em] text-white/60'>
               REGISTRATIONS OPENING SOON
             </p>
           )}
