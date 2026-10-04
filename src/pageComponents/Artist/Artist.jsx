@@ -1420,6 +1420,15 @@ export default function App() {
           pointer-events: none;
           object-fit: contain;
           object-position: bottom;
+
+          /* Purple outline glow. drop-shadow follows the transparent cut-out edge of the
+             image (not its rectangular box). Three stacked shadows = brightest right on
+             the edge, fading outward, so it reads as a radial glow rather than a flat one.
+             --glow is "R G B", so the colour is changed in this one place. */
+          --glow: 168 85 247;
+          filter: drop-shadow(0 0 2px rgb(var(--glow) / 0.6))
+            drop-shadow(0 0 14px rgb(var(--glow) / 0.45))
+            drop-shadow(0 0 48px rgb(var(--glow) / 0.28));
         }
 
         .artist-portrait--arijit {
