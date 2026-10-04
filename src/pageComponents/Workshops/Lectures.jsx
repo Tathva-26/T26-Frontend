@@ -12,11 +12,16 @@ import React, {
 import Image from 'next/image'
 import { createPortal } from 'react-dom'
 import gsap from 'gsap'
+import { TextPlugin } from 'gsap/TextPlugin'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 import { useEvents } from '@/hooks/useEvents'
 import { useEventDetails } from '@/hooks/useEventDetails'
 import Checkout from '@/components/Checkout/Checkout'
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(TextPlugin)
+}
 
 const lecturesStyles = `
 @import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
@@ -273,6 +278,7 @@ export default function LecturesPage() {
   const floatRefs = useRef({})
   const cardRefs = useRef({})
   const frontFaceRefs = useRef({})
+  const descRefs = useRef({})
   const isFinePointer = useRef(true)
   const prefersReducedMotion = useRef(false)
   const focusedIdRef = useRef(null)
@@ -1393,6 +1399,17 @@ export default function LecturesPage() {
     }
 
     startCallout(id, slotEl, lecture)
+
+    const descEl = descRefs.current[id]
+    if (descEl && lecture.description) {
+      gsap.killTweensOf(descEl)
+      gsap.set(descEl, { text: '' })
+      gsap.to(descEl, {
+        text: lecture.description,
+        duration: Math.min(1.5, lecture.description.length * 0.02),
+        ease: 'none',
+      })
+    }
   }
 
   const handleCardMove = (id, e) => {
@@ -1472,6 +1489,12 @@ export default function LecturesPage() {
     slotEl.style.zIndex = '1'
     resetCardActivation(id)
     stopCardPulse(id)
+
+    const descEl = descRefs.current[id]
+    if (descEl) {
+      gsap.killTweensOf(descEl)
+      gsap.set(descEl, { text: '' })
+    }
 
     if (String(focusedIdRef.current) === String(id)) {
       fadeOutCallout()
@@ -1882,7 +1905,7 @@ export default function LecturesPage() {
                         {column.map((lecture, rowIndex) => (
                           <div
                             key={lecture.id}
-                            className='relative'
+                            className='relative cursor-pointer'
                             ref={(el) => {
                               if (el) slotRefs.current[lecture.id] = el
                               else delete slotRefs.current[lecture.id]
@@ -1904,6 +1927,7 @@ export default function LecturesPage() {
                             }
                             onMouseMove={(e) => handleCardMove(lecture.id, e)}
                             onMouseLeave={() => handleCardLeave(lecture.id)}
+                            onClick={() => setSelectedLecture(lecture)}
                           >
                             <div
                               ref={(el) => {
@@ -1978,7 +2002,10 @@ export default function LecturesPage() {
                                       proportions so the mask, cutout and border
                                       artwork are not stretched */}
                                   <div className='absolute inset-x-0 top-0 aspect-[0.9825]'>
-                                    {/* CARD VISUAL ARTWORK */}
+                                    {/* CARD VISUAL ARTWORK — the real event
+                                        picture, shown directly. Hovering
+                                        fades in a typewriter description
+                                        over it. */}
                                     <div
                                       className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-slate-900'
                                       style={{
@@ -1999,8 +2026,27 @@ export default function LecturesPage() {
                                         alt={lecture.fullTitle}
                                         fill
                                         sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                                        className='object-cover object-center transition-transform duration-500 ease-out'
+                                        className='object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105'
                                       />
+
+                                      {/* Typewriter description, revealed on hover */}
+                                      <div className='pointer-events-none absolute inset-0 z-10 flex items-start opacity-0 transition-opacity duration-500 group-hover:opacity-100'>
+                                        <div
+                                          className='w-full px-[6%] pb-[14%] pt-[10%]'
+                                          style={{
+                                            background:
+                                              'linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 70%, transparent 100%)',
+                                          }}
+                                        >
+                                          <p
+                                            ref={(el) => {
+                                              if (el) descRefs.current[lecture.id] = el
+                                              else delete descRefs.current[lecture.id]
+                                            }}
+                                            className='m-0 text-[4.2cqw] font-bold leading-[1.4] text-white/90'
+                                          />
+                                        </div>
+                                      </div>
                                     </div>
 
                                     {/* BACKGROUND CUTOUT OUTSIDE THE BORDER */}
@@ -2012,8 +2058,13 @@ export default function LecturesPage() {
                                       }}
                                     />
 
-                                    {/* DATE (unchanged position) */}
+                                    {/* PRICE & DATE (unchanged position) */}
                                     <div className='absolute inset-x-0 bottom-0 z-20 h-[13.5%]'>
+                                      <div className='absolute bottom-[81%] left-[3%] leading-none'>
+                                        <span className='text-[4.28cqw] font-extrabold text-white'>
+                                          {lecture.fee}
+                                        </span>
+                                      </div>
                                       <div className='absolute bottom-[81%] right-[1.1%] flex flex-col items-end leading-none'>
                                         <span className='mb-px text-[4.28cqw] font-extrabold uppercase tracking-wider text-[#fbebec]'>
                                           {lecture.dateMonth}
