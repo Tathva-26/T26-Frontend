@@ -23,10 +23,9 @@ const assetPathPrefix = 'https://cdn-next-main.tathva.org/images/artist'
 const artists = [
   {
     name: 'Day 2 Artists',
-    description:
-      'Day 2 turns the volume all the way up! Hip-hop swagger, show-stopping vocals and stage lights blazing. Bring your loudest energy, because you will be singing along till your voice gives out!',
-    background: `${assetPathPrefix}/21bbf.webp`,
-    portrait: `${assetPathPrefix}/day2_main.webp`,
+    performers: ['Vedan', 'Akasa', 'Gabri', 'Stic'],
+    background: `${assetPathPrefix}/21bbf.svg`,
+    portrait: `${assetPathPrefix}/day2_main.svg`,
     portraitClassName: 'artist-portrait artist-portrait--arijit',
     cardPortrait: `${assetPathPrefix}/day2_anim_1.webp`,
     cardSecondary: `${assetPathPrefix}/day2_anim_2.webp`,
@@ -35,10 +34,10 @@ const artists = [
   },
   {
     name: 'Day 3 Artists',
-    description:
-      'Day 3 is the grand finale! A full squad takes over the stage with massive beats and even bigger energy. Sing it out, jump it out, and make it a night you will never forget!',
-    background: `${assetPathPrefix}/bef85.webp`,
-    portrait: `${assetPathPrefix}/day3.webp`,
+    performers: ['Sachet-Parampara', 'Thamarassery Churam', 'DJ noise'],
+    performersPerLine: 1,
+    background: `${assetPathPrefix}/bef85.svg`,
+    portrait: `${assetPathPrefix}/day3.svg`,
     portraitClassName: 'artist-portrait artist-portrait--day3',
     cardPortrait: `${assetPathPrefix}/day3_anim_2.webp`,
     cardSecondary: `${assetPathPrefix}/day3_anim_3.webp`,
@@ -66,7 +65,12 @@ function ScheduleCard({ artist, activeIndex = 0, onSelectDay }) {
           </button>
         ))}
       </div>
-      <p>{artist.description}</p>
+      <p>
+        Brace yourselves for a magical night as the legendary
+        <br />
+        {artist.performers.join(', ')} take the stage. Get ready to sing, sway,
+        and make memories!
+      </p>
     </div>
   )
 }
@@ -172,10 +176,8 @@ function useScrubCrossfade(
         onRefresh: syncVisibility,
       })
       if (bgs.length > 1) gsap.set(bgs.slice(1), { autoAlpha: 0 })
-      if (ports.length > 1)
-        gsap.set(ports.slice(1), { autoAlpha: 0 })
-      if (boards.length > 1)
-        gsap.set(boards.slice(1), { autoAlpha: 0 })
+      if (ports.length > 1) gsap.set(ports.slice(1), { autoAlpha: 0 })
+      if (boards.length > 1) gsap.set(boards.slice(1), { autoAlpha: 0 })
 
       const total = timelineTotal(count)
       const artistStops = Array.from(
@@ -221,7 +223,8 @@ function useScrubCrossfade(
                   gsap.utils.clamp(
                     0,
                     1,
-                    (trigger.scroll() - trigger.start) / (trigger.end - trigger.start),
+                    (trigger.scroll() - trigger.start) /
+                      (trigger.end - trigger.start),
                   )
                 // Touch screens. A swipe is native scroll with momentum: it
                 // goes as far as it was thrown, so "one artist per gesture"
@@ -240,10 +243,12 @@ function useScrubCrossfade(
                   gestureFrom = null // the swipe is over: see the stops below
                   const swiped = Math.abs(travelled) >= TOUCH_INTENT_PX
                   const range = trigger.end - trigger.start
-                  const toScroll = (time) => trigger.start + range * (time / total)
+                  const toScroll = (time) =>
+                    trigger.start + range * (time / total)
                   const time = here() * total
                   const index = Math.min(count - 1, Math.floor(time / STEP))
-                  const onHold = index >= count - 1 || time - index * STEP <= HOLD
+                  const onHold =
+                    index >= count - 1 || time - index * STEP <= HOLD
 
                   let target = null
                   if (!onHold) {
@@ -273,16 +278,20 @@ function useScrubCrossfade(
                       index > 0
                         ? toScroll((index - 1) * STEP + HOLD - TOUCH_HOLD_INSET)
                         : Math.max(
-                          0,
-                          trigger.start - (scroller?.clientHeight ?? 0) * 1.2,
-                        )
+                            0,
+                            trigger.start - (scroller?.clientHeight ?? 0) * 1.2,
+                          )
                   }
                   if (target === null || Math.abs(target - scroll) < 2)
                     return here()
 
                   const lenis = window.__lenis
                   if (!lenis)
-                    return gsap.utils.clamp(0, 1, (target - trigger.start) / range)
+                    return gsap.utils.clamp(
+                      0,
+                      1,
+                      (target - trigger.start) / range,
+                    )
                   if (!lenis.isStopped && !lenis.isLocked) {
                     lenis.scrollTo(target, {
                       duration: 0.45,
@@ -340,7 +349,8 @@ function useScrubCrossfade(
                 if (direction > 0) {
                   pendingArtistIndex = settled === null ? 0 : settled + 1
                 } else if (direction < 0) {
-                  pendingArtistIndex = settled === null ? count - 1 : settled - 1
+                  pendingArtistIndex =
+                    settled === null ? count - 1 : settled - 1
                 } else {
                   // On the homepage the Artists trigger can first become
                   // active in the same frame that content is unlocked from
@@ -352,13 +362,13 @@ function useScrubCrossfade(
                     settledArtistIndex.current === null
                       ? 0
                       : artistStops.reduce(
-                        (nearest, point, index) =>
-                          Math.abs(point - value) <
+                          (nearest, point, index) =>
+                            Math.abs(point - value) <
                             Math.abs(artistStops[nearest] - value)
-                            ? index
-                            : nearest,
-                        0,
-                      )
+                              ? index
+                              : nearest,
+                          0,
+                        )
                 }
 
                 // Advance exactly one artist per completed scroll gesture.
@@ -457,11 +467,7 @@ function useScrubCrossfade(
         }
 
         if (ports[i] && ports[i + 1]) {
-          tl.to(
-            ports[i],
-            { autoAlpha: 0, ease: PORTRAIT_EASE },
-            t,
-          ).to(
+          tl.to(ports[i], { autoAlpha: 0, ease: PORTRAIT_EASE }, t).to(
             ports[i + 1],
             { autoAlpha: 1, ease: PORTRAIT_EASE },
             t,
@@ -470,11 +476,7 @@ function useScrubCrossfade(
 
         // Synchronized vertical sliding animation matching the left side portraits
         if (boards[i] && boards[i + 1]) {
-          tl.to(
-            boards[i],
-            { autoAlpha: 0, ease: PORTRAIT_EASE },
-            t,
-          ).to(
+          tl.to(boards[i], { autoAlpha: 0, ease: PORTRAIT_EASE }, t).to(
             boards[i + 1],
             { autoAlpha: 1, ease: PORTRAIT_EASE },
             t,
@@ -502,7 +504,11 @@ function useScrubCrossfade(
           const time = timeAt(scroll)
           if (time < 0) return -1
           if (time > total) return count
-          return gsap.utils.clamp(0, count - 1, Math.round((time - HOLD / 2) / STEP))
+          return gsap.utils.clamp(
+            0,
+            count - 1,
+            Math.round((time - HOLD / 2) / STEP),
+          )
         }
         let last = scroller.scrollTop
         // On screen for real: while the page is still locked on Hero / W1
@@ -510,7 +516,10 @@ function useScrubCrossfade(
         // page, and by its measurements there a swipe on W1 is a swipe on it.
         const showing = () =>
           typeof section.checkVisibility !== 'function' ||
-          section.checkVisibility({ visibilityProperty: true, checkVisibilityCSS: true })
+          section.checkVisibility({
+            visibilityProperty: true,
+            checkVisibilityCSS: true,
+          })
         const onTouchStart = () => {
           last = scroller.scrollTop
           gestureStart = null
@@ -632,7 +641,10 @@ function segmentBetween(rectA, rectB) {
   }
   const dx = centerB.x - centerA.x
   const dy = centerB.y - centerA.y
-  return { start: edgePoint(rectA, dx, dy, 6), end: edgePoint(rectB, -dx, -dy, 6) }
+  return {
+    start: edgePoint(rectA, dx, dy, 6),
+    end: edgePoint(rectB, -dx, -dy, 6),
+  }
 }
 
 function buildCurve(start, end, bend = 1) {
@@ -714,7 +726,8 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
         const r = el.getBoundingClientRect()
         const isAvatar = el.classList.contains('slide__avatar')
         const radius = window.getComputedStyle(el).borderTopLeftRadius || ''
-        const round = isAvatar || (radius.includes('%') && parseFloat(radius) >= 50)
+        const round =
+          isAvatar || (radius.includes('%') && parseFloat(radius) >= 50)
         return {
           left: r.left - slideBox.left,
           top: r.top - slideBox.top,
@@ -803,6 +816,25 @@ const ConnectorArrow = forwardRef(function ConnectorArrow(
   )
 })
 
+function ArtistName({ artist, className }) {
+  if (artist.performers) {
+    return (
+      <div className={`artist-names-container ${className}`}>
+        {artist.performers.map((performer, idx) => (
+          <span
+            key={idx}
+            className={`artist-single-name artist-single-name--${idx}`}
+          >
+            {performer}
+          </span>
+        ))}
+      </div>
+    )
+  }
+
+  return <h2 className={className}>{artist.name}</h2>
+}
+
 function ArtistContent({
   artist,
   onRegisterConnector,
@@ -834,7 +866,10 @@ function ArtistContent({
   }
 
   return (
-    <div className={`artist-content-slide slide--${artist.name.replace(/\s+/g, '-').toLowerCase()}`} ref={slideRef}>
+    <div
+      className={`artist-content-slide slide--${artist.name.replace(/\s+/g, '-').toLowerCase()}`}
+      ref={slideRef}
+    >
       <img
         ref={avatarRef}
         className='slide__avatar'
@@ -923,7 +958,7 @@ function ArtistContent({
         />
       )}
 
-      <h2 className='slide__name'>{artist.name}</h2>
+      <ArtistName artist={artist} className='slide__name' />
     </div>
   )
 }
@@ -977,7 +1012,9 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
         onRepeat: swapConnectors,
       },
     )
-    const stopWatching = watchVisible(track, (visible) => tween.paused(!visible))
+    const stopWatching = watchVisible(track, (visible) =>
+      tween.paused(!visible),
+    )
     return () => {
       stopWatching()
       tween.kill()
@@ -998,16 +1035,17 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
     let tween = null
     let L = numConnectors
     let seen = true
-    for (let i = 0; i < numConnectors; i++) connectorRefs.current[i]?.setProgress(1)
+    for (let i = 0; i < numConnectors; i++)
+      connectorRefs.current[i]?.setProgress(1)
 
     const wait = () => {
       timer = setTimeout(step, seen ? 60 : 400)
     }
     const stopWatching = trackRef.current
       ? watchVisible(trackRef.current, (visible) => {
-        seen = visible
-        tween?.paused(!visible)
-      })
+          seen = visible
+          tween?.paused(!visible)
+        })
       : null
 
     const step = () => {
@@ -1030,12 +1068,14 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
         duration: numConnectors === 4 ? 1.2 : 1.8,
         ease: 'power1.inOut',
         onUpdate: () => {
-          connectorRefs.current[current - numConnectors * loopsRef.current]?.setProgress(
-            prog.v,
-          )
+          connectorRefs.current[
+            current - numConnectors * loopsRef.current
+          ]?.setProgress(prog.v)
         },
         onComplete: () => {
-          connectorRefs.current[current - numConnectors * loopsRef.current]?.setProgress(1)
+          connectorRefs.current[
+            current - numConnectors * loopsRef.current
+          ]?.setProgress(1)
           L = current + 1
           step()
         },
@@ -1148,7 +1188,10 @@ function ArtistMobile() {
               <div className='mobile-stage'>
                 <ArtistBoard artist={artist} />
               </div>
-              <h2 className='mobile-name'>{artist.name}</h2>
+              <ArtistName
+                artist={artist}
+                className={`mobile-name${artist.performersPerLine === 1 ? ' mobile-name--raised' : ''}`}
+              />
               <p className='mobile-desc'>
                 Brace yourselves for a magical night as the legendary{' '}
                 {artist.name} takes the stage. Get ready to sing, sway, and make
@@ -1185,7 +1228,8 @@ export default function App() {
       <style jsx global>{`
         @font-face {
           font-family: 'VCR OSD Mono';
-          src: url('https://cdn-next-main.tathva.org/fonts/VCR_OSD_MONO.ttf') format('truetype');
+          src: url('https://cdn-next-main.tathva.org/fonts/VCR_OSD_MONO.ttf')
+            format('truetype');
           font-weight: 400;
           font-style: normal;
           font-display: swap;
@@ -1193,7 +1237,8 @@ export default function App() {
 
         @font-face {
           font-family: 'Bebas Neue';
-          src: url('https://cdn-next-main.tathva.org/fonts/BebasNeue-Regular.ttf') format('truetype');
+          src: url('https://cdn-next-main.tathva.org/fonts/BebasNeue-Regular.ttf')
+            format('truetype');
           font-weight: 400;
           font-style: normal;
           font-display: swap;
@@ -1201,7 +1246,8 @@ export default function App() {
 
         @font-face {
           font-family: 'Space Grotesk';
-          src: url('https://cdn-next-main.tathva.org/fonts/SpaceGrotesk-Variable.ttf') format('truetype');
+          src: url('https://cdn-next-main.tathva.org/fonts/SpaceGrotesk-Variable.ttf')
+            format('truetype');
           font-weight: 100 900;
           font-style: normal;
           font-display: swap;
@@ -1394,15 +1440,17 @@ export default function App() {
         .schedule-card {
           position: absolute;
           z-index: 3;
-          top: 25%;
-          right: -5%;
+          top: 20%;
+          right: -8%;
           width: min(320px, 50%);
           min-width: 260px;
           overflow: hidden;
           border: 1px solid #323231;
           border-radius: 14px;
           background: #202020;
-          transition: border-color 0.3s ease, transform 0.3s ease;
+          transition:
+            border-color 0.3s ease,
+            transform 0.3s ease;
         }
 
         /* Laptop View: proportionally scaled down without affecting inner layout */
@@ -1544,7 +1592,8 @@ export default function App() {
           -webkit-backface-visibility: hidden;
         }
 
-        .slide__avatar, .slide__avatar2 {
+        .slide__avatar,
+        .slide__avatar2 {
           position: absolute;
           z-index: 2;
           width: 16%;
@@ -1553,7 +1602,8 @@ export default function App() {
           object-fit: cover;
         }
 
-        .slide__secondary, .slide__primary {
+        .slide__secondary,
+        .slide__primary {
           position: absolute;
           z-index: 2;
           width: 24%;
@@ -1595,9 +1645,32 @@ export default function App() {
           aspect-ratio: 1;
           border-radius: 50%;
         }
-        .slide--day-2-artists .slide__name {
-          top: 10%;
-          left: 40%;
+
+        /* Day 2: Individual name placement between pictures */
+        /* Day 2: Individual name placement between pictures */
+        .slide--day-2-artists .artist-single-name--1 {
+          /* Vedan: between top-left avatar and top avatar2, above secondary */
+          top: 37%;
+          left: 25%;
+          transform: rotate(-7deg);
+        }
+        .slide--day-2-artists .artist-single-name--0 {
+          /* Akasa: right of avatar2, above primary */
+          top: 34%;
+          left: 77%;
+          transform: rotate(5deg);
+        }
+        .slide--day-2-artists .artist-single-name--2 {
+          /* Gabri: between secondary and primary, below avatar2 */
+          top: 64%;
+          left: 52%;
+          transform: rotate(-6deg);
+        }
+        .slide--day-2-artists .artist-single-name--3 {
+          /* Stic: below primary */
+          top: 80%;
+          left: 80%;
+          transform: rotate(4deg);
         }
 
         /* --- DAY 3 SPECIFIC LAYOUT --- */
@@ -1613,19 +1686,44 @@ export default function App() {
           top: 10%;
           left: 68%;
         }
-        .slide--day-3-artists .slide__name {
-          top: 65%;
-          left: 65%;
+
+        /* Day 3: Individual name placement between pictures */
+        /* Day 3: Individual name placement between pictures */
+        .slide--day-3-artists .artist-single-name--0 {
+          /* Sachet-Parampara: between avatar and primary, above secondary */
+          top: 22%;
+          left: 25%;
+          transform: rotate(-6deg);
+        }
+        .slide--day-3-artists .artist-single-name--1 {
+          /* Thamarassery Churam: right of secondary, below primary */
+          top: 63%;
+          left: 60%;
+          transform: rotate(-8deg);
+        }
+        .slide--day-3-artists .artist-single-name--2 {
+          /* DJ noise: below avatar, left of secondary */
+          top: 69%;
+          left: 6%;
+          transform: rotate(4deg);
         }
 
         .slide__name {
           position: absolute;
+          inset: 0;
           z-index: 3;
           margin: 0;
+          pointer-events: none;
+        }
+
+        .artist-single-name {
+          position: absolute;
           color: white;
           font-family: 'La Belle Aurore:Regular', cursive;
-          font-size: clamp(28px, 3.2vw, 52px);
-          transform: rotate(-10deg);
+          font-size: clamp(24px, 2.5vw, 42px);
+          white-space: nowrap;
+          pointer-events: auto;
+          line-height: 1;
         }
 
         .connector-overlay {
@@ -1767,7 +1865,9 @@ export default function App() {
             writing-mode: vertical-rl;
             transform: rotate(180deg);
             cursor: pointer;
-            transition: background 0.3s ease, color 0.3s ease;
+            transition:
+              background 0.3s ease,
+              color 0.3s ease;
           }
 
           .mobile-days .is-active {
@@ -1826,6 +1926,20 @@ export default function App() {
             font-size: clamp(6px, 12vw, 66px);
             line-height: 0.95;
             text-transform: uppercase;
+          }
+
+          .mobile-name--raised {
+            top: 24px;
+          }
+
+          .mobile-name .artist-single-name {
+            position: static;
+            display: block;
+            color: inherit;
+            font-family: inherit;
+            font-size: inherit;
+            transform: none;
+            line-height: inherit;
           }
 
           .mobile-desc {

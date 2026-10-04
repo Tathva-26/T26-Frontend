@@ -41,9 +41,9 @@ const desktopCards = [
     iconClass: 'top-[510px] left-[77px]',
   },
   {
-    id: 'hackathons',
+    id: 'passes',
     number: '04',
-    title: 'HACKATHONS',
+    title: 'PASSES',
     description: [''],
     frame: `${desktopAssetBase}/group-37.png`,
     titleClass: 'top-[140px] left-px w-[204px] text-xl tracking-[5.00px]',
@@ -144,8 +144,16 @@ const mobileCards = [
 const cardIcon =
   'https://c.animaapp.com/UqxAlqQL/img/3ef01d988cdc695be23d44d3ff250f97-removebg-preview-4@2x.png'
 
-function ActivityCard({ card, onSelect, selected, index, anySelected, customStyle }) {
-  const positionClass = customStyle?.position !== undefined ? customStyle.position : card.position
+function ActivityCard({
+  card,
+  onSelect,
+  selected,
+  index,
+  anySelected,
+  customStyle,
+}) {
+  const positionClass =
+    customStyle?.position !== undefined ? customStyle.position : card.position
   return (
     <article
       className={`${positionClass} animate-float transition-all duration-500 cursor-pointer ${
@@ -364,7 +372,8 @@ function MobileView() {
             aria-label='Tathva activities'
           >
             {mobileCards.map((card, index) => {
-              const leftPos = index % 2 === 0 ? tabletParams.col1Left : tabletParams.col2Left
+              const leftPos =
+                index % 2 === 0 ? tabletParams.col1Left : tabletParams.col2Left
               const topPos = index < 2 ? 0 : 419
               return (
                 <ActivityCard

@@ -2224,19 +2224,18 @@ export default function LecturesPage() {
           onClick={() => setSelectedLecture(null)}
         >
           <div
-            className='relative w-full max-w-[575px] rounded-[20px] border border-white/10 bg-[#0d0a17]/90 px-5 py-5 shadow-2xl backdrop-blur-sm sm:px-7'
-            style={{ containerType: 'inline-size' }}
+            className='relative w-full max-w-[820px] rounded-[24px] border border-white/10 bg-[#0d0a17]/90 px-7 py-7 shadow-2xl backdrop-blur-sm sm:px-10 sm:py-9'
             onClick={(e) => e.stopPropagation()}
           >
             {/* CLOSE BUTTON */}
             <button
               type='button'
               onClick={() => setSelectedLecture(null)}
-              className='absolute right-4 top-4 z-10 rounded-md p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white cursor-pointer'
+              className='absolute right-5 top-5 z-10 rounded-md p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white cursor-pointer'
               aria-label='Close lecture details'
             >
               <svg
-                className='w-5 h-5'
+                className='w-6 h-6'
                 viewBox='0 0 24 24'
                 fill='none'
                 stroke='currentColor'
@@ -2250,59 +2249,61 @@ export default function LecturesPage() {
               </svg>
             </button>
 
-            <div className='grid gap-x-8 gap-y-5 pt-2 sm:grid-cols-[216px_minmax(0,1fr)] sm:items-start'>
+            <div className='grid gap-x-10 gap-y-6 pt-2 sm:grid-cols-[300px_minmax(0,1fr)] sm:items-start'>
               <div>
-                <div className='relative aspect-square overflow-hidden rounded-[7px] border border-[#737373]'>
+                <div className='relative aspect-square overflow-hidden rounded-[10px] border border-[#737373]'>
                   <Image
                     src={selectedLecture.image}
                     alt={selectedLecture.fullTitle}
                     fill
-                    sizes='216px'
+                    sizes='300px'
                     className='object-cover object-center'
                   />
                 </div>
 
-                <div className='mt-2 flex items-end justify-between px-1'>
+                <div className='mt-3 flex items-end justify-between px-1'>
                   <span className='flex items-baseline leading-none text-white'>
                     {selectedLecture.priceInPaise > 0 ? (
                       <>
-                        <span className='font-sans text-3xl font-bold'>₹</span>
-                        <span className={`lectures-jaro text-3xl`}>
+                        <span className='font-sans text-4xl font-bold'>₹</span>
+                        <span className={`lectures-jaro text-4xl`}>
                           {selectedLecture.fee.replace(/^₹/, '')}
                         </span>
                       </>
                     ) : (
-                      <span className={`lectures-jaro text-3xl`}>
+                      <span className={`lectures-jaro text-4xl`}>
                         {selectedLecture.fee}
                       </span>
                     )}
                   </span>
-                  <span className='font-bold text-base leading-none text-white'>
+                  <span className='font-bold text-lg leading-none text-white'>
                     {selectedLecture.dateDay} {selectedLecture.dateMonth}
                   </span>
                 </div>
 
-                <Checkout event={selectedLecture} />
+                <div className='mt-2 [&_button]:py-3 [&_button]:text-base [&_dl]:text-xs'>
+                  <Checkout event={selectedLecture} />
+                </div>
               </div>
 
-              <div className='pt-2 sm:pt-6'>
+              <div className='pt-2 sm:pt-6' style={{ containerType: 'inline-size' }}>
                 <h2
-                  className={`lectures-fragment-serif max-w-full overflow-hidden whitespace-nowrap text-[clamp(1.75rem,7cqw,3rem)] leading-none text-white`}
+                  className={`lectures-fragment-serif max-w-full overflow-hidden whitespace-nowrap text-[clamp(2.25rem,8cqw,3.75rem)] leading-none text-white`}
                 >
                   LECTURES
                 </h2>
 
                 <div className='mt-7 space-y-2'>
-                  <h3 className='text-base font-semibold text-[#e2e2e2]'>
+                  <h3 className='text-lg font-semibold text-[#e2e2e2]'>
                     About the lecture
                   </h3>
-                  <p className='text-[9px] leading-[1.25] text-[#8d8d8d]'>
+                  <p className='text-sm leading-[1.5] text-[#8d8d8d]'>
                     {selectedLecture.description}
                   </p>
                 </div>
 
                 {(selectedLecture.isTeamEvent || selectedLecture.bookingClosed) && (
-                  <div className='mt-3 space-y-1 text-[9px] uppercase leading-tight text-white'>
+                  <div className='mt-4 space-y-1 text-xs uppercase leading-tight text-white'>
                     {selectedLecture.isTeamEvent && (
                       <p>
                         Team event
@@ -2325,18 +2326,18 @@ export default function LecturesPage() {
                   * route — the list route omits it.
                   */}
                 {selectedDetails.event?.extraInfo && (
-                  <div className='mt-5'>
-                    <h3 className='text-[11px] font-bold uppercase text-white'>
+                  <div className='mt-6'>
+                    <h3 className='text-sm font-bold uppercase text-white'>
                       Details :
                     </h3>
-                    <p className='mt-2 whitespace-pre-line text-[9px] leading-[1.35] text-[#8d8d8d]'>
+                    <p className='mt-2 whitespace-pre-line text-sm leading-[1.5] text-[#8d8d8d]'>
                       {selectedDetails.event.extraInfo}
                     </p>
                   </div>
                 )}
 
                 {(selectedDetails.event?.venueFull || selectedDetails.event?.time) && (
-                  <div className='mt-4 space-y-1 text-[9px] uppercase leading-tight text-white'>
+                  <div className='mt-5 space-y-1 text-xs uppercase leading-tight text-white'>
                     {selectedDetails.event.time && (
                       <p>{selectedDetails.event.time}</p>
                     )}
@@ -2346,12 +2347,6 @@ export default function LecturesPage() {
                   </div>
                 )}
 
-                <button
-                  type='button'
-                  className='mt-5 rounded-[7px] bg-[rgba(0,116,122,0.75)] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[rgba(0,145,151,0.9)] cursor-pointer'
-                >
-                  LEARN MORE
-                </button>
               </div>
             </div>
           </div>

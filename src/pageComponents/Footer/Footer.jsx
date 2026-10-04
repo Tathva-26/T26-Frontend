@@ -5,6 +5,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { Bebas_Neue, Varela } from 'next/font/google'
+import Link from 'next/link'
 import { GlowLetters } from './glow'
 import { DotsBackground } from '@/components/AmbientBackground'
 
@@ -24,15 +25,27 @@ const varela = Varela({
 const linkColumns = [
   {
     heading: 'EXPLORE',
-    links: ['ANOUNCEMENTS', 'TEAMS', 'MAP', 'CONTACTS'],
+    links: [
+      { label: 'HOME', href: '/' },
+      { label: 'CONTACTS', href: '/contact' },
+    ],
   },
   {
     heading: 'ABOUT',
-    links: ['HOME', 'EVENTS', 'LECTURES', 'WORKSHOPS', 'PASSES'],
+    links: [
+      { label: 'WORKSHOPS', href: '/workshops' },
+      { label: 'LECTURES', href: '/lectures' },
+      { label: 'COMPETITIONS', href: '/competitions' },
+      { label: 'PASSES', href: '/passes' },
+    ],
   },
   {
     heading: 'MORE',
-    links: ['GALLERY', 'FAQ', 'CARRERS', 'SPONSORS'],
+    links: [
+      { label: 'PROSHOW', href: '/proshow' },
+      { label: 'ACCOMMODATION', href: '/accommodation' },
+      { label: 'PROFILE', href: '/profile' },
+    ],
   },
 ]
 
@@ -295,13 +308,13 @@ export default function Footer() {
 
                   <ul className='space-y-1.5 md:space-y-1 w-full'>
                     {column.links.map((link) => (
-                      <li key={link}>
-                        <a
-                          href='#'
+                      <li key={link.label}>
+                        <Link
+                          href={link.href}
                           className='group flex items-center justify-between gap-1.5 font-bebas text-[12px] sm:text-[13px] tracking-[0.08em] text-[#B0B0B0] hover:text-white transition-colors block leading-tight'
                         >
                           <span className='transition-transform duration-200 group-hover:translate-x-0.5'>
-                            {link}
+                            {link.label}
                           </span>
                           {/* Pink arrow for desktop view */}
                           <svg
@@ -320,7 +333,7 @@ export default function Footer() {
                               strokeLinejoin='round'
                             />
                           </svg>
-                        </a>
+                        </Link>
                       </li>
                     ))}
                   </ul>

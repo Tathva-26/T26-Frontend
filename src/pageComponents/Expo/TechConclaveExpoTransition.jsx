@@ -13,12 +13,22 @@ import styles from './ExpoTransition.module.css'
 import expoStyles from './Expo.module.css'
 import { measureExpoLabels, expoLeaderPaths } from './expoLeaders.mjs'
 
+// The pinned scroll-journey (camera rig, GSAP ScrollTrigger pin, procedural
+// mist) is a desktop-only experience. Phones get the older, lightweight Expo
+// presentation instead: the standalone crystal + copy, laid out inline with
+// normal scroll — no pin, no scroll-triggered animation, no extra WebGL rig.
+const MOBILE_QUERY = '(max-width: 767px)'
 const subscribeMotion = (callback) => {
-  const query = window.matchMedia('(prefers-reduced-motion: reduce)')
-  query.addEventListener('change', callback)
-  return () => query.removeEventListener('change', callback)
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
+  const mobile = window.matchMedia(MOBILE_QUERY)
+  motion.addEventListener('change', callback)
+  mobile.addEventListener('change', callback)
+  return () => {
+    motion.removeEventListener('change', callback)
+    mobile.removeEventListener('change', callback)
+  }
 }
-const motionSnapshot = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const motionSnapshot = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches && !window.matchMedia(MOBILE_QUERY).matches
 const serverSnapshot = () => false
 
 export default function TechConclaveExpoTransition() {
