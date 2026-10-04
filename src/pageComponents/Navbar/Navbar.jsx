@@ -44,7 +44,7 @@ const instrumentSerif = Instrument_Serif({
 const NAV_LINKS = [
   { label: 'Workshops', href: '/workshops' },
   { label: 'Lectures', href: '/lectures' },
-  { label: 'ProShow', href: '/passes' },
+  { label: 'Passes', href: '/passes' },
   { label: 'Accommodation', href: '/accommodation' },
 ]
 

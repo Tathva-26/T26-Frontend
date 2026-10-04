@@ -23,7 +23,7 @@ const leftMenu = [
   { label: 'HOME', href: '/' },
   { label: 'ACCOMMODATION', href: '/accommodation' },
   { label: 'LECTURES', href: '/lectures' },
-  { label: 'PROSHOW', href: '/proshow' },
+  // { label: 'PROSHOW', href: '/proshow' },
 ]
 
 const rightMenu = [
