@@ -399,3 +399,83 @@ export const REFERRALS = {
   successfulSalesAmount: 250000,
   registered: true,
 }
+
+/* ---- accommodation --------------------------------------------------- */
+
+/**
+ * Mirrors `GET /api/accommodation/options` exactly, including the shapes that
+ * are awkward: the API serves THREE FLAT LISTS, not a nested catalogue, and
+ * the page assembles its tier view from them.
+ *
+ * The edges worth exercising are all here:
+ *
+ *   - 4-sharing has no female stock, so it has no female SKU rows and no
+ *     female availability row at all. A tier that simply does not exist for
+ *     this buyer is different from one that sold out.
+ *   - `byNight` differs across nights, because a stay occupies a RANGE: two
+ *     bookings starting on different days still collide in the middle. A
+ *     fixture with flat nights would hide every bug in that logic.
+ *   - Enums are uppercase (MALE/FEMALE, VEG/NONVEG), matching the backend's
+ *     Prisma enums rather than the lowercase ids a frontend would pick.
+ *   - Prices are per WHOLE STAY. Three dormitory nights is less than three
+ *     times one night, so nothing here can be derived by multiplication.
+ */
+
+const ROOM_PRICES = {
+  dormitory: { 1: 20000, 2: 34000, 3: 48000 },
+  'sharing-3': { 1: 100000, 2: 180000, 3: 265000 },
+  'sharing-4': { 1: 110000, 2: 200000, 3: 290000 },
+}
+
+const STOCK = [
+  { tier: 'dormitory', gender: 'MALE', unit: 'bed', total: 450 },
+  { tier: 'dormitory', gender: 'FEMALE', unit: 'bed', total: 120 },
+  { tier: 'sharing-3', gender: 'MALE', unit: 'room', total: 10 },
+  { tier: 'sharing-3', gender: 'FEMALE', unit: 'room', total: 25 },
+  { tier: 'sharing-4', gender: 'MALE', unit: 'room', total: 8 },
+]
+
+/** Units held on each night, so `byNight` is not uniformly the total. */
+const HELD = {
+  'sharing-4|MALE': { 1: 6, 2: 6, 3: 0 },
+  'sharing-3|FEMALE': { 1: 0, 2: 25, 3: 0 },
+}
+
+export const ACCOMMODATION = {
+  festNights: 3,
+  checkIn: '11:00',
+  checkOut: '10:00',
+  notes: [
+    'Check-in from 11:00 AM, check-out by 10:00 AM.',
+    'Bring your own bedsheets.',
+  ],
+
+  rooms: STOCK.flatMap(({ tier, gender }) =>
+    [1, 2, 3].map((nights) => ({
+      tier,
+      gender,
+      nights,
+      price: ROOM_PRICES[tier][nights],
+      onSale: true,
+    })),
+  ),
+
+  food: [1, 2, 3].flatMap((day) =>
+    ['VEG', 'NONVEG'].map((diet) => ({ day, diet, price: 18000, onSale: true })),
+  ),
+
+  availability: STOCK.map(({ tier, gender, unit, total }) => {
+    const held = HELD[`${tier}|${gender}`] ?? {}
+    return {
+      tier,
+      gender,
+      unit,
+      total,
+      byNight: {
+        1: total - (held[1] ?? 0),
+        2: total - (held[2] ?? 0),
+        3: total - (held[3] ?? 0),
+      },
+    }
+  }),
+}
