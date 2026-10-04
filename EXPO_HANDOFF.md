@@ -1,5 +1,28 @@
 # Tathva Expo handoff
 
+## Optimization update — 2026-10-04
+
+Current branch: `fix/expo_optimization-adithyaa`. This update supersedes the
+older renderer-latch and timing descriptions below: current entry hold ends
+at phase 1.2 on desktop and 1.4 on mobile; departure lasts .45 phase units.
+
+- Homepage crystal loading starts within 1200 px of the viewport. Standalone
+  `/expo` still requests it immediately. Readiness includes a GPU warm-up frame.
+- A late model is admitted while hidden or during the settled hold, never
+  halfway through a tumble or detail animation.
+- Desktop poster masks reuse 33 deterministic thresholds. Compact viewport
+  transitions omit poster blur/masks and hide DOM mist when the model is live.
+- Cloud shaders use two noise octaves on compact hardware and four otherwise;
+  their mesh is hidden outside the transition interval.
+- Frame-time sampling reduces DPR/transmission resolution after two slow
+  three-second windows; four fast windows restore quality. Long resume gaps
+  are excluded. Compact shards use reflections without transmission.
+- Model DOM references are cached; connector projection is limited to 20/30 Hz.
+  Inactive shard instances are skipped and bounds refresh matches picking cadence.
+
+Additional check: `node scripts/check-expo-render-budget.mjs`.
+Physical-device FPS and production build performance remain unmeasured.
+
 Repo: T26-Frontend
 Branch: dev/expo-adithyaa
 Stack: Next.js 16.3.4, React 19, Three.js/R3F, GSAP ScrollTrigger, Lenis.
