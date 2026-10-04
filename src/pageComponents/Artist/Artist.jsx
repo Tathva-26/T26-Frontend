@@ -12,7 +12,7 @@ import {
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { EasePack } from 'gsap/EasePack'
-import TopoBackground from '@/components/TopoBackground'
+import Topography from '@/components/Topography/Topography'
 import { watchVisible } from '@/lib/watchVisible'
 import { touchStop } from '@/lib/touchStop'
 
@@ -1162,14 +1162,7 @@ function ArtistMobile() {
                 mobileBgRefs.current[index] = el
               }}
             >
-              <TopoBackground
-                fixed={false}
-                background='#1c1c1c'
-                lineColor='220, 220, 220'
-                lineOpacity={0.16}
-                seed={index + 7}
-                style={{ zIndex: 0 }}
-              />
+              <Topography scale={2} />
             </div>
           ))}
         </div>
@@ -1989,14 +1982,7 @@ export default function App() {
                 bgRefs.current[index] = el
               }}
             >
-              <TopoBackground
-                fixed={false}
-                background='#1c1c1c'
-                lineColor='220, 220, 220'
-                lineOpacity={0.16}
-                seed={index + 7}
-                style={{ zIndex: 0 }}
-              />
+              <Topography scale={2} />
             </div>
           ))}
         </div>
