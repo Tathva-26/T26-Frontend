@@ -77,16 +77,14 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang='en' className='h-full antialiased'>
-      {' '}
       <body className='min-h-full flex flex-col'>
         {/* One session for the whole app: every page reads it, and every 401
-from anywhere routes to the single handler inside. */}{' '}
+from anywhere routes to the single handler inside. */}
         <UserProvider>
-          {' '}
           <ReferralCapture />
-          {children}{' '}
-        </UserProvider>{' '}
-      </body>{' '}
+          {children}
+        </UserProvider>
+      </body>
     </html>
   )
 }
