@@ -20,7 +20,7 @@ const michroma = Michroma({
 })
 
 const leftMenu = [
-  { label: 'HOME', href: '/hero' },
+  { label: 'HOME', href: '/' },
   { label: 'ANNOUNCEMENTS', href: '/announcements' },
   { label: 'ACCOMMODATION', href: '/accommodation' },
   { label: 'LECTURES', href: '/lectures' },
@@ -244,7 +244,7 @@ function TathvaMenuOverlay() {
 
   // Scroll spy for dynamic multi-section scroll in page.js
   useEffect(() => {
-    const isHomePage = pathname === '/' || pathname === '/hero'
+    const isHomePage = pathname === '/' || pathname === '/'
     if (!isHomePage) return
 
     let rafId = null
@@ -490,7 +490,7 @@ function TathvaMenuOverlay() {
         "
       >
         <Link
-          href="/hero"
+          href="/"
           aria-label="Tathva home"
           className="pointer-events-auto inline-flex items-center"
         >

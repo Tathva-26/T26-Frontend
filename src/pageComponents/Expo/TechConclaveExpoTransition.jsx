@@ -122,10 +122,14 @@ function ExpoTransitionContent() {
       pose.layout = box
       journey.current = pose
       const { x, y } = journeyScreenPoint(pose, box)
+      const interactive = entry > .72 && exit === 0
       gsap.set(crystal.current, {
         width: box.width, height: box.height, opacity: exit > 0 ? 1 : pose.opacity,
-        pointerEvents: entry > .72 && exit === 0 ? 'auto' : 'none',
+        pointerEvents: interactive ? 'auto' : 'none',
       })
+      // The model's canvas wrapper sets its own pointer-events, which wins over
+      // the container's: see .crystal[data-expo-interactive] in the CSS.
+      crystal.current.dataset.expoInteractive = String(interactive)
       const fallback = crystal.current.querySelector('img')
       // Keep opacity in CSS so the ready state can hide the illustration when
       // the model loads, even if scrolling is paused at that moment.

@@ -14,6 +14,7 @@ import {
 } from '../wheels/robowarsHandoff'
 import './robowars.css'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
+import { useRobowarsBreak } from './useRobowarsBreak'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
@@ -331,6 +332,8 @@ export default function RobowarsHero({ leadInVh = 0 }) {
   const desktopXlRef = useRef(null)
   const desktopTabletRef = useRef(null)
   const mobileRef = useRef(null)
+
+  useRobowarsBreak(timelineRef)
 
   useGSAP(
     () => {
