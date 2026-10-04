@@ -244,7 +244,7 @@ function TathvaMenuOverlay() {
 
   // Scroll spy for dynamic multi-section scroll in page.js
   useEffect(() => {
-    const isHomePage = pathname === '/' || pathname === '/hero'
+    const isHomePage = pathname === '/' || pathname === '/'
     if (!isHomePage) return
 
     let rafId = null
