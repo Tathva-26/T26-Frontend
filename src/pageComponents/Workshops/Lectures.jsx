@@ -13,11 +13,10 @@ import Image from 'next/image'
 import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import { TextPlugin } from 'gsap/TextPlugin'
+import { useRouter } from 'next/navigation'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 import { useEvents } from '@/hooks/useEvents'
-import { useEventDetails } from '@/hooks/useEventDetails'
-import Checkout from '@/components/Checkout/Checkout'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(TextPlugin)
@@ -166,22 +165,13 @@ const IDLE_YIELD_DURATION = 0.5
 const IDLE_RESTORE_DURATION = 0.85
 
 export default function LecturesPage() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
-
-  const [selectedLecture, setSelectedLecture] = useState(null)
 
   const { events, loading, error, reload } = useEvents(EVENT_TYPE, {
     label: CARD_LABEL,
     fallbackImage: FALLBACK_IMAGE,
   })
-
-  // The full record for whatever the modal has open. The list route returns a
-  // trimmed field set, so `extraInfo` is only available from here.
-  const selectedDetails = useEventDetails(selectedLecture?.id ?? null, {
-    label: CARD_LABEL,
-    fallbackImage: FALLBACK_IMAGE,
-  })
-  const [viewDetailsMode, setViewDetailsMode] = useState(false)
 
   const [mounted, setMounted] = useState(false)
 
@@ -1927,7 +1917,7 @@ export default function LecturesPage() {
                             }
                             onMouseMove={(e) => handleCardMove(lecture.id, e)}
                             onMouseLeave={() => handleCardLeave(lecture.id)}
-                            onClick={() => setSelectedLecture(lecture)}
+                            onClick={() => router.push(`/lectures/${lecture.id}`)}
                           >
                             <div
                               ref={(el) => {
@@ -2216,142 +2206,6 @@ export default function LecturesPage() {
         }
       `}</style>
 
-      {/* LECTURE DETAILS MODAL */}
-      {selectedLecture && (
-        <div
-          className='fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#06050b] bg-cover bg-center p-4 text-white animate-in fade-in duration-200'
-          style={{ backgroundImage: "url('/images/lecture-detail-bg.png')" }}
-          onClick={() => setSelectedLecture(null)}
-        >
-          <div
-            className='relative w-full max-w-[820px] rounded-[24px] border border-white/10 bg-[#0d0a17]/90 px-7 py-7 shadow-2xl backdrop-blur-sm sm:px-10 sm:py-9'
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* CLOSE BUTTON */}
-            <button
-              type='button'
-              onClick={() => setSelectedLecture(null)}
-              className='absolute right-5 top-5 z-10 rounded-md p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white cursor-pointer'
-              aria-label='Close lecture details'
-            >
-              <svg
-                className='w-6 h-6'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  d='M6 18L18 6M6 6l12 12'
-                />
-              </svg>
-            </button>
-
-            <div className='grid gap-x-10 gap-y-6 pt-2 sm:grid-cols-[300px_minmax(0,1fr)] sm:items-start'>
-              <div>
-                <div className='relative aspect-square overflow-hidden rounded-[10px] border border-[#737373]'>
-                  <Image
-                    src={selectedLecture.image}
-                    alt={selectedLecture.fullTitle}
-                    fill
-                    sizes='300px'
-                    className='object-cover object-center'
-                  />
-                </div>
-
-                <div className='mt-3 flex items-end justify-between px-1'>
-                  <span className='flex items-baseline leading-none text-white'>
-                    {selectedLecture.priceInPaise > 0 ? (
-                      <>
-                        <span className='font-sans text-4xl font-bold'>₹</span>
-                        <span className={`lectures-jaro text-4xl`}>
-                          {selectedLecture.fee.replace(/^₹/, '')}
-                        </span>
-                      </>
-                    ) : (
-                      <span className={`lectures-jaro text-4xl`}>
-                        {selectedLecture.fee}
-                      </span>
-                    )}
-                  </span>
-                  <span className='font-bold text-lg leading-none text-white'>
-                    {selectedLecture.dateDay} {selectedLecture.dateMonth}
-                  </span>
-                </div>
-
-                <div className='mt-2 [&_button]:py-3 [&_button]:text-base [&_dl]:text-xs'>
-                  <Checkout event={selectedLecture} />
-                </div>
-              </div>
-
-              <div className='pt-2 sm:pt-6' style={{ containerType: 'inline-size' }}>
-                <h2
-                  className={`lectures-fragment-serif max-w-full overflow-hidden whitespace-nowrap text-[clamp(2.25rem,8cqw,3.75rem)] leading-none text-white`}
-                >
-                  LECTURES
-                </h2>
-
-                <div className='mt-7 space-y-2'>
-                  <h3 className='text-lg font-semibold text-[#e2e2e2]'>
-                    About the lecture
-                  </h3>
-                  <p className='text-sm leading-[1.5] text-[#8d8d8d]'>
-                    {selectedLecture.description}
-                  </p>
-                </div>
-
-                {(selectedLecture.isTeamEvent || selectedLecture.bookingClosed) && (
-                  <div className='mt-4 space-y-1 text-xs uppercase leading-tight text-white'>
-                    {selectedLecture.isTeamEvent && (
-                      <p>
-                        Team event
-                        {selectedLecture.teamSize
-                          ? ` · up to ${selectedLecture.teamSize} members`
-                          : ''}
-                      </p>
-                    )}
-                    {selectedLecture.bookingClosed && (
-                      <p className='text-[#f0a3a3]'>Booking closed</p>
-                    )}
-                  </div>
-                )}
-
-                {/*
-                  * The backend has no field for event contacts, so the two
-                  * placeholder names that used to sit here would have shipped
-                  * beside real event data. `extraInfo` is the long write-up
-                  * the API does hold, and it only comes back from the detail
-                  * route — the list route omits it.
-                  */}
-                {selectedDetails.event?.extraInfo && (
-                  <div className='mt-6'>
-                    <h3 className='text-sm font-bold uppercase text-white'>
-                      Details :
-                    </h3>
-                    <p className='mt-2 whitespace-pre-line text-sm leading-[1.5] text-[#8d8d8d]'>
-                      {selectedDetails.event.extraInfo}
-                    </p>
-                  </div>
-                )}
-
-                {(selectedDetails.event?.venueFull || selectedDetails.event?.time) && (
-                  <div className='mt-5 space-y-1 text-xs uppercase leading-tight text-white'>
-                    {selectedDetails.event.time && (
-                      <p>{selectedDetails.event.time}</p>
-                    )}
-                    {selectedDetails.event.venueFull && (
-                      <p className='text-[#8d8d8d]'>{selectedDetails.event.venueFull}</p>
-                    )}
-                  </div>
-                )}
-
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
