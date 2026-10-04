@@ -1,0 +1,416 @@
+file,orig_bytes,new_bytes,action,note
+images/ITC machine font.png,2304,2304,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/profile-avatar.png,1939,1939,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/profile-main-avatar.png,3511,3511,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/profile.png,1304900,1304900,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/tathva-logo-black.png,181603,181603,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/workshops-heading.png,73752,73752,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/workshops/astronaut-outline.png,1446731,593605,PNG,"RGB->P (1353, 1162) palette-256 Mediancut"
+images/workshops/tathva-emblem.png,19204,19204,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/workshops/workshop-card-image.png,117021,117021,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/Robowars/tathva-white-logo.png,13416,13416,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/tickets/bg-city.png,1554301,728730,PNG,"RGB->P (1728, 688) palette-256 Mediancut"
+images/tickets/demo.png,359585,359585,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/techconclave/bigstar.png,51589,51589,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/techconclave/logo.png,34293,34293,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/techconclave/tedx.png,25557,25557,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/competitions/competition-card-image.png,117021,117021,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/competitions/tathva-emblem.png,19204,19204,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/shared/tathva-logo.png,1823,1823,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/expo/crystal-fallback.png,287084,287084,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/expo/tathva-robot.png,90986,90986,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/GPC/space-shooter/bullet.png,886,886,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/GPC/space-shooter/enemy2.png,46372,46372,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/GPC/space-shooter/spaceship.png,65041,65041,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/GPC/game/exit.png,5885,5885,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/GPC/hero/dragon.png,194889,194889,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/menu/border_left.png,12118,12118,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/menu/border_right.png,11932,11932,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/menu/leftwave.png,684,684,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/menu/rightwave.png,683,683,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/contact-us/tathva-logo.png,13416,13416,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-222.png,77943,77943,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-223@2x.png,94497,94497,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-227@2x.png,1279,1279,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-229@2x.png,1835,1835,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-231@2x.png,4264,4264,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-233@2x.png,2594,2594,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-234@2x.png,4186,4186,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-235@2x.png,3176,3176,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-236@2x.png,58629,58629,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-237@2x.png,26094,26094,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-239@2x.png,8412,8412,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-240@2x.png,23489,23489,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-241@2x.png,16025,16025,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-242@2x.png,9032,9032,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-243@2x.png,3469,3469,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-244@2x.png,7750,7750,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-245@2x.png,10362,10362,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-246@2x.png,9590,9590,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-247@2x.png,4463,4463,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-248@2x.png,4888,4888,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-249.png,54260,54260,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/ticket/image-250@2x.png,45702,45702,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/lectures/lecture-card-image.png,117021,117021,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/lectures/tathva-emblem.png,19204,19204,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/hero/arrow-right.png,8874,8874,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/hero/background1.png,513831,220291,PNG,"RGB->P (1280, 631) palette-256 Mediancut"
+images/hero/butterfly.png,53251,53251,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/hero/floatingisland.png,1439404,1439404,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/hero/girl4.png,926269,926269,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/hero/planeticon.png,1810,1810,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/hero/portalbg.png,2340120,2340120,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/hero/tathva_text.png,165918,165918,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/hero/tathva_text1.png,539679,539679,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/hero/tathvalogo.png,13416,13416,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/artist/09bd3.png,26815,26815,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/artist/1fbda.png,223587,223587,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/artist/21bbf.png,632304,632304,PNG,"P (1500, 2667) already-optimal, kept"
+images/artist/2a131.png,78518,78518,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/artist/32995.png,106642,106642,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/artist/32c3b.png,13416,13416,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/artist/3a288.png,69774,69774,PNG,"RGB (736, 732) already-optimal, kept"
+images/artist/43ca6.png,457962,457500,PNG,"P->P (1584, 993) lossless-opt"
+images/artist/475ef.png,22470,22470,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/artist/50195.png,533463,533463,PNG,"P (860, 1664) already-optimal, kept"
+images/artist/5ecd4.png,110930,110930,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/artist/6bd42.png,79048,79048,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/artist/8577e.png,423429,423429,PNG,"P (860, 1528) already-optimal, kept"
+images/artist/88fac.png,978307,674063,PNG,"RGB->P (1347, 1168) palette-256 Mediancut"
+images/artist/8a9a6.png,79045,79045,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/artist/8bb40.png,221946,221946,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/artist/arijit.png,221693,221693,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/artist/bef85.png,548417,547553,PNG,"P->P (2000, 951) lossless-opt"
+images/artist/c5dbc.png,106648,106648,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/artist/shreya.png,278755,278755,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/proshow/celestial-smoke-a.png,123530,123530,PNG,ERROR kept: Fast Octree (method == 2) and libimagequant (method == 3) are the only valid methods for quantizing RGBA images
+images/workshop-robotics.jpg,866441,172193,JPG,"(1024, 1024) q80-progressive"
+images/workshops/workshop-astronaut.jpg,109677,109636,JPG,"(749, 936) q80-progressive"
+images/competitions/competition-astronaut.jpg,109677,109636,JPG,"(749, 936) q80-progressive"
+images/lectures/lecture-astronaut.jpg,109677,109636,JPG,"(749, 936) q80-progressive"
+images/hero/bg10.jpg,742,742,JPG,"already-optimal, kept"
+file.svg,391,391,SVG,"no raster, already minified"
+images/workshops/workshop-card-border.svg,626,624,SVG,no raster; comment/whitespace minified
+images/Robowars/arena-left-robot.svg,2099693,2099693,SVG,"1 embed(s) recompressed, saved 0KB raster"
+images/Robowars/arena-right-robot.svg,1582336,1582336,SVG,"1 embed(s) recompressed, saved 0KB raster"
+images/tickets/leftrod.svg,502,500,SVG,no raster; comment/whitespace minified
+images/tickets/rightrod.svg,500,498,SVG,no raster; comment/whitespace minified
+images/tickets/ticket1.svg,1010227,848575,SVG,"13 embed(s) recompressed, saved 118KB raster"
+images/tickets/ticket2.svg,1175067,1013415,SVG,"21 embed(s) recompressed, saved 118KB raster"
+images/tickets/ticket3.svg,1021826,922746,SVG,"16 embed(s) recompressed, saved 73KB raster"
+images/competitions/competition-card-border.svg,626,624,SVG,no raster; comment/whitespace minified
+images/expo/crystal-fallback.svg,156555,156555,SVG,"1 embed(s) recompressed, saved 0KB raster"
+images/expo/robot-head.svg,1772,1673,SVG,no raster; comment/whitespace minified
+images/expo/stars.svg,10019,10019,SVG,"no raster, already minified"
+images/expo/tathva-mark.svg,18428,18428,SVG,"1 embed(s) recompressed, saved 0KB raster"
+images/menu/tathva.svg,641,637,SVG,no raster; comment/whitespace minified
+images/menu/tleft.svg,245,243,SVG,no raster; comment/whitespace minified
+images/menu/tright.svg,245,243,SVG,no raster; comment/whitespace minified
+images/contact-us/menu.svg,540,534,SVG,no raster; comment/whitespace minified
+images/contact-us/nav-chevron-wide.svg,276,274,SVG,no raster; comment/whitespace minified
+images/contact-us/nav-chevron.svg,293,291,SVG,no raster; comment/whitespace minified
+images/ticket/line-81.svg,169,169,SVG,"ERROR kept: not well-formed (invalid token): line 1, column 0"
+images/lectures/lecture-card-border.svg,626,624,SVG,no raster; comment/whitespace minified
+images/hero/arrow-right.svg,591,492,SVG,no raster; comment/whitespace minified
+images/hero/bird.svg,698945,698945,SVG,"1 embed(s) recompressed, saved 0KB raster"
+images/hero/ellipse.svg,19015,19011,SVG,no raster; comment/whitespace minified
+images/hero/floatingisland.svg,1921051,1921051,SVG,"1 embed(s) recompressed, saved 0KB raster"
+images/hero/regarrow.svg,249,247,SVG,no raster; comment/whitespace minified
+images/hero/tathva.svg,4385,4341,SVG,no raster; comment/whitespace minified
+images/hero/tathva_mobile.svg,4327,4283,SVG,no raster; comment/whitespace minified
+images/hero/tathva_text.svg,4385,4341,SVG,no raster; comment/whitespace minified
+images/hero/trail.svg,312,310,SVG,no raster; comment/whitespace minified
+images/accommodation/sample.svg,1393,1321,SVG,no raster; comment/whitespace minified
+images/artist/061e4.svg,706,701,SVG,no raster; comment/whitespace minified
+images/artist/180d8.svg,743,741,SVG,no raster; comment/whitespace minified
+images/artist/21bbf.svg,526148,229109,SVG,"1 embed(s) recompressed, saved 218KB raster"
+images/artist/4b3f7.svg,541,535,SVG,no raster; comment/whitespace minified
+images/artist/4bffe.svg,1779,1774,SVG,no raster; comment/whitespace minified
+images/artist/4e2c4.svg,540,534,SVG,no raster; comment/whitespace minified
+images/artist/74ad1.svg,1306264,61221,SVG,"1 embed(s) recompressed, saved 912KB raster"
+images/artist/7b7c3.svg,412,410,SVG,no raster; comment/whitespace minified
+images/artist/7ca22.svg,1306267,61224,SVG,"1 embed(s) recompressed, saved 912KB raster"
+images/artist/825ae.svg,276,274,SVG,no raster; comment/whitespace minified
+images/artist/88fac.svg,4896,4784,SVG,"1 embed(s) recompressed, saved 0KB raster"
+images/artist/8ba16.svg,8311,8230,SVG,no raster; comment/whitespace minified
+images/artist/91781.svg,271,269,SVG,no raster; comment/whitespace minified
+images/artist/9dd0b.svg,621,619,SVG,no raster; comment/whitespace minified
+images/artist/9e1e2.svg,293,291,SVG,no raster; comment/whitespace minified
+images/artist/9fa9a.svg,649,641,SVG,no raster; comment/whitespace minified
+images/artist/a16f6.svg,282,280,SVG,no raster; comment/whitespace minified
+images/artist/b2083.svg,397,395,SVG,no raster; comment/whitespace minified
+images/artist/bd76f.svg,680,676,SVG,no raster; comment/whitespace minified
+images/artist/bef85.svg,211122,142879,SVG,"1 embed(s) recompressed, saved 50KB raster"
+images/artist/c26b1.svg,1306284,61241,SVG,"1 embed(s) recompressed, saved 912KB raster"
+images/artist/c7ad2.svg,743,741,SVG,no raster; comment/whitespace minified
+images/artist/cb9f3.svg,585,581,SVG,no raster; comment/whitespace minified
+images/artist/d63a5.svg,282,280,SVG,no raster; comment/whitespace minified
+images/artist/day2_anim_1.svg,71439,71439,SVG,"1 embed(s) recompressed, saved 0KB raster"
+images/artist/day2_anim_2.svg,67647,67647,SVG,"1 embed(s) recompressed, saved 0KB raster"
+images/artist/day2_anim_3.svg,54721,54721,SVG,"1 embed(s) recompressed, saved 0KB raster"
+images/artist/day2_anim_4.svg,313102,170043,SVG,"1 embed(s) recompressed, saved 105KB raster"
+images/artist/day2_main.svg,632112,315569,SVG,"1 embed(s) recompressed, saved 232KB raster"
+images/artist/day3.svg,499520,247753,SVG,"1 embed(s) recompressed, saved 184KB raster"
+images/artist/day3_anim_1.svg,83711,83711,SVG,"1 embed(s) recompressed, saved 0KB raster"
+images/artist/day3_anim_2.svg,67911,67911,SVG,"1 embed(s) recompressed, saved 0KB raster"
+images/artist/day3_anim_3.svg,91403,91403,SVG,"1 embed(s) recompressed, saved 0KB raster"
+images/artist/e97cd.svg,821,810,SVG,no raster; comment/whitespace minified
+images/proshow/artist-1.svg,463,458,SVG,no raster; comment/whitespace minified
+images/proshow/artist-2.svg,463,458,SVG,no raster; comment/whitespace minified
+images/proshow/artist-3.svg,463,458,SVG,no raster; comment/whitespace minified
+images/proshow/artist-4.svg,459,454,SVG,no raster; comment/whitespace minified
+images/proshow/artist-5.svg,463,458,SVG,no raster; comment/whitespace minified
+images/proshow/artist-6.svg,463,458,SVG,no raster; comment/whitespace minified
+images/proshow/artist-7.svg,459,454,SVG,no raster; comment/whitespace minified
+wheels/Auto Show.svg,6108,6106,SVG,no raster; comment/whitespace minified
+wheels/Wheels.svg,6220,6218,SVG,no raster; comment/whitespace minified
+images/hero/portalloop.mp4,1291804,1291804,MP4,"re-encode not smaller, kept"
+images/hero/prtal.mp4,2931745,2931745,MP4,"re-encode not smaller, kept"
+images/hero/titlebg.mp4,3804385,3804385,MP4,"re-encode not smaller, kept"
+audio/proshow/track-1.wav -> audio/proshow/track-1.mp3,529244,193558,WAV>MP3,128kbps CBR
+audio/proshow/track-2.wav -> audio/proshow/track-2.mp3,529244,193558,WAV>MP3,128kbps CBR
+audio/proshow/track-3.wav -> audio/proshow/track-3.mp3,529244,193558,WAV>MP3,128kbps CBR
+audio/proshow/track-4.wav -> audio/proshow/track-4.mp3,529244,193558,WAV>MP3,128kbps CBR
+audio/proshow/track-5.wav -> audio/proshow/track-5.mp3,529244,193558,WAV>MP3,128kbps CBR
+audio/proshow/track-6.wav -> audio/proshow/track-6.mp3,529244,193558,WAV>MP3,128kbps CBR
+audio/proshow/track-7.wav -> audio/proshow/track-7.mp3,529244,193558,WAV>MP3,128kbps CBR
+fonts/AkiraExpanded-SuperBold.otf,26320,26320,FONT,"woff2 not smaller, kept original"
+fonts/AkiraExpanded.otf,26320,26320,FONT,"woff2 not smaller, kept original"
+fonts/Alexandria-Variable.ttf,332488,332488,FONT,"woff2 not smaller, kept original"
+fonts/BebasNeue-Regular.ttf,61400,61400,FONT,"woff2 not smaller, kept original"
+fonts/BowlbyOneSC-Regular.ttf,54152,54152,FONT,"woff2 not smaller, kept original"
+fonts/Helvetica.woff,147900,147900,FONT,"woff2 not smaller, kept original"
+fonts/Inter.ttf,874708,874708,FONT,"woff2 not smaller, kept original"
+fonts/Monocraft.ttf,59416,59416,FONT,"woff2 not smaller, kept original"
+fonts/Orbitron-VariableFont_wght.ttf,38548,38548,FONT,"woff2 not smaller, kept original"
+fonts/PPFragment-SansRegular.otf,106064,106064,FONT,"woff2 not smaller, kept original"
+fonts/PPFragment-SerifExtraBold.otf,111464,111464,FONT,"woff2 not smaller, kept original"
+fonts/PPFragment-SerifLight.otf,108680,108680,FONT,"woff2 not smaller, kept original"
+fonts/PPFragment-SerifRegular.otf,107928,107928,FONT,"woff2 not smaller, kept original"
+fonts/PPFragment-TextRegular.otf,105784,105784,FONT,"woff2 not smaller, kept original"
+fonts/Poppins-Medium.ttf,156520,156520,FONT,"woff2 not smaller, kept original"
+fonts/Poppins-Regular.ttf,158240,158240,FONT,"woff2 not smaller, kept original"
+fonts/Poppins-SemiBoldItalic.ttf,178584,178584,FONT,"woff2 not smaller, kept original"
+fonts/SpaceGrotesk-Variable.ttf,136676,136676,FONT,"woff2 not smaller, kept original"
+fonts/VCR_OSD_MONO.ttf,22584,22584,FONT,"woff2 not smaller, kept original"
+fonts/akira-expanded-demo.otf,26320,26320,FONT,"woff2 not smaller, kept original"
+fonts/alata-regular.ttf,348308,348308,FONT,"woff2 not smaller, kept original"
+fonts/calm-serif-demo.otf,52436,52436,FONT,"woff2 not smaller, kept original"
+fonts/fontspring.otf,13272,13272,FONT,"woff2 not smaller, kept original"
+fonts/neoform.otf,221800,221800,FONT,"woff2 not smaller, kept original"
+images/competitions/competition-astronaut.jpg,109636,0,DEDUPE,"identical to images/workshops/workshop-astronaut.jpg, removed"
+images/competitions/competition-card-border.svg,624,0,DEDUPE,"identical to images/workshops/workshop-card-border.svg, removed"
+images/competitions/competition-card-image.png,117021,0,DEDUPE,"identical to images/workshops/workshop-card-image.png, removed"
+images/competitions/tathva-emblem.png,19204,0,DEDUPE,"identical to images/workshops/tathva-emblem.png, removed"
+images/GPC/frames/ezgif-frame-003.webp,18344,0,DEDUPE,"identical to images/GPC/frames/ezgif-frame-002.webp, removed"
+images/GPC/frames/ezgif-frame-008.webp,18390,0,DEDUPE,"identical to images/GPC/frames/ezgif-frame-007.webp, removed"
+images/GPC/frames/ezgif-frame-013.webp,17892,0,DEDUPE,"identical to images/GPC/frames/ezgif-frame-012.webp, removed"
+images/GPC/frames/ezgif-frame-018.webp,16596,0,DEDUPE,"identical to images/GPC/frames/ezgif-frame-017.webp, removed"
+images/GPC/frames/ezgif-frame-023.webp,13726,0,DEDUPE,"identical to images/GPC/frames/ezgif-frame-022.webp, removed"
+images/GPC/frames/ezgif-frame-028.webp,12906,0,DEDUPE,"identical to images/GPC/frames/ezgif-frame-027.webp, removed"
+images/GPC/frames/ezgif-frame-033.webp,12746,0,DEDUPE,"identical to images/GPC/frames/ezgif-frame-032.webp, removed"
+images/GPC/frames/ezgif-frame-038.webp,12702,0,DEDUPE,"identical to images/GPC/frames/ezgif-frame-037.webp, removed"
+images/GPC/frames/ezgif-frame-043.webp,12528,0,DEDUPE,"identical to images/GPC/frames/ezgif-frame-042.webp, removed"
+images/GPC/frames/ezgif-frame-048.webp,13560,0,DEDUPE,"identical to images/GPC/frames/ezgif-frame-047.webp, removed"
+images/GPC/frames/ezgif-frame-053.webp,16610,0,DEDUPE,"identical to images/GPC/frames/ezgif-frame-052.webp, removed"
+images/GPC/frames/ezgif-frame-058.webp,17970,0,DEDUPE,"identical to images/GPC/frames/ezgif-frame-057.webp, removed"
+images/contact-us/tathva-logo.png,13416,0,DEDUPE,"identical to images/Robowars/tathva-white-logo.png, removed"
+images/lectures/lecture-astronaut.jpg,109636,0,DEDUPE,"identical to images/workshops/workshop-astronaut.jpg, removed"
+images/lectures/lecture-card-border.svg,624,0,DEDUPE,"identical to images/workshops/workshop-card-border.svg, removed"
+images/lectures/lecture-card-image.png,117021,0,DEDUPE,"identical to images/workshops/workshop-card-image.png, removed"
+images/lectures/tathva-emblem.png,19204,0,DEDUPE,"identical to images/workshops/tathva-emblem.png, removed"
+images/hero/tathva_text.svg,4341,0,DEDUPE,"identical to images/hero/tathva.svg, removed"
+images/hero/tathvalogo.png,13416,0,DEDUPE,"identical to images/Robowars/tathva-white-logo.png, removed"
+images/artist/32c3b.png,13416,0,DEDUPE,"identical to images/Robowars/tathva-white-logo.png, removed"
+images/artist/4e2c4.svg,534,0,DEDUPE,"identical to images/contact-us/menu.svg, removed"
+images/artist/825ae.svg,274,0,DEDUPE,"identical to images/contact-us/nav-chevron-wide.svg, removed"
+images/artist/9e1e2.svg,291,0,DEDUPE,"identical to images/contact-us/nav-chevron.svg, removed"
+wheels/frames/ezgif-frame-108.webp,53022,0,DEDUPE,"identical to wheels/frames/ezgif-frame-107.webp, removed"
+wheels/frames/ezgif-frame-113.webp,52770,0,DEDUPE,"identical to wheels/frames/ezgif-frame-112.webp, removed"
+wheels/frames/ezgif-frame-118.webp,56502,0,DEDUPE,"identical to wheels/frames/ezgif-frame-117.webp, removed"
+wheels/frames/ezgif-frame-123.webp,55776,0,DEDUPE,"identical to wheels/frames/ezgif-frame-122.webp, removed"
+wheels/frames/ezgif-frame-128.webp,59372,0,DEDUPE,"identical to wheels/frames/ezgif-frame-127.webp, removed"
+wheels/frames/ezgif-frame-133.webp,58630,0,DEDUPE,"identical to wheels/frames/ezgif-frame-132.webp, removed"
+wheels/frames/ezgif-frame-138.webp,59364,0,DEDUPE,"identical to wheels/frames/ezgif-frame-137.webp, removed"
+wheels/frames/ezgif-frame-143.webp,56478,0,DEDUPE,"identical to wheels/frames/ezgif-frame-142.webp, removed"
+wheels/frames/ezgif-frame-148.webp,57512,0,DEDUPE,"identical to wheels/frames/ezgif-frame-147.webp, removed"
+wheels/frames/ezgif-frame-153.webp,55984,0,DEDUPE,"identical to wheels/frames/ezgif-frame-152.webp, removed"
+wheels/frames/ezgif-frame-158.webp,56282,0,DEDUPE,"identical to wheels/frames/ezgif-frame-157.webp, removed"
+wheels/frames/ezgif-frame-163.webp,55012,0,DEDUPE,"identical to wheels/frames/ezgif-frame-162.webp, removed"
+wheels/frames/ezgif-frame-168.webp,53960,0,DEDUPE,"identical to wheels/frames/ezgif-frame-167.webp, removed"
+wheels/frames/ezgif-frame-173.webp,53672,0,DEDUPE,"identical to wheels/frames/ezgif-frame-172.webp, removed"
+wheels/frames/ezgif-frame-178.webp,55234,0,DEDUPE,"identical to wheels/frames/ezgif-frame-177.webp, removed"
+wheels/frames/ezgif-frame-183.webp,58066,0,DEDUPE,"identical to wheels/frames/ezgif-frame-182.webp, removed"
+wheels/frames/ezgif-frame-188.webp,61708,0,DEDUPE,"identical to wheels/frames/ezgif-frame-187.webp, removed"
+wheels/frames/ezgif-frame-193.webp,63846,0,DEDUPE,"identical to wheels/frames/ezgif-frame-192.webp, removed"
+wheels/frames/ezgif-frame-198.webp,69236,0,DEDUPE,"identical to wheels/frames/ezgif-frame-197.webp, removed"
+wheels/frames/ezgif-frame-203.webp,69966,0,DEDUPE,"identical to wheels/frames/ezgif-frame-202.webp, removed"
+wheels/frames/ezgif-frame-208.webp,73224,0,DEDUPE,"identical to wheels/frames/ezgif-frame-207.webp, removed"
+wheels/frames/ezgif-frame-213.webp,71748,0,DEDUPE,"identical to wheels/frames/ezgif-frame-212.webp, removed"
+wheels/frames/ezgif-frame-218.webp,73080,0,DEDUPE,"identical to wheels/frames/ezgif-frame-217.webp, removed"
+wheels/frames/ezgif-frame-223.webp,66952,0,DEDUPE,"identical to wheels/frames/ezgif-frame-222.webp, removed"
+wheels/frames/ezgif-frame-228.webp,66566,0,DEDUPE,"identical to wheels/frames/ezgif-frame-227.webp, removed"
+wheels/frames/ezgif-frame-233.webp,65374,0,DEDUPE,"identical to wheels/frames/ezgif-frame-232.webp, removed"
+wheels/frames/ezgif-frame-238.webp,64480,0,DEDUPE,"identical to wheels/frames/ezgif-frame-237.webp, removed"
+fonts/AkiraExpanded.otf,26320,0,DEDUPE,"identical to fonts/AkiraExpanded-SuperBold.otf, removed"
+fonts/akira-expanded-demo.otf,26320,0,DEDUPE,"identical to fonts/AkiraExpanded-SuperBold.otf, removed"
+fonts/AkiraExpanded.otf,26320,26320,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+fonts/akira-expanded-demo.otf,26320,26320,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/GPC/frames/ezgif-frame-003.webp,18344,18344,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/GPC/frames/ezgif-frame-008.webp,18390,18390,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/GPC/frames/ezgif-frame-013.webp,17892,17892,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/GPC/frames/ezgif-frame-018.webp,16596,16596,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/GPC/frames/ezgif-frame-023.webp,13726,13726,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/GPC/frames/ezgif-frame-028.webp,12906,12906,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/GPC/frames/ezgif-frame-033.webp,12746,12746,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/GPC/frames/ezgif-frame-038.webp,12702,12702,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/GPC/frames/ezgif-frame-043.webp,12528,12528,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/GPC/frames/ezgif-frame-048.webp,13560,13560,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/GPC/frames/ezgif-frame-053.webp,16610,16610,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/GPC/frames/ezgif-frame-058.webp,17970,17970,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/artist/32c3b.png,13416,13416,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/artist/4e2c4.svg,540,540,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/artist/825ae.svg,276,276,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/artist/9e1e2.svg,293,293,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/competitions/competition-astronaut.jpg,109677,109677,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/competitions/competition-card-border.svg,626,626,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/competitions/competition-card-image.png,117021,117021,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/competitions/tathva-emblem.png,19204,19204,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/contact-us/tathva-logo.png,13416,13416,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/hero/tathva_text.svg,4385,4385,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/hero/tathvalogo.png,13416,13416,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/lectures/lecture-astronaut.jpg,109677,109677,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/lectures/lecture-card-border.svg,626,626,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/lectures/lecture-card-image.png,117021,117021,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/lectures/tathva-emblem.png,19204,19204,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-108.webp,53022,53022,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-113.webp,52770,52770,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-118.webp,56502,56502,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-123.webp,55776,55776,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-128.webp,59372,59372,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-133.webp,58630,58630,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-138.webp,59364,59364,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-143.webp,56478,56478,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-148.webp,57512,57512,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-153.webp,55984,55984,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-158.webp,56282,56282,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-163.webp,55012,55012,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-168.webp,53960,53960,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-173.webp,53672,53672,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-178.webp,55234,55234,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-183.webp,58066,58066,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-188.webp,61708,61708,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-193.webp,63846,63846,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-198.webp,69236,69236,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-203.webp,69966,69966,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-208.webp,73224,73224,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-213.webp,71748,71748,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-218.webp,73080,73080,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-223.webp,66952,66952,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-228.webp,66566,66566,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-233.webp,65374,65374,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+wheels/frames/ezgif-frame-238.webp,64480,64480,RESTORE,restored from SRC; dedupe reverted (breaks URLs/sequences)
+images/GPC/game/exit.png,5885,2051,PNG2,"RGBA->P (100, 100) palette-255 FastOctree"
+images/GPC/hero/dragon.png,194889,43771,PNG2,"RGBA->P (637, 361) palette-255 FastOctree"
+images/GPC/space-shooter/bullet.png,886,785,PNG2,"RGBA->RGBA (100, 357) lossless-opt"
+images/GPC/space-shooter/enemy2.png,46372,11007,PNG2,"RGBA->P (250, 250) palette-255 FastOctree"
+images/GPC/space-shooter/spaceship.png,65041,12187,PNG2,"RGBA->P (250, 247) palette-255 FastOctree"
+images/ITC machine font.png,2304,1989,PNG2,"RGBA->RGBA (308, 43) lossless-opt"
+images/Robowars/tathva-white-logo.png,13416,2785,PNG2,"RGBA->P (203, 167) palette-255 FastOctree"
+images/artist/09bd3.png,26815,6308,PNG2,"RGBA->P (120, 120) palette-255 FastOctree"
+images/artist/1fbda.png,223587,32285,PNG2,"RGBA->P (612, 405) palette-255 FastOctree"
+images/artist/2a131.png,78518,13103,PNG2,"RGBA->P (471, 455) palette-255 FastOctree"
+images/artist/32995.png,106642,15680,PNG2,"RGBA->P (511, 456) palette-255 FastOctree"
+images/artist/32c3b.png,13416,2785,PNG2,"RGBA->P (203, 167) palette-255 FastOctree"
+images/artist/475ef.png,22470,5106,PNG2,"RGBA->P (120, 120) palette-255 FastOctree"
+images/artist/5ecd4.png,110930,15119,PNG2,"RGBA->P (354, 447) palette-255 FastOctree"
+images/artist/6bd42.png,79048,11838,PNG2,"RGBA->P (391, 444) palette-255 FastOctree"
+images/artist/8a9a6.png,79045,11836,PNG2,"RGBA->P (391, 444) palette-255 FastOctree"
+images/artist/8bb40.png,221946,56461,PNG2,"RGBA->P (1024, 683) palette-255 FastOctree"
+images/artist/arijit.png,221693,39766,PNG2,"RGBA->P (1024, 486) palette-255 FastOctree"
+images/artist/c5dbc.png,106648,15680,PNG2,"RGBA->P (511, 456) palette-255 FastOctree"
+images/artist/shreya.png,278755,51630,PNG2,"RGBA->P (447, 558) palette-255 FastOctree"
+images/competitions/competition-card-image.png,117021,21417,PNG2,"RGBA->P (270, 271) palette-255 FastOctree"
+images/competitions/tathva-emblem.png,19204,5267,PNG2,"RGBA->P (455, 427) palette-255 FastOctree"
+images/contact-us/tathva-logo.png,13416,2785,PNG2,"RGBA->P (203, 167) palette-255 FastOctree"
+images/expo/crystal-fallback.png,287084,47944,PNG2,"RGBA->P (534, 703) palette-255 FastOctree"
+images/expo/tathva-robot.png,90986,14996,PNG2,"RGBA->P (546, 457) palette-255 FastOctree"
+images/hero/arrow-right.png,8874,2254,PNG2,"RGBA->P (375, 161) palette-255 FastOctree"
+images/hero/butterfly.png,53251,6239,PNG2,"RGBA->P (500, 500) palette-255 FastOctree"
+images/hero/floatingisland.png,1439404,303622,PNG2,"RGBA->P (1584, 993) palette-255 FastOctree"
+images/hero/girl4.png,926269,150656,PNG2,"RGBA->P (2171, 724) palette-255 FastOctree"
+images/hero/planeticon.png,1810,1504,PNG2,"RGBA->P (72, 72) palette-255 FastOctree"
+images/hero/portalbg.png,2340120,515335,PNG2,"RGBA->P (1149, 1369) palette-255 FastOctree"
+images/hero/tathva_text.png,165918,32087,PNG2,"RGBA->P (1280, 237) palette-255 FastOctree"
+images/hero/tathva_text1.png,539679,102240,PNG2,"RGBA->P (2172, 724) palette-255 FastOctree"
+images/hero/tathvalogo.png,13416,2785,PNG2,"RGBA->P (203, 167) palette-255 FastOctree"
+images/lectures/lecture-card-image.png,117021,21417,PNG2,"RGBA->P (270, 271) palette-255 FastOctree"
+images/lectures/tathva-emblem.png,19204,5267,PNG2,"RGBA->P (455, 427) palette-255 FastOctree"
+images/menu/border_left.png,12118,3586,PNG2,"RGBA->P (213, 401) palette-255 FastOctree"
+images/menu/border_right.png,11932,3574,PNG2,"RGBA->P (212, 401) palette-255 FastOctree"
+images/menu/leftwave.png,684,561,PNG2,"RGBA->RGBA (37, 31) lossless-opt"
+images/menu/rightwave.png,683,574,PNG2,"RGBA->RGBA (37, 31) lossless-opt"
+images/profile-avatar.png,1939,1497,PNG2,"RGBA->P (48, 48) palette-255 FastOctree"
+images/profile-main-avatar.png,3511,1753,PNG2,"RGBA->P (78, 78) palette-255 FastOctree"
+images/profile.png,1304900,53693,PNG2,"RGBA->P (1413, 882) palette-255 FastOctree"
+images/proshow/celestial-smoke-a.png,123530,7889,PNG2,"RGBA->P (1024, 576) palette-255 FastOctree"
+images/shared/tathva-logo.png,1823,1482,PNG2,"RGBA->P (55, 46) palette-255 FastOctree"
+images/tathva-logo-black.png,181603,25333,PNG2,"RGBA->P (1280, 470) palette-255 FastOctree"
+images/techconclave/bigstar.png,51589,8351,PNG2,"RGBA->P (447, 559) palette-255 FastOctree"
+images/techconclave/logo.png,34293,4094,PNG2,"RGBA->P (500, 500) palette-255 FastOctree"
+images/techconclave/tedx.png,25557,4184,PNG2,"RGBA->P (400, 119) palette-255 FastOctree"
+images/ticket/image-222.png,77943,10259,PNG2,"RGBA->P (208, 596) palette-255 FastOctree"
+images/ticket/image-223@2x.png,94497,8033,PNG2,"RGBA->P (152, 776) palette-255 FastOctree"
+images/ticket/image-227@2x.png,1279,1155,PNG2,"RGBA->RGBA (42, 50) lossless-opt"
+images/ticket/image-229@2x.png,1835,1453,PNG2,"RGBA->P (56, 66) palette-255 FastOctree"
+images/ticket/image-231@2x.png,4264,1949,PNG2,"RGBA->P (102, 120) palette-255 FastOctree"
+images/ticket/image-233@2x.png,2594,1621,PNG2,"RGBA->P (72, 86) palette-255 FastOctree"
+images/ticket/image-234@2x.png,4186,1931,PNG2,"RGBA->P (100, 120) palette-255 FastOctree"
+images/ticket/image-235@2x.png,3176,1721,PNG2,"RGBA->P (82, 98) palette-255 FastOctree"
+images/ticket/image-236@2x.png,58629,10130,PNG2,"RGBA->P (210, 222) palette-255 FastOctree"
+images/ticket/image-237@2x.png,26094,4407,PNG2,"RGBA->P (280, 200) palette-255 FastOctree"
+images/ticket/image-239@2x.png,8412,2486,PNG2,"RGBA->P (160, 90) palette-255 FastOctree"
+images/ticket/image-240@2x.png,23489,4812,PNG2,"RGBA->P (244, 170) palette-255 FastOctree"
+images/ticket/image-241@2x.png,16025,3537,PNG2,"RGBA->P (126, 118) palette-255 FastOctree"
+images/ticket/image-242@2x.png,9032,2911,PNG2,"RGBA->P (166, 198) palette-255 FastOctree"
+images/ticket/image-243@2x.png,3469,1787,PNG2,"RGBA->P (88, 104) palette-255 FastOctree"
+images/ticket/image-244@2x.png,7750,2334,PNG2,"RGBA->P (120, 116) palette-255 FastOctree"
+images/ticket/image-245@2x.png,10362,2592,PNG2,"RGBA->P (86, 84) palette-255 FastOctree"
+images/ticket/image-246@2x.png,9590,2573,PNG2,"RGBA->P (146, 58) palette-255 FastOctree"
+images/ticket/image-247@2x.png,4463,1627,PNG2,"RGBA->P (144, 52) palette-255 FastOctree"
+images/ticket/image-248@2x.png,4888,1737,PNG2,"RGBA->P (52, 144) palette-255 FastOctree"
+images/ticket/image-249.png,54260,11563,PNG2,"RGBA->P (999, 324) palette-255 FastOctree"
+images/ticket/image-250@2x.png,45702,10428,PNG2,"RGBA->P (912, 550) palette-255 FastOctree"
+images/tickets/demo.png,359585,42237,PNG2,"RGBA->P (756, 370) palette-255 FastOctree"
+images/workshops-heading.png,73752,16144,PNG2,"RGBA->P (1848, 298) palette-255 FastOctree"
+images/workshops/tathva-emblem.png,19204,5267,PNG2,"RGBA->P (455, 427) palette-255 FastOctree"
+images/workshops/workshop-card-image.png,117021,21417,PNG2,"RGBA->P (270, 271) palette-255 FastOctree"
+images/competitions/competition-astronaut.jpg,109677,109636,JPG2,"(749, 936) q80-progressive"
+images/lectures/lecture-astronaut.jpg,109677,109636,JPG2,"(749, 936) q80-progressive"
+images/hero/titlebg.mp4,3804385,3518789,MP4-2,H264 CRF28 applied
+images/hero/prtal.mp4,2931745,774436,MP4-2,H264 CRF28 applied
+images/hero/portalloop.mp4,1291804,1183851,MP4-2,H264 CRF28 applied
+fonts/AkiraExpanded-SuperBold.otf -> fonts/AkiraExpanded-SuperBold.woff2,26320,9336,FONT2,woff2
+fonts/AkiraExpanded.otf -> fonts/AkiraExpanded.woff2,26320,9336,FONT2,woff2
+fonts/Alexandria-Variable.ttf -> fonts/Alexandria-Variable.woff2,332488,126300,FONT2,woff2
+fonts/BebasNeue-Regular.ttf -> fonts/BebasNeue-Regular.woff2,61400,21484,FONT2,woff2
+fonts/BowlbyOneSC-Regular.ttf -> fonts/BowlbyOneSC-Regular.woff2,54152,30936,FONT2,woff2
+fonts/Helvetica.woff -> fonts/Helvetica.woff2,147900,104352,FONT2,woff2
+fonts/Inter.ttf -> fonts/Inter.woff2,874708,348972,FONT2,woff2
+fonts/Monocraft.ttf -> fonts/Monocraft.woff2,59416,9428,FONT2,woff2
+fonts/Orbitron-VariableFont_wght.ttf -> fonts/Orbitron-VariableFont_wght.woff2,38548,15984,FONT2,woff2
+fonts/PPFragment-SansRegular.otf -> fonts/PPFragment-SansRegular.woff2,106064,50888,FONT2,woff2
+fonts/PPFragment-SerifExtraBold.otf -> fonts/PPFragment-SerifExtraBold.woff2,111464,55068,FONT2,woff2
+fonts/PPFragment-SerifLight.otf -> fonts/PPFragment-SerifLight.woff2,108680,53604,FONT2,woff2
+fonts/PPFragment-SerifRegular.otf -> fonts/PPFragment-SerifRegular.woff2,107928,52924,FONT2,woff2
+fonts/PPFragment-TextRegular.otf -> fonts/PPFragment-TextRegular.woff2,105784,52564,FONT2,woff2
+fonts/Poppins-Medium.ttf -> fonts/Poppins-Medium.woff2,156520,50368,FONT2,woff2
+fonts/Poppins-Regular.ttf -> fonts/Poppins-Regular.woff2,158240,51188,FONT2,woff2
+fonts/Poppins-SemiBoldItalic.ttf -> fonts/Poppins-SemiBoldItalic.woff2,178584,58152,FONT2,woff2
+fonts/SpaceGrotesk-Variable.ttf -> fonts/SpaceGrotesk-Variable.woff2,136676,49348,FONT2,woff2
+fonts/VCR_OSD_MONO.ttf -> fonts/VCR_OSD_MONO.woff2,22584,5668,FONT2,woff2
+fonts/akira-expanded-demo.otf -> fonts/akira-expanded-demo.woff2,26320,9332,FONT2,woff2
+fonts/alata-regular.ttf -> fonts/alata-regular.woff2,348308,98460,FONT2,woff2
+fonts/calm-serif-demo.otf -> fonts/calm-serif-demo.woff2,52436,17656,FONT2,woff2
+fonts/fontspring.otf -> fonts/fontspring.woff2,13272,5176,FONT2,woff2
+fonts/neoform.otf -> fonts/neoform.woff2,221800,34372,FONT2,woff2

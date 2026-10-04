@@ -889,7 +889,7 @@ function DesktopPoster() {
         backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})`,
       }}
     >
-      <section className='tc-stage' aria-label='Tech Conclave, October 10-11'>
+      <section className='tc-stage' aria-label='Tech Conclave, October 9-10'>
         {/* colour blocks behind the robot */}
         <div
           className='tc-abs tc-deco'
@@ -964,7 +964,7 @@ function DesktopPoster() {
             textLength='150'
             lengthAdjust='spacingAndGlyphs'
           >
-            10-11
+            9-10
           </text>
         </svg>
 
@@ -975,12 +975,12 @@ function DesktopPoster() {
           src={robot}
           alt='Waving robot'
         />
-      <img
+      {/* <img
   className='tc-ted-d tc-deco tc-animate-meta'
   style={box(492, 400, 180, 180)}
   src={ted}
   alt='TEDx'
-/>
+/> */}
         {/* right column */}
         <div
           className='tc-abs tc-hero-heading'
@@ -1047,7 +1047,7 @@ function MobilePoster() {
         backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})`,
       }}
     >
-      <section className='tc-m-stage' aria-label='Tech Conclave, October 10-11'>
+      <section className='tc-m-stage' aria-label='Tech Conclave, October 9-10'>
         {/* ── visual group: title + illustration + eyebrow ── */}
         <div className='tc-m-panel tc-m-panel--visual'>
           <div className='tc-m-titlewrap'>
@@ -1106,12 +1106,12 @@ function MobilePoster() {
             {/* TEDx: pinned to the pink block's top-right corner (block =
                 x 30–310, y 270–340 on the 424×335 scene). Width is a % of the
                 scene, height follows via aspect-ratio, so it scales with it. */}
-            <img
+            {/* <img
               className='tc-m-ted tc-deco'
               style={{ ...mbox(200, 275, 100, 100), height: 'auto' }}
               src={ted}
               alt='TEDx'
-            />
+            /> */}
 
           </div>
 
@@ -1124,7 +1124,7 @@ function MobilePoster() {
         <div className='tc-m-panel tc-m-panel--info'>
           <div className='tc-m-date tc-animate-meta'>
             <span className='tc-m-oct'>OCT</span>
-            <span className='tc-m-days'>10-11</span>
+            <span className='tc-m-days'>9-10</span>
           </div>
 
           <div className='tc-m-footer tc-animate-meta'>
@@ -1171,13 +1171,13 @@ function TabletPoster() {
         backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${background})`,
       }}
     >
-      <section className='tc-t-stage' aria-label='Tech Conclave, October 10-11'>
+      <section className='tc-t-stage' aria-label='Tech Conclave, October 9-10'>
         <div className='tc-t-visual'>
          <h1 className='tc-t-title tc-animate-title'>
   <span className='tc-t-tech'>TECH</span>
   <span className='tc-t-conclave-row'>
     <span className='tc-t-conclave'>CONCLAVE</span>
-    <img className='tc-t-ted tc-deco' src={ted} alt='TEDx' />
+    {/* <img className='tc-t-ted tc-deco' src={ted} alt='TEDx' /> */}
   </span>
 </h1>
           <div className='tc-t-art'>
@@ -1239,9 +1239,9 @@ function TabletPoster() {
               unforgettable experiences.
             </p>
           </div>
-          <div className='tc-t-date tc-animate-meta' aria-label='October 10-11'>
+          <div className='tc-t-date tc-animate-meta' aria-label='October 9-10'>
             <span className='tc-t-oct'>OCT</span>
-            <span className='tc-t-days'>10-11</span>
+            <span className='tc-t-days'>9-10</span>
           </div>
         </div>
       </section>
@@ -1877,7 +1877,7 @@ z-index: 100;
 .tc-card-light {
   position: absolute;
   inset: 0;
-  z-index: 11; /* above the photo (.tc-card-img is 10) */
+  z-index: 9; /* above the photo (.tc-card-img is 10) */
   border-radius: inherit;
   pointer-events: none;
   opacity: 0;
@@ -1888,7 +1888,7 @@ z-index: 100;
     transparent 70%
   );
 }
-.tc-card:is(.tc-active, :focus-visible) .tc-card-light {
+.tc-card:is(.tc-active, :focus-visible) {
   opacity: 1;
 }
 
@@ -2056,5 +2056,14 @@ z-index: 100;
   transform: translateY(200px);
   transform: translateX(75px);
 
+}
+.tc-m-tile::before,
+.tc-t-speaker::before {
+  bottom: -22%;
+}
+
+.tc-m-tile .tc-card-ring,
+.tc-t-speaker .tc-card-ring {
+  bottom: -22%;
 }
 `
