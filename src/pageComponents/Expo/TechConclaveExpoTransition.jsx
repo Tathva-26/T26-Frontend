@@ -20,6 +20,8 @@ const subscribeMotion = (callback) => {
 }
 const motionSnapshot = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const serverSnapshot = () => false
+// Reuse deterministic noise masks; update only when its threshold changes.
+const cloudMasks = Array.from({ length: 33 }, (_, index) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640"><filter id="cloud"><feTurbulence type="fractalNoise" baseFrequency=".012 .018" numOctaves="3" seed="7"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 4 4 4 0 ${2 - index / 32 * 14}"/></filter><rect width="100%" height="100%" filter="url(#cloud)"/></svg>`)}")`)
 
 export default function TechConclaveExpoTransition() {
   return <ExpoDetailsProvider><ExpoTransitionContent /></ExpoDetailsProvider>
@@ -39,7 +41,10 @@ function ExpoTransitionContent() {
     // forced layout reads for every animated frame.
     const plane = geometry.current
     if (!plane) return
-    expoLeaderPaths(points, plane).forEach((path, index) => paths.current[index]?.setAttribute('d', path))
+    expoLeaderPaths(points, plane).forEach((path, index) => {
+      const node = paths.current[index]
+      if (node && node.getAttribute('d') !== path) node.setAttribute('d', path)
+    })
   }, [])
 
   const projectModel = useCallback((points) => {
@@ -58,9 +63,15 @@ function ExpoTransitionContent() {
     const lines = element.querySelector('[data-expo-connectors]')
     const copy = page.querySelectorAll(`.${expoStyles.title}, .${expoStyles.intro}, .${expoStyles.description}, .${expoStyles.explore}`)
     const explore = page.querySelector('[data-expo-explore]')
+    const activate = page.querySelector('[data-expo-slot] button')
+    const fallback = crystal.current.querySelector('img')
+    const renderer = crystal.current.querySelector('[data-crystal-state]')
+    const detailRoot = element.closest('[data-expo-detail-state]')
     const entryCopy = [...copy].filter(node => node !== explore)
     const scroller = document.querySelector('.main-scroll')
     const mobile = plane.clientWidth < 768
+    element.dataset.expoCompact = String(mobile)
+    let maskIndex = -1
     const exitStart = mobile ? 1.4 : 1.2
     const duration = exitStart + .45
     const scrollUnit = mobile ? 1.5 : 2.4
@@ -107,18 +118,17 @@ function ExpoTransitionContent() {
       // Preserve entry/exit speed and give phones a .6-viewport reading hold;
       // desktop retains its .48-viewport hold and 1.08-viewport departure.
       const phase = details.progress.current.state !== 'closed' && details.progress.current.frozenPhase != null ? details.progress.current.frozenPhase : progress * duration
-      const state = crystal.current.querySelector('[data-crystal-state]')?.dataset.crystalState
+      const state = renderer?.dataset.crystalState
       // Readiness, not the timing of the first scroll, owns renderer selection.
       // Both representations consume this same pose; a late model must join
       // the current frame rather than remain hidden or restart the entrance.
       crystal.current.dataset.expoRenderer = state === 'ready' ? 'model' : 'fallback'
       const exit = Math.min(1, Math.max(0, (phase - exitStart) / .45))
       const entry = Math.min(1, phase)
-      const detailRoot = element.closest('[data-expo-detail-state]')
       const available = phase >= 1 && phase < exitStart && details.progress.current.state === 'closed'
       if (detailRoot) detailRoot.dataset.expoReady = String(available)
       explore.disabled = !available
-      page.querySelector('[data-expo-slot] button').disabled = !available
+      activate.disabled = !available
       const pose = phase > exitStart ? expoExit(exit) : expoJourney(entry)
       const box = geometry.current
       if (!box) return
@@ -129,20 +139,22 @@ function ExpoTransitionContent() {
         width: box.width, height: box.height, opacity: exit > 0 ? 1 : pose.opacity,
         pointerEvents: entry > .72 && exit === 0 ? 'auto' : 'none',
       })
-      const fallback = crystal.current.querySelector('img')
       // Keep opacity in CSS so the ready state can hide the illustration when
       // the model loads, even if scrolling is paused at that moment.
       gsap.set(fallback, { '--journey-fallback-opacity': pose.opacity, width: box.slotWidth, height: box.slotHeight, x: x - box.slotWidth / 2, y: y - box.slotHeight / 2, scale: pose.scale * 8 / (8 - pose.depth), rotationX: pose.pitch * 180 / Math.PI })
       const veil = exit > 0 ? Math.sin(exit * Math.PI) : Math.sin(Math.PI * Math.min(1, Math.max(0, (entry - .04) / .66)))
       gsap.set(mist, { opacity: veil * .48, '--veil-drift': `${progress * -18}%` })
-      gsap.set(tc, { filter: `blur(${veil * 3}px) saturate(${1 - veil * .35})` })
+      if (!mobile) gsap.set(tc, { filter: `blur(${veil * 3}px) saturate(${1 - veil * .35})` })
       // Erode the poster through a fixed cloud field, rather than opening a
       // geometric window around the incoming exhibit. Alpha thresholds are
       // deterministic so reversing scroll reconstructs the same poster.
       const dissolve = Math.min(1, Math.max(0, (entry - .16) / .36))
-      const cloudMask = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640"><filter id="cloud"><feTurbulence type="fractalNoise" baseFrequency=".012 .018" numOctaves="3" seed="7"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 4 4 4 0 ${2 - dissolve * 14}"/></filter><rect width="100%" height="100%" filter="url(#cloud)"/></svg>`
-      tc.style.maskImage = dissolve === 0 ? 'none' : `url("data:image/svg+xml,${encodeURIComponent(cloudMask)}")`
-      tc.style.maskSize = '100% 100%'
+      const nextMask = dissolve === 0 ? -1 : Math.round(dissolve * 32)
+      if (!mobile && nextMask !== maskIndex) {
+        tc.style.maskImage = nextMask < 0 ? 'none' : cloudMasks[nextMask]
+        tc.style.maskSize = '100% 100%'
+        maskIndex = nextMask
+      }
       page.style.pointerEvents = available ? 'auto' : 'none'
       gsap.set(lines, { scale: 1 - exit * .65, transformOrigin: `${box.endX}px ${box.endY}px` })
       if (state !== 'ready' || crystal.current.dataset.expoRenderer === 'fallback') {
@@ -196,7 +208,6 @@ function ExpoTransitionContent() {
     resize.observe(plane)
     // Asset completion updates the current pose even while scrolling is idle.
     const readiness = new MutationObserver(() => render(trigger?.animation?.progress() ?? 0))
-    const renderer = crystal.current.querySelector('[data-crystal-state]')
     if (renderer) readiness.observe(renderer, { attributes: true, attributeFilter: ['data-crystal-state'] })
     document.fonts.ready.then(() => { if (!disposed) { measure(); render(trigger?.animation?.progress() ?? 0) } })
     // HeroFrameController can change the page's available height after mount.
@@ -217,7 +228,8 @@ function ExpoTransitionContent() {
       delete element.dataset.expoDuration
       delete element.dataset.expoExitStart
       explore.disabled = false
-      page.querySelector('[data-expo-slot] button').disabled = false
+      activate.disabled = false
+      delete element.dataset.expoCompact
       window.__lenis?.resize()
     }
   }, [animated, project, details])
@@ -230,7 +242,7 @@ function ExpoTransitionContent() {
       {animated && <div className={styles.plane} data-expo-plane>
         <div className={styles.mist} data-expo-mist aria-hidden='true' />
         <div ref={crystal} className={styles.crystal}>
-          <Crystal3D journey={journey} onProject={projectModel} preload />
+          <Crystal3D journey={journey} onProject={projectModel} />
         </div>
         <svg className={styles.connectors} data-expo-connectors aria-hidden='true'>
           {[0, 1, 2].map((index) => <path key={index} ref={(node) => { paths.current[index] = node }} />)}

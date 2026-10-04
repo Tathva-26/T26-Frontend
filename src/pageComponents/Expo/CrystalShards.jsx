@@ -22,6 +22,7 @@ export default function CrystalShards({ journey, compact, prepareGlass, target }
   const state = useRef(SHARDS.map(() => ({ x: 0, y: 0, hover: 0, spin: 0, pulse: 0 })))
   const timer = useRef(0)
   const activation = useRef(0)
+  const boundsAt = useRef(-1)
   const picking = useMemo(() => ({ ray: new Raycaster(), pointer: new Vector2(), center: new Vector3(), color: new Color(), hits: [], last: -1, hit: -1 }), [])
   useEffect(() => () => geometry.dispose(), [geometry])
   useFrame(({ camera, size: viewport }, delta) => {
@@ -56,6 +57,7 @@ export default function CrystalShards({ journey, compact, prepareGlass, target }
       }
     }
     SHARDS.forEach(([x, y, z, size, angle], index) => {
+      if (index >= count) return
       const shard = state.current[index]
       picking.center.set(x, y, z).applyMatrix4(mesh.current.matrixWorld).project(camera)
       const dx = (input.x - picking.center.x) * viewport.width / 2
@@ -80,10 +82,14 @@ export default function CrystalShards({ journey, compact, prepareGlass, target }
     })
     mesh.current.instanceMatrix.needsUpdate = true
     mesh.current.instanceColor.needsUpdate = true
-    mesh.current.computeBoundingSphere()
+    // Raycasting needs fresh bounds only at the same cadence as surface picking.
+    if (time - boundsAt.current > (compact ? .05 : 1 / 30)) {
+      mesh.current.computeBoundingSphere()
+      boundsAt.current = time
+    }
     mesh.current.visible = reveal > .005
   })
   return <instancedMesh name='expo-shards' ref={mesh} args={[geometry, undefined, 6]} frustumCulled={false}>
-    <meshPhysicalMaterial color='#a9bbff' metalness={.1} roughness={.08} transmission={.85} thickness={.25} ior={1.5} envMapIntensity={4.5} onBeforeCompile={prepareGlass} flatShading />
+    <meshPhysicalMaterial color='#a9bbff' metalness={.1} roughness={compact ? .18 : .08} transmission={compact ? 0 : .85} thickness={.25} ior={1.5} envMapIntensity={4.5} onBeforeCompile={prepareGlass} flatShading />
   </instancedMesh>
 }

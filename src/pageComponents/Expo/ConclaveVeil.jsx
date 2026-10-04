@@ -6,7 +6,8 @@ import { TextureLoader, Vector2 } from 'three'
 
 // A screen-space cloud pass overlaps the outgoing DOM poster and incoming
 // crystal, using the actual TechConclave background for refracted fragments.
-export default function ConclaveVeil({ journey }) {
+export default function ConclaveVeil({ journey, compact }) {
+  const mesh = useRef(null)
   const material = useRef(null)
   const background = useLoader(TextureLoader, '/images/techconclave/background.webp')
   const uniforms = useMemo(() => ({
@@ -18,6 +19,7 @@ export default function ConclaveVeil({ journey }) {
     if (!material.current) return
     const live = material.current.uniforms
     const pose = journey.current
+    mesh.current.visible = pose.exit != null ? pose.exit > .16 && pose.exit < 1 : pose.progress > .03 && pose.progress < .72
     live.uTime.value = clock.elapsedTime
     live.uProgress.value = pose.progress
     live.uExit.value = pose.exit ?? 0
@@ -26,9 +28,9 @@ export default function ConclaveVeil({ journey }) {
       live.uOrigin.value.set(pose.layout.startX / size.width, 1 - pose.layout.startY / size.height)
     }
   })
-  return <mesh renderOrder={100} frustumCulled={false}>
+  return <mesh ref={mesh} renderOrder={100} frustumCulled={false}>
     <planeGeometry args={[2, 2]} />
-    <shaderMaterial ref={material} transparent depthTest={false} depthWrite={false} uniforms={uniforms}
+    <shaderMaterial key={compact ? 'compact' : 'full'} ref={material} transparent depthTest={false} depthWrite={false} uniforms={uniforms}
       vertexShader={'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }'}
       fragmentShader={`
         varying vec2 vUv;
@@ -37,7 +39,7 @@ export default function ConclaveVeil({ journey }) {
         uniform vec2 uOrigin;
         float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
         float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
-        float fbm(vec2 p){float a=.5,n=0.;for(int i=0;i<4;i++){n+=noise(p)*a;p=p*2.03+vec2(3.7,8.1);a*=.5;}return n;}
+        float fbm(vec2 p){float a=.5,n=0.;for(int i=0;i<${compact ? 2 : 4};i++){n+=noise(p)*a;p=p*2.03+vec2(3.7,8.1);a*=.5;}return n;}
         void main(){
           float envelope=smoothstep(.03,.23,uProgress)*(1.-smoothstep(.42,.72,uProgress));
           if(uExit>0.)envelope=smoothstep(.16,.50,uExit)*(1.-smoothstep(.68,1.,uExit));

@@ -2,13 +2,14 @@
 /* eslint-disable react-hooks/immutability -- R3F exposes mutable Three.js scene/camera objects, not React state. */
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { Canvas, useLoader, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { NoToneMapping, PMREMGenerator } from "three";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import CrystalOptics from './CrystalOptics'
 import CrystalModel from "./CrystalModel";
 import ConclaveVeil from "./ConclaveVeil";
 import { interactionTargets, localPointer } from "./crystalGeometry.mjs";
+import { sampleFrameBudget } from './expoRenderBudget.mjs';
 
 function SceneEnvironment({ shared }) {
   const { gl, scene, camera, size } = useThree();
@@ -50,9 +51,15 @@ function ContextEvents({ onFailure }) {
   return null;
 }
 
-function RenderBudget({ compact }) {
+function RenderBudget({ compact, degraded, onQuality }) {
   const gl = useThree((state) => state.gl);
-  useEffect(() => { gl.transmissionResolutionScale = compact ? .5 : .75; }, [gl, compact]);
+  const sample = useRef({ seconds: 0, frames: 0, strikes: 0, recoveries: 0, degraded: false });
+  useEffect(() => { gl.transmissionResolutionScale = degraded ? .35 : compact ? .5 : .75; }, [gl, compact, degraded]);
+  useFrame((_, delta) => {
+    const before = sample.current.degraded;
+    sample.current = sampleFrameBudget(sample.current, delta);
+    if (before !== sample.current.degraded) onQuality(sample.current.degraded);
+  });
   return null;
 }
 
@@ -63,6 +70,7 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
   const pointer = useRef(null);
   const [dpr, setDpr] = useState(1);
   const [compact, setCompact] = useState(true);
+  const [degraded, setDegraded] = useState(false);
   const controlsRect = (element) => element.closest('[data-expo-progress]')?.querySelector('[data-expo-slot]')?.getBoundingClientRect() || element.getBoundingClientRect();
 
   const reset = () => {
@@ -126,18 +134,18 @@ export default function CrystalScene({ active, onReady, onFailure, journey, onPr
 
   return (
     <div style={{ width: "100%", height: "100%", touchAction: "pan-y pinch-zoom" }} tabIndex={0} onKeyDown={keyboard} onBlur={reset} onPointerDown={down} onPointerMove={update} onPointerUp={release} onPointerCancel={release} onPointerLeave={reset} onLostPointerCapture={reset} aria-describedby="crystal-instructions" data-crystal-control role="button" aria-haspopup="dialog" aria-label="Interactive Tathva crystal">
-      <Canvas dpr={dpr} frameloop={active ? "always" : "never"} camera={{ fov: 32, position: [0, 0, 7], near: .1, far: 30 }} gl={{ alpha: true, antialias: true, powerPreference: "low-power" }} onCreated={({ gl }) => { gl.setClearColor(0, 0); gl.toneMapping = NoToneMapping; gl.transmissionResolutionScale = .75; }} fallback={null}>
+      <Canvas dpr={degraded ? Math.min(dpr, 1) : dpr} frameloop={active ? "always" : "never"} camera={{ fov: 32, position: [0, 0, 7], near: .1, far: 30 }} gl={{ alpha: true, antialias: true, powerPreference: "low-power" }} onCreated={({ gl }) => { gl.setClearColor(0, 0); gl.toneMapping = NoToneMapping; gl.transmissionResolutionScale = .75; }} fallback={null}>
         <ContextEvents onFailure={onFailure} />
-        <RenderBudget compact={compact} />
-        <CrystalOptics compact={compact} />
+        <RenderBudget compact={compact} degraded={degraded} onQuality={setDegraded} />
+        <CrystalOptics compact={compact || degraded} />
         <ambientLight intensity={.08} />
         <directionalLight position={[-3, 4, 3]} color="#7bbaff" intensity={.6} />
         <pointLight position={[1.8, -1.2, 1]} color="#ee49cf" intensity={4} distance={5} decay={2} />
         {/* Readiness includes every asset needed for the entrance, not just the shell. */}
         <Suspense fallback={null}>
           <SceneEnvironment shared={!!journey} />
-          <CrystalModel target={target} compact={compact} onReady={onReady} onMood={reportMood} journey={journey} onProject={onProject} />
-          {journey && <ConclaveVeil journey={journey} />}
+          <CrystalModel target={target} compact={compact || degraded} onReady={onReady} onMood={reportMood} journey={journey} onProject={onProject} />
+          {journey && <ConclaveVeil journey={journey} compact={compact || degraded} />}
         </Suspense>
       </Canvas>
       <span ref={feedback} aria-live='polite' style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)' }} />

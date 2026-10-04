@@ -69,5 +69,6 @@
 @media (max-width: 767px) {
   .mist { filter: blur(14px); }
 }
+.bridge[data-expo-compact='true']:has([data-expo-renderer='model']) .mist { visibility: hidden; }
 
 .animated:has([data-crystal-state="ready"]):not(:has([data-expo-renderer="fallback"])) [data-expo-slot] button { display: none; }

@@ -143,6 +143,11 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const anchor = useMemo(() => new Vector3(), [])
   const started = useRef(false)
   const gl = useThree((state) => state.gl)
+  const dom = useRef(null)
+  const projectedAt = useRef(-1)
+  useEffect(() => {
+    dom.current = { root: gl.domElement.closest('[data-expo-detail-state]'), control: gl.domElement.closest('[data-crystal-control]') }
+  }, [gl])
   const robotSource = useLoader(TextureLoader, '/images/expo/robot-head.svg')
   const source = useLoader(geometryLoader, '/images/expo/crystal/shell.drc')
   const [normal, roughness] = useLoader(
@@ -226,7 +231,8 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     readiness.current.available = available
     const readyAge = time - readiness.current.at
     const readyPulse = available && readyAge < 1.2 ? Math.sin(Math.PI * Math.max(0, readyAge) / 1.2) ** 2 : 0
-    const detailRoot = gl.domElement.closest('[data-expo-detail-state]')
+    const detailRoot = dom.current?.root
+    // eslint-disable-next-line react-hooks/immutability -- Cached DOM node, updated outside React in the R3F frame loop.
     if (detailRoot && detailRoot.dataset.expoReady !== String(available)) detailRoot.dataset.expoReady = String(available)
     const idleTime = idleClock.current
     if (inDetails && !savedPose.current) {
@@ -291,8 +297,9 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const hover = life.current.hover
     const press = available && target.current.pressed && life.current.hitStrength ? .45 : 0
     const interactive = available && life.current.hitStrength > 0
-    const control = gl.domElement.closest('[data-crystal-control]')
-    if (control) control.style.cursor = interactive ? 'pointer' : available && target.current.shardHover ? 'grab' : 'auto'
+    const control = dom.current?.control
+    const cursor = interactive ? 'pointer' : available && target.current.shardHover ? 'grab' : 'auto'
+    if (control && control.style.cursor !== cursor) control.style.cursor = cursor
     cursorLight.current.position.set(lightPoint.x, lightPoint.y, 1.2)
     cursorLight.current.intensity = hover * 1.6
     glass.current.envMapIntensity = 2.2 + hover * .25
@@ -357,7 +364,8 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     mist.current.position.x = Math.sin(time * .16) * .22
     mist.current.material.uniforms.time.value = time
     mist.current.material.uniforms.opacity.value = .10 * influence * (1 - hover * .45)
-    if (onProject && influence > .01) {
+    if (onProject && influence > .01 && time - projectedAt.current >= (compact ? 1 / 20 : 1 / 30)) {
+      projectedAt.current = time
       travel.current.updateWorldMatrix(true, true)
       projectedAnchors.forEach((point) => {
         anchor.copy(point.source).applyMatrix4(body.matrixWorld).project(camera)
@@ -419,7 +427,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
             roughnessMap={roughness}
             normalMap={normal}
             normalScale={[0.24, 0.24]}
-            transmission={1}
+            transmission={compact ? .65 : 1}
             thickness={0.12}
             ior={1.18}
             reflectivity={0.3}

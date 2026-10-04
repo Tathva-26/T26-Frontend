@@ -21,7 +21,10 @@ function ExpoContent({ sharedCrystal = false }) {
   const leaders = useRef([])
   const project = useCallback((points) => {
     if (!layout.current) return
-    expoLeaderPaths(points, layout.current).forEach((path, index) => leaders.current[index]?.setAttribute('d', path))
+    expoLeaderPaths(points, layout.current).forEach((path, index) => {
+      const node = leaders.current[index]
+      if (node && node.getAttribute('d') !== path) node.setAttribute('d', path)
+    })
   }, [])
   useLayoutEffect(() => {
     if (sharedCrystal) return
