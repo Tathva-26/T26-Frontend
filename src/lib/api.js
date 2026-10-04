@@ -48,6 +48,8 @@ export const PATHS = {
   announcements: '/api/announcements',
   venues: '/api/venue/',
   seatCount: '/api/seat_count/',
+  accommodationOptions: '/api/accommodation/options',
+  accommodationBook: '/api/accommodation/book',
   healthz: '/healthz',
 }
 
