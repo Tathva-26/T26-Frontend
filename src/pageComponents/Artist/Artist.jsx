@@ -12,7 +12,7 @@ import {
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { EasePack } from 'gsap/EasePack'
-import TopoBackground from '@/components/TopoBackground'
+import Topography from '@/components/Topography/Topography'
 import { watchVisible } from '@/lib/watchVisible'
 import { touchStop } from '@/lib/touchStop'
 
@@ -24,6 +24,7 @@ const artists = [
   {
     name: 'Day 2 Artists',
     performers: ['Vedan', 'Akasa', 'Gabri', 'Stic'],
+    mobilePerformerLines: [['Vedan', 'Akasa', 'Gabri', 'Stic']],
     background: `${assetPathPrefix}/21bbf.svg`,
     portrait: `${assetPathPrefix}/day2_main.svg`,
     portraitClassName: 'artist-portrait artist-portrait--arijit',
@@ -35,6 +36,10 @@ const artists = [
   {
     name: 'Day 3 Artists',
     performers: ['Sachet-Parampara', 'Thamarassery Churam', 'DJ noise'],
+    mobilePerformerLines: [
+      ['Sachet-Parampara', 'DJ noise'],
+      ['Thamarassery Churam'],
+    ],
     performersPerLine: 1,
     background: `${assetPathPrefix}/bef85.svg`,
     portrait: `${assetPathPrefix}/day3.svg`,
@@ -825,7 +830,14 @@ function ArtistName({ artist, className }) {
             key={idx}
             className={`artist-single-name artist-single-name--${idx}`}
           >
-            {performer}
+            {performer === 'Thamarassery Churam' ? (
+              <>
+                Thamarassery<br className='artist-name-mobile-break' />
+                Churam
+              </>
+            ) : (
+              performer
+            )}
           </span>
         ))}
       </div>
@@ -1150,14 +1162,7 @@ function ArtistMobile() {
                 mobileBgRefs.current[index] = el
               }}
             >
-              <TopoBackground
-                fixed={false}
-                background='#1c1c1c'
-                lineColor='220, 220, 220'
-                lineOpacity={0.16}
-                seed={index + 7}
-                style={{ zIndex: 0 }}
-              />
+              <Topography scale={2} />
             </div>
           ))}
         </div>
@@ -1188,10 +1193,15 @@ function ArtistMobile() {
               <div className='mobile-stage'>
                 <ArtistBoard artist={artist} />
               </div>
-              <ArtistName
-                artist={artist}
+              <h2
                 className={`mobile-name${artist.performersPerLine === 1 ? ' mobile-name--raised' : ''}`}
-              />
+              >
+                {artist.mobilePerformerLines.map((line, lineIndex) => (
+                  <span className='artist-single-name' key={lineIndex}>
+                    {line.join(' . ')}{line.includes('DJ noise') ? '.' : ''}
+                  </span>
+                ))}
+              </h2>
               <p className='mobile-desc'>
                 Brace yourselves for a magical night as the legendary{' '}
                 {artist.name} takes the stage. Get ready to sing, sway, and make
@@ -1437,21 +1447,21 @@ export default function App() {
         /* -------------------------------------------------------------
            DESKTOP/LAPTOP SCHEDULE CARD: Shifted Higher & Proportionally Sized
            ------------------------------------------------------------- */
-        .schedule-card {
-          position: absolute;
-          z-index: 3;
-          top: 20%;
-          right: -8%;
-          width: min(320px, 50%);
-          min-width: 260px;
-          overflow: hidden;
-          border: 1px solid #323231;
-          border-radius: 14px;
-          background: #202020;
-          transition:
-            border-color 0.3s ease,
-            transform 0.3s ease;
-        }
+          .schedule-card {
+            position: absolute;
+            z-index: 3;
+            /* Lock vertical placement relative to viewport or rem instead of column height % */
+            top: clamp(60px, 12vh, 120px);
+            /* Pin directly to the column boundary instead of a drifting negative % */
+            right: -24px;
+            /* Keep dimensions fixed so text doesn't reflow between screens */
+            width: 290px;
+            overflow: hidden;
+            border: 1px solid #323231;
+            border-radius: 14px;
+            background: #202020;
+            transition: border-color 0.3s ease;
+            }
 
         /* Laptop View: proportionally scaled down without affecting inner layout */
         @media (max-width: 1440px) and (min-width: 769px) {
@@ -1647,7 +1657,6 @@ export default function App() {
         }
 
         /* Day 2: Individual name placement between pictures */
-        /* Day 2: Individual name placement between pictures */
         .slide--day-2-artists .artist-single-name--1 {
           /* Vedan: between top-left avatar and top avatar2, above secondary */
           top: 37%;
@@ -1688,23 +1697,22 @@ export default function App() {
         }
 
         /* Day 3: Individual name placement between pictures */
-        /* Day 3: Individual name placement between pictures */
-        .slide--day-3-artists .artist-single-name--0 {
+        .slide--day-3-artists .artist-single-name--1 {
           /* Sachet-Parampara: between avatar and primary, above secondary */
           top: 22%;
-          left: 25%;
+          left: 35%;
           transform: rotate(-6deg);
         }
-        .slide--day-3-artists .artist-single-name--1 {
+        .slide--day-3-artists .artist-single-name--0 {
           /* Thamarassery Churam: right of secondary, below primary */
-          top: 63%;
+          top: 78%;
           left: 60%;
           transform: rotate(-8deg);
         }
         .slide--day-3-artists .artist-single-name--2 {
           /* DJ noise: below avatar, left of secondary */
-          top: 69%;
-          left: 6%;
+          top: 60%;
+          left: 3%;
           transform: rotate(4deg);
         }
 
@@ -1919,17 +1927,17 @@ export default function App() {
 
           .mobile-name {
             position: relative;
-            top: 34px;
-            margin: 22px 0 0;
+            top: 58px;
+            margin: 16px 0 0;
             color: #fff;
             font-family: 'Bebas Neue', 'Bebas Neue:Regular', sans-serif;
-            font-size: clamp(6px, 12vw, 66px);
-            line-height: 0.95;
+            font-size: clamp(20px, 7.5vw, 38px);
+            line-height: 1;
             text-transform: uppercase;
           }
 
           .mobile-name--raised {
-            top: 24px;
+            top: 50px;
           }
 
           .mobile-name .artist-single-name {
@@ -1944,10 +1952,10 @@ export default function App() {
 
           .mobile-desc {
             position: relative;
-            top: 24px;
-            margin: 12px 0 0;
-            font-size: 20.5px;
-            line-height: 1.25;
+            top: 52px;
+            margin: 8px 0 0;
+            font-size: 16px;
+            line-height: 1.35;
             opacity: 0.92;
           }
         }
@@ -1974,14 +1982,7 @@ export default function App() {
                 bgRefs.current[index] = el
               }}
             >
-              <TopoBackground
-                fixed={false}
-                background='#1c1c1c'
-                lineColor='220, 220, 220'
-                lineOpacity={0.16}
-                seed={index + 7}
-                style={{ zIndex: 0 }}
-              />
+              <Topography scale={2} />
             </div>
           ))}
         </div>

@@ -13,6 +13,12 @@ import LightPillar from '@/components/LightPillar/LightPillar'
 // need a src, so unillustrated passes fall back to a generic ticket graphic.
 const FALLBACK_IMAGE = 'https://cdn-next-main.tathva.org/images/tickets/day2pass.webp'
 
+// A short tap buzz for switching tickets. No-op on browsers/devices without
+// the Vibration API (desktop, iOS Safari) — feature-detected, never thrown.
+const vibrate = (duration = 12) => {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(duration)
+}
+
 export default function TathvaPasses() {
   const inNavbarScope = useNavbarScope()
 
@@ -35,15 +41,17 @@ export default function TathvaPasses() {
 
 
   const handlePrev = () => {
+    vibrate()
     setChosenIndex(activeIndex === 0 ? passes.length - 1 : activeIndex - 1)
   }
 
   const handleNext = () => {
+    vibrate()
     setChosenIndex(activeIndex === passes.length - 1 ? 0 : activeIndex + 1)
   }
 
   return (
-    <main className='relative flex min-h-screen w-full flex-col items-center justify-between overflow-hidden bg-black select-none font-sans text-white'>
+    <main className='relative flex min-h-[100dvh] w-full flex-col items-center justify-between overflow-hidden bg-black select-none font-sans text-white'>
       {!inNavbarScope && <Navbar />}
       <TathvaMenu />
       <div className='pointer-events-none absolute inset-0 z-[5] overflow-hidden'>
@@ -85,7 +93,7 @@ export default function TathvaPasses() {
       {/* -------------------------------------------------------------
           HERO TITLE & SUBTITLE (AKIRA EXPANDED FONT)
       ------------------------------------------------------------- */}
-      <div className='relative z-10 my-0 sm:my-auto flex w-full flex-col items-center justify-center px-4 pt-24 sm:pt-24 md:pt-20 pb-10 sm:pb-14 text-center'>
+      <div className='relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 pt-24 sm:pt-24 md:pt-20 pb-10 sm:pb-14 text-center'>
         <h1
           className='text-4xl font-black tracking-[0.12em] text-white sm:text-5xl md:text-6xl lg:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]'
           style={{ fontFamily: "'Akira Expanded', 'Orbitron', sans-serif" }}
@@ -104,16 +112,16 @@ export default function TathvaPasses() {
             Mobile: Vertical rotation (Top/Center/Bottom) with middle largest
             Desktop: Horizontal rotation (Left/Center/Right)
         ------------------------------------------------------------- */}
-        <div className='relative mt-56 sm:mt-10 md:mt-14 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
-          {/* Left Arrow Button (Previous) */}
+        <div className='relative mt-8 sm:mt-10 md:mt-14 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
+          {/* Prev Arrow — top of the stack on phone (vertical wheel), left on desktop */}
           <button
             type='button'
             onClick={handlePrev}
             aria-label='Previous ticket'
-            className='group absolute left-2 sm:left-4 md:left-6 lg:left-8 top-1/2 -translate-y-1/2 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14'
+            className='group absolute z-40 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black left-1/2 -translate-x-1/2 top-2 sm:left-4 sm:top-1/2 sm:translate-x-0 sm:-translate-y-[100%] sm:h-11 sm:w-11 md:left-6 md:h-14 md:w-14 lg:left-8'
           >
             <svg
-              className='h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:-translate-x-0.5'
+              className='h-5 w-5 rotate-90 sm:rotate-0 md:h-6 md:w-6 transition-transform group-hover:-translate-x-0.5'
               fill='none'
               stroke='currentColor'
               viewBox='0 0 24 24'
@@ -140,13 +148,20 @@ export default function TathvaPasses() {
               return (
                 <div
                   key={ticket.id}
-                  onClick={() => setChosenIndex(index)}
+                  onClick={() => {
+                    vibrate()
+                    setChosenIndex(index)
+                  }}
                   className={`absolute left-1/2 top-1/2 cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${
                     isCenter
-                      ? 'z-30 -translate-x-1/2 -translate-y-[52%] sm:-translate-y-[58%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
+                      ? // Phone: dead centre, both axes. Desktop: shifted up a bit
+                        // (sm:/md: Y) so the elevated hero look still happens.
+                        'z-30 -translate-x-1/2 -translate-y-1/2 sm:-translate-y-[58%] md:-translate-y-[62%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
                       : isLeft
-                        ? 'z-10 -translate-x-1/2 sm:-translate-x-[95%] md:-translate-x-[100%] lg:-translate-x-[105%] -translate-y-[100%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
-                        : 'z-10 -translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] translate-y-[20%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        ? // Phone: tucked behind the centre card from above — a vertical
+                          // wheel. Desktop: same idea, tucked behind from the left.
+                          'z-10 -translate-x-1/2 -translate-y-[70%] sm:-translate-x-[70%] sm:-translate-y-[38%] md:-translate-y-[42%] scale-75 opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        : 'z-10 -translate-x-1/2 -translate-y-[30%] sm:-translate-x-[30%] sm:-translate-y-[38%] md:-translate-y-[42%] scale-75 opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
                   }`}
                 >
                   <div className='relative w-[260px] sm:w-[420px] md:w-[540px] lg:w-[640px] xl:w-[700px]'>
@@ -169,15 +184,15 @@ export default function TathvaPasses() {
             })}
           </div>
 
-          {/* Right Arrow Button (Next) */}
+          {/* Next Arrow — bottom of the stack on phone (vertical wheel), right on desktop */}
           <button
             type='button'
             onClick={handleNext}
             aria-label='Next ticket'
-            className='group absolute right-2 sm:right-4 md:right-6 lg:right-8 top-1/2 -translate-y-1/2 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14'
+            className='group absolute z-40 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black left-1/2 -translate-x-1/2 bottom-2 sm:left-auto sm:right-4 sm:bottom-auto sm:top-1/2 sm:translate-x-0 sm:-translate-y-[100%] sm:h-11 sm:w-11 md:right-6 md:h-14 md:w-14 lg:right-8'
           >
             <svg
-              className='h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:translate-x-0.5'
+              className='h-5 w-5 rotate-90 sm:rotate-0 md:h-6 md:w-6 transition-transform group-hover:translate-x-0.5'
               fill='none'
               stroke='currentColor'
               viewBox='0 0 24 24'
