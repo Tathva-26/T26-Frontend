@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { PASS_EVENT_TYPE } from '@/lib/api'
 import { useEvents } from '@/hooks/useEvents'
 import Checkout from '@/components/Checkout/Checkout'
@@ -16,7 +16,9 @@ const FALLBACK_IMAGE = 'https://cdn-next-main.tathva.org/images/tickets/day2pass
 export default function TathvaPasses() {
   const inNavbarScope = useNavbarScope()
 
-  const [activeIndex, setActiveIndex] = useState(0)
+  // null = no manual selection yet, so the carousel opens centred on
+  // whichever pass loads in, without setState-in-an-effect to get there.
+  const [chosenIndex, setChosenIndex] = useState(null)
 
   // Passes are ordinary bookable events (GET /api/events/all?type=passes) —
   // the carousel is built straight from whatever the backend returns, not a
@@ -26,20 +28,18 @@ export default function TathvaPasses() {
     fallbackImage: FALLBACK_IMAGE,
   })
 
-  // Once the passes load, start on the middle one rather than index 0.
-  useEffect(() => {
-    if (passes.length) setActiveIndex(Math.floor((passes.length - 1) / 2))
-  }, [passes.length])
+  const activeIndex =
+    chosenIndex !== null ? chosenIndex : Math.floor((passes.length - 1) / 2)
 
   const active = passes[activeIndex] ?? null
 
 
   const handlePrev = () => {
-    setActiveIndex((prev) => (prev === 0 ? passes.length - 1 : prev - 1))
+    setChosenIndex(activeIndex === 0 ? passes.length - 1 : activeIndex - 1)
   }
 
   const handleNext = () => {
-    setActiveIndex((prev) => (prev === passes.length - 1 ? 0 : prev + 1))
+    setChosenIndex(activeIndex === passes.length - 1 ? 0 : activeIndex + 1)
   }
 
   return (
@@ -140,8 +140,8 @@ export default function TathvaPasses() {
               return (
                 <div
                   key={ticket.id}
-                  onClick={() => setActiveIndex(index)}
-                  className={`absolute left-1/2 top-1/2 cursor-pointer transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${
+                  onClick={() => setChosenIndex(index)}
+                  className={`absolute left-1/2 top-1/2 cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${
                     isCenter
                       ? 'z-30 -translate-x-1/2 -translate-y-[52%] sm:-translate-y-[58%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
                       : isLeft
@@ -153,16 +153,16 @@ export default function TathvaPasses() {
                     <img
                       src={ticket.image}
                       alt={ticket.fullTitle}
-                      className='h-auto w-full object-contain filter transition-[filter] duration-500 hover:brightness-105'
+                      // The backend/mock can point `picture` at an asset that 404s —
+                      // fall back to the known-good ticket art so the carousel always
+                      // has something to show (and to animate) instead of going blank.
+                      onError={(e) => {
+                        if (e.currentTarget.src !== FALLBACK_IMAGE) {
+                          e.currentTarget.src = FALLBACK_IMAGE
+                        }
+                      }}
+                      className='aspect-[0.72/1] h-auto w-full object-contain filter transition-all duration-500 hover:brightness-105'
                     />
-                    <div className='pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-0.5 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-3 pt-10 text-center'>
-                      <span className='text-base font-black uppercase tracking-[0.1em] text-white sm:text-xl'>
-                        {ticket.fullTitle}
-                      </span>
-                      <span className='text-[10px] font-semibold tracking-[0.18em] text-white/80 sm:text-xs'>
-                        {ticket.dateMonth} {ticket.dateDay} · {ticket.fee}
-                      </span>
-                    </div>
                   </div>
                 </div>
               )
