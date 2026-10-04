@@ -439,7 +439,7 @@ export default function CrystalModel({ target, compact = false, reduced = false,
             roughnessMap={roughness}
             normalMap={normal}
             normalScale={[0.24, 0.24]}
-            transmission={compact ? .65 : 1}
+            transmission={1}
             thickness={0.12}
             ior={1.18}
             reflectivity={0.3}

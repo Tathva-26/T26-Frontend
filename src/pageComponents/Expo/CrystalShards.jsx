@@ -91,6 +91,6 @@ export default function CrystalShards({ journey, compact, reduced, prepareGlass,
     mesh.current.visible = reveal > .005
   })
   return <instancedMesh name='expo-shards' ref={mesh} args={[geometry, undefined, 6]} frustumCulled={false}>
-    <meshPhysicalMaterial color='#a9bbff' metalness={.1} roughness={compact ? .18 : .08} transmission={compact ? 0 : .85} thickness={.25} ior={1.5} envMapIntensity={4.5} onBeforeCompile={prepareGlass} flatShading />
+    <meshPhysicalMaterial color='#a9bbff' metalness={.1} roughness={.08} transmission={.85} thickness={.25} ior={1.5} envMapIntensity={4.5} onBeforeCompile={prepareGlass} flatShading />
   </instancedMesh>
 }
