@@ -22,7 +22,9 @@ at phase 1.2 on desktop and 1.4 on mobile; departure lasts .45 phase units.
   their mesh is hidden outside the transition interval.
 - Frame-time sampling reduces DPR/transmission resolution after two slow
   three-second windows; four fast windows restore quality. Long resume gaps
-  are excluded. Compact shards use reflections without transmission.
+  are excluded. Quality changes preserve glass appearance: shell transmission
+  stays at 1, shard transmission at .85 and shard roughness at .08. Compact
+  budgets reduce resolution, particle/shard count and cloud complexity instead.
 - Model DOM references are cached; connector projection is limited to 20/30 Hz.
   Inactive shard instances are skipped and bounds refresh matches picking cadence.
 
