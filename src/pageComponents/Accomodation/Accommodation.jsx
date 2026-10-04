@@ -34,99 +34,17 @@ const accommodationStyles = `
   -webkit-text-stroke: 0.04em #fff;
 }
 
-.accommodation-page .cards {
+.accommodation-page .comingSoon {
   align-self: center;
-  display: grid;
-  grid-template-columns: repeat(3, 23.4vw);
-  column-gap: 4.2vw;
-  padding-right: 2vw;
-  justify-content: start;
-}
-
-.accommodation-page .card {
-  position: relative;
-  aspect-ratio: 215 / 306;
-  border: 0.28vw solid #fff;
-  border-radius: 2.6vw;
-  overflow: hidden;
-  background: #222;
-}
-
-.accommodation-page .cardImage {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.accommodation-page .locate {
-  position: absolute;
-  top: 1.2vw;
-  right: 1.2vw;
-  display: flex;
-  align-items: center;
-  gap: 0.5vw;
-  padding: 0.6vw 1vw;
-  border-radius: 999px;
-  background: #3d2440;
-  color: #fff;
-  font-family: var(--font-space);
-  font-size: 0.75vw;
-  font-weight: 600;
-}
-
-.accommodation-page .locate svg {
-  width: 1.1vw;
-  height: 1.1vw;
-}
-
-.accommodation-page .info {
-  position: absolute;
-  left: 1.3vw;
-  right: 1.3vw;
-  bottom: 1.3vw;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  padding: 1vw 0.9vw;
-  border-radius: 1.6vw;
-  background: rgba(225, 225, 232, 0.55);
-  backdrop-filter: blur(10px);
-}
-
-.accommodation-page .name {
-  font-family: var(--font-jockey);
-  font-size: 1.55vw;
+  justify-self: center;
+  text-align: center;
+  font-family: var(--font-bebas);
+  font-size: clamp(2.5rem, 6vw, 5.5rem);
   line-height: 1;
-  color: #14142b;
-  letter-spacing: 0.02em;
-  -webkit-text-stroke: 0.03vw #14142b;
-}
-
-.accommodation-page .location {
-  margin-top: 0.4vw;
-  font-family: var(--font-space);
-  font-size: 0.7vw;
-  color: #444;
-}
-
-.accommodation-page .explore {
-  display: flex;
-  align-items: center;
-  gap: 0.4vw;
-  padding: 0.75vw 1.1vw;
-  border-radius: 999px;
-  background: #8a8cf5;
+  letter-spacing: 0.04em;
   color: #fff;
-  font-family: var(--font-space);
-  font-size: 0.7vw;
-  font-weight: 600;
-}
-
-.accommodation-page .explore svg {
-  width: 0.85vw;
-  height: 0.85vw;
+  opacity: 0.85;
+  padding: 0 4vw;
 }
 
 @media (max-width: 900px) {
@@ -147,71 +65,12 @@ const accommodationStyles = `
     text-align: center;
   }
 
-  .accommodation-page .cards {
+  .accommodation-page .comingSoon {
     align-self: start;
+    justify-self: center;
     margin-top: 24px;
-    padding-right: 0;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-    justify-content: stretch;
-    max-width: 640px;
-    justify-self: center;
-    width: 100%;
-  }
-
-  .accommodation-page .cards > .card:nth-child(3):last-child {
-    grid-column: 1 / -1;
-    justify-self: center;
-    width: calc(50% - 8px);
-  }
-
-  .accommodation-page .card {
-    border-width: 2px;
-    border-radius: 20px;
-  }
-
-  .accommodation-page .locate {
-    top: 8px;
-    right: 8px;
-    gap: 4px;
-    padding: 5px 9px;
-    font-size: 11px;
-  }
-
-  .accommodation-page .locate svg {
-    width: 13px;
-    height: 13px;
-  }
-
-  .accommodation-page .info {
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 8px 10px;
-    border-radius: 14px;
-  }
-
-  .accommodation-page .name {
-    font-size: 16px;
-  }
-
-  .accommodation-page .location {
-    margin-top: 3px;
-    font-size: 10px;
-  }
-
-  .accommodation-page .explore {
-    gap: 4px;
-    padding: 6px 12px;
-    font-size: 11px;
-  }
-
-  .accommodation-page .explore svg {
-    width: 12px;
-    height: 12px;
+    font-size: clamp(2.5rem, 12vw, 4rem);
+    text-align: center;
   }
 }
 `
@@ -219,73 +78,6 @@ const accommodationStyles = `
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import { useNavbarScope } from '@/pageComponents/Navbar/NavbarContext'
-
-const HOSTELS = [
-  {
-    id: 1,
-    name: 'Mega Hostel Boys II',
-    location: 'West Campus, NIT Calicut',
-    image: 'https://cdn-next-main.tathva.org/images/accommodation/sample.svg',
-  },
-  {
-    id: 2,
-    name: 'Mega Hostel Boys II',
-    location: 'West Campus, NIT Calicut',
-    image: 'https://cdn-next-main.tathva.org/images/accommodation/sample.svg',
-  },
-  {
-    id: 3,
-    name: 'Mega Hostel Boys II',
-    location: 'West Campus, NIT Calicut',
-    image: 'https://cdn-next-main.tathva.org/images/accommodation/sample.svg',
-  },
-]
-
-function PinIcon() {
-  return (
-    <svg viewBox='0 0 24 24' fill='currentColor' aria-hidden='true'>
-      <path d='M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z' />
-    </svg>
-  )
-}
-
-function SearchIcon() {
-  return (
-    <svg
-      viewBox='0 0 24 24'
-      fill='none'
-      stroke='currentColor'
-      strokeWidth='3'
-      strokeLinecap='round'
-      aria-hidden='true'
-    >
-      <circle cx='10.5' cy='10.5' r='6.5' />
-      <path d='m16 16 5 5' />
-    </svg>
-  )
-}
-
-function HostelCard({ name, location, image }) {
-  return (
-    <article className='card'>
-      <img className='cardImage' src={image} alt={name} />
-      <button type='button' className='locate'>
-        <PinIcon />
-        Locate
-      </button>
-      <div className='info'>
-        <div>
-          <h2 className='name'>{name}</h2>
-          <p className='location'>{location}</p>
-        </div>
-        <button type='button' className='explore'>
-          <SearchIcon />
-          Explore
-        </button>
-      </div>
-    </article>
-  )
-}
 
 export default function Accommodation() {
   const inNavbarScope = useNavbarScope()
@@ -296,11 +88,7 @@ export default function Accommodation() {
       <TathvaMenu />
       <style>{accommodationStyles}</style>
       <h1 className='heading'>ACCOMMODATION</h1>
-      <section className='cards'>
-        {HOSTELS.map((h) => (
-          <HostelCard key={h.id} {...h} />
-        ))}
-      </section>
+      <p className='comingSoon'>COMING SOON</p>
     </main>
   )
 }
