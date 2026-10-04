@@ -1,37 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useMemo, useRef } from 'react'
+import { useFrame, useLoader } from '@react-three/fiber'
 import { TextureLoader, Vector2 } from 'three'
-
-const BACKGROUND_URL = 'https://cdn-next-main.tathva.org/images/techconclave/background.webp'
 
 // A screen-space cloud pass overlaps the outgoing DOM poster and incoming
 // crystal, using the actual TechConclave background for refracted fragments.
-// This is a purely decorative layer on top of the real crystal/robot model,
-// so its texture is loaded by hand (callback-style) rather than through
-// useLoader/Suspense: a failed fetch (CDN hiccup, a stale cross-origin cache
-// entry) must stay contained here and simply skip the mist, never throw into
-// Suspense — an error there unwinds past any boundary placed inside <Canvas>
-// (R3F's scene graph is a separate renderer) and is only ever caught by
-// Crystal3D's SceneBoundary, which would otherwise replace the entire model.
 export default function ConclaveVeil({ journey }) {
   const material = useRef(null)
-  const [background, setBackground] = useState(null)
-
-  useEffect(() => {
-    let cancelled = false
-    const loader = new TextureLoader()
-    let texture
-    loader.load(BACKGROUND_URL, (loaded) => {
-      if (cancelled) { loaded.dispose(); return }
-      texture = loaded
-      setBackground(loaded)
-    }, undefined, () => {})
-    return () => { cancelled = true; texture?.dispose() }
-  }, [])
-
-  const uniforms = useMemo(() => background && ({
+  const background = useLoader(TextureLoader, '/images/techconclave/background.webp')
+  const uniforms = useMemo(() => ({
     uTime: { value: 0 }, uProgress: { value: 0 }, uExit: { value: 0 },
     uAspect: { value: 1 }, uImageAspect: { value: background.image.width / background.image.height },
     uBackground: { value: background }, uOrigin: { value: new Vector2(.3, .5) },
@@ -48,7 +26,6 @@ export default function ConclaveVeil({ journey }) {
       live.uOrigin.value.set(pose.layout.startX / size.width, 1 - pose.layout.startY / size.height)
     }
   })
-  if (!uniforms) return null
   return <mesh renderOrder={100} frustumCulled={false}>
     <planeGeometry args={[2, 2]} />
     <shaderMaterial ref={material} transparent depthTest={false} depthWrite={false} uniforms={uniforms}

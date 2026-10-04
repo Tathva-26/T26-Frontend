@@ -13,22 +13,12 @@ import styles from './ExpoTransition.module.css'
 import expoStyles from './Expo.module.css'
 import { measureExpoLabels, expoLeaderPaths } from './expoLeaders.mjs'
 
-// The pinned scroll-journey (camera rig, GSAP ScrollTrigger pin, procedural
-// mist) is a desktop-only experience. Phones get the older, lightweight Expo
-// presentation instead: the standalone crystal + copy, laid out inline with
-// normal scroll — no pin, no scroll-triggered animation, no extra WebGL rig.
-const MOBILE_QUERY = '(max-width: 767px)'
 const subscribeMotion = (callback) => {
-  const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
-  const mobile = window.matchMedia(MOBILE_QUERY)
-  motion.addEventListener('change', callback)
-  mobile.addEventListener('change', callback)
-  return () => {
-    motion.removeEventListener('change', callback)
-    mobile.removeEventListener('change', callback)
-  }
+  const query = window.matchMedia('(prefers-reduced-motion: reduce)')
+  query.addEventListener('change', callback)
+  return () => query.removeEventListener('change', callback)
 }
-const motionSnapshot = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches && !window.matchMedia(MOBILE_QUERY).matches
+const motionSnapshot = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const serverSnapshot = () => false
 
 export default function TechConclaveExpoTransition() {
@@ -83,7 +73,10 @@ function ExpoTransitionContent() {
       if (disposed) return
       const viewport = plane.getBoundingClientRect()
       const destination = slot.getBoundingClientRect()
-      const robot = [...tc.querySelectorAll('img[src="https://cdn-next-main.tathva.org/images/techconclave/robot.webp"]')]
+      const robot = [...tc.querySelectorAll('img')].filter(image => {
+        const pathname = new URL(image.currentSrc || image.src, window.location.href).pathname
+        return pathname === '/images/techconclave/robot.webp'
+      })
         .find((image) => image.getBoundingClientRect().width > 0)
       const source = robot?.getBoundingClientRect()
       const tcBox = tc.getBoundingClientRect()
@@ -132,14 +125,10 @@ function ExpoTransitionContent() {
       pose.layout = box
       journey.current = pose
       const { x, y } = journeyScreenPoint(pose, box)
-      const interactive = entry > .72 && exit === 0
       gsap.set(crystal.current, {
         width: box.width, height: box.height, opacity: exit > 0 ? 1 : pose.opacity,
-        pointerEvents: interactive ? 'auto' : 'none',
+        pointerEvents: entry > .72 && exit === 0 ? 'auto' : 'none',
       })
-      // The model's canvas wrapper sets its own pointer-events, which wins over
-      // the container's: see .crystal[data-expo-interactive] in the CSS.
-      crystal.current.dataset.expoInteractive = String(interactive)
       const fallback = crystal.current.querySelector('img')
       // Keep opacity in CSS so the ready state can hide the illustration when
       // the model loads, even if scrolling is paused at that moment.

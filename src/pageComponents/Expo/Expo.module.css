@@ -1,5 +1,5 @@
-@font-face { font-family: 'Expo Bowlby'; src: url('https://cdn-next-main.tathva.org/fonts/BowlbyOneSC-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Expo Alexandria'; src: url('https://cdn-next-main.tathva.org/fonts/Alexandria-Variable.ttf') format('truetype'); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Expo Bowlby'; src: url('/fonts/BowlbyOneSC-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Expo Alexandria'; src: url('/fonts/Alexandria-Variable.ttf') format('truetype'); font-weight: 100 900; font-style: normal; font-display: swap; }
 .page { min-height: 100dvh; overflow-x: clip; background: #131219; color: #fff; }
 .stage { isolation: isolate; position: relative; width: 100%; min-height: 600px; height: max(100dvh, 49.3vw); overflow: hidden; background: #131219; }
 .stage::after { content: ''; position: absolute; inset: auto 0 0; height: 6vh; background: linear-gradient(transparent, #080808); pointer-events: none; z-index: 4; }
@@ -91,6 +91,9 @@
 .standaloneCrystal { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .standaloneCrystal [data-crystal-control] { pointer-events: auto; }
 .standaloneCrystal .fallback { inset: auto; left: var(--expo-slot-left); top: var(--expo-slot-top); width: var(--expo-slot-width); height: var(--expo-slot-height); }
+.fallbackShards { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+.stage:has([data-crystal-state='ready']) .fallbackShards { visibility: hidden; }
+@media (max-width: 767px) { .fallbackShards use:nth-of-type(n+5) { display: none; } }
 
 .fallbackActivate { position: absolute; inset: 10% 20%; border: 0; background: transparent; cursor: pointer; pointer-events: auto; }
 .crystalSlot:has(.fallbackActivate) { z-index: 4; pointer-events: none; }

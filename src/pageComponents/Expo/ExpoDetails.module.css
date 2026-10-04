@@ -1,5 +1,5 @@
 .root { display: contents; --detail-copy: 1; --detail-dark: 0; --detail-text: 0; --detail-scale: 1; }
-.root :is([data-expo-intro], [data-expo-description], [data-expo-explore], [data-expo-title]) { filter: opacity(var(--detail-copy)); }
+.root :is([data-expo-intro], [data-expo-description], [data-expo-explore], [data-expo-title], [data-expo-fallback-shards]) { filter: opacity(var(--detail-copy)); }
 .root [data-expo-connectors] { filter: opacity(var(--detail-copy)); scale: var(--detail-copy); }
 .root [data-expo-fallback-image] { scale: var(--detail-scale); }
 .dialog { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; margin: 0; border: 0; padding: max(100px, env(safe-area-inset-top)) 24px max(48px, env(safe-area-inset-bottom)); box-sizing: border-box; color: #e6eeff; background: transparent; overflow-y: auto; overscroll-behavior: contain; }

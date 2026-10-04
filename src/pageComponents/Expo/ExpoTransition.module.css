@@ -19,7 +19,7 @@
 .animated > [data-expo-page] > section > p,
 .animated > [data-expo-page] > section > button { z-index: 5; }
 .animated > [data-expo-page] > section > h1 { z-index: 1; }
-.animated > [data-expo-page] svg[aria-hidden] { visibility: hidden; }
+.animated > [data-expo-page] svg[aria-hidden]:not([data-expo-fallback-shards]) { visibility: hidden; }
 .plane {
   position: absolute;
   bottom: 0;
@@ -40,14 +40,9 @@
   pointer-events: none;
 }
 .crystal img { inset: auto; top: 0; left: 0; transform-origin: center; }
-/* While the crystal is not interactive (the Tech Conclave poster is still the
-   page), nothing inside it may take the pointer. Its canvas wrapper sets
-   pointer-events: auto itself, which overrides the container's `none`, so the
-   invisible canvas covered the whole viewport and the speaker cards under it
-   never saw a hover. */
-.crystal[data-expo-interactive='false'] * { pointer-events: none !important; }
 .crystal[data-expo-renderer='fallback'] [data-crystal-control] { visibility: hidden; }
 .crystal[data-expo-renderer='fallback'] img { opacity: var(--journey-fallback-opacity, 1); }
+.animated:has([data-crystal-state='ready']):not(:has([data-expo-renderer='fallback'])) [data-expo-fallback-shards] { visibility: hidden; }
 .mist {
   position: absolute;
   top: 0;

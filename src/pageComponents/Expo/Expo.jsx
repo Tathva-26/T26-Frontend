@@ -5,6 +5,7 @@ import Crystal3D from './Crystal3D'
 import styles from './Expo.module.css'
 import { expoJourney } from './expoJourney.mjs'
 import { measureExpoLabels, expoLeaderPaths } from './expoLeaders.mjs'
+import FallbackShards from './FallbackShards'
 import { ExpoDetailsProvider, useExpoDetails } from './ExpoDetails'
 
 export default function Expo(props) {
@@ -55,6 +56,8 @@ function ExpoContent({ sharedCrystal = false }) {
         <h1 id='expo-title' className={styles.title} data-expo-title>
           <span className={styles.desktopTitle}>EXPO</span>
         </h1>
+        <FallbackShards />
+
         <p className={styles.intro} data-expo-intro>
           Tathva’26 Expo is all about technology,
           the trending, the innovations, the age-old,
