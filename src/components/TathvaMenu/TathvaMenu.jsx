@@ -962,7 +962,7 @@ function TathvaMenuOverlay() {
       >
         {/* Center Base Image */}
         <img
-          src='https://cdn-next-main.tathva.org/images/menu/tathva.svg'
+          src='https://cdn-next-main.tathva.org/images/menu/tathva.webp'
           alt='Tathva 26'
           draggable={false}
           className='pointer-events-none block h-auto w-full select-none object-contain'
@@ -970,7 +970,7 @@ function TathvaMenuOverlay() {
 
         {/* Left Wing (aligned over the center image) */}
         <img
-          src='https://cdn-next-main.tathva.org/images/menu/tleft.svg'
+          src='https://cdn-next-main.tathva.org/images/menu/tleft.webp'
           alt=''
           draggable={false}
           className='pointer-events-none absolute -left-2 top-1/2 h-full w-[195px] -translate-y-5.25 select-none object-contain'
@@ -978,7 +978,7 @@ function TathvaMenuOverlay() {
 
         {/* Right Wing (aligned over the center image) */}
         <img
-          src='https://cdn-next-main.tathva.org/images/menu/tright.svg'
+          src='https://cdn-next-main.tathva.org/images/menu/tright.webp'
           alt=''
           draggable={false}
           className='pointer-events-none absolute -right-2 top-1/2 h-full w-[195px] -translate-y-5.25 select-none object-contain'

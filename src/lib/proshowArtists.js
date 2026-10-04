@@ -8,7 +8,7 @@ export const proshowArtists = [
     date: "09 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "https://cdn-next-main.tathva.org/images/proshow/artist-1.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-1.webp",
     track: {
       title: "Starboy",
       artist: "The Weeknd",
@@ -21,7 +21,7 @@ export const proshowArtists = [
     date: "09 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "https://cdn-next-main.tathva.org/images/proshow/artist-2.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-2.webp",
     track: {
       title: "Placeholder Two",
       artist: "Nova",
@@ -34,7 +34,7 @@ export const proshowArtists = [
     date: "10 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "https://cdn-next-main.tathva.org/images/proshow/artist-3.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-3.webp",
     track: {
       title: "Placeholder Three",
       artist: "Zephyr",
@@ -47,7 +47,7 @@ export const proshowArtists = [
     date: "10 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "https://cdn-next-main.tathva.org/images/proshow/artist-4.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-4.webp",
     track: {
       title: "Placeholder Four",
       artist: "Kairos",
@@ -60,7 +60,7 @@ export const proshowArtists = [
     date: "11 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "https://cdn-next-main.tathva.org/images/proshow/artist-5.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-5.webp",
     track: {
       title: "Placeholder Five",
       artist: "Lumen",
@@ -73,7 +73,7 @@ export const proshowArtists = [
     date: "11 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "https://cdn-next-main.tathva.org/images/proshow/artist-6.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-6.webp",
     track: {
       title: "Placeholder Six",
       artist: "Orbit",
@@ -86,7 +86,7 @@ export const proshowArtists = [
     date: "12 October 2026",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-    image: "https://cdn-next-main.tathva.org/images/proshow/artist-7.svg",
+    image: "https://cdn-next-main.tathva.org/images/proshow/artist-7.webp",
     track: {
       title: "Placeholder Seven",
       artist: "Solara",

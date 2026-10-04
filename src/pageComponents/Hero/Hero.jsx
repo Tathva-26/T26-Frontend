@@ -981,7 +981,7 @@ export const Hero = ({
           className={styles.coordsRing}
           alt=''
           aria-hidden='true'
-          src={`${assetBase}ellipse.svg`}
+          src={`${assetBase}ellipse.webp`}
         />
         <p className={styles.coordsText}>
           11.321973° N
@@ -1246,7 +1246,7 @@ export const Hero = ({
                 ref={t1Ref}
                 className={styles.t1Inner}
                 style={{
-                  '--title-mask': `url(${isMobile ? `${assetBase}tathva_mobile.svg` : `${assetBase}tathva_text.png`})`,
+                  '--title-mask': `url(${isMobile ? `${assetBase}tathva_mobile.webp` : `${assetBase}tathva_text.png`})`,
                 }}
               >
                 <div className={styles.titleVideoWrap}>
@@ -1271,8 +1271,8 @@ export const Hero = ({
                   aria-hidden='true'
                   src={
                     isMobile
-                      ? `${assetBase}tathva_mobile.svg`
-                      : `${assetBase}tathva_text.svg`
+                      ? `${assetBase}tathva_mobile.webp`
+                      : `${assetBase}tathva_text.webp`
                   }
                 />
               </div>

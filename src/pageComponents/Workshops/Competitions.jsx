@@ -2057,7 +2057,7 @@ export default function CompetitionsPage() {
 
                                     <div className='pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30'>
                                       <img
-                                        src='https://cdn-next-main.tathva.org/images/competitions/competition-card-border.svg'
+                                        src='https://cdn-next-main.tathva.org/images/competitions/competition-card-border.webp'
                                         alt=''
                                         className='absolute inset-[-0.38%] h-full w-full'
                                       />

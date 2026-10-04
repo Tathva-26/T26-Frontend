@@ -24,8 +24,8 @@ const artists = [
   {
     name: 'Day 2 Artists',
     performers: ['Vedan', 'Akasa', 'Gabri', 'Stic'],
-    background: `${assetPathPrefix}/21bbf.svg`,
-    portrait: `${assetPathPrefix}/day2_main.svg`,
+    background: `${assetPathPrefix}/21bbf.webp`,
+    portrait: `${assetPathPrefix}/day2_main.webp`,
     portraitClassName: 'artist-portrait artist-portrait--arijit',
     cardPortrait: `${assetPathPrefix}/day2_anim_1.webp`,
     cardSecondary: `${assetPathPrefix}/day2_anim_2.webp`,
@@ -36,8 +36,8 @@ const artists = [
     name: 'Day 3 Artists',
     performers: ['Sachet-Parampara', 'Thamarassery Churam', 'DJ noise'],
     performersPerLine: 1,
-    background: `${assetPathPrefix}/bef85.svg`,
-    portrait: `${assetPathPrefix}/day3.svg`,
+    background: `${assetPathPrefix}/bef85.webp`,
+    portrait: `${assetPathPrefix}/day3.webp`,
     portraitClassName: 'artist-portrait artist-portrait--day3',
     cardPortrait: `${assetPathPrefix}/day3_anim_2.webp`,
     cardSecondary: `${assetPathPrefix}/day3_anim_3.webp`,
@@ -1096,7 +1096,7 @@ const ArtistBoard = memo(function ArtistBoard({ artist }) {
     <div className='artist-board'>
       <img
         className='artist-board__texture'
-        src={`${assetPathPrefix}/88fac.svg`}
+        src={`${assetPathPrefix}/88fac.webp`}
         alt=''
       />
       <div className='board-marquee'>

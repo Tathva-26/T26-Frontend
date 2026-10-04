@@ -103,7 +103,7 @@ export default function HeroFrameController({ children }) {
       'islandv2.webp',
       'rockyground.webp',
       'girl4.webp',
-      isMobile ? 'tathva_mobile.svg' : 'tathva_text.svg',
+      isMobile ? 'tathva_mobile.webp' : 'tathva_text.webp',
     ]
 
     const images = CRITICAL.map((f) => preloadImage(HERO_BASE + f))

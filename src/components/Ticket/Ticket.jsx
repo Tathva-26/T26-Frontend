@@ -220,7 +220,7 @@ export const Frame = () => {
         className="absolute top-[273px] left-[782px] w-[113px] h-1"
         alt=""
         aria-hidden="true"
-        src={`${assetBaseUrl}line-81.svg`}
+        src={`${assetBaseUrl}line-81.webp`}
       />
       <div className="top-[323px] left-[283px] w-[311px] [font-family:'Alatsi',Helvetica] text-5xl tracking-[2.40px] absolute font-normal text-black leading-[normal] whitespace-nowrap">
         TATHVA 2026

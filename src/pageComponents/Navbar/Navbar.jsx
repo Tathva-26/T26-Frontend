@@ -448,7 +448,7 @@ export default function Navbar() {
             <span className='nb__cta-line' aria-hidden='true' />
             <FlipText ref={registerFlipRef} text={ctaLabel} />
             <img
-              src='https://cdn-next-main.tathva.org/images/hero/regarrow.svg'
+              src='https://cdn-next-main.tathva.org/images/hero/regarrow.webp'
               alt=''
               className='nb__cta-arrow'
             />

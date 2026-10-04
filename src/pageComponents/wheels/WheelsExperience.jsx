@@ -781,12 +781,12 @@ export default function WheelsExperience({ revealUnderlay = false }) {
                 className='flex max-w-[65%] flex-col will-change-transform max-md:max-w-[58%]'
               >
                 <img
-                  src='https://cdn-next-main.tathva.org/wheels/Wheels.svg'
+                  src='https://cdn-next-main.tathva.org/wheels/Wheels.webp'
                   alt='Wheels'
                   className='block w-[clamp(180px,24vw,334px)] h-auto object-contain opacity-95 max-md:w-[clamp(130px,38vw,190px)]'
                 />
                 <img
-                  src='https://cdn-next-main.tathva.org/wheels/Auto%20Show.svg'
+                  src='https://cdn-next-main.tathva.org/wheels/Auto%20Show.webp'
                   alt='Auto Show'
                   className='block w-[clamp(100px,13vw,183px)] h-auto mt-2 object-contain opacity-95 max-md:w-[clamp(72px,21vw,105px)] max-md:mt-1'
                 />
