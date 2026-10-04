@@ -1934,7 +1934,7 @@ export default function App() {
 
           .mobile-name {
             position: relative;
-            top: 24px;
+            top: 58px;
             margin: 16px 0 0;
             color: #fff;
             font-family: 'Bebas Neue', 'Bebas Neue:Regular', sans-serif;
@@ -1944,7 +1944,7 @@ export default function App() {
           }
 
           .mobile-name--raised {
-            top: 39px;
+            top: 50px;
           }
 
           .mobile-name .artist-single-name {
@@ -1959,7 +1959,7 @@ export default function App() {
 
           .mobile-desc {
             position: relative;
-            top: 39px;
+            top: 52px;
             margin: 8px 0 0;
             font-size: 16px;
             line-height: 1.35;

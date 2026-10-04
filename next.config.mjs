@@ -12,7 +12,6 @@ const imageHost = process.env.NEXT_PUBLIC_IMAGE_HOST || 'cdn.tathva.org'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   devIndicators: false,
-  allowedDevOrigins:['10.238.181.7'],
   images: {
     remotePatterns: [
       // Event covers and profile pictures, served from R2.
