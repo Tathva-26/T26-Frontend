@@ -1,9 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import Image from 'next/image'
+import { useEffect, useState } from 'react'
 import { PASS_EVENT_TYPE } from '@/lib/api'
-import { formatPrice } from '@/lib/format'
 import { useEvents } from '@/hooks/useEvents'
 import Checkout from '@/components/Checkout/Checkout'
 import Navbar from '@/pageComponents/Navbar/Navbar'
@@ -11,74 +9,29 @@ import { useNavbarScope } from '@/pageComponents/Navbar/NavbarContext'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 import LightPillar from '@/components/LightPillar/LightPillar'
 
-/**
- * The three pass artworks, in carousel order.
- *
- * Every word on these tickets — the day, the date, the inclusions and the
- * price — is baked into the bitmap inside each image. None of it can be driven
- * from the API, so this table describes what is pictured rather than being
- * the source of truth for it. If a price changes, the artwork has to be
- * redrawn; the figures here only exist so the labelling stays honest.
- *
- * `match` pairs an artwork with the backend event that sells it, by heading.
- */
-const PASS_ARTWORK = [
-  {
-    id: 'day-3',
-    title: 'DAY 3',
-    date: 'OCT 11 2026',
-    price: 'Rs. 1400/-',
-    details: 'PROSHOW',
-    src: 'https://cdn-next-main.tathva.org/images/tickets/day3pass.webp',
-    alt: 'Tathva Pass Day 3 - Oct 11 2026',
-    match: /\bday\s*3\b/i,
-  },
-  {
-    id: 'day-1',
-    title: 'DAY 1',
-    date: 'OCT 9 2026',
-    price: 'Rs. 600/-',
-    details: 'WHEELS | ROBOWARS | INFORMALS',
-    src: 'https://cdn-next-main.tathva.org/images/tickets/day1pass.webp',
-    alt: 'Tathva Pass Day 1 - Oct 9 2026',
-    match: /\bday\s*1\b/i,
-  },
-  {
-    id: 'day-all',
-    title: 'DAY ALL',
-    date: 'OCT ALL 2026',
-    price: 'Rs. 1999/-',
-    details: 'PROSHOW',
-    src: 'https://cdn-next-main.tathva.org/images/tickets/day2pass.webp',
-    alt: 'Tathva Pass Day 2 - Oct 2026',
-    match: /\b(all\s*days?|day\s*all)\b/i,
-  },
-];
-
+// `picture` is nullable on a pass event, and next/image (and a plain <img>)
+// need a src, so unillustrated passes fall back to a generic ticket graphic.
+const FALLBACK_IMAGE = 'https://cdn-next-main.tathva.org/images/tickets/day2pass.webp'
 
 export default function TathvaPasses() {
   const inNavbarScope = useNavbarScope()
 
-  // Center ticket index default 1 -> DAY ALL
-  const [activeIndex, setActiveIndex] = useState(1)
+  const [activeIndex, setActiveIndex] = useState(0)
 
-  /*
-   * Passes are ordinary bookable events, queried by the type an admin puts on
-   * them. Until they exist the carousel still renders: the artwork is the
-   * design, and the booking control is what depends on the API.
-   */
-  const { events, loading } = useEvents(PASS_EVENT_TYPE);
+  // Passes are ordinary bookable events (GET /api/events/all?type=passes) —
+  // the carousel is built straight from whatever the backend returns, not a
+  // hardcoded list, so an added/removed/repriced pass shows up on its own.
+  const { events: passes, loading } = useEvents(PASS_EVENT_TYPE, {
+    label: 'Pass',
+    fallbackImage: FALLBACK_IMAGE,
+  })
 
-  const passes = useMemo(
-    () =>
-      PASS_ARTWORK.map((artwork) => ({
-        ...artwork,
-        event: events.find((candidate) => artwork.match.test(candidate.fullTitle || '')) ?? null,
-      })),
-    [events],
-  );
+  // Once the passes load, start on the middle one rather than index 0.
+  useEffect(() => {
+    if (passes.length) setActiveIndex(Math.floor((passes.length - 1) / 2))
+  }, [passes.length])
 
-  const active = passes[activeIndex];
+  const active = passes[activeIndex] ?? null
 
 
   const handlePrev = () => {
@@ -106,7 +59,7 @@ export default function TathvaPasses() {
           pillarRotation={58}
           interactive={false}
           mixBlendMode='normal'
-          quality='high'
+          quality='medium'
         />
       </div>
 
@@ -188,7 +141,7 @@ export default function TathvaPasses() {
                 <div
                   key={ticket.id}
                   onClick={() => setActiveIndex(index)}
-                  className={`absolute left-1/2 top-1/2 cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${
+                  className={`absolute left-1/2 top-1/2 cursor-pointer transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${
                     isCenter
                       ? 'z-30 -translate-x-1/2 -translate-y-[52%] sm:-translate-y-[58%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
                       : isLeft
@@ -198,10 +151,18 @@ export default function TathvaPasses() {
                 >
                   <div className='relative w-[260px] sm:w-[420px] md:w-[540px] lg:w-[640px] xl:w-[700px]'>
                     <img
-                      src={ticket.src}
-                      alt={ticket.alt}
-                      className='h-auto w-full object-contain filter transition-all duration-500 hover:brightness-105'
+                      src={ticket.image}
+                      alt={ticket.fullTitle}
+                      className='h-auto w-full object-contain filter transition-[filter] duration-500 hover:brightness-105'
                     />
+                    <div className='pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-0.5 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-3 pt-10 text-center'>
+                      <span className='text-base font-black uppercase tracking-[0.1em] text-white sm:text-xl'>
+                        {ticket.fullTitle}
+                      </span>
+                      <span className='text-[10px] font-semibold tracking-[0.18em] text-white/80 sm:text-xs'>
+                        {ticket.dateMonth} {ticket.dateDay} · {ticket.fee}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )
@@ -235,23 +196,24 @@ export default function TathvaPasses() {
           * The artwork promises "REGISTER" but nothing was ever clickable.
           * The control belongs to whichever pass is centred.
           */}
-        <div className='relative z-30 mt-6 w-full max-w-[280px] sm:mt-8'>
+        <div className='relative z-30 mt-8 flex min-h-[210px] w-full max-w-[320px] flex-col justify-center sm:mt-10 sm:min-h-[230px] sm:max-w-[420px] md:max-w-[460px] rounded-2xl border border-white/15 bg-black/35 px-6 py-6 backdrop-blur-sm shadow-[0_0_50px_rgba(91,99,230,0.35)]'>
           {loading ? (
-            <p className='text-center text-[11px] tracking-[0.18em] text-white/60'>
+            <p className='text-center text-sm tracking-[0.18em] text-white/60'>
               CHECKING AVAILABILITY…
             </p>
-          ) : active?.event ? (
+          ) : active ? (
             <>
-              <p className='mb-1 text-center text-[11px] tracking-[0.18em] text-white/80'>
-                {active.event.fullTitle}
-                {active.event.priceInPaise !== null && ` · ${formatPrice(active.event.priceInPaise)}`}
+              <p className='mb-3 text-center text-sm sm:text-base font-semibold tracking-[0.18em] text-white'>
+                {active.fullTitle}
+                {active.priceInPaise !== null && ` · ${active.fee}`}
               </p>
-              <Checkout event={active.event} />
+              <div className='[&_button]:py-3 [&_button]:text-xl sm:[&_button]:text-2xl'>
+                <Checkout event={active} />
+              </div>
             </>
           ) : (
-            /* No pass event carries this name yet, so there is nothing to sell.
-               Saying so beats a button that cannot work. */
-            <p className='text-center text-[11px] leading-relaxed tracking-[0.14em] text-white/60'>
+            /* No pass events from the backend yet, so there is nothing to sell. */
+            <p className='text-center text-sm leading-relaxed tracking-[0.14em] text-white/60'>
               REGISTRATIONS OPENING SOON
             </p>
           )}

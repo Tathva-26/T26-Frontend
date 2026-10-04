@@ -21,10 +21,8 @@ const michroma = Michroma({
 
 const leftMenu = [
   { label: 'HOME', href: '/' },
-  { label: 'ANNOUNCEMENTS', href: '/announcements' },
   { label: 'ACCOMMODATION', href: '/accommodation' },
   { label: 'LECTURES', href: '/lectures' },
-  { label: 'CREDITS', href: '/credits' },
   { label: 'PROSHOW', href: '/proshow' },
 ]
 
@@ -32,7 +30,6 @@ const rightMenu = [
   { label: 'PROFILE', href: '/profile' },
   { label: 'WORKSHOPS', href: '/workshops' },
   { label: 'PASSES', href: '/passes' },
-  { label: 'MAP', href: '/map' },
   { label: 'COMPETITIONS', href: '/competitions' },
   { label: 'CONTACT', href: '/contact' },
 ]
