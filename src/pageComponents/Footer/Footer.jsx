@@ -235,7 +235,7 @@ export default function Footer() {
           </svg>
 
           <div className='footer-panel-content relative z-10 w-full flex flex-col md:grid md:grid-cols-[auto_1fr] md:justify-between items-center gap-6 md:gap-8 lg:gap-12 xl:gap-16 px-6 py-5 sm:px-8 lg:px-[54px] xl:px-[68px] md:my-auto md:py-6 lg:py-8'>
-            {/* NEWSLETTER SECTION */}
+            {/* NEWSLETTER SECTION — hidden for now
             <div className='footer-newsletter w-full self-center'>
               <p className='font-bebas text-[20px] sm:text-[23px] lg:text-[25px] leading-[26px] sm:leading-[28px] tracking-[0.02em] text-white font-normal lg:whitespace-nowrap'>
                 GET THE LATESTUPDATES &amp; SIGNALS
@@ -290,6 +290,7 @@ export default function Footer() {
                 />
               </form>
             </div>
+            */}
 
             {/* NAVIGATION COLUMNS */}
             <div className='footer-navigation mt-7 w-full grid grid-cols-3 gap-2 md:mt-0 md:flex md:h-auto md:flex-row md:items-start md:justify-end md:gap-5 lg:gap-8 xl:gap-10 md:translate-y-2 lg:translate-y-3'>

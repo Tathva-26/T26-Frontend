@@ -141,7 +141,7 @@ export default function TathvaPasses() {
                 <div
                   key={ticket.id}
                   onClick={() => setActiveIndex(index)}
-                  className={`absolute left-1/2 top-1/2 cursor-pointer transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${
+                  className={`absolute left-1/2 top-1/2 cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${
                     isCenter
                       ? 'z-30 -translate-x-1/2 -translate-y-[52%] sm:-translate-y-[58%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
                       : isLeft
@@ -153,16 +153,16 @@ export default function TathvaPasses() {
                     <img
                       src={ticket.image}
                       alt={ticket.fullTitle}
-                      className='h-auto w-full object-contain filter transition-[filter] duration-500 hover:brightness-105'
+                      // The backend/mock can point `picture` at an asset that 404s —
+                      // fall back to the known-good ticket art so the carousel always
+                      // has something to show (and to animate) instead of going blank.
+                      onError={(e) => {
+                        if (e.currentTarget.src !== FALLBACK_IMAGE) {
+                          e.currentTarget.src = FALLBACK_IMAGE
+                        }
+                      }}
+                      className='aspect-[0.72/1] h-auto w-full object-contain filter transition-all duration-500 hover:brightness-105'
                     />
-                    <div className='pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-0.5 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-3 pt-10 text-center'>
-                      <span className='text-base font-black uppercase tracking-[0.1em] text-white sm:text-xl'>
-                        {ticket.fullTitle}
-                      </span>
-                      <span className='text-[10px] font-semibold tracking-[0.18em] text-white/80 sm:text-xs'>
-                        {ticket.dateMonth} {ticket.dateDay} · {ticket.fee}
-                      </span>
-                    </div>
                   </div>
                 </div>
               )

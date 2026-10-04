@@ -188,7 +188,7 @@ export default function ProfilePage() {
         density={0.9}
         glowIntensity={0.35}
         saturation={0.55}
-        twinkleIntensity={0.4}
+        twinkleIntensity={0}
         rotationSpeed={0.05}
       />
     </div>

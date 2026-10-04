@@ -163,7 +163,7 @@ export default function ContactUs() {
               </div>
             </div>
 
-            <div className={styles.fieldRow}>
+            <div className={styles.fieldRow} style={{ display: 'none' }}>
               <label className={styles.emailLabel} htmlFor='contact-email'>
                 Email:
               </label>
