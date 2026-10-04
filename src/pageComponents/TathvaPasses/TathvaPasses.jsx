@@ -154,14 +154,13 @@ export default function TathvaPasses() {
                   }}
                   className={`absolute left-1/2 top-1/2 cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${
                     isCenter
-                      ? // Phone: dead centre, both axes. Desktop: shifted up a bit
-                        // (sm:/md: Y) so the elevated hero look still happens.
+                      ? // Dead centre, elevated a bit more on desktop for the hero look.
                         'z-30 -translate-x-1/2 -translate-y-1/2 sm:-translate-y-[58%] md:-translate-y-[62%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
                       : isLeft
-                        ? // Phone: tucked behind the centre card from above — a vertical
-                          // wheel. Desktop: same idea, tucked behind from the left.
-                          'z-10 -translate-x-1/2 -translate-y-[70%] sm:-translate-x-[70%] sm:-translate-y-[38%] md:-translate-y-[42%] scale-75 opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
-                        : 'z-10 -translate-x-1/2 -translate-y-[30%] sm:-translate-x-[30%] sm:-translate-y-[38%] md:-translate-y-[42%] scale-75 opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        ? // Same horizontal spread — left and right of centre, a little
+                          // lower — on every breakpoint, not stacked on top of each other.
+                          'z-10 -translate-x-[85%] -translate-y-[40%] scale-75 opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        : 'z-10 -translate-x-[15%] -translate-y-[40%] scale-75 opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
                   }`}
                 >
                   <div className='relative w-[260px] sm:w-[420px] md:w-[540px] lg:w-[640px] xl:w-[700px]'>
