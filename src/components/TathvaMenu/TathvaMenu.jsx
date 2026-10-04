@@ -23,6 +23,7 @@ const leftMenu = [
   { label: 'HOME', href: '/' },
   { label: 'ACCOMMODATION', href: '/accommodation' },
   { label: 'LECTURES', href: '/lectures' },
+  { label: 'CONTACT', href: '/contact' },
   // { label: 'PROSHOW', href: '/proshow' },
 ]
 
@@ -31,7 +32,6 @@ const rightMenu = [
   { label: 'WORKSHOPS', href: '/workshops' },
   { label: 'PASSES', href: '/passes' },
   { label: 'COMPETITIONS', href: '/competitions' },
-  { label: 'CONTACT', href: '/contact' },
 ]
 
 /* -----------------------------------------------------------------------
@@ -750,7 +750,7 @@ function TathvaMenuOverlay() {
             flex-col
             items-center
             justify-center
-            gap-[18px]
+            gap-[26px]
             px-4
             py-6
           '
@@ -853,7 +853,7 @@ function TathvaMenuOverlay() {
             flex-col
             items-center
             justify-center
-            gap-[18px]
+            gap-[26px]
             px-4
             py-6
           '

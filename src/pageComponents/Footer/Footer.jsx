@@ -42,7 +42,7 @@ const linkColumns = [
   {
     heading: 'MORE',
     links: [
-      { label: 'PROSHOW', href: '/proshow' },
+      // { label: 'PROSHOW', href: '/proshow' },
       { label: 'ACCOMMODATION', href: '/accommodation' },
       { label: 'PROFILE', href: '/profile' },
     ],
@@ -235,84 +235,44 @@ export default function Footer() {
           </svg>
 
           <div className='footer-panel-content relative z-10 w-full flex flex-col md:grid md:grid-cols-[auto_1fr] md:justify-between items-center gap-6 md:gap-8 lg:gap-12 xl:gap-16 px-6 py-5 sm:px-8 lg:px-[54px] xl:px-[68px] md:my-auto md:py-6 lg:py-8'>
-            {/* NEWSLETTER SECTION — hidden for now
-            <div className='footer-newsletter w-full self-center'>
+            {/* MAIL US SECTION */}
+            <div className='footer-mail w-full self-center'>
               <p className='font-bebas text-[20px] sm:text-[23px] lg:text-[25px] leading-[26px] sm:leading-[28px] tracking-[0.02em] text-white font-normal lg:whitespace-nowrap'>
-                GET THE LATESTUPDATES &amp; SIGNALS
+                GOT A QUESTION?
               </p>
               <p className='mt-2.5 w-full font-bebas text-[14px] leading-[18px] text-[#A0A0A0] sm:w-[250px] sm:text-[15px] lg:w-auto lg:text-[16px]'>
-                BE THE FIRST TO KNOW ABOUT EVENTS,
-                <br />
-                WORKSHOPS,PASSES AND MORE
+                REACH OUT AND WE&apos;LL GET BACK TO YOU.
               </p>
 
-              <form
-                onSubmit={(e) => e.preventDefault()}
-                className='relative mt-4 h-[42px] w-full max-w-[435px] sm:mt-5'
+              <Link
+                href='/contact'
+                className='mt-4 inline-block rounded-[7px] bg-[rgba(0,116,122,0.75)] px-5 py-2.5 text-xs font-bold tracking-[0.1em] text-white transition-colors hover:bg-[rgba(0,145,151,0.9)] sm:mt-5'
               >
-                <svg
-                  viewBox='0 0 297 44'
-                  preserveAspectRatio='none'
-                  className='pointer-events-none absolute inset-0 h-full w-full'
-                  xmlns='http://www.w3.org/2000/svg'
-                >
-                  <path
-                    d='M0.838867 34.6907 V11.7501 L8.39247 0.839355 H286.197 L295.709 8.95248 V34.6907 L286.197 43.0836 H243.393 H10.9103 L0.838867 34.6907 Z'
-                    stroke='#80858C'
-                    strokeWidth='1.2'
-                    strokeLinecap='round'
-                    fill='#222222'
-                  />
-                  <path
-                    d='M255.982 25.7383 L243.113 40.0063 H283.399 L292.911 31.6134 V11.1907 L284.798 4.7561 H256.262 L255.982 25.7383 Z'
-                    fill='#3F7393'
-                  />
-                  <path
-                    d='M271.836 22.5004 H283.249 M277.542 28.2068 L283.249 22.5004 L277.542 16.7939'
-                    stroke='#F5F5F5'
-                    strokeWidth='1.6'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                  />
-                </svg>
-
-                <input
-                  type='email'
-                  required
-                  placeholder='Enter Your Email'
-                  className='absolute inset-0 w-full bg-transparent pl-4 pr-[50px] text-center md:text-left md:pl-[20px] md:pr-[55px] font-varela text-[12px] sm:text-[13px] font-normal leading-none tracking-[0.22em] text-white outline-none placeholder:text-[#9A9A9A]'
-                />
-
-                <button
-                  type='submit'
-                  aria-label='Subscribe'
-                  className='absolute right-0 top-0 h-full w-[48px] sm:w-[48px] lg:w-[73px] cursor-pointer'
-                />
-              </form>
+                MAIL US
+              </Link>
             </div>
-            */}
 
             {/* NAVIGATION COLUMNS */}
-            <div className='footer-navigation mt-7 w-full grid grid-cols-3 gap-2 md:mt-0 md:flex md:h-auto md:flex-row md:items-start md:justify-end md:gap-5 lg:gap-8 xl:gap-10 md:translate-y-2 lg:translate-y-3'>
+            <div className='footer-navigation mt-7 w-full grid grid-cols-3 gap-2 md:mt-0 md:flex md:h-auto md:w-full md:flex-row md:items-start md:justify-between lg:gap-8 xl:gap-10 md:translate-y-2 lg:translate-y-3'>
               {linkColumns.map((column) => (
                 <div
                   key={column.heading}
-                  className='footer-col flex flex-col items-start w-full md:w-[115px] lg:w-[135px] xl:w-[150px]'
+                  className='footer-col flex flex-col items-start w-full md:w-[150px] lg:w-[180px] xl:w-[200px]'
                 >
                   {/* Header with extending divider line on desktop */}
                   <div className='flex w-full items-center gap-2 mb-2 md:mb-3'>
-                    <h3 className='font-bebas text-[15px] md:text-[17px] xl:text-[18px] leading-none tracking-[0.08em] text-white whitespace-nowrap'>
+                    <h3 className='font-bebas text-[15px] md:text-[18px] lg:text-[20px] xl:text-[22px] leading-none tracking-[0.08em] text-white whitespace-nowrap'>
                       {column.heading}
                     </h3>
                     <div className='hidden md:block h-[1px] flex-1 bg-[#444444]' />
                   </div>
 
-                  <ul className='space-y-1.5 md:space-y-1 w-full'>
+                  <ul className='space-y-1.5 md:space-y-2 w-full'>
                     {column.links.map((link) => (
                       <li key={link.label}>
                         <Link
                           href={link.href}
-                          className='group flex items-center justify-between gap-1.5 font-bebas text-[12px] sm:text-[13px] tracking-[0.08em] text-[#B0B0B0] hover:text-white transition-colors block leading-tight'
+                          className='group flex items-center justify-between gap-1.5 font-bebas text-[12px] sm:text-[13px] md:text-[15px] lg:text-[16px] tracking-[0.08em] text-[#B0B0B0] hover:text-white transition-colors block leading-tight'
                         >
                           <span className='transition-transform duration-200 group-hover:translate-x-0.5'>
                             {link.label}
