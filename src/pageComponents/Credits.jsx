@@ -1,23 +1,30 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-
 import { teams as defaultTeams, PLACEHOLDER } from "@/lib/creditsData";
 
-
+/* ─────────────────────────────────────────────────────────────────────────────
+   GLOBAL LAYOUT CONFIGURATION
+   Easily tweak height, width, gaps, and padding here in one place!
+───────────────────────────────────────────────────────────────────────────── */
 export const CREDITS_CONFIG = {
+  // 1. Maximum width of each card
   cardMaxWidth: "230px",
 
-  cardAspectRatio: "aspect-[3/4]",
+  // 2. Aspect ratio or fixed height for cards (e.g. "aspect-[9/16]", "aspect-[3/4]", "h-[360px]")
+  cardAspectRatio: "aspect-[9/16]",
 
+  // 3. Gap between cards in the grid (e.g. "gap-8 sm:gap-10 md:gap-12" or "gap-x-6 gap-y-12")
   cardGridGap: "gap-8 sm:gap-10 md:gap-12",
 
-  sectionVerticalPadding: "py-10 sm:py-14",
+  // 4. Vertical spacing between team sections (padding top/bottom):
+  sectionVerticalPadding: "py-12 sm:py-16",
 
+  // 5. Maximum width of page content container:
   containerMaxWidth: "max-w-7xl",
 };
 
-
+/* ─── Social Icons ─── */
 function LinkedInIcon() {
   return (
     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -38,6 +45,7 @@ function GitHubIcon() {
   );
 }
 
+/* ─── Scroll Observer ─── */
 function useFadeIn() {
   const ref = useRef(null);
   useEffect(() => {
@@ -58,11 +66,175 @@ function useFadeIn() {
   return ref;
 }
 
-/* ─── Member Card with tc-card Hover Effects & Hover Message ─── */
+/* ─── Interactive Stardust & Cosmic Background (Clean Neutral + Violet) ─── */
+function FuturisticCyberBackground() {
+  const canvasRef = useRef(null);
+  const mouseRef = useRef({ x: -1000, y: -1000, active: false });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationFrameId;
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    const handleMouseMove = (e) => {
+      mouseRef.current.x = e.clientX;
+      mouseRef.current.y = e.clientY;
+      mouseRef.current.active = true;
+    };
+
+    const handleMouseLeave = () => {
+      mouseRef.current.active = false;
+      mouseRef.current.x = -1000;
+      mouseRef.current.y = -1000;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseleave", handleMouseLeave);
+
+    const particleCount = Math.min(80, Math.floor((width * height) / 20000));
+    const particles = [];
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
+        radius: Math.random() * 1.5 + 0.8,
+        color: Math.random() > 0.35 ? "#ffffff" : "#a78bfa", // clean stardust white & subtle violet
+        baseAlpha: Math.random() * 0.4 + 0.15,
+      });
+    }
+
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0) p.x = width;
+        else if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        else if (p.y > height) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.baseAlpha;
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = p.color;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = p.color;
+            ctx.globalAlpha = (1 - dist / 120) * 0.15;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
+        }
+
+        if (mouseRef.current.active) {
+          const mdx = p.x - mouseRef.current.x;
+          const mdy = p.y - mouseRef.current.y;
+          const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+
+          if (mDist < 160) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(mouseRef.current.x, mouseRef.current.y);
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.globalAlpha = (1 - mDist / 160) * 0.35;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+
+      ctx.globalAlpha = 1;
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, []);
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none">
+      {/* Deep Space Background */}
+      <div className="absolute inset-0 bg-[#05060b]" />
+
+      {/* Interactive Stardust Canvas */}
+      <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-10" />
+
+      {/* Subtle Perspective Floor (Clean Slate/Violet, No Electric Blue) */}
+      <div className="absolute inset-x-0 bottom-0 h-[400px] overflow-hidden pointer-events-none z-0">
+        <div
+          className="absolute inset-x-0 -bottom-[120px] h-[550px] w-full origin-bottom"
+          style={{
+            transform: "perspective(400px) rotateX(74deg)",
+            backgroundImage: `
+              linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+            `,
+            backgroundSize: "60px 60px",
+            maskImage: "linear-gradient(to top, rgba(0,0,0,1) 25%, transparent 95%)",
+            WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 25%, transparent 95%)",
+          }}
+        />
+        {/* Soft Horizon Line */}
+        <div className="absolute bottom-[280px] inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      </div>
+
+      {/* Ambient Deep Nebula Lights (Violet & Deep Indigo) */}
+      <div className="absolute top-[5%] left-[20%] w-[650px] h-[650px] rounded-full bg-violet-600/[0.06] blur-[180px]" />
+      <div className="absolute top-[45%] right-[15%] w-[600px] h-[600px] rounded-full bg-purple-600/[0.05] blur-[180px]" />
+      <div className="absolute bottom-[10%] left-[30%] w-[550px] h-[550px] rounded-full bg-indigo-600/[0.04] blur-[170px]" />
+
+      {/* Subtle Shooting Star Streaks */}
+      <div className="laser-streak laser-1" />
+      <div className="laser-streak laser-2" />
+    </div>
+  );
+}
+
+/* ─── Clean, Modern 3D Parallax Card ─── */
 function MemberCard({ name, role, message, image, linkedin, github, index }) {
   const cardRef = useRef(null);
   const containerRef = useFadeIn();
   const [failed, setFailed] = useState(false);
+  const [transform, setTransform] = useState("perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)");
 
   const displaySrc = failed ? PLACEHOLDER : (image || PLACEHOLDER);
 
@@ -71,8 +243,20 @@ function MemberCard({ name, role, message, image, linkedin, github, index }) {
     const rect = cardRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+
     cardRef.current.style.setProperty("--light-x", `${x}px`);
     cardRef.current.style.setProperty("--light-y", `${y}px`);
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -9;
+    const rotateY = ((x - centerX) / centerX) * 9;
+
+    setTransform(`perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateY(-8px) scale3d(1.025, 1.025, 1.025)`);
+  };
+
+  const handlePointerLeave = () => {
+    setTransform("perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px) scale3d(1, 1, 1)");
   };
 
   const handleImageError = () => {
@@ -85,25 +269,27 @@ function MemberCard({ name, role, message, image, linkedin, github, index }) {
       className="credits-fade-in flex flex-col items-center w-full mx-auto group"
       style={{
         maxWidth: CREDITS_CONFIG.cardMaxWidth,
-        transitionDelay: `${index * 70}ms`,
+        transitionDelay: `${index * 60}ms`,
       }}
     >
-      {/* Outer Card with tc-card hover spotlight & lift */}
+      {/* 3D Card Box (Clean, No Blue Borders or Reticles) */}
       <div
         ref={cardRef}
         onPointerMove={handlePointerMove}
-        className={`tc-custom-card relative w-full ${CREDITS_CONFIG.cardAspectRatio} rounded-2xl overflow-hidden cursor-pointer select-none bg-[#0c0d18] border border-white/10 transition-all duration-500 ease-out hover:-translate-y-2 hover:shadow-[0_16px_36px_-6px_rgba(124,58,237,0.45),0_0_24px_rgba(124,58,237,0.3)] hover:border-violet-500/50`}
+        onPointerLeave={handlePointerLeave}
+        style={{ transform, transition: "transform 0.28s cubic-bezier(0.23, 1, 0.32, 1)" }}
+        className={`tc-custom-card relative w-full ${CREDITS_CONFIG.cardAspectRatio} rounded-2xl overflow-hidden cursor-pointer select-none bg-[#0c0d16] border border-white/10 group-hover:border-white/30 transition-all duration-500 shadow-[0_10px_30px_rgba(0,0,0,0.8)] group-hover:shadow-[0_20px_40px_-6px_rgba(139,92,246,0.35),0_0_25px_rgba(255,255,255,0.08)]`}
       >
-        {/* Photo with zoom effect on hover */}
+        {/* Photo with smooth zoom on hover */}
         {displaySrc ? (
           <img
             src={displaySrc}
             alt={name}
             onError={handleImageError}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108 group-hover:saturate-110"
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-violet-900/30 to-blue-900/20 flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-br from-violet-950/30 to-[#0c0d16] flex items-center justify-center">
             <svg className="w-16 h-16 text-white/20" viewBox="0 0 100 100" fill="currentColor">
               <circle cx="50" cy="36" r="21" />
               <path d="M10 96 c0 -22 18 -40 40 -40 c22 0 40 18 40 40 Z" />
@@ -111,38 +297,30 @@ function MemberCard({ name, role, message, image, linkedin, github, index }) {
           </div>
         )}
 
-        {/* Dynamic Cursor Spotlight (follows pointer) */}
+        {/* Clean Neutral Cursor Spotlight */}
         <div
           className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"
           style={{
             background:
-              "radial-gradient(190px circle at var(--light-x, 50%) var(--light-y, 50%), rgba(255, 255, 255, 0.2), transparent 70%)",
+              "radial-gradient(200px circle at var(--light-x, 50%) var(--light-y, 50%), rgba(255, 255, 255, 0.18), transparent 70%)",
           }}
         />
 
-        {/* Accent Inset Glow Ring */}
-        <div className="absolute inset-0 pointer-events-none rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 shadow-[inset_0_0_18px_rgba(139,92,246,0.4)]" />
+        {/* Subtle Accent Glow Ring on Hover */}
+        <div className="absolute inset-0 pointer-events-none rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 shadow-[inset_0_0_20px_rgba(139,92,246,0.3)]" />
 
-        {/* Gradient backdrop at bottom for text legibility */}
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/85 via-black/40 to-transparent pointer-events-none z-20" />
+        {/* Gradient backdrop at bottom for text contrast */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none z-20" />
 
-        {/* ── Hover Message (Written by the person) ── */}
-        <div className="absolute inset-x-3 bottom-3 z-30 flex flex-col gap-1.5 p-3 rounded-xl bg-black/60 backdrop-blur-md border border-white/15 opacity-0 translate-y-3 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-out shadow-lg pointer-events-none">
-          <div className="flex items-center gap-1.5 text-violet-400">
-            <svg className="w-3.5 h-3.5 shrink-0 opacity-80" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-            </svg>
-            <span className="text-[10px] font-mono tracking-wider uppercase text-violet-300/80 font-semibold">
-              Note
-            </span>
-          </div>
-          <p className="text-[11px] sm:text-xs text-white/95 leading-snug font-medium italic drop-shadow-sm">
+        {/* ── Clean Personal Note on Hover (No "Transmission" or Blue Headers) ── */}
+        <div className="absolute inset-x-3 bottom-3 z-30 p-3 rounded-xl bg-black/75 backdrop-blur-xl border border-white/15 opacity-0 translate-y-3 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-out shadow-2xl pointer-events-none">
+          <p className="text-xs text-white/95 leading-snug font-medium italic drop-shadow-sm">
             &ldquo;{message}&rdquo;
           </p>
         </div>
       </div>
 
-      {/* Name, Role & Socials below the photo */}
+      {/* Name, Role & Socials below card */}
       <div className="mt-3 flex flex-col items-center text-center gap-1 w-full px-1">
         <h3 className="text-white font-bold text-sm sm:text-base tracking-wide group-hover:text-violet-300 transition-colors duration-200">
           {name}
@@ -179,12 +357,13 @@ function MemberCard({ name, role, message, image, linkedin, github, index }) {
   );
 }
 
-/* ─── Team Section ─── */
+/* ─── Team Section (Clean Headers) ─── */
 function TeamSection({ title, members }) {
   const titleRef = useFadeIn();
+
   return (
     <section className={`w-full ${CREDITS_CONFIG.containerMaxWidth} mx-auto px-4 sm:px-8 ${CREDITS_CONFIG.sectionVerticalPadding}`}>
-      {/* Section Title */}
+      {/* Clean Section Title */}
       <div ref={titleRef} className="credits-fade-in mb-8 sm:mb-10">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight flex items-center gap-2">
           <span>{title}</span>
@@ -203,20 +382,20 @@ function TeamSection({ title, members }) {
   );
 }
 
-/* ─── Hero ─── */
+/* ─── Hero Section (Clean White / Violet) ─── */
 function Hero() {
   const ref = useFadeIn();
   return (
     <section
       ref={ref}
-      className={`credits-fade-in relative w-full ${CREDITS_CONFIG.containerMaxWidth} mx-auto px-4 sm:px-8 pt-16 sm:pt-20 pb-8 sm:pb-10`}
+      className={`credits-fade-in relative w-full ${CREDITS_CONFIG.containerMaxWidth} mx-auto px-4 sm:px-8 pt-20 sm:pt-24 pb-8 sm:pb-10`}
     >
       <p className="text-violet-400 font-mono text-xs sm:text-sm tracking-widest uppercase mb-2">
         The people behind
       </p>
-      <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white tracking-tighter leading-tight flex items-baseline gap-3 flex-wrap">
+      <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-tight flex items-baseline gap-3 flex-wrap">
         <span>Tathva&apos;26</span>
-        <span className="bg-gradient-to-r from-violet-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
+        <span className="bg-gradient-to-r from-violet-400 via-purple-300 to-white bg-clip-text text-transparent">
           Tech Team
         </span>
       </h1>
@@ -224,7 +403,7 @@ function Hero() {
   );
 }
 
-/* ─── Main Credits Page ─── */
+/* ─── Main Credits Page Component ─── */
 export default function Credits({ teams: propTeams }) {
   const displayTeams = propTeams || defaultTeams;
 
@@ -241,21 +420,67 @@ export default function Credits({ teams: propTeams }) {
           opacity: 1;
           transform: translateY(0);
         }
-        @keyframes float-subtle {
-          0%,
-          100% {
-            transform: translateY(0);
+
+        /* Subtle Stardust Shooting Streaks */
+        .laser-streak {
+          position: absolute;
+          width: 200px;
+          height: 1.5px;
+          background: linear-gradient(90deg, rgba(255, 255, 255, 0.8), rgba(167, 139, 250, 0.5), transparent);
+          filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
+          opacity: 0;
+          transform: rotate(-35deg);
+          pointer-events: none;
+        }
+        .laser-1 {
+          top: 18%;
+          left: 15%;
+          animation: laserMove1 10s ease-in-out infinite 1s;
+        }
+        .laser-2 {
+          top: 60%;
+          right: 10%;
+          animation: laserMove2 13s ease-in-out infinite 5s;
+        }
+
+        @keyframes laserMove1 {
+          0% {
+            transform: translate3d(-100px, -100px, 0) rotate(-35deg);
+            opacity: 0;
           }
-          50% {
-            transform: translateY(-5px);
+          8% {
+            opacity: 0.9;
+          }
+          20% {
+            transform: translate3d(400px, 280px, 0) rotate(-35deg);
+            opacity: 0;
+          }
+          100% {
+            opacity: 0;
+          }
+        }
+
+        @keyframes laserMove2 {
+          0% {
+            transform: translate3d(150px, -80px, 0) rotate(-40deg);
+            opacity: 0;
+          }
+          8% {
+            opacity: 0.8;
+          }
+          22% {
+            transform: translate3d(-350px, 300px, 0) rotate(-40deg);
+            opacity: 0;
+          }
+          100% {
+            opacity: 0;
           }
         }
       `}</style>
 
-      <div className="relative min-h-screen w-full bg-[#050508] overflow-x-hidden text-slate-100">
-        {/* Subtle Ambient Glows */}
-        <div className="pointer-events-none fixed top-0 left-1/4 w-[500px] h-[500px] rounded-full bg-violet-600/[0.05] blur-[140px]" />
-        <div className="pointer-events-none fixed bottom-1/4 right-1/4 w-[450px] h-[450px] rounded-full bg-blue-600/[0.04] blur-[140px]" />
+      <div className="relative min-h-screen w-full bg-[#05060b] overflow-x-hidden text-slate-100">
+        {/* Futuristic Background */}
+        <FuturisticCyberBackground />
 
         {/* Content */}
         <div className="relative z-10">
@@ -266,12 +491,17 @@ export default function Credits({ teams: propTeams }) {
             <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           </div>
 
+          {/* Team Sections */}
           {displayTeams.map((team) => (
-            <TeamSection key={team.title} title={team.title} members={team.members} />
+            <TeamSection
+              key={team.title}
+              title={team.title}
+              members={team.members}
+            />
           ))}
 
-          {/* Footer */}
-          <footer className={`w-full ${CREDITS_CONFIG.containerMaxWidth} mx-auto px-4 sm:px-8 py-10 text-center`}>
+          {/* Clean Minimal Footer */}
+          <footer className={`w-full ${CREDITS_CONFIG.containerMaxWidth} mx-auto px-4 sm:px-8 py-12 text-center`}>
             <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6" />
             <p className="text-white/25 text-xs font-mono tracking-widest uppercase">
               TATHVA &apos;26 • NIT CALICUT
