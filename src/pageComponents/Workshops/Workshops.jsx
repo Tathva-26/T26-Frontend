@@ -2213,18 +2213,20 @@ export default function WorkshopsPage() {
                                       overflow: 'hidden',
                                     }}
                                   >
-                                    {/* Invisible spacer: pushes only the FIRST
-                                        line to the right of the notch. Line 2
-                                        wraps underneath it and starts at the
-                                        left edge. */}
+                                    {/* PRICE — sits in the notch cut out of the
+                                        card's bottom-left corner. Same float
+                                        footprint the old invisible spacer used,
+                                        so the title still wraps around it. */}
                                     <span
-                                      aria-hidden='true'
+                                      className='m-0 block text-left text-[4.4cqw] font-bold leading-[1.1] text-white'
                                       style={{
                                         float: 'left',
                                         width: '33cqw',
                                         height: '6.6cqw',
                                       }}
-                                    />
+                                    >
+                                      {workshop.fee}
+                                    </span>
                                     <p className='m-0 break-words text-[5.5cqw] font-bold leading-[1.2] text-white'>
                                       {workshop.fullTitle || workshop.title}
                                     </p>
