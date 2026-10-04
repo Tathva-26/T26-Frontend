@@ -973,7 +973,7 @@ function TathvaMenuOverlay() {
           src='https://cdn-next-main.tathva.org/images/menu/tleft.svg'
           alt=''
           draggable={false}
-          className='pointer-events-none absolute -left-2 top-1/2 h-full w-[195px] -translate-y-5.25 select-none object-contain'
+          className='pointer-events-none absolute -left-3.25 top-4 h-full w-[175px] -translate-y-5.25 select-none object-contain'
         />
 
         {/* Right Wing (aligned over the center image) */}
@@ -981,7 +981,7 @@ function TathvaMenuOverlay() {
           src='https://cdn-next-main.tathva.org/images/menu/tright.svg'
           alt=''
           draggable={false}
-          className='pointer-events-none absolute -right-2 top-1/2 h-full w-[195px] -translate-y-5.25 select-none object-contain'
+          className='pointer-events-none absolute -right-2.75 top-4 h-full w-[175px] -translate-y-5.25 select-none object-contain'
         />
 
         {/* Current page or scrolled section name */}
