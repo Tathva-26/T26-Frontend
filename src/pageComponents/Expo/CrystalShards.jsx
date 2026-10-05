@@ -6,6 +6,7 @@ import { useFrame } from '@react-three/fiber'
 import { useExpoDetails } from './ExpoDetails'
 import { Color, IcosahedronGeometry, MathUtils, Object3D, Raycaster, Vector2, Vector3 } from 'three'
 import { animationDelta } from './crystalInteraction.mjs'
+import { shardMotion } from './expoShardMotion.mjs'
 
 // Figma's asymmetric arrangement, expressed in the main crystal's local space.
 const SHARDS = [
@@ -23,6 +24,7 @@ export default function CrystalShards({ journey, compact, reduced, prepareGlass,
   const timer = useRef(0)
   const activation = useRef(0)
   const boundsAt = useRef(-1)
+  const choreography = useRef({})
   const picking = useMemo(() => ({ ray: new Raycaster(), pointer: new Vector2(), center: new Vector3(), color: new Color(), hits: [], last: -1, hit: -1 }), [])
   useEffect(() => {
     // Compile the colored instancing variant during warm-up, before the first
@@ -86,8 +88,9 @@ export default function CrystalShards({ journey, compact, reduced, prepareGlass,
       shard.spin = MathUtils.damp(shard.spin, 0, 3, dt)
       shard.pulse = MathUtils.damp(shard.pulse, 0, 4, dt)
       const motion = available ? 1 : Math.max(0, 1 - (detail?.value ?? 0) * 5) * (pose?.interaction ?? 1)
-      dummy.position.set(x + shard.x * motion, y + (shard.y + Math.sin(visualTime * .8 + index) * .025) * motion, z)
-      dummy.rotation.set(.4 + shard.y * motion, index * .8 + (shard.spin + Math.sin(visualTime * .5 + index) * .06) * motion, angle - shard.x * motion)
+      const flight = shardMotion(pose?.progress ?? 1, detail?.value ?? 0, index, reduced, choreography.current)
+      dummy.position.set(x * flight.spread + shard.x * motion, y * flight.spread + flight.rise + (shard.y + Math.sin(visualTime * .8 + index) * .025) * motion, z)
+      dummy.rotation.set(.4 + shard.y * motion, index * .8 + flight.turn + (shard.spin + Math.sin(visualTime * .5 + index) * .06) * motion, angle - shard.x * motion)
       const scale = reveal * (1 + shard.hover * .04 + shard.pulse * .04)
       dummy.scale.set(size * .55 * scale, size * 1.5 * scale, size * .48 * scale)
       dummy.updateMatrix()

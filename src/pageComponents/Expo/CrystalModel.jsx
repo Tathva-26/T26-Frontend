@@ -9,6 +9,7 @@ import {
   Float32BufferAttribute,
   MathUtils,
   Raycaster,
+  RepeatWrapping,
   ShaderChunk,
   SRGBColorSpace,
   TextureLoader,
@@ -23,6 +24,7 @@ import { detailMotion } from './expoDetailMotion.mjs'
 import { useExpoDetails } from './ExpoDetails'
 import { springStep, fractureSector, animationDelta, pulseStrength } from './crystalInteraction.mjs'
 import CrystalShards from './CrystalShards'
+import CrystalNetwork from './CrystalNetwork'
 
 const geometryLoader = new DRACOLoader()
   .setDecoderPath('/images/expo/decoders/draco/')
@@ -168,6 +170,13 @@ export default function CrystalModel({ target, compact = false, textureCompact =
     dom.current = { root: gl.domElement.closest('[data-expo-detail-state]'), control: gl.domElement.closest('[data-crystal-control]') }
   }, [gl])
   const robotSource = useLoader(TextureLoader, '/images/expo/robot-head.svg')
+  const noiseSource = useLoader(TextureLoader, '/images/expo/crystal/cloud-noise.png')
+  const causticNoise = useMemo(() => {
+    const texture = noiseSource.clone()
+    texture.wrapS = texture.wrapT = RepeatWrapping
+    texture.needsUpdate = true
+    return texture
+  }, [noiseSource])
   const source = useLoader(geometryLoader, '/images/expo/crystal/shell.drc')
   const [normal, roughness] = useLoader(
     surfaceLoader,
@@ -195,7 +204,7 @@ export default function CrystalModel({ target, compact = false, textureCompact =
   const veins = useMemo(() => createCrystalVeins(), [])
   const glow = useMemo(() => createGlow(), [])
   const energy = useMemo(() => createEnergy(), [])
-  const energyUniforms = useMemo(() => ({ map: { value: energy }, brightness: { value: 1 } }), [energy])
+  const energyUniforms = useMemo(() => ({ map: { value: energy }, brightness: { value: 1 }, noise: { value: causticNoise }, time: { value: 0 } }), [energy, causticNoise])
   const veinUniforms = useMemo(() => ({ time: { value: 0 }, hover: { value: 0 }, pulse: { value: 0 }, pointer: { value: new Vector3() } }), [])
   const mistUniforms = useMemo(() => ({ time: { value: 0 }, opacity: { value: 0 } }), [])
   const dust = useMemo(() => {
@@ -219,10 +228,11 @@ export default function CrystalModel({ target, compact = false, textureCompact =
       veins.dispose()
       glow.dispose()
       energy.dispose()
+      causticNoise.dispose()
       robot.dispose()
       dust.dispose()
     },
-    [geometry, veins, glow, energy, robot, dust],
+    [geometry, veins, glow, energy, causticNoise, robot, dust],
   )
   useFrame(({ camera, size }, delta) => {
     const dt = animationDelta(delta)
@@ -332,6 +342,7 @@ export default function CrystalModel({ target, compact = false, textureCompact =
     glowMaterial.current.opacity = .8 + (breath + hover * .12 + chargeLevel * .15 + (awake ? .25 : 0)) * influence + breath * detailAmount * .18 + Math.sin((pose?.exit ?? 0) * Math.PI) * .2
     // Press feedback lives on the inner shell and its fractures, never a screen-space halo.
     energyMaterial.current.uniforms.brightness.value = 1.6 + (breath + hover * .18 + chargeLevel * .25) * influence + pulse * 1.2 + readyPulse * .65 + press + surge * 1.6 + breath * detailAmount * .18
+    energyMaterial.current.uniforms.time.value = visualTime
     fractures.current.uniforms.time.value = visualTime
     fractures.current.uniforms.hover.value = hover
     fractures.current.uniforms.pulse.value = pulse + readyPulse * .25 + press * .4 + surge * .65
@@ -426,6 +437,7 @@ export default function CrystalModel({ target, compact = false, textureCompact =
       <group ref={idle}>
       <group ref={group}>
       <CrystalShards journey={journey} compact={compact} reduced={reduced} prepareGlass={prepareGlass} target={target} />
+      <CrystalNetwork target={target} reduced={reduced} compact={compact} />
       <pointLight ref={cursorLight} color='#75dfff' intensity={0} distance={4} decay={2} />
       <points ref={motes} geometry={dust}>
         <pointsMaterial color='#acdfff' map={glow} size={.055} transparent opacity={.18} depthWrite={false} blending={AdditiveBlending} />
@@ -451,7 +463,7 @@ export default function CrystalModel({ target, compact = false, textureCompact =
               'varying vec2 vEnergyUv; void main(){vEnergyUv=position.xy/vec2(2.18,3.4)+.5;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}'
             }
             fragmentShader={
-              'uniform sampler2D map; uniform float brightness; varying vec2 vEnergyUv; void main(){vec4 tex=texture2D(map,vEnergyUv); if(tex.a<0.04) discard; gl_FragColor=vec4(tex.rgb*brightness,tex.a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'
+              'uniform sampler2D map,noise; uniform float brightness,time; varying vec2 vEnergyUv; void main(){vec4 tex=texture2D(map,vEnergyUv); if(tex.a<0.04) discard; float a=texture2D(noise,vEnergyUv*1.7+vec2(time*.025,-time*.018)).r; float b=texture2D(noise,vEnergyUv*2.1+vec2(-time*.021,time*.013)).r; float ridge=1.-smoothstep(.015,.095,abs(a-b)); float edge=smoothstep(.15,.5,length(vEnergyUv-vec2(.5,.55))); vec3 caustic=mix(vec3(.06,.30,.55),vec3(.32,.06,.36),vEnergyUv.x)*ridge*edge*.32; gl_FragColor=vec4(tex.rgb*brightness+caustic,tex.a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'
             }
           />
         </mesh>
