@@ -558,6 +558,37 @@ export async function mockAdapter(config) {
     return respond(config, 200, FOOD)
   }
 
+  if (method === 'get' && path === '/api/accommodation/my') {
+    if (!signedIn()) return notSignedIn(config)
+    return respond(config, 200, {
+      bookings: [
+        {
+          bookingUid: 'mock-stay-1',
+          status: 'CONFIRMED',
+          rooms: [{ id: 1, tier: 'dormitory', gender: 'MALE', checkInDay: 1, nights: 2, quantity: 1 }],
+        },
+        {
+          bookingUid: 'mock-stay-2',
+          status: 'FAILED',
+          rooms: [{ id: 2, tier: 'sharing-3', gender: 'MALE', checkInDay: 2, nights: 1, quantity: 1 }],
+        },
+      ],
+    })
+  }
+
+  if (method === 'get' && path === '/api/food/my') {
+    if (!signedIn()) return notSignedIn(config)
+    return respond(config, 200, {
+      orders: [
+        {
+          bookingUid: 'mock-food-1',
+          status: 'PENDING',
+          items: [{ id: 1, day: 1, diet: 'VEG', quantity: 2 }, { id: 2, day: 2, diet: 'VEG', quantity: 1 }],
+        },
+      ],
+    })
+  }
+
   if (method === 'post' && path === '/api/food/book') {
     return createFoodOrder(config, body)
   }

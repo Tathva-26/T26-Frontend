@@ -23,6 +23,7 @@ import { formatPrice } from '@/lib/format'
 import { paymentOutcome } from '@/lib/booking'
 import { useAccommodation } from '@/hooks/useAccommodation'
 import { useUser } from '@/context/UserContext'
+import MyBookings from './MyBookings'
 import {
   GENDERS,
   STAY_NIGHTS,
@@ -282,6 +283,7 @@ export default function Accommodation() {
     availability,
     notes,
     festNights,
+    bookingsOpen,
     loading,
     error,
     backendDisabled,
@@ -455,6 +457,9 @@ export default function Accommodation() {
           </ul>
         )}
 
+        {/* Keyed so a payment return re-reads the latest statuses. */}
+        {isSignedIn && !backendDisabled && <MyBookings key={chargeStatus ?? 'page'} />}
+
         {returning ? (
           <PaymentReturn
             chargeStatus={chargeStatus}
@@ -483,6 +488,17 @@ export default function Accommodation() {
             >
               Retry
             </button>
+          </div>
+        ) : !bookingsOpen ? (
+          /* Paused from the admin panel. The backend refuses bookings too,
+             so this is the honest state, not just a hidden button. */
+          <div className='mt-10'>
+            <p className='font-[var(--font-bebas)] text-4xl tracking-wide text-white/85 sm:text-5xl'>
+              BOOKINGS PAUSED
+            </p>
+            <p className='mt-2 text-sm text-white/55'>
+              Room and food bookings are paused for now. Please check back later.
+            </p>
           </div>
         ) : (
           <div className='mt-10 grid gap-10 lg:grid-cols-[1fr_20rem] lg:items-start'>
