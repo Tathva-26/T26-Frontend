@@ -10,6 +10,7 @@ export default function CrystalOptics({ compact }) {
   const details = useExpoDetails()
   const target = useRef(null)
   const passRef = useRef(null)
+  const motionResult = useRef({})
   const pass = useMemo(() => {
     const material = new ShaderMaterial({
       depthTest: false, depthWrite: false,
@@ -50,7 +51,7 @@ export default function CrystalOptics({ compact }) {
   useFrame(({ gl, scene, camera, size }) => {
     const pass = passRef.current
     const detail = details?.progress.current
-    const amount = detailMotion(detail?.value ?? 0, detail?.reduced).optical
+    const amount = detailMotion(detail?.value ?? 0, detail?.reduced, motionResult.current).optical
     const canvas = gl.domElement
     const mode = pass && amount > .001 ? 'active' : 'idle'
     if (canvas.dataset.expoOptics !== mode) canvas.dataset.expoOptics = mode
@@ -61,10 +62,12 @@ export default function CrystalOptics({ compact }) {
     const height = Math.max(1, Math.round(size.height * ratio))
     if (target.current.width !== width || target.current.height !== height) target.current.setSize(width, height)
     const uniforms = pass.material.uniforms
-    uniforms.source.value = target.current.texture
+    if (uniforms.source.value !== target.current.texture) uniforms.source.value = target.current.texture
     uniforms.amount.value = amount * (compact ? .75 : 1)
-    uniforms.center.value.set(detail?.centerX ?? .5, detail?.centerY ?? .5)
-    uniforms.aspect.value = size.width / Math.max(1, size.height)
+    const centerX = detail?.centerX ?? .5, centerY = detail?.centerY ?? .5
+    if (uniforms.center.value.x !== centerX || uniforms.center.value.y !== centerY) uniforms.center.value.set(centerX, centerY)
+    const aspect = size.width / Math.max(1, size.height)
+    if (uniforms.aspect.value !== aspect) uniforms.aspect.value = aspect
     const previous = gl.getRenderTarget()
     try {
       gl.setRenderTarget(target.current)

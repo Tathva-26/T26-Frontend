@@ -33,6 +33,7 @@ function ExpoTransitionContent() {
   const journey = useRef(expoJourney(0))
   const geometry = useRef(null)
   const paths = useRef([])
+  const screenPoint = useRef({ x: 0, y: 0 })
 
   const project = useCallback((points) => {
     // Canvas and connector SVG share the same viewport; cached geometry avoids
@@ -130,7 +131,7 @@ function ExpoTransitionContent() {
       if (!box) return
       pose.layout = box
       journey.current = pose
-      const { x, y } = journeyScreenPoint(pose, box)
+      const { x, y } = journeyScreenPoint(pose, box, screenPoint.current)
       gsap.set(crystal.current, {
         width: box.width, height: box.height, opacity: exit > 0 ? 1 : pose.opacity,
         pointerEvents: entry > .72 && exit === 0 ? 'auto' : 'none',

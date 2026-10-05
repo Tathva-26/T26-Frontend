@@ -157,6 +157,7 @@ export default function CrystalModel({ target, compact = false, reduced = false,
   const gl = useThree((state) => state.gl)
   const dom = useRef(null)
   const projectedAt = useRef(-1)
+  const frameResults = useRef({ motion: {}, springX: {}, springY: {}, point: {} })
   useEffect(() => {
     dom.current = { root: gl.domElement.closest('[data-expo-detail-state]'), control: gl.domElement.closest('[data-crystal-control]') }
   }, [gl])
@@ -226,7 +227,7 @@ export default function CrystalModel({ target, compact = false, reduced = false,
     const pose = journey?.current
     const detail = details?.progress.current
     const detailAmount = detail?.value ?? 0
-    const motion = detailMotion(detailAmount, detail?.reduced)
+    const motion = detailMotion(detailAmount, detail?.reduced, frameResults.current.motion)
     const influence = (pose ? pose.interaction : 1) * motion.interaction
     const surge = motion.pulse
     detailGroup.current.scale.setScalar(1)
@@ -329,8 +330,8 @@ export default function CrystalModel({ target, compact = false, reduced = false,
     fractures.current.uniforms.hover.value = hover
     fractures.current.uniforms.pulse.value = pulse + readyPulse * .25 + press * .4 + surge * .65
     fractures.current.uniforms.pointer.value.copy(lightPoint)
-    const sx = springStep(body.rotation.x, life.current.vx, target.current.tiltX * influence * (1 + hover * .55), dt)
-    const sy = springStep(body.rotation.y, life.current.vy, target.current.tiltY * influence * (1 + hover * .55), dt)
+    const sx = springStep(body.rotation.x, life.current.vx, target.current.tiltX * influence * (1 + hover * .55), dt, frameResults.current.springX)
+    const sy = springStep(body.rotation.y, life.current.vy, target.current.tiltY * influence * (1 + hover * .55), dt, frameResults.current.springY)
     body.rotation.x = sx.position; life.current.vx = sx.velocity
     body.rotation.y = sy.position; life.current.vy = sy.velocity
     if (inDetails && savedPose.current) {
@@ -340,7 +341,7 @@ export default function CrystalModel({ target, compact = false, reduced = false,
     }
     travel.current.rotation.set(pose?.pitch ?? 0, pose?.yaw ?? 0, pose?.roll ?? 0)
     if (pose?.layout) {
-      const point = journeyScreenPoint(pose, pose.layout)
+      const point = journeyScreenPoint(pose, pose.layout, frameResults.current.point)
       const halfHeight = Math.tan(camera.fov * Math.PI / 360) * (8 - pose.depth)
       const halfWidth = halfHeight * size.width / size.height
       travel.current.position.set((point.x / size.width * 2 - 1) * halfWidth, (1 - point.y / size.height * 2) * halfHeight, pose.depth)
@@ -371,12 +372,20 @@ export default function CrystalModel({ target, compact = false, reduced = false,
       .12 + MathUtils.damp(robotMotion.current.rotation.y - .12, (awake ? -.12 : .065 * Math.sin(visualTime * .35) - body.rotation.y * .30 + lightPoint.x * hover * .10) * influence, 2.8, dt),
       .085 + Math.sin(visualTime * .42) * .035 * influence, 'ZYX')
     robotMotion.current.position.y = Math.sin(visualTime * .67 + .8) * .025 * influence
-    motes.current.rotation.z = Math.sin(visualTime * .12) * .12
-    motes.current.position.y = Math.sin(visualTime * .23) * .10
-    motes.current.material.opacity = .18 * influence
-    mist.current.position.x = Math.sin(visualTime * .16) * .22
-    mist.current.material.uniforms.time.value = visualTime
-    mist.current.material.uniforms.opacity.value = .10 * influence * (1 - hover * .45)
+    const dustOpacity = .18 * influence
+    motes.current.visible = travel.current.visible && dustOpacity > .001
+    if (motes.current.visible) {
+      motes.current.rotation.z = Math.sin(visualTime * .12) * .12
+      motes.current.position.y = Math.sin(visualTime * .23) * .10
+      motes.current.material.opacity = dustOpacity
+    }
+    const mistOpacity = .10 * influence * (1 - hover * .45)
+    mist.current.visible = travel.current.visible && mistOpacity > .001
+    if (mist.current.visible) {
+      mist.current.position.x = Math.sin(visualTime * .16) * .22
+      mist.current.material.uniforms.time.value = visualTime
+      mist.current.material.uniforms.opacity.value = mistOpacity
+    }
     if (onProject && influence > .01 && time - projectedAt.current >= (compact ? 1 / 20 : 1 / 30)) {
       projectedAt.current = time
       travel.current.updateWorldMatrix(true, true)

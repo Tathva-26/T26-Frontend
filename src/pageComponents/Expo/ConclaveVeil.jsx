@@ -23,11 +23,14 @@ export default function ConclaveVeil({ journey, compact }) {
     // During the reading hold and detail view there is no cloud pass to update.
     if (!mesh.current.visible) return
     live.uTime.value = clock.elapsedTime
-    live.uProgress.value = pose.progress
-    live.uExit.value = pose.exit ?? 0
-    live.uAspect.value = size.width / size.height
+    if (live.uProgress.value !== pose.progress) live.uProgress.value = pose.progress
+    const exit = pose.exit ?? 0
+    if (live.uExit.value !== exit) live.uExit.value = exit
+    const aspect = size.width / size.height
+    if (live.uAspect.value !== aspect) live.uAspect.value = aspect
     if (pose.layout) {
-      live.uOrigin.value.set(pose.layout.startX / size.width, 1 - pose.layout.startY / size.height)
+      const x = pose.layout.startX / size.width, y = 1 - pose.layout.startY / size.height
+      if (live.uOrigin.value.x !== x || live.uOrigin.value.y !== y) live.uOrigin.value.set(x, y)
     }
   })
   return <mesh ref={mesh} renderOrder={100} frustumCulled={false}>

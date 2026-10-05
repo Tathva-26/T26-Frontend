@@ -21,9 +21,10 @@ export function ExpoDetailsProvider({ children }) {
   const release = useRef(null)
   const opener = useRef(null)
   const controller = useMemo(() => {
+    const motionResult = {}
     const paint = () => {
       const p = progress.current.value
-      const motion = detailMotion(p, progress.current.reduced)
+      const motion = detailMotion(p, progress.current.reduced, motionResult)
       root.current.style.setProperty('--detail-copy', motion.copy)
       root.current.style.setProperty('--detail-dark', motion.dark)
       root.current.style.setProperty('--detail-text', motion.text)

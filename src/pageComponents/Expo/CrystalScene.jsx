@@ -70,7 +70,7 @@ function RenderBudget({ compact, degraded, onQuality }) {
   useEffect(() => { gl.transmissionResolutionScale = degraded ? .35 : compact ? .5 : .75; }, [gl, compact, degraded]);
   useFrame((_, delta) => {
     const before = sample.current.degraded;
-    sample.current = sampleFrameBudget(sample.current, delta);
+    sampleFrameBudget(sample.current, delta, sample.current);
     if (before !== sample.current.degraded) onQuality(sample.current.degraded);
   });
   return null;
@@ -85,6 +85,7 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
   const [dpr, setDpr] = useState(1);
   const [compact, setCompact] = useState(true);
   const [degraded, setDegraded] = useState(false);
+  const renderDpr = degraded ? Math.min(dpr, compact ? .8 : 1) : dpr;
   const controlsRect = (element) => element.closest('[data-expo-progress]')?.querySelector('[data-expo-slot]')?.getBoundingClientRect() || element.getBoundingClientRect();
 
   const reset = () => {
@@ -148,7 +149,7 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
 
   return (
     <div style={{ width: "100%", height: "100%", touchAction: "pan-y pinch-zoom" }} tabIndex={0} onKeyDown={keyboard} onBlur={reset} onPointerDown={down} onPointerMove={update} onPointerUp={release} onPointerCancel={release} onPointerLeave={reset} onLostPointerCapture={reset} aria-describedby="crystal-instructions" data-crystal-control role="button" aria-haspopup="dialog" aria-label="Interactive Tathva crystal">
-      <Canvas dpr={degraded ? Math.min(dpr, 1) : dpr} frameloop={active ? "always" : "never"} camera={{ fov: 32, position: [0, 0, 7], near: .1, far: 30 }} gl={{ alpha: true, antialias: true, powerPreference: "low-power" }} onCreated={({ gl }) => { gl.setClearColor(0, 0); gl.toneMapping = NoToneMapping; gl.transmissionResolutionScale = .75; }} fallback={null}>
+      <Canvas dpr={renderDpr} frameloop={active ? "always" : "never"} camera={{ fov: 32, position: [0, 0, 7], near: .1, far: 30 }} gl={{ alpha: true, antialias: true, powerPreference: "low-power" }} onCreated={({ gl }) => { gl.setClearColor(0, 0); gl.toneMapping = NoToneMapping; gl.transmissionResolutionScale = .75; }} fallback={null}>
         <ContextEvents onFailure={onFailure} onLost={onLost} onRestored={onRestored} shaderFailed={shaderFailed} />
         <RenderBudget compact={compact} degraded={degraded} onQuality={setDegraded} />
         <CrystalOptics compact={compact || degraded} />

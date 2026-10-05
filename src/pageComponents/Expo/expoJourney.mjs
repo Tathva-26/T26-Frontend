@@ -39,13 +39,12 @@ export function expoExit(progress) {
   }
 }
 
-export function journeyScreenPoint(pose, layout) {
+export function journeyScreenPoint(pose, layout, result = {}) {
   if (pose.exit != null) {
     const flight = smooth((pose.exit - .12) / .76)
-    return {
-      x: layout.endX + Math.sin(flight * Math.PI) * layout.width * .10,
-      y: layout.endY - flight * (layout.endY + layout.height * .24),
-    }
+    result.x = layout.endX + Math.sin(flight * Math.PI) * layout.width * .10
+    result.y = layout.endY - flight * (layout.endY + layout.height * .24)
+    return result
   }
   const releaseX = layout.startX + (layout.endX - layout.startX) * .18
   // Keep the top of the released shell below the measured navigation edge.
@@ -53,8 +52,7 @@ export function journeyScreenPoint(pose, layout) {
   const releaseY = Math.max(safeTop, Math.min(layout.startY - layout.height * .12, layout.endY - layout.height * .32))
   const emergeX = layout.startX + (releaseX - layout.startX) * pose.emerge
   const emergeY = layout.startY + (releaseY - layout.startY) * pose.emerge
-  return {
-    x: emergeX + (layout.endX - emergeX) * pose.travel + Math.sin(pose.travel * Math.PI) * layout.width * .035,
-    y: emergeY + (layout.endY - emergeY) * pose.travel,
-  }
+  result.x = emergeX + (layout.endX - emergeX) * pose.travel + Math.sin(pose.travel * Math.PI) * layout.width * .035
+  result.y = emergeY + (layout.endY - emergeY) * pose.travel
+  return result
 }
