@@ -407,21 +407,15 @@ export default function Accommodation() {
     syncStay({ tier: next, quantity: capped })
   }
 
-  /* Each food day is its own TIQR event, and one payment cannot span
-     events, so the coupon cart is paid one day at a time. */
-  const foodDays = [...new Set(foodLines.map((line) => line.day))].sort()
-
-  /* `cart` is 'room' or 'food-<day>'. */
   async function checkout(cart) {
     if (!isSignedIn) {
       signIn()
       return
     }
 
-    const foodDay = cart.startsWith('food-') ? Number(cart.slice(5)) : null
     const [path, body] =
-      foodDay !== null
-        ? [PATHS.foodBook, buildFoodBody(foodLines.filter((line) => line.day === foodDay))]
+      cart === 'food'
+        ? [PATHS.foodBook, buildFoodBody(foodLines)]
         : [PATHS.accommodationBook, buildBookingBody(lines)]
     const failWith = (message) => {
       setCheckoutErrors((current) => ({ ...current, [cart]: message }))
@@ -625,8 +619,8 @@ export default function Accommodation() {
                 </h2>
                 <p className='mt-1 text-sm text-white/50'>
                   Breakfast + Lunch, {formatPrice(food[0]?.price ?? 0)} per day.
-                  Buy any mix of days, with or without a room. Food is paid
-                  for separately from rooms, one payment per day.
+                  Buy any mix of days, with or without a room — food is paid
+                  for separately.
                 </p>
 
                 <div className='mt-4 grid gap-3 sm:grid-cols-2'>
@@ -676,32 +670,16 @@ export default function Accommodation() {
                 error={checkoutErrors.room}
                 onCheckout={() => checkout('room')}
               />
-              {foodDays.length === 0 ? (
-                <CartPanel
-                  title='Food coupons'
-                  lines={[]}
-                  emptyText='No coupons added yet.'
-                />
-              ) : (
-                foodDays.map((day) => (
-                  <CartPanel
-                    key={day}
-                    title={`Food coupons · ${festDate(day)}`}
-                    lines={foodLines.filter((line) => line.day === day)}
-                    emptyText=''
-                    payLabel={`Pay for ${festDate(day)}`}
-                    isSignedIn={isSignedIn}
-                    submitting={submitting === `food-${day}`}
-                    error={checkoutErrors[`food-${day}`]}
-                    onCheckout={() => checkout(`food-${day}`)}
-                  />
-                ))
-              )}
-              {foodDays.length > 1 && (
-                <p className='px-1 text-xs text-white/45'>
-                  Each day&apos;s coupons are a separate payment.
-                </p>
-              )}
+              <CartPanel
+                title='Food coupons'
+                lines={foodLines}
+                emptyText='No coupons added yet.'
+                payLabel='Pay for food'
+                isSignedIn={isSignedIn}
+                submitting={submitting === 'food'}
+                error={checkoutErrors.food}
+                onCheckout={() => checkout('food')}
+              />
             </aside>
           </div>
         )}
