@@ -452,6 +452,7 @@ export default function HeroFrameController({ children }) {
     <>
       <NavbarScope>
       <div
+        data-scroll-cue-hero={ready && heroInteractive ? 'true' : undefined}
         style={{
           position: 'relative',
           width: '100%',
