@@ -112,7 +112,7 @@ export default function TathvaPasses() {
             Mobile: Vertical rotation (Top/Center/Bottom) with middle largest
             Desktop: Horizontal rotation (Left/Center/Right)
         ------------------------------------------------------------- */}
-        <div className='relative mt-64 sm:mt-16 md:mt-20 lg:mt-24 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
+        <div className='relative mt-32 sm:mt-16 md:mt-20 lg:mt-24 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
           {/* Left Arrow Button (Previous) */}
           <button
             type='button'
@@ -136,7 +136,7 @@ export default function TathvaPasses() {
           </button>
 
           {/* Ticket Showcase Stack */}
-          <div className='relative flex h-[260px] sm:h-[320px] md:h-[370px] lg:h-[400px] w-full max-w-3xl items-center justify-center'>
+          <div className='relative flex h-[400px] sm:h-[320px] md:h-[370px] lg:h-[400px] w-full max-w-3xl items-center justify-center'>
             {passes.map((ticket, index) => {
               let offset = index - activeIndex
               if (offset < -1) offset += passes.length
@@ -174,7 +174,7 @@ export default function TathvaPasses() {
                         : '-translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] -translate-y-[34%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
                   }`}
                 >
-                  <div className='relative w-[260px] sm:w-[420px] md:w-[540px] lg:w-[640px] xl:w-[700px]'>
+                  <div className='relative w-[360px] sm:w-[420px] md:w-[540px] lg:w-[640px] xl:w-[700px]'>
                     <img
                       src={ticket.image}
                       alt={ticket.fullTitle}

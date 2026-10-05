@@ -2074,7 +2074,7 @@ export default function CompetitionsPage() {
                                   if (el) cardRefs.current[competition.id] = el
                                   else delete cardRefs.current[competition.id]
                                 }}
-                                className='group relative aspect-[0.9] w-full overflow-hidden bg-[#0d101c]'
+                                className='group relative w-full overflow-hidden rounded-md bg-[#0d101c]'
                                 style={{
                                   transformStyle: 'preserve-3d',
                                   transformOrigin: 'center center',
@@ -2094,10 +2094,8 @@ export default function CompetitionsPage() {
                                         competition.id
                                       ]
                                   }}
-                                  className='relative flex flex-col justify-between'
+                                  className='relative flex w-full flex-col'
                                   style={{
-                                    width: 'calc(100% - 3px)',
-                                    height: 'calc(100% - 5px)',
                                     transformStyle: 'preserve-3d',
                                     borderTop: `1px solid ${REST_EDGE_HIGHLIGHT_TOP}`,
                                     borderLeft: `1px solid ${REST_EDGE_HIGHLIGHT_LEFT}`,
@@ -2133,94 +2131,38 @@ export default function CompetitionsPage() {
                                     className='competition-pulse-overlay pointer-events-none absolute inset-0 z-10'
                                   />
 
-                                  {/* ORIGINAL CARD SHAPE — kept at its original
-                                      proportions so the mask, cutout and border
-                                      artwork are not stretched */}
-                                  <div className='absolute inset-x-0 top-0 aspect-[0.9825]'>
-                                    {/* CARD VISUAL ARTWORK — the real event picture, shown directly.
-                                        The description now lives in the hover callout. */}
-                                    <div
-                                      ref={(el) => {
-                                        if (el) artRefs.current[competition.id] = el
-                                        else delete artRefs.current[competition.id]
-                                      }}
-                                      className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-slate-900'
-                                      style={{
-                                        maskImage:
-                                          "url('https://cdn-next-main.tathva.org/images/competitions/competition-card-image.png')",
-                                        WebkitMaskImage:
-                                          "url('https://cdn-next-main.tathva.org/images/competitions/competition-card-image.png')",
-                                        maskPosition: 'center',
-                                        WebkitMaskPosition: 'center',
-                                        maskRepeat: 'no-repeat',
-                                        WebkitMaskRepeat: 'no-repeat',
-                                        maskSize: '100% 100%',
-                                        WebkitMaskSize: '100% 100%',
-                                      }}
-                                    >
-                                      <Image
-                                        src={competition.image}
-                                        alt={competition.fullTitle}
-                                        fill
-                                        sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                                        className='object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105'
-                                      />
-                                    </div>
-
-                                    {/* BACKGROUND CUTOUT OUTSIDE THE BORDER */}
-                                    <div
-                                      className='pointer-events-none absolute inset-0 z-15 bg-[#06070d]'
-                                      style={{
-                                        clipPath:
-                                          'polygon(32.18% 90.64%, 100% 90.64%, 100% 100%, 23.29% 100%, 24.64% 99%)',
-                                      }}
+                                  {/* POSTER ARTWORK — plain contained image,
+                                      no mask/cutout/border shaping */}
+                                  <div
+                                    ref={(el) => {
+                                      if (el) artRefs.current[competition.id] = el
+                                      else delete artRefs.current[competition.id]
+                                    }}
+                                    className='relative aspect-[2/3] w-full overflow-hidden bg-slate-900'
+                                  >
+                                    <Image
+                                      src={competition.image}
+                                      alt={competition.fullTitle}
+                                      fill
+                                      sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                                      className='object-contain object-center transition-transform duration-500 ease-out group-hover:scale-105'
                                     />
-
-                                    <div className='pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30'>
-                                      <img
-                                        src='https://cdn-next-main.tathva.org/images/competitions/competition-card-border.svg'
-                                        alt=''
-                                        className='absolute inset-[-0.38%] h-full w-full'
-                                      />
-                                    </div>
                                   </div>
 
-                                  {/* EXTRA LABEL SPACE — continues the cutout
-                                      colour below the original card shape so the
-                                      title has room to wrap onto two lines */}
-                                  <div
-                                    className='pointer-events-none absolute inset-x-0 bottom-0 z-15 bg-[#06070d]'
-                                    style={{ top: 'calc(100cqw / 0.9825)' }}
-                                  />
-
-                                  {/* TITLE — max 2 lines. Line 1 sits beside the
-                                      notch, line 2 starts at the card's left edge */}
-                                  <div
-                                    className='absolute left-0 right-0 z-20 text-right'
-                                    style={{
-                                      top: 'calc(100cqw / 0.9825 * 0.9064 + 2.5cqw)',
-                                      paddingLeft: '1cqw',
-                                      paddingRight: '4cqw',
-                                      maxHeight: '13.2cqw',
-                                      overflow: 'hidden',
-                                    }}
-                                  >
-                                    {/* PRICE — sits in the notch cut out of the
-                                        card's bottom-left corner. Same float
-                                        footprint the old invisible spacer used,
-                                        so the title still wraps around it. */}
-                                    <span
-                                      className='m-0 block text-left text-[4.4cqw] font-bold leading-[1.1] text-white'
-                                      style={{
-                                        float: 'left',
-                                        width: '33cqw',
-                                        height: '6.6cqw',
-                                      }}
-                                    >
-                                      {competition.fee}
-                                    </span>
-                                    <p className='m-0 break-words text-[5.5cqw] font-bold leading-[1.2] text-white'>
+                                  {/* STATIC INFO — title, date/venue, price */}
+                                  <div className='flex flex-col gap-1 px-3 py-2.5'>
+                                    <p className='m-0 truncate text-[0.95rem] font-semibold text-white'>
                                       {competition.fullTitle || competition.title}
+                                    </p>
+                                    <p className='m-0 text-xs text-white/60'>
+                                      {competition.dateMonth} {competition.dateDay}
+                                      {competition.time ? ` · ${competition.time}` : ''}
+                                      {getVenueName(competition.venue)
+                                        ? ` · ${getVenueName(competition.venue)}`
+                                        : ''}
+                                    </p>
+                                    <p className='m-0 text-sm font-medium text-white'>
+                                      {competition.fee}
                                     </p>
                                   </div>
                                 </div>
