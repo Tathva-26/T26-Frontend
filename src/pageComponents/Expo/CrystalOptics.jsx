@@ -55,9 +55,16 @@ export default function CrystalOptics({ compact, warmupReady, assetsMounted, onF
         void main(){
           vec2 delta=vUv-center;
           float radius=length(delta*vec2(aspect,1.));
+          // Angular wedges create a reversible fracture fan around the crystal.
+          // No additional texture samples or rendering passes are required.
+          vec2 physical=delta*vec2(aspect,1.);
+          float angle=dot(physical,physical)<.00000001 ? 0. : atan(physical.y,physical.x);
+          float seam=1.-smoothstep(.015,.11,abs(sin(angle*3.+radius*7.)));
           float weight=(1.-smoothstep(.08,.65,radius))*amount;
-          vec2 bent=vUv-delta*weight*.16;
-          vec2 split=delta*weight*.022;
+          float facet=step(0.,sin(angle*3.+radius*7.))*2.-1.;
+          vec2 tangent=vec2(-physical.y,physical.x)/vec2(aspect,1.);
+          vec2 bent=vUv-delta*weight*.11+tangent*facet*weight*.045;
+          vec2 split=delta*weight*(.012+seam*.018);
           vec4 base=texture2D(source,bent);
           vec4 red=texture2D(source,bent+split);
           vec4 blue=texture2D(source,bent-split);

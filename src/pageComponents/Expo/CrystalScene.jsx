@@ -147,7 +147,7 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
     target.current.pressed = Boolean(pointer.current && !pointer.current.moved);
     const { tiltX, tiltY } = interactionTargets(local, drag, touch);
     const dragging = touch && pointer.current.mode === 'drag';
-    Object.assign(target.current, { tiltX, tiltY, x: point.x, y: point.y, active: !dragging, touch, dragging, keyboard: false });
+    Object.assign(target.current, { tiltX, tiltY, x: point.x, y: point.y, localX: local.x, localY: local.y, active: !dragging, touch, dragging, keyboard: false });
   };
   const down = (event) => {
     if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
@@ -200,8 +200,8 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
         <RenderBudget compact={compact} degraded={degraded} onQuality={setDegraded} />
         <CrystalOptics compact={compact || degraded} warmupReady={warmupReady} assetsMounted={assetsMounted} onFailure={onFailure} journey={journey} />
         <ambientLight intensity={.08} />
-        <directionalLight position={[-3, 4, 3]} color="#7bbaff" intensity={.6} />
-        <pointLight position={[1.8, -1.2, 1]} color="#ee49cf" intensity={4} distance={5} decay={2} />
+        <directionalLight position={[-3, 4, 3]} color="#abcfff" intensity={.7} />
+        <pointLight position={[1.8, -1.2, 1]} color="#cb79d9" intensity={2.8} distance={5} decay={2} />
         {/* Readiness includes every asset needed for the entrance, not just the shell. */}
         <Suspense fallback={<LoadingCrystal journey={journey} target={target} reduced={reduced} />}>
           <SceneEnvironment shared={!!journey} />

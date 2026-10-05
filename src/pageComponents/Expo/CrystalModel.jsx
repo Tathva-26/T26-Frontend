@@ -69,7 +69,7 @@ function prepareGlass(shader) {
   // Multiply signed offsets instead: Apple GPUs can otherwise output black.
   shader.fragmentShader = shader.fragmentShader.replace(
     'vec3 outgoingLight = totalDiffuse + totalSpecular + totalEmissiveRadiance;',
-    'float edge = pow(clamp(1. - abs(dot(normal, normalize(vViewPosition))), 0., 1.), 1.3); vec3 edgeTint = mix(vec3(.65,.82,1.),vec3(1.,.35,.85),smoothstep(.2,1.5,vExpoWorldPosition.x-vExpoWorldPosition.y*.3)); vec2 pinkOffset = vExpoWorldPosition.xy - vec2(.75,-.6); float pink = exp(-dot(pinkOffset*pinkOffset,vec2(8.,2.))); vec3 rimGlow = (vec3(.012,.035,.075)+vec3(.45,.045,.32)*pink)*edge; vec3 outgoingLight = totalDiffuse + totalSpecular * mix(.24,1.25,edge) * edgeTint + totalEmissiveRadiance + rimGlow;',
+    'float edge = pow(clamp(1. - abs(dot(normal, normalize(vViewPosition))), 0., 1.), 1.3); vec3 edgeTint = mix(vec3(.65,.82,1.),vec3(.86,.55,.91),smoothstep(.2,1.5,vExpoWorldPosition.x-vExpoWorldPosition.y*.3)); vec2 pinkOffset = vExpoWorldPosition.xy - vec2(.75,-.6); float pink = exp(-dot(pinkOffset*pinkOffset,vec2(8.,2.))); vec3 rimGlow = (vec3(.012,.035,.075)+vec3(.28,.07,.25)*pink)*edge; vec3 outgoingLight = totalDiffuse + totalSpecular * mix(.24,1.25,edge) * edgeTint + totalEmissiveRadiance + rimGlow;',
   )
 }
 
@@ -154,6 +154,21 @@ export default function CrystalModel({ target, compact = false, textureCompact =
   const motes = useRef()
   const mist = useRef()
   const energyMaterial = useRef()
+  const frost = useRef({ point: { value: new Vector2(0, .2) }, amount: { value: 0 } })
+  const prepareShell = useMemo(() => shader => {
+    prepareGlass(shader)
+    shader.uniforms.expoFrostPoint = frost.current.point
+    shader.uniforms.expoFrostAmount = frost.current.amount
+    shader.vertexShader = 'varying vec2 vExpoSurface;\n' + shader.vertexShader
+    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvExpoSurface=position.xy;')
+    shader.fragmentShader = 'varying vec2 vExpoSurface; uniform vec2 expoFrostPoint; uniform float expoFrostAmount;\n' + shader.fragmentShader
+    shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', `
+      #include <roughnessmap_fragment>
+      vec2 frostDelta=vExpoSurface-expoFrostPoint;
+      float frostClear=exp(-dot(frostDelta,frostDelta)*8.)*expoFrostAmount;
+      roughnessFactor=max(.012,roughnessFactor*(1.-frostClear*.55));
+    `)
+  }, [frost])
   const life = useRef({ hover: 0, hitStrength: 0, lastRay: -1, lastHit: -10, activation: 0, charge: 0, sectors: 0, pulseAt: -10, awakeUntil: -10, awake: false, vx: 0, vy: 0 })
   const intersections = useRef([])
   const projectedAnchors = useMemo(() => [[-.76, .55, .3], [.76, .35, .3], [.7, -.55, .3], [-.4, -1.05, .3]].map(([x, y, z]) => ({ source: new Vector3(x, y, z), x: 0, y: 0 })), [])
@@ -334,6 +349,10 @@ export default function CrystalModel({ target, compact = false, textureCompact =
     cursorLight.current.intensity = hover * 1.6
     glass.current.envMapIntensity = 2.2 + hover * .25
     glass.current.roughness = .045 - hover * .012
+    // Horizontal touch drags already supply slot coordinates; no extra raycast.
+    if (target.current.touch && target.current.dragging) frost.current.point.value.set((target.current.localX ?? 0) * .95, (target.current.localY ?? 0) * 1.5)
+    else if (life.current.hitStrength) frost.current.point.value.set(lightPoint.x, lightPoint.y)
+    frost.current.amount.value = MathUtils.damp(frost.current.amount.value, !reduced && influence > .01 && (target.current.dragging || life.current.hitStrength) ? .85 : 0, 6, dt)
     body.scale.setScalar(1 + hover * .025 + pulse * .012)
     // Warm the hidden canvas once so GPU upload/readiness can finish before entry.
     // After that first render, offscreen/transparent journey poses stay hidden.
@@ -409,7 +428,7 @@ export default function CrystalModel({ target, compact = false, textureCompact =
     const mistOpacity = .10 * influence * (1 - hover * .45)
     mist.current.visible = travel.current.visible && mistOpacity > .001
     if (mist.current.visible) {
-      mist.current.position.x = Math.sin(visualTime * .16) * .22
+      mist.current.position.x = Math.sin(visualTime * .16) * .14
       mist.current.material.uniforms.time.value = visualTime
       mist.current.material.uniforms.opacity.value = mistOpacity
     }
@@ -442,11 +461,11 @@ export default function CrystalModel({ target, compact = false, textureCompact =
       <points ref={motes} geometry={dust}>
         <pointsMaterial color='#acdfff' map={glow} size={.055} transparent opacity={.18} depthWrite={false} blending={AdditiveBlending} />
       </points>
-      <mesh ref={mist} position={[0, -.4, -.9]} scale={[4.5, 2.2, 1]}>
+      <mesh ref={mist} position={[0, -.95, -.9]} scale={[3.8, 1.5, 1]}>
         <planeGeometry />
         <shaderMaterial transparent depthWrite={false} blending={AdditiveBlending} uniforms={mistUniforms}
-          vertexShader={'varying vec2 vUv; void main(){vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }'}
-          fragmentShader={'uniform float time,opacity; varying vec2 vUv; float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);} float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);} void main(){vec2 p=vUv*vec2(5.,2.)+vec2(time*.06,-time*.015);float n=noise(p)*.65+noise(p*2.1)*.35; float feather=smoothstep(0.,.18,vUv.x)*smoothstep(0.,.18,1.-vUv.x)*smoothstep(0.,.22,vUv.y)*smoothstep(0.,.22,1.-vUv.y);float bandOffset=(vUv.y-.5-sin(vUv.x*6.+time*.12)*.12)*4.; float band=exp(-bandOffset*bandOffset);gl_FragColor=vec4(.20,.43,.65,opacity*feather*band*smoothstep(.24,.72,n));\n#include <colorspace_fragment>\n}'} />
+          vertexShader={'varying vec2 vUv; varying float vMistDepth; void main(){vUv=uv; vec4 view=modelViewMatrix*vec4(position,1.); vMistDepth=-view.z; gl_Position=projectionMatrix*view; }'}
+          fragmentShader={'uniform float time,opacity; varying vec2 vUv; varying float vMistDepth; float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);} float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);} void main(){vec2 p=vUv*vec2(5.,2.)+vec2(time*.06,-time*.015);float n=noise(p)*.65+noise(p*2.1)*.35; float feather=smoothstep(0.,.18,vUv.x)*smoothstep(0.,.18,1.-vUv.x)*smoothstep(0.,.22,vUv.y)*smoothstep(0.,.22,1.-vUv.y);float bandOffset=(vUv.y-.5-sin(vUv.x*6.+time*.12)*.12)*4.; float band=exp(-bandOffset*bandOffset);gl_FragColor=vec4(.20,.43,.65,opacity*feather*band*smoothstep(.24,.72,n)*smoothstep(2.,5.,vMistDepth)*(1.-smoothstep(11.,18.,vMistDepth)));\n#include <colorspace_fragment>\n}'} />
       </mesh>
       <group>
         <mesh
@@ -482,7 +501,7 @@ export default function CrystalModel({ target, compact = false, textureCompact =
             reflectivity={0.3}
             clearcoat={0}
             envMapIntensity={2.2}
-            onBeforeCompile={prepareGlass}
+            onBeforeCompile={prepareShell}
           />
         </mesh>
         {/* Preserve the artwork's fixed alignment with the shell geometry. */}

@@ -32,12 +32,29 @@ export default function LoadingCrystal({ journey, target, reduced }) {
   return (
     <group ref={group}>
       <mesh geometry={geometry}>
-        <meshPhongMaterial color="#6b9fce" emissive="#071727" transparent opacity={.48} shininess={100} flatShading depthWrite={false} />
+        <meshPhongMaterial color="#263b65" specular="#b7d7f5" emissive="#061126" transparent opacity={.62} shininess={110} flatShading depthWrite={false} />
       </mesh>
-      <mesh position={[0, 0, .1]} scale={[.55, .55, .55]}>
-        <icosahedronGeometry args={[1, 0]} />
-        <meshBasicMaterial color="#168aff" wireframe transparent opacity={.7} />
-      </mesh>
+      {/* Asset-free robot proxy keeps the loading exhibit recognisable. */}
+      <group position={[0, .18, .5]} rotation={[0, .12, .085]}>
+        <mesh scale={[.49, .44, .25]}>
+          <sphereGeometry args={[1, 16, 12]} />
+          <meshBasicMaterial color="#126fff" />
+        </mesh>
+        <mesh position={[0, -.035, .24]} scale={[.35, .20, .06]}>
+          <sphereGeometry args={[1, 16, 8]} />
+          <meshBasicMaterial color="#061337" />
+        </mesh>
+        {[-1, 1].map(side => <group key={side}>
+          <mesh position={[side * .51, 0, 0]} scale={[.09, .19, .12]}>
+            <sphereGeometry args={[1, 8, 8]} />
+            <meshBasicMaterial color="#168aff" />
+          </mesh>
+          <mesh position={[side * .15, -.015, .30]} scale={[.075, .04, .015]}>
+            <sphereGeometry args={[1, 8, 6]} />
+            <meshBasicMaterial color="#6dddff" />
+          </mesh>
+        </group>)}
+      </group>
     </group>
   )
 }
