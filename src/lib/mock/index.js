@@ -18,6 +18,8 @@
 
 import { AxiosError } from 'axios'
 import {
+  ACCOMMODATION,
+  FOOD,
   BOOKINGS,
   EVENTS,
   REFERRALS,
@@ -318,6 +320,145 @@ function createBooking(config, body) {
   })
 }
 
+/* ---- accommodation --------------------------------------------------- */
+
+/**
+ * Books a room cart (stay lines only; food has its own checkout).
+ *
+ * Validated in the order the real thing would have to: the cart has to make
+ * sense before stock is touched, and stock is checked against the gender the
+ * line was built for — a 4-sharing room has no female stock at all, so that
+ * combination must fail here rather than at the door.
+ */
+function createAccommodationBooking(config, body) {
+	if (!signedIn()) return notSignedIn(config)
+
+	const items = Array.isArray(body.items) ? body.items : []
+	if (items.length === 0) {
+		return fail(config, 400, { error: 'Cart is empty' })
+	}
+
+	if (!currentUser.phone) {
+		return fail(config, 400, {
+			message: 'Add a phone number to your profile before booking',
+		})
+	}
+
+	const festNights = ACCOMMODATION.festNights
+	let amount = 0
+
+	// Mirrors accommodation.service.js: a cart may hold the same tier twice,
+	// so later lines must see the stock earlier ones consumed.
+	const claimed = {}
+
+	for (const item of items) {
+		const quantity = Number(item.quantity)
+		if (!Number.isInteger(quantity) || quantity < 1) {
+			return fail(config, 400, { error: `Invalid quantity for ${item.kind} line` })
+		}
+
+		if (item.kind !== 'stay') {
+			return fail(config, 400, { error: `Unknown cart item kind "${item.kind}"` })
+		}
+
+		const checkInDay = Number(item.checkInDay)
+		const nights = Number(item.nights)
+		if (
+			!Number.isInteger(checkInDay) ||
+			!Number.isInteger(nights) ||
+			checkInDay < 1 ||
+			nights < 1 ||
+			checkInDay + nights - 1 > festNights
+		) {
+			return fail(config, 400, {
+				error: `A ${nights}-night stay cannot start on day ${checkInDay}`,
+			})
+		}
+
+		const rate = ACCOMMODATION.rooms.find(
+			(row) => row.tier === item.tier && row.gender === item.gender && row.nights === nights,
+		)
+		if (!rate) {
+			return fail(config, 404, {
+				error: `${item.tier} is not sold for ${nights} nights to ${item.gender}`,
+			})
+		}
+		if (!rate.onSale) return fail(config, 409, { error: 'That room is not on sale yet' })
+
+		// Availability is the TIGHTEST night in the range, not the first.
+		const stock = ACCOMMODATION.availability.find(
+			(row) => row.tier === item.tier && row.gender === item.gender,
+		)
+		const key = `${item.tier}|${item.gender}`
+		let free = Number.POSITIVE_INFINITY
+		for (let n = checkInDay; n <= checkInDay + nights - 1; n += 1) {
+			free = Math.min(free, stock?.byNight?.[n] ?? 0)
+		}
+		free -= claimed[key] ?? 0
+
+		if (free <= 0) {
+			return fail(config, 409, {
+				error: `${item.tier} is sold out for those nights`,
+				code: 'SOLD_OUT',
+			})
+		}
+		if (quantity > free) {
+			return fail(config, 409, {
+				error: `Only ${free} left in ${item.tier} for those nights`,
+				code: 'INSUFFICIENT_STOCK',
+			})
+		}
+		claimed[key] = (claimed[key] ?? 0) + quantity
+
+		amount += rate.price * quantity
+	}
+
+	// Stands in for TIQR's hosted payment page.
+	return respond(config, 201, {
+		message: 'Booking created',
+		bookingUid: 'mock-accommodation-uid',
+		amount,
+		redir_url: '/accommodation?status=CHARGED&signature=mock-signature',
+	})
+}
+
+/** Books a food-coupon cart, as food.service.js would. */
+function createFoodOrder(config, body) {
+	if (!signedIn()) return notSignedIn(config)
+
+	const items = Array.isArray(body.items) ? body.items : []
+	if (items.length === 0) return fail(config, 400, { error: 'Cart is empty' })
+
+	if (!currentUser.phone) {
+		return fail(config, 400, {
+			message: 'Add a phone number to your profile before booking',
+		})
+	}
+
+	let amount = 0
+	for (const item of items) {
+		const quantity = Number(item.quantity)
+		if (!Number.isInteger(quantity) || quantity < 1) {
+			return fail(config, 400, { error: 'Invalid quantity for a food line' })
+		}
+		const rate = FOOD.food.find(
+			(row) => row.day === Number(item.day) && row.diet === item.diet,
+		)
+		if (!rate) {
+			return fail(config, 404, { error: `No food coupon for day ${item.day} ${item.diet}` })
+		}
+		if (!rate.onSale) return fail(config, 409, { error: 'Food coupons are not on sale yet' })
+		amount += rate.price * quantity
+	}
+
+	return respond(config, 201, {
+		message: 'Order created',
+		bookingUid: 'mock-food-uid',
+		amount,
+		redir_url: '/accommodation?status=CHARGED&signature=mock-signature',
+	})
+}
+
 function myBookings(config, wantsRefresh) {
   if (!signedIn()) return notSignedIn(config)
 
@@ -402,6 +543,54 @@ export async function mockAdapter(config) {
       message: 'Query submitted successfully',
       contact: { id: 1, status: 'NEW', createdAt: new Date().toISOString(), ...body },
     })
+  }
+
+  if (method === 'get' && path === '/api/accommodation/options') {
+    // Served verbatim: the fixture IS the real envelope.
+    return respond(config, 200, ACCOMMODATION)
+  }
+
+  if (method === 'post' && path === '/api/accommodation/book') {
+    return createAccommodationBooking(config, body)
+  }
+
+  if (method === 'get' && path === '/api/food/options') {
+    return respond(config, 200, FOOD)
+  }
+
+  if (method === 'get' && path === '/api/accommodation/my') {
+    if (!signedIn()) return notSignedIn(config)
+    return respond(config, 200, {
+      bookings: [
+        {
+          bookingUid: 'mock-stay-1',
+          status: 'CONFIRMED',
+          rooms: [{ id: 1, tier: 'dormitory', gender: 'MALE', checkInDay: 1, nights: 2, quantity: 1 }],
+        },
+        {
+          bookingUid: 'mock-stay-2',
+          status: 'FAILED',
+          rooms: [{ id: 2, tier: 'sharing-3', gender: 'MALE', checkInDay: 2, nights: 1, quantity: 1 }],
+        },
+      ],
+    })
+  }
+
+  if (method === 'get' && path === '/api/food/my') {
+    if (!signedIn()) return notSignedIn(config)
+    return respond(config, 200, {
+      orders: [
+        {
+          bookingUid: 'mock-food-1',
+          status: 'PENDING',
+          items: [{ id: 1, day: 1, diet: 'VEG', quantity: 2 }, { id: 2, day: 2, diet: 'VEG', quantity: 1 }],
+        },
+      ],
+    })
+  }
+
+  if (method === 'post' && path === '/api/food/book') {
+    return createFoodOrder(config, body)
   }
 
   if (method === 'get' && path === '/healthz') {

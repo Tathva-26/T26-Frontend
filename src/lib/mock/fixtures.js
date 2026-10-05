@@ -234,6 +234,10 @@ export const EVENTS = [
     createdAt: '2026-08-08T03:30:00.000Z',
     updatedAt: '2026-09-29T03:30:00.000Z',
   },
+
+  /* ---- passes: four, so the carousel's centre/left/right/far slots all
+          get exercised. Prices are in paise, matching the live tickets
+          (Rs 200 / 1,200 / 1,100 / 2,000). -------------------------------- */
   {
     id: 40,
     tiqrEventId: 930,
@@ -243,12 +247,13 @@ export const EVENTS = [
     datetime: '2026-10-08T18:30:00.000Z',
     startTime: '2026-10-08T18:30:00.000Z',
     endTime: '2026-10-11T18:29:00.000Z',
-    price: 199900,
+    price: 200000,
     venueId: null,
     venue: null,
     description: 'Proshow, events and conclave across all three days.',
     extraInfo: null,
-    picture: 'https://cdn.tathva.org/events/pass-all.webp',
+    
+    picture: 'https://cdn.tathva.org/events/506476dc-25d4-4813-8c88-c7344395c099.webp',
     teamSize: null,
     isTeamEvent: false,
     committee: null,
@@ -260,6 +265,56 @@ export const EVENTS = [
     updatedAt: '2026-09-30T03:30:00.000Z',
   },
   {
+    id: 42,
+    tiqrEventId: 932,
+    ticketId: 812,
+    type: 'passes',
+    heading: 'Tathva Pass - Day 2',
+    datetime: '2026-10-09T18:30:00.000Z',
+    startTime: null,
+    endTime: null,
+    price: 100000,
+    venueId: null,
+    venue: null,
+    description: 'Proshow and events on day two.',
+    extraInfo: null,
+    picture: 'https://cdn-next-main.tathva.org/images/tickets/day2pass.webp',
+    teamSize: null,
+    isTeamEvent: false,
+    committee: null,
+    ticketsRemaining: 4000,
+    dynamicPricing: false,
+    status: 'OPEN',
+    passcodeRequired: false,
+    createdAt: '2026-08-11T03:30:00.000Z',
+    updatedAt: '2026-09-30T03:30:00.000Z',
+  },
+  {
+    id: 43,
+    tiqrEventId: 933,
+    ticketId: 813,
+    type: 'passes',
+    heading: 'Tathva Pass - Day 3',
+    datetime: '2026-10-10T18:30:00.000Z',
+    startTime: null,
+    endTime: null,
+    price: 110000,
+    venueId: null,
+    venue: null,
+    description: 'Proshow and events on day three.',
+    extraInfo: null,
+    picture: 'https://cdn-next-main.tathva.org/images/tickets/day3pass.webp',
+    teamSize: null,
+    isTeamEvent: false,
+    committee: null,
+    ticketsRemaining: 4000,
+    dynamicPricing: false,
+    status: 'OPEN',
+    passcodeRequired: false,
+    createdAt: '2026-08-12T03:30:00.000Z',
+    updatedAt: '2026-09-30T03:30:00.000Z',
+  },
+   {
     id: 41,
     tiqrEventId: 931,
     ticketId: 811,
@@ -268,12 +323,12 @@ export const EVENTS = [
     datetime: '2026-10-08T18:30:00.000Z',
     startTime: null,
     endTime: null,
-    price: 39900,
+    price: 20000,
     venueId: null,
     venue: null,
     description: 'Wheels, RoboWars and the conclave on day one.',
     extraInfo: null,
-    picture: 'https://cdn.tathva.org/events/pass-day1.webp',
+    picture: 'https://cdn-next-main.tathva.org/images/tickets/day1pass.webp',
     teamSize: null,
     isTeamEvent: false,
     committee: null,
@@ -398,4 +453,88 @@ export const REFERRALS = {
   successfulTicketCount: 5,
   successfulSalesAmount: 250000,
   registered: true,
+}
+
+/* ---- accommodation --------------------------------------------------- */
+
+/**
+ * Mirrors `GET /api/accommodation/options` exactly, including the shapes that
+ * are awkward: the API serves THREE FLAT LISTS, not a nested catalogue, and
+ * the page assembles its tier view from them.
+ *
+ * The edges worth exercising are all here:
+ *
+ *   - 4-sharing has no female stock, so it has no female SKU rows and no
+ *     female availability row at all. A tier that simply does not exist for
+ *     this buyer is different from one that sold out.
+ *   - `byNight` differs across nights, because a stay occupies a RANGE: two
+ *     bookings starting on different days still collide in the middle. A
+ *     fixture with flat nights would hide every bug in that logic.
+ *   - Enums are uppercase (MALE/FEMALE, VEG/NONVEG), matching the backend's
+ *     Prisma enums rather than the lowercase ids a frontend would pick.
+ *   - Prices are per WHOLE STAY. Three dormitory nights is less than three
+ *     times one night, so nothing here can be derived by multiplication.
+ */
+
+const ROOM_PRICES = {
+  dormitory: { 1: 20000, 2: 34000, 3: 48000 },
+  'sharing-3': { 1: 100000, 2: 180000, 3: 265000 },
+  'sharing-4': { 1: 110000, 2: 200000, 3: 290000 },
+}
+
+const STOCK = [
+  { tier: 'dormitory', gender: 'MALE', unit: 'bed', total: 450 },
+  { tier: 'dormitory', gender: 'FEMALE', unit: 'bed', total: 120 },
+  { tier: 'sharing-3', gender: 'MALE', unit: 'room', total: 10 },
+  { tier: 'sharing-3', gender: 'FEMALE', unit: 'room', total: 25 },
+  { tier: 'sharing-4', gender: 'MALE', unit: 'room', total: 8 },
+]
+
+/** Units held on each night, so `byNight` is not uniformly the total. */
+const HELD = {
+  'sharing-4|MALE': { 1: 6, 2: 6, 3: 0 },
+  'sharing-3|FEMALE': { 1: 0, 2: 25, 3: 0 },
+}
+
+export const ACCOMMODATION = {
+  festNights: 3,
+  checkIn: '11:00',
+  checkOut: '10:00',
+  notes: [
+    'Check-in from 11:00 AM, check-out by 10:00 AM.',
+    'Bring your own bedsheets.',
+  ],
+
+  rooms: STOCK.flatMap(({ tier, gender }) =>
+    [1, 2, 3].map((nights) => ({
+      tier,
+      gender,
+      nights,
+      price: ROOM_PRICES[tier][nights],
+      onSale: true,
+    })),
+  ),
+
+  availability: STOCK.map(({ tier, gender, unit, total }) => {
+    const held = HELD[`${tier}|${gender}`] ?? {}
+    return {
+      tier,
+      gender,
+      unit,
+      total,
+      byNight: {
+        1: total - (held[1] ?? 0),
+        2: total - (held[2] ?? 0),
+        3: total - (held[3] ?? 0),
+      },
+    }
+  }),
+}
+
+/** GET /api/food/options. Food is its own TIQR event, checked out separately. */
+export const FOOD = {
+  notes: ['Each coupon covers breakfast and lunch for its day.'],
+  food: [1, 2, 3].flatMap((day) =>
+    ['VEG', 'NONVEG'].map((diet) => ({ day, diet, price: 18000, onSale: true })),
+  ),
 }

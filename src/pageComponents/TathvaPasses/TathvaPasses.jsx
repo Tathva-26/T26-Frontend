@@ -13,6 +13,12 @@ import LightPillar from '@/components/LightPillar/LightPillar'
 // need a src, so unillustrated passes fall back to a generic ticket graphic.
 const FALLBACK_IMAGE = 'https://cdn-next-main.tathva.org/images/tickets/day2pass.webp'
 
+// A short tap buzz for switching tickets. No-op on browsers/devices without
+// the Vibration API (desktop, iOS Safari) — feature-detected, never thrown.
+const vibrate = (duration = 12) => {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(duration)
+}
+
 export default function TathvaPasses() {
   const inNavbarScope = useNavbarScope()
 
@@ -33,17 +39,18 @@ export default function TathvaPasses() {
 
   const active = passes[activeIndex] ?? null
 
-
   const handlePrev = () => {
+    vibrate()
     setChosenIndex(activeIndex === 0 ? passes.length - 1 : activeIndex - 1)
   }
 
   const handleNext = () => {
+    vibrate()
     setChosenIndex(activeIndex === passes.length - 1 ? 0 : activeIndex + 1)
   }
 
   return (
-    <main className='relative flex min-h-screen w-full flex-col items-center justify-between overflow-hidden bg-black select-none font-sans text-white'>
+    <main className='relative flex min-h-[100dvh] w-full flex-col items-center justify-between overflow-hidden bg-black select-none font-sans text-white'>
       {!inNavbarScope && <Navbar />}
       <TathvaMenu />
       <div className='pointer-events-none absolute inset-0 z-[5] overflow-hidden'>
@@ -85,7 +92,7 @@ export default function TathvaPasses() {
       {/* -------------------------------------------------------------
           HERO TITLE & SUBTITLE (AKIRA EXPANDED FONT)
       ------------------------------------------------------------- */}
-      <div className='relative z-10 my-0 sm:my-auto flex w-full flex-col items-center justify-center px-4 pt-24 sm:pt-24 md:pt-20 pb-10 sm:pb-14 text-center'>
+      <div className='relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 pt-24 sm:pt-24 md:pt-20 pb-10 sm:pb-14 text-center'>
         <h1
           className='text-4xl font-black tracking-[0.12em] text-white sm:text-5xl md:text-6xl lg:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]'
           style={{ fontFamily: "'Akira Expanded', 'Orbitron', sans-serif" }}
@@ -101,19 +108,19 @@ export default function TathvaPasses() {
 
         {/* -------------------------------------------------------------
             TICKET CAROUSEL & NAVIGATION
-            Mobile: Vertical rotation (Top/Center/Bottom) with middle largest
-            Desktop: Horizontal rotation (Left/Center/Right)
+            Mobile: Vertical rotation (Top/Center/Bottom/Far) with middle largest
+            Desktop: Horizontal rotation (Left/Center/Right + Far at bottom middle)
         ------------------------------------------------------------- */}
-        <div className='relative mt-56 sm:mt-10 md:mt-14 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
+        <div className='relative mt-32 sm:mt-16 md:mt-20 lg:mt-24 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
           {/* Left Arrow Button (Previous) */}
           <button
             type='button'
             onClick={handlePrev}
             aria-label='Previous ticket'
-            className='group absolute left-2 sm:left-4 md:left-6 lg:left-8 top-1/2 -translate-y-1/2 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14'
+            className='group absolute left-2 sm:left-4 md:left-6 lg:left-8 top-full mt-4 sm:top-1/2 sm:mt-0 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14'
           >
             <svg
-              className='h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:-translate-x-0.5'
+              className='h-5 w-5 rotate-90 sm:rotate-0 md:h-6 md:w-6 transition-transform group-hover:-translate-x-0.5'
               fill='none'
               stroke='currentColor'
               viewBox='0 0 24 24'
@@ -128,7 +135,7 @@ export default function TathvaPasses() {
           </button>
 
           {/* Ticket Showcase Stack */}
-          <div className='relative flex h-[260px] sm:h-[320px] md:h-[370px] lg:h-[400px] w-full max-w-3xl items-center justify-center'>
+          <div className='relative flex h-[400px] sm:h-[320px] md:h-[370px] lg:h-[400px] w-full max-w-3xl items-center justify-center'>
             {passes.map((ticket, index) => {
               let offset = index - activeIndex
               if (offset < -1) offset += passes.length
@@ -136,20 +143,52 @@ export default function TathvaPasses() {
 
               const isCenter = offset === 0
               const isLeft = offset === -1
+              const isRight = offset === 1
+
+              /* With exactly 4 passes, the leftover card (offset ±2) gets its
+                 own "far" slot (bottom middle on desktop, bottom of the
+                 vertical stack on phones), so all four stay visible and each
+                 one travels around the loop as you navigate.
+                 With 5+ passes, anything beyond the four slots is parked
+                 invisibly so it can't pile up behind another card. */
+              const isFar =
+                !isCenter && !isLeft && !isRight && passes.length === 4
+              const isHidden = !isCenter && !isLeft && !isRight && !isFar
+
+              /* Each slot gets an explicit layer so paint order never falls
+                 back to array order: centre on top, side cards next, the far
+                 card behind the right one. */
+              const layer = isCenter ? 'z-30' : isLeft || isRight ? 'z-20' : 'z-10'
 
               return (
                 <div
                   key={ticket.id}
-                  onClick={() => setChosenIndex(index)}
-                  className={`absolute left-1/2 top-1/2 cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${
+                  aria-hidden={isHidden}
+                  onClick={() => {
+                    if (isHidden) return
+                    vibrate()
+                    setChosenIndex(index)
+                  }}
+                  className={`absolute left-1/2 top-1/2 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${layer} ${
+                    isHidden ? 'pointer-events-none' : 'cursor-pointer'
+                  } ${
                     isCenter
-                      ? 'z-30 -translate-x-1/2 -translate-y-[52%] sm:-translate-y-[58%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
+                      ? // Dead centre, elevated a bit more on desktop for the hero look.
+                        '-translate-x-1/2 -translate-y-1/2 sm:-translate-y-[58%] md:-translate-y-[62%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
                       : isLeft
-                        ? 'z-10 -translate-x-1/2 sm:-translate-x-[95%] md:-translate-x-[100%] lg:-translate-x-[105%] -translate-y-[100%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
-                        : 'z-10 -translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] translate-y-[20%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        ? '-translate-x-1/2 sm:-translate-x-[95%] md:-translate-x-[100%] lg:-translate-x-[105%] -translate-y-[66%] sm:-translate-y-[44%] md:-translate-y-[45%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        : isRight
+                          ? '-translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] -translate-y-[34%] sm:-translate-y-[44%] md:-translate-y-[45%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                          : isFar
+                            ? // Fourth slot.
+                              // Phone: below the "next" card, tucked behind it, so a strip peeks out.
+                              // Desktop: bottom middle, between the left and right cards (unchanged).
+                              '-translate-x-1/2 -translate-y-[27%] scale-65 sm:-translate-y-[30%] md:-translate-y-[28%] sm:scale-70 opacity-70 sm:opacity-90 hover:opacity-100 drop-shadow-[0_10px_20px_rgba(0,0,0,0.7)]'
+                            : // 5th+ pass: parked invisibly.
+                              '-translate-x-1/2 -translate-y-1/2 scale-50 opacity-0'
                   }`}
                 >
-                  <div className='relative w-[260px] sm:w-[420px] md:w-[540px] lg:w-[640px] xl:w-[700px]'>
+                  <div className='relative w-[360px] sm:w-[420px] md:w-[540px] lg:w-[640px] xl:w-[700px]'>
                     <img
                       src={ticket.image}
                       alt={ticket.fullTitle}
@@ -169,15 +208,15 @@ export default function TathvaPasses() {
             })}
           </div>
 
-          {/* Right Arrow Button (Next) */}
+          {/* Next Arrow — bottom of the stack on phone (vertical wheel), right on desktop */}
           <button
             type='button'
             onClick={handleNext}
             aria-label='Next ticket'
-            className='group absolute right-2 sm:right-4 md:right-6 lg:right-8 top-1/2 -translate-y-1/2 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14'
+            className='group absolute right-2 sm:right-4 md:right-6 lg:right-8 top-full mt-4 sm:top-1/2 sm:mt-0 sm:-translate-y-[100%] z-40 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border-2 border-white bg-black/40 text-white shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 hover:bg-white hover:text-black md:h-14 md:w-14'
           >
             <svg
-              className='h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:translate-x-0.5'
+              className='h-5 w-5 rotate-90 sm:rotate-0 md:h-6 md:w-6 transition-transform group-hover:translate-x-0.5'
               fill='none'
               stroke='currentColor'
               viewBox='0 0 24 24'
@@ -195,25 +234,25 @@ export default function TathvaPasses() {
         {/*
           * The artwork promises "REGISTER" but nothing was ever clickable.
           * The control belongs to whichever pass is centred.
-          */}
+        */}
         <div className='relative z-30 mt-8 flex min-h-[210px] w-full max-w-[320px] flex-col justify-center sm:mt-10 sm:min-h-[230px] sm:max-w-[420px] md:max-w-[460px] rounded-2xl border border-white/15 bg-black/35 px-6 py-6 backdrop-blur-sm shadow-[0_0_50px_rgba(91,99,230,0.35)]'>
           {loading ? (
-            <p className='text-center text-sm tracking-[0.18em] text-white/60'>
+            <p className='text-center text-base sm:text-lg tracking-[0.18em] text-white/60'>
               CHECKING AVAILABILITY…
             </p>
           ) : active ? (
             <>
-              <p className='mb-3 text-center text-sm sm:text-base font-semibold tracking-[0.18em] text-white'>
+              <p className='mb-3 text-center text-lg sm:text-xl font-semibold tracking-[0.18em] text-white'>
                 {active.fullTitle}
                 {active.priceInPaise !== null && ` · ${active.fee}`}
               </p>
-              <div className='[&_button]:py-3 [&_button]:text-xl sm:[&_button]:text-2xl'>
+              <div className='[&_button]:py-3 [&_button]:text-2xl sm:[&_button]:text-3xl [&_dl]:text-sm'>
                 <Checkout event={active} />
               </div>
             </>
           ) : (
             /* No pass events from the backend yet, so there is nothing to sell. */
-            <p className='text-center text-sm leading-relaxed tracking-[0.14em] text-white/60'>
+            <p className='text-center text-base sm:text-lg leading-relaxed tracking-[0.14em] text-white/60'>
               REGISTRATIONS OPENING SOON
             </p>
           )}

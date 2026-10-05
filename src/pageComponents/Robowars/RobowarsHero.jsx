@@ -20,21 +20,21 @@ gsap.registerPlugin(ScrollTrigger, useGSAP)
 
 // Figma: "Calm Serif" — used for the main serif headline
 const calmSerif = localFont({
-  src: '../../../public/fonts/calm-serif-demo.otf',
+  src: '../../../public/fonts/calm-serif-demo.woff2',
   variable: '--font-calm-serif-local',
   display: 'swap',
 })
 
 // Figma: "Alata" — used for date, arena specs, prize text
 const alata = localFont({
-  src: '../../../public/fonts/alata-regular.ttf',
+  src: '../../../public/fonts/alata-regular.woff2',
   variable: '--font-alata-local',
   display: 'swap',
 })
 
 // "Bowlby One SC" — used for ROBO WARS headline
 const bowlbyOneSC = localFont({
-  src: '../../../public/fonts/BowlbyOneSC-Regular.ttf',
+  src: '../../../public/fonts/BowlbyOneSC-Regular.woff2',
   variable: '--font-bowlby-one-sc-local',
   display: 'swap',
 })
@@ -213,7 +213,7 @@ function MobileFrame({ containerRef }) {
         alt=''
         fill
         priority
-        sizes='100vw'
+        sizes='(max-width: 767px) 100vw, 0px'
         draggable={false}
         className='object-cover'
       />
@@ -450,7 +450,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
         // yanked anywhere. This only means anything for wheel/trackpad
         // input, which Lenis itself smooths (`smoothWheel`) — self.getVelocity()
         // is reading Lenis's own eased output.
-        const HARD_SCROLL_VELOCITY = 2200
+        const HARD_SCROLL_VELOCITY = 900
 
         // Touch screens scroll natively — Lenis's `syncTouch` is off (see
         // SmoothScroll), so a swipe's momentum is driven by the OS, not
@@ -464,7 +464,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
 
         const buildTimeline = (root) => {
           const timeline = gsap.timeline({
-            defaults: { ease: 'none' },
+            defaults: { ease: 'power1.out' },
             scrollTrigger: {
               scroller: document.querySelector('.main-scroll') || window,
               trigger: timelineRef.current,
@@ -540,6 +540,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
               {
                 opacity: 1,
                 transform: 'translate3d(0, 0, 0) scale(1)',
+                duration: 0.25,
               },
               BEAT_ROBOTS,
             )
@@ -550,6 +551,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
               {
                 opacity: 1,
                 transform: 'translate3d(0, 0, 0) scale(1)',
+                duration: 0.2,
               },
               BEAT_TITLE,
             )
@@ -558,6 +560,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
               {
                 opacity: 1,
                 transform: 'translate3d(0, 0, 0) scale(1)',
+                duration: 0.18,
               },
               BEAT_DATE,
             )
@@ -566,6 +569,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
               {
                 opacity: 1,
                 transform: 'translate3d(0, 0, 0) scale(1)',
+                duration: 0.18,
               },
               BEAT_DETAILS,
             )
@@ -576,9 +580,9 @@ export default function RobowarsHero({ leadInVh = 0 }) {
           const root = mobileRef.current
           if (!root) return
           setInitialMotion(root, {
-            robotDistance: 42,
-            titleDistance: 14,
-            detailDistance: 16,
+            robotDistance: 36,
+            titleDistance: 8,
+            detailDistance: 12,
           })
           buildTimeline(root)
         })
@@ -586,9 +590,9 @@ export default function RobowarsHero({ leadInVh = 0 }) {
           const root = desktopTabletRef.current
           if (!root) return
           setInitialMotion(root, {
-            robotDistance: 54,
-            titleDistance: 20,
-            detailDistance: 22,
+            robotDistance: 45,
+            titleDistance: 10,
+            detailDistance: 14,
           })
           buildTimeline(root)
         })
@@ -596,9 +600,9 @@ export default function RobowarsHero({ leadInVh = 0 }) {
           const root = desktopXlRef.current
           if (!root) return
           setInitialMotion(root, {
-            robotDistance: 70,
-            titleDistance: 28,
-            detailDistance: 34,
+            robotDistance: 50,
+            titleDistance: 12,
+            detailDistance: 18,
           })
           buildTimeline(root)
         })
@@ -648,7 +652,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
 
       <div
         data-robowars-stage
-        className='sticky top-0 h-[100dvh] min-h-[560px] w-full overflow-hidden will-change-transform'
+        className='sticky top-0 h-dvh min-h-[560px] w-full overflow-hidden will-change-transform'
       >
         {/* Zoomed in by default; WheelsExperience scales this back down to 1
             as the docking TV's backdrop fades, so the arena zooms out in sync
@@ -658,11 +662,11 @@ export default function RobowarsHero({ leadInVh = 0 }) {
             from that wider box, so arena-bg (object-cover) always fills the
             full viewport instead of letterboxing top and bottom. */}
         <DesktopFrame
-          className='hidden w-[max(100vw,202.726dvh)] xl:block'
+          className='hidden min-w-full min-h-full w-[max(100vw,203dvh)] xl:block'
           containerRef={desktopXlRef}
         />
         <DesktopFrame
-          className='hidden w-[max(112vw,227.053dvh)] md:block xl:hidden'
+          className='hidden min-w-full min-h-full w-[max(112vw,228dvh)] md:block xl:hidden'
           scale='tablet'
           containerRef={desktopTabletRef}
         />

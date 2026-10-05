@@ -14,16 +14,18 @@ const ROUTE_BY_TITLE = {
   HACKATHONS: '/competitions',
 }
 
-// Desktop Constants
-const desktopAssetBase = 'https://c.animaapp.com/Dp7bguVy/img'
+// Desktop Constants — all assets served from our CDN (never Anima, never the webserver).
+// Source files: public/images/w1/ (WebP, converted from the Anima originals).
+const desktopAssetBase = 'https://cdn-next-main.tathva.org/images/w1'
+const mobileAssetBase = 'https://cdn-next-main.tathva.org/images/w1'
 const desktopCards = [
   {
     id: 'workshops',
     number: '01',
     title: 'WORKSHOPS',
     description: [''],
-    frame: `${desktopAssetBase}/vector-29.png`,
-    image: `${desktopAssetBase}/tathva-26-generate-the-same-image---ar-321487---edit-httpss-m-97@2x.png`,
+    frame: `${desktopAssetBase}/desktop-frame-workshops.webp`,
+    image: `${desktopAssetBase}/desktop-card-workshops.webp`,
     titleClass: 'top-[140px] left-0 w-[204px] text-xl tracking-[5.00px]',
     descriptionClass: 'top-[154px] left-0 w-[204px]',
     markerClass: 'top-[45px] left-[77px]',
@@ -34,7 +36,7 @@ const desktopCards = [
     number: '02',
     title: 'COMPETITIONS',
     description: [''],
-    frame: `${desktopAssetBase}/group-35.png`,
+    frame: `${desktopAssetBase}/desktop-frame-competitions.webp`,
     titleClass: 'top-[140px] left-px w-[204px] text-lg tracking-[4.50px]',
     descriptionClass: 'top-[154px] left-px w-[204px]',
     markerClass: 'top-[45px] left-[77px]',
@@ -45,7 +47,7 @@ const desktopCards = [
     number: '03',
     title: 'LECTURES',
     description: [''],
-    frame: `${desktopAssetBase}/group-36.png`,
+    frame: `${desktopAssetBase}/desktop-frame-lectures.webp`,
     titleClass: 'top-[140px] left-[21px] w-[171px] text-xl tracking-[5.00px]',
     descriptionClass: 'top-[158px] left-px w-[204px]',
     markerClass: 'top-[45px] left-[77px]',
@@ -56,7 +58,7 @@ const desktopCards = [
     number: '04',
     title: 'PASSES',
     description: [''],
-    frame: `${desktopAssetBase}/group-37.png`,
+    frame: `${desktopAssetBase}/desktop-frame-passes.webp`,
     titleClass: 'top-[140px] left-px w-[204px] text-xl tracking-[5.00px]',
     descriptionClass: 'top-[157px] left-px w-[204px]',
     markerClass: 'top-[42px] left-[79px]',
@@ -78,7 +80,7 @@ const mobileCards = [
     //     REAL WORLD
     //   </>
     // ),
-    image: 'https://c.animaapp.com/UqxAlqQL/img/group-34@2x.png',
+    image: `${mobileAssetBase}/mobile-card-workshops.webp`,
     position: 'absolute top-0 left-px w-[143px] h-[401px]',
     titleClass:
       "absolute top-[76px] left-0 w-[139px] [font-family:'Hammersmith_One',Helvetica] font-normal text-white text-[13.6px] text-center tracking-[3.40px] leading-[normal]",
@@ -99,7 +101,7 @@ const mobileCards = [
     //     BUILD
     //   </>
     // ),
-    image: 'https://c.animaapp.com/UqxAlqQL/img/group-35@2x.png',
+    image: `${mobileAssetBase}/mobile-card-competitions.webp`,
     position: 'absolute top-px left-[174px] w-[143px] h-[401px]',
     titleClass:
       "left-px w-[139px] text-[12.2px] tracking-[3.06px] absolute top-[76px] [font-family:'Hammersmith_One',Helvetica] font-normal text-white text-center leading-[normal]",
@@ -120,7 +122,7 @@ const mobileCards = [
     //     GROW
     //   </>
     // ),
-    image: 'https://c.animaapp.com/UqxAlqQL/img/group-36@2x.png',
+    image: `${mobileAssetBase}/mobile-card-lectures.webp`,
     position: 'absolute top-[419px] left-0 w-[143px] h-[401px]',
     titleClass:
       "left-3.5 w-[116px] text-[13.6px] tracking-[3.40px] absolute top-[76px] [font-family:'Hammersmith_One',Helvetica] font-normal text-white text-center leading-[normal]",
@@ -131,7 +133,7 @@ const mobileCards = [
   },
   {
     number: '04',
-    title: 'HACKATHONS',
+    title: 'PASSES',
     // description: (
     //   <>
     //     CODE
@@ -141,7 +143,7 @@ const mobileCards = [
     //     CREATE
     //   </>
     // ),
-    image: 'https://c.animaapp.com/UqxAlqQL/img/group-37@2x.png',
+    image: `${mobileAssetBase}/mobile-card-passes.webp`,
     position: 'absolute top-[419px] left-[174px] w-[143px] h-[401px]',
     titleClass:
       "absolute top-[76px] left-0 w-[139px] [font-family:'Hammersmith_One',Helvetica] font-normal text-white text-[13.6px] text-center tracking-[3.40px] leading-[normal]",
@@ -152,8 +154,7 @@ const mobileCards = [
   },
 ]
 
-const cardIcon =
-  'https://c.animaapp.com/UqxAlqQL/img/3ef01d988cdc695be23d44d3ff250f97-removebg-preview-4@2x.png'
+const cardIcon = `${mobileAssetBase}/mobile-icon.webp`
 
 function ActivityCard({
   card,
@@ -198,7 +199,7 @@ function ActivityCard({
         <h2 className={card.titleClass}>{card.title}</h2>
         <p className={card.descriptionClass}>{card.description}</p>
         <div
-          className={`absolute w-[33px] h-[34px] ${card.numberPosition} bg-[url(https://c.animaapp.com/UqxAlqQL/img/22e6ef5def6cb45e16f88405d9a1a8e5-removebg-preview-1-3@2x.png)] bg-cover bg-[50%_50%]`}
+          className={`absolute w-[33px] h-[34px] ${card.numberPosition} bg-[url(https://cdn-next-main.tathva.org/images/w1/mobile-marker.webp)] bg-cover bg-[50%_50%]`}
           aria-hidden='true'
         >
           <span className="absolute w-full h-[36.00%] top-[32.00%] left-0 [font-family:'Hammersmith_One',Helvetica] font-normal text-white text-[10.9px] text-center tracking-[3.04px] leading-[normal] whitespace-nowrap">
@@ -268,7 +269,7 @@ function MobileView() {
 
   return (
     <main
-      className='block min-[1285px]:hidden bg-[url(https://c.animaapp.com/UqxAlqQL/img/android-compact---16.png)] bg-cover bg-[50%_50%] w-full h-[100svh] relative overflow-hidden flex items-center justify-center'
+      className='block min-[1285px]:hidden bg-[url(https://cdn-next-main.tathva.org/images/w1/w1-bg.webp)] bg-cover bg-[50%_50%] w-full h-[100svh] relative overflow-hidden flex items-center justify-center'
       onClick={() => setSelectedCard(null)}
     >
       {viewType === 'tablet-landscape' ? (
@@ -343,7 +344,7 @@ function MobileView() {
                     ))}
                   </p>
                   <div
-                    className={`absolute w-[49px] h-[50px] bg-[url(https://c.animaapp.com/Dp7bguVy/img/22e6ef5def6cb45e16f88405d9a1a8e5-removebg-preview-1-3@2x.png)] bg-cover bg-[50%_50%] ${card.markerClass}`}
+                    className={`absolute w-[49px] h-[50px] bg-[url(https://cdn-next-main.tathva.org/images/w1/desktop-marker.webp)] bg-cover bg-[50%_50%] ${card.markerClass}`}
                     aria-label={`${card.number}: ${card.title}`}
                   >
                     <span className="absolute w-full h-[36.00%] top-[32.00%] left-0 [font-family:'Hammersmith_One',Helvetica] font-normal text-white text-base text-center tracking-[4.48px] leading-[normal] whitespace-nowrap">
@@ -354,7 +355,7 @@ function MobileView() {
                     className={`absolute w-[52px] h-[52px] aspect-[1] object-cover ${card.iconClass}`}
                     alt=''
                     aria-hidden='true'
-                    src={`${desktopAssetBase}/3ef01d988cdc695be23d44d3ff250f97-removebg-preview-4@2x.png`}
+                    src={`${desktopAssetBase}/desktop-icon.webp`}
                   />
                 </div>
               </article>
@@ -454,7 +455,7 @@ function DesktopView() {
   const router = useRouter()
   return (
     <main
-      className='hidden min-[1285px]:flex events-container bg-[url(https://c.animaapp.com/Dp7bguVy/img/frame-48.png)] bg-cover bg-[50%_50%] w-full h-[max(697px,100svh)] relative items-center justify-center overflow-hidden'
+      className='hidden min-[1285px]:flex events-container bg-[url(https://cdn-next-main.tathva.org/images/w1/w1-bg.webp)] bg-cover bg-[50%_50%] w-full h-[max(697px,100svh)] relative items-center justify-center overflow-hidden'
       data-model-id='998:1701'
     >
       <div className='hidden lg:block'></div>
@@ -514,7 +515,7 @@ function DesktopView() {
                   ))}
                 </p>
                 <div
-                  className={`absolute w-[49px] h-[50px] bg-[url(https://c.animaapp.com/Dp7bguVy/img/22e6ef5def6cb45e16f88405d9a1a8e5-removebg-preview-1-3@2x.png)] bg-cover bg-[50%_50%] ${card.markerClass}`}
+                  className={`absolute w-[49px] h-[50px] bg-[url(https://cdn-next-main.tathva.org/images/w1/desktop-marker.webp)] bg-cover bg-[50%_50%] ${card.markerClass}`}
                   aria-label={`${card.number}: ${card.title}`}
                 >
                   <span className="absolute w-full h-[36.00%] top-[32.00%] left-0 [font-family:'Hammersmith_One',Helvetica] font-normal text-white text-base text-center tracking-[4.48px] leading-[normal] whitespace-nowrap">
@@ -525,7 +526,7 @@ function DesktopView() {
                   className={`absolute w-[52px] h-[52px] aspect-[1] object-cover ${card.iconClass}`}
                   alt=''
                   aria-hidden='true'
-                  src={`${desktopAssetBase}/3ef01d988cdc695be23d44d3ff250f97-removebg-preview-4@2x.png`}
+                  src={`${desktopAssetBase}/desktop-icon.webp`}
                 />
               </div>
             </article>

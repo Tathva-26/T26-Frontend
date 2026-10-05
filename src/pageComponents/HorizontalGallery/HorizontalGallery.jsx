@@ -407,7 +407,9 @@ export default function HorizontalGallery({ coordinatedEntrance = false }) {
           '
         />
 
-        {/* BOTTOM GRADIENT */}
+        {/* BOTTOM GRADIENT — fades to the page's black (the Footer's own
+            backdrop) right at the seam, instead of this section's own
+            purple, so the two sections blend instead of cutting hard. */}
         <div
           className='
             pointer-events-none
@@ -421,8 +423,8 @@ export default function HorizontalGallery({ coordinatedEntrance = false }) {
             md:h-48
 
             bg-gradient-to-t
-            from-[#1d1725]
-            via-[#1d1725]/60
+            from-black
+            via-[#1d1725]/80
             to-transparent
           '
         />

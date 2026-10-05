@@ -12,7 +12,7 @@ import {
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { EasePack } from 'gsap/EasePack'
-import TopoBackground from '@/components/TopoBackground'
+import Topography from '@/components/Topography/Topography'
 import { watchVisible } from '@/lib/watchVisible'
 import { touchStop } from '@/lib/touchStop'
 
@@ -24,8 +24,9 @@ const artists = [
   {
     name: 'Day 2 Artists',
     performers: ['Vedan', 'Akasa', 'Gabri', 'Stic'],
-    background: `${assetPathPrefix}/21bbf.svg`,
-    portrait: `${assetPathPrefix}/day2_main.svg`,
+    mobilePerformerLines: [['Vedan', 'Akasa', 'Gabri', 'Stic']],
+    background: `${assetPathPrefix}/21bbf.webp`,
+    portrait: `${assetPathPrefix}/day2_main.webp`,
     portraitClassName: 'artist-portrait artist-portrait--arijit',
     cardPortrait: `${assetPathPrefix}/day2_anim_1.webp`,
     cardSecondary: `${assetPathPrefix}/day2_anim_2.webp`,
@@ -35,9 +36,13 @@ const artists = [
   {
     name: 'Day 3 Artists',
     performers: ['Sachet-Parampara', 'Thamarassery Churam', 'DJ noise'],
+    mobilePerformerLines: [
+      ['Sachet-Parampara', 'DJ noise'],
+      ['Thamarassery Churam'],
+    ],
     performersPerLine: 1,
-    background: `${assetPathPrefix}/bef85.svg`,
-    portrait: `${assetPathPrefix}/day3.svg`,
+    background: `${assetPathPrefix}/bef85.webp`,
+    portrait: `${assetPathPrefix}/day3.webp`,
     portraitClassName: 'artist-portrait artist-portrait--day3',
     cardPortrait: `${assetPathPrefix}/day3_anim_2.webp`,
     cardSecondary: `${assetPathPrefix}/day3_anim_3.webp`,
@@ -148,6 +153,12 @@ function useScrubCrossfade(
       const bgs = (bgRefs?.current || []).filter(Boolean)
       const ports = (portraitRefs?.current || []).filter(Boolean)
       const boards = (boardRefs?.current || []).filter(Boolean)
+      const portraitImages = ports.map((port) =>
+        port.querySelector('.artist-portrait'),
+      )
+      const boardMarquees = boards.map((board) =>
+        board.querySelector('.board-marquee'),
+      )
       const count = Math.max(bgs.length, boards.length, ports.length)
       if (count < 2) return
       // The wide layout's section also wraps the phone layout, so on a phone
@@ -178,6 +189,12 @@ function useScrubCrossfade(
       if (bgs.length > 1) gsap.set(bgs.slice(1), { autoAlpha: 0 })
       if (ports.length > 1) gsap.set(ports.slice(1), { autoAlpha: 0 })
       if (boards.length > 1) gsap.set(boards.slice(1), { autoAlpha: 0 })
+      gsap.set(portraitImages.slice(1).filter(Boolean), {
+        y: -PORTRAIT_EXIT,
+      })
+      gsap.set(boardMarquees.slice(1).filter(Boolean), {
+        y: -PORTRAIT_EXIT,
+      })
 
       const total = timelineTotal(count)
       const artistStops = Array.from(
@@ -472,15 +489,32 @@ function useScrubCrossfade(
             { autoAlpha: 1, ease: PORTRAIT_EASE },
             t,
           )
+          if (portraitImages[i] && portraitImages[i + 1]) {
+            tl.to(portraitImages[i], { y: PORTRAIT_EXIT, ease: PORTRAIT_EASE }, t)
+              .fromTo(
+                portraitImages[i + 1],
+                { y: -PORTRAIT_EXIT },
+                { y: 0, ease: PORTRAIT_EASE, immediateRender: false },
+                t,
+              )
+          }
         }
 
-        // Synchronized vertical sliding animation matching the left side portraits
         if (boards[i] && boards[i + 1]) {
           tl.to(boards[i], { autoAlpha: 0, ease: PORTRAIT_EASE }, t).to(
             boards[i + 1],
             { autoAlpha: 1, ease: PORTRAIT_EASE },
             t,
           )
+          if (boardMarquees[i] && boardMarquees[i + 1]) {
+            tl.to(boardMarquees[i], { y: PORTRAIT_EXIT, ease: PORTRAIT_EASE }, t)
+              .fromTo(
+                boardMarquees[i + 1],
+                { y: -PORTRAIT_EXIT },
+                { y: 0, ease: PORTRAIT_EASE, immediateRender: false },
+                t,
+              )
+          }
         }
       }
 
@@ -825,7 +859,14 @@ function ArtistName({ artist, className }) {
             key={idx}
             className={`artist-single-name artist-single-name--${idx}`}
           >
-            {performer}
+            {performer === 'Thamarassery Churam' ? (
+              <>
+                Thamarassery<br className='artist-name-mobile-break' />
+                Churam
+              </>
+            ) : (
+              performer
+            )}
           </span>
         ))}
       </div>
@@ -1150,14 +1191,7 @@ function ArtistMobile() {
                 mobileBgRefs.current[index] = el
               }}
             >
-              <TopoBackground
-                fixed={false}
-                background='#1c1c1c'
-                lineColor='220, 220, 220'
-                lineOpacity={0.16}
-                seed={index + 7}
-                style={{ zIndex: 0 }}
-              />
+              <Topography scale={2} />
             </div>
           ))}
         </div>
@@ -1188,10 +1222,15 @@ function ArtistMobile() {
               <div className='mobile-stage'>
                 <ArtistBoard artist={artist} />
               </div>
-              <ArtistName
-                artist={artist}
+              <h2
                 className={`mobile-name${artist.performersPerLine === 1 ? ' mobile-name--raised' : ''}`}
-              />
+              >
+                {artist.mobilePerformerLines.map((line, lineIndex) => (
+                  <span className='artist-single-name' key={lineIndex}>
+                    {line.join(' . ')}{line.includes('DJ noise') ? '.' : ''}
+                  </span>
+                ))}
+              </h2>
               <p className='mobile-desc'>
                 Brace yourselves for a magical night as the legendary{' '}
                 {artist.name} takes the stage. Get ready to sing, sway, and make
@@ -1410,6 +1449,15 @@ export default function App() {
           pointer-events: none;
           object-fit: contain;
           object-position: bottom;
+
+          /* Purple outline glow. drop-shadow follows the transparent cut-out edge of the
+             image (not its rectangular box). Three stacked shadows = brightest right on
+             the edge, fading outward, so it reads as a radial glow rather than a flat one.
+             --glow is "R G B", so the colour is changed in this one place. */
+          --glow: 168 85 247;
+          filter: drop-shadow(0 0 2px rgb(var(--glow) / 0.6))
+            drop-shadow(0 0 14px rgb(var(--glow) / 0.45))
+            drop-shadow(0 0 48px rgb(var(--glow) / 0.28));
         }
 
         .artist-portrait--arijit {
@@ -1437,21 +1485,21 @@ export default function App() {
         /* -------------------------------------------------------------
            DESKTOP/LAPTOP SCHEDULE CARD: Shifted Higher & Proportionally Sized
            ------------------------------------------------------------- */
-        .schedule-card {
-          position: absolute;
-          z-index: 3;
-          top: 20%;
-          right: -8%;
-          width: min(320px, 50%);
-          min-width: 260px;
-          overflow: hidden;
-          border: 1px solid #323231;
-          border-radius: 14px;
-          background: #202020;
-          transition:
-            border-color 0.3s ease,
-            transform 0.3s ease;
-        }
+          .schedule-card {
+            position: absolute;
+            z-index: 3;
+            /* Lock vertical placement relative to viewport or rem instead of column height % */
+            top: clamp(60px, 12vh, 120px);
+            /* Pin directly to the column boundary instead of a drifting negative % */
+            right: -24px;
+            /* Keep dimensions fixed so text doesn't reflow between screens */
+            width: 290px;
+            overflow: hidden;
+            border: 1px solid #323231;
+            border-radius: 14px;
+            background: #202020;
+            transition: border-color 0.3s ease;
+            }
 
         /* Laptop View: proportionally scaled down without affecting inner layout */
         @media (max-width: 1440px) and (min-width: 769px) {
@@ -1647,7 +1695,6 @@ export default function App() {
         }
 
         /* Day 2: Individual name placement between pictures */
-        /* Day 2: Individual name placement between pictures */
         .slide--day-2-artists .artist-single-name--1 {
           /* Vedan: between top-left avatar and top avatar2, above secondary */
           top: 37%;
@@ -1688,23 +1735,22 @@ export default function App() {
         }
 
         /* Day 3: Individual name placement between pictures */
-        /* Day 3: Individual name placement between pictures */
-        .slide--day-3-artists .artist-single-name--0 {
+        .slide--day-3-artists .artist-single-name--1 {
           /* Sachet-Parampara: between avatar and primary, above secondary */
           top: 22%;
-          left: 25%;
+          left: 35%;
           transform: rotate(-6deg);
         }
-        .slide--day-3-artists .artist-single-name--1 {
+        .slide--day-3-artists .artist-single-name--0 {
           /* Thamarassery Churam: right of secondary, below primary */
-          top: 63%;
+          top: 78%;
           left: 60%;
           transform: rotate(-8deg);
         }
         .slide--day-3-artists .artist-single-name--2 {
           /* DJ noise: below avatar, left of secondary */
-          top: 69%;
-          left: 6%;
+          top: 60%;
+          left: 3%;
           transform: rotate(4deg);
         }
 
@@ -1919,17 +1965,17 @@ export default function App() {
 
           .mobile-name {
             position: relative;
-            top: 34px;
-            margin: 22px 0 0;
+            top: 58px;
+            margin: 16px 0 0;
             color: #fff;
             font-family: 'Bebas Neue', 'Bebas Neue:Regular', sans-serif;
-            font-size: clamp(6px, 12vw, 66px);
-            line-height: 0.95;
+            font-size: clamp(20px, 7.5vw, 38px);
+            line-height: 1;
             text-transform: uppercase;
           }
 
           .mobile-name--raised {
-            top: 24px;
+            top: 50px;
           }
 
           .mobile-name .artist-single-name {
@@ -1944,10 +1990,10 @@ export default function App() {
 
           .mobile-desc {
             position: relative;
-            top: 24px;
-            margin: 12px 0 0;
-            font-size: 20.5px;
-            line-height: 1.25;
+            top: 52px;
+            margin: 8px 0 0;
+            font-size: 16px;
+            line-height: 1.35;
             opacity: 0.92;
           }
         }
@@ -1974,14 +2020,7 @@ export default function App() {
                 bgRefs.current[index] = el
               }}
             >
-              <TopoBackground
-                fixed={false}
-                background='#1c1c1c'
-                lineColor='220, 220, 220'
-                lineOpacity={0.16}
-                seed={index + 7}
-                style={{ zIndex: 0 }}
-              />
+              <Topography scale={2} />
             </div>
           ))}
         </div>
