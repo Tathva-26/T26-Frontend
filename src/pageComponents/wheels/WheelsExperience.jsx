@@ -346,8 +346,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       }
 
       if (currentFrame <= SHRINK_START) {
-        if (robowarsStage)
-          robowarsStage.style.transform = `scale(${robowarsZoomStart.toFixed(4)})`
+        if (robowarsStage) robowarsStage.style.transform = 'scale(1)'
         const initX = ALIGN_CONFIG.fullscreenShiftX
         const initY = startTvY + ALIGN_CONFIG.fullscreenShiftY
         tvContainer.style.transform = `translate3d(${initX.toFixed(2)}px, ${initY.toFixed(2)}px, 0) scale(${startTvScale.toFixed(4)})`
@@ -390,19 +389,14 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       // TV screen corners smoothly round to 6px
       tvScreen.style.borderRadius = `${(curEase * 6).toFixed(1)}px`
 
-      // No darkening overlay at all once the TV starts shrinking: Robowars is
-      // hidden purely by the zoom crop (robowarsZoomStart is a "cover" fit of
-      // the TV's own screen rect, so at curEase 0 the crop shows only that
-      // rect, identical to what the wheels TV is displaying there) and it
-      // zooms out in lockstep with the TV's own shrink easing, so the arena
-      // is progressively and fully revealed with no black overlay involved.
+      // Smoothly fade out Wheels' black backdrop to reveal Robowars underneath
+      // without extreme GPU texture scaling on the stage
       if (revealUnderlay && backdropRef.current) {
-        backdropRef.current.style.opacity = '0'
+        backdropRef.current.style.opacity = Math.max(0, 1 - curEase).toFixed(3)
       }
 
       if (robowarsStage) {
-        const robowarsScale =
-          robowarsZoomStart + (1 - robowarsZoomStart) * curEase
+        const robowarsScale = 1 + 0.03 * (1 - curEase)
         robowarsStage.style.transform = `scale(${robowarsScale.toFixed(4)})`
       }
 
