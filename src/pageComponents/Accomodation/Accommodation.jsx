@@ -18,7 +18,7 @@ import {
   buildBookingBody,
   buildStayLine,
   cartCount,
-  cartTotal,
+  cartFees,
   checkoutBlocker,
   clampCheckInDay,
   foodName,
@@ -195,7 +195,7 @@ export default function Accommodation() {
 
   const tier = tiers.find((row) => row.tier === tierId) ?? null
 
-  const total = cartTotal(lines)
+  const fees = cartFees(lines)
   const count = cartCount(lines)
   const blocker = checkoutBlocker(lines)
 
@@ -551,14 +551,31 @@ export default function Accommodation() {
                 </ul>
               )}
 
-              <div className='mt-5 flex justify-between border-t border-white/12 pt-4 text-base font-semibold'>
-                <span>Total</span>
-                {/* formatPrice(0) is "Free", which is right for a free ticket
-                    and wrong for an empty basket. */}
-                <span className='tabular-nums'>
-                  {lines.length === 0 ? '₹0' : formatPrice(total)}
-                </span>
-              </div>
+              {/* TIQR adds the platform fee and GST on top of the ticket
+                  prices at checkout, so the breakdown shows the buyer what they
+                  will actually be charged. Matches its own total exactly. */}
+              <dl className='mt-5 space-y-1.5 border-t border-white/12 pt-4 text-sm'>
+                <div className='flex justify-between text-white/60'>
+                  <dt>Subtotal</dt>
+                  <dd className='tabular-nums'>{formatPrice(fees.base)}</dd>
+                </div>
+                <div className='flex justify-between text-white/60'>
+                  <dt>Platform fee (2.5%)</dt>
+                  <dd className='tabular-nums'>{formatPrice(fees.platformFee)}</dd>
+                </div>
+                <div className='flex justify-between text-white/60'>
+                  <dt>GST on fee (18%)</dt>
+                  <dd className='tabular-nums'>{formatPrice(fees.gst)}</dd>
+                </div>
+                <div className='flex justify-between pt-1.5 text-base font-semibold text-white'>
+                  <dt>Total</dt>
+                  {/* formatPrice(0) is "Free", which is right for a free ticket
+                      and wrong for an empty basket. */}
+                  <dd className='tabular-nums'>
+                    {lines.length === 0 ? '₹0' : formatPrice(fees.total)}
+                  </dd>
+                </div>
+              </dl>
 
               <button
                 type='button'

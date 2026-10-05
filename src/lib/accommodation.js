@@ -21,6 +21,8 @@
  * Enums are the backend's: MALE/FEMALE and VEG/NONVEG, uppercase.
  */
 
+import { feeBreakdown } from '@/lib/fees'
+
 export const GENDERS = [
   { id: 'MALE', label: 'Male' },
   { id: 'FEMALE', label: 'Female' },
@@ -196,6 +198,20 @@ export function buildFoodLine(coupon, quantity) {
 export const lineTotal = (line) => line.unitPrice * line.quantity
 export const cartTotal = (lines) =>
   lines.reduce((sum, line) => sum + lineTotal(line), 0)
+
+/**
+ * The buyer-facing breakdown: subtotal, platform fee, GST on the fee, total.
+ *
+ * Fees are applied to the whole basket, not per line, because that is how
+ * TIQR charges it. Worked example from a real checkout: 3-sharing x4 at ₹1,800
+ * plus two food lines of ₹900 gives a subtotal of ₹9,000, a fee of ₹225, GST of
+ * ₹40.50 and a total of ₹9,265.50, which is what TIQR charged.
+ */
+export function cartFees(lines) {
+  const base = cartTotal(lines) // paise
+  const fee = feeBreakdown(base)
+  return fee ?? { base: 0, platformFee: 0, gst: 0, total: 0 }
+}
 export const cartCount = (lines) =>
   lines.reduce((sum, line) => sum + line.quantity, 0)
 
