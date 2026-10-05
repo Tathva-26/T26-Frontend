@@ -6,7 +6,6 @@ export default async function WorkshopDetailPage({ params }) {
   return (
     <EventDetailPage
       id={id}
-      eventType='workshops'
       label='Workshop'
       heading='WORKSHOPS'
       backHref='/workshops'
