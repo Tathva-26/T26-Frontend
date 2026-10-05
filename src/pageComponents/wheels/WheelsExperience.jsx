@@ -10,6 +10,7 @@ import {
   START_FRAME,
   TOTAL_SCROLL_VH,
   TV_ART_STYLE,
+  getFrameProgress,
   getRobowarsTvScreenRect,
 } from './robowarsHandoff'
 import { holdLoader } from '@/lib/loadGate'
@@ -663,7 +664,8 @@ export default function WheelsExperience({ revealUnderlay = false }) {
 
         if (self.progress <= FRAME_PROGRESS_END) {
           targetFrameRef.current =
-            (self.progress / FRAME_PROGRESS_END) * (FRAME_COUNT - 1)
+            getFrameProgress(self.progress / FRAME_PROGRESS_END) *
+            (FRAME_COUNT - 1)
           targetFadeRef.current = 0
         } else {
           targetFrameRef.current = FRAME_COUNT - 1

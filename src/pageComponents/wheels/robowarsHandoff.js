@@ -4,12 +4,52 @@
 export const START_FRAME = 105;
 export const END_FRAME = 240;
 export const FRAME_COUNT = END_FRAME - START_FRAME + 1;
+export const FRAME_SPEEDUP_AT = 200;
 // Frame at which the fullscreen TV starts shrinking towards its docked spot.
 export const SHRINK_START_FRAME = 80;
 
-// Scroll distance (in viewport heights) spent scrubbing through the car frames,
-// followed by extra distance spent fading the docked TV screen to black.
-export const FRAME_SCROLL_VH = 700;
+// Keep the original frame pace through frame 200, then use half as much scroll
+// for the remaining frames.
+const ORIGINAL_FRAME_SCROLL_VH = 700;
+const FRAME_INTERVALS = FRAME_COUNT - 1;
+const SPEEDUP_INTERVALS = FRAME_SPEEDUP_AT - START_FRAME;
+const REMAINING_INTERVALS = FRAME_INTERVALS - SPEEDUP_INTERVALS;
+const EFFECTIVE_FRAME_INTERVALS =
+  SPEEDUP_INTERVALS + REMAINING_INTERVALS / 2;
+export const FRAME_SCROLL_VH =
+  ORIGINAL_FRAME_SCROLL_VH * (EFFECTIVE_FRAME_INTERVALS / FRAME_INTERVALS);
+
+export function getFrameProgress(scrollProgress) {
+  const progress = Math.min(1, Math.max(0, scrollProgress));
+  const splitScrollProgress = SPEEDUP_INTERVALS / EFFECTIVE_FRAME_INTERVALS;
+  const splitFrameProgress = SPEEDUP_INTERVALS / FRAME_INTERVALS;
+
+  if (progress <= splitScrollProgress) {
+    return (progress / splitScrollProgress) * splitFrameProgress;
+  }
+  return (
+    splitFrameProgress +
+    ((progress - splitScrollProgress) / (1 - splitScrollProgress)) *
+      (1 - splitFrameProgress)
+  );
+}
+
+export function getFrameScrollProgress(frameProgress) {
+  const progress = Math.min(1, Math.max(0, frameProgress));
+  const splitScrollProgress = SPEEDUP_INTERVALS / EFFECTIVE_FRAME_INTERVALS;
+  const splitFrameProgress = SPEEDUP_INTERVALS / FRAME_INTERVALS;
+
+  if (progress <= splitFrameProgress) {
+    return (progress / splitFrameProgress) * splitScrollProgress;
+  }
+  return (
+    splitScrollProgress +
+    ((progress - splitFrameProgress) / (1 - splitFrameProgress)) *
+      (1 - splitScrollProgress)
+  );
+}
+
+// Extra distance spent fading the docked TV screen to black.
 export const FADE_SCROLL_VH = 70;
 export const TOTAL_SCROLL_VH = FRAME_SCROLL_VH + FADE_SCROLL_VH;
 
@@ -17,7 +57,9 @@ export const TOTAL_SCROLL_VH = FRAME_SCROLL_VH + FADE_SCROLL_VH;
 // across FRAME_SCROLL_VH / TOTAL_SCROLL_VH of that pinned distance.
 const PINNED_SCROLL_VH = TOTAL_SCROLL_VH - 100;
 const SHRINK_START_VH =
-  (SHRINK_START_FRAME / (FRAME_COUNT - 1)) * (FRAME_SCROLL_VH / TOTAL_SCROLL_VH) * PINNED_SCROLL_VH;
+  getFrameScrollProgress(SHRINK_START_FRAME / FRAME_INTERVALS) *
+  (FRAME_SCROLL_VH / TOTAL_SCROLL_VH) *
+  PINNED_SCROLL_VH;
 
 // How far (vh) Robowars is pulled up underneath Wheels. It must already be
 // pinned in place when the TV starts shrinking, because that's when Wheels'

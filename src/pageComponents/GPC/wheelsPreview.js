@@ -3,6 +3,7 @@ import {
   FRAME_SCROLL_VH,
   START_FRAME,
   TOTAL_SCROLL_VH,
+  getFrameProgress,
 } from "@/pageComponents/wheels/robowarsHandoff";
 
 // Wheels (the section after GPC) scrubs through its car footage as it scrolls.
@@ -43,14 +44,14 @@ export function createWheelsPreview() {
     if (!section) return 0;
     const box = section.getBoundingClientRect();
     const progress = (window.innerHeight - box.top) / box.height;
-    return clamp01(progress / (FRAME_SCROLL_VH / TOTAL_SCROLL_VH)) * (FRAME_COUNT - 1);
+    return getFrameProgress(clamp01(progress / (FRAME_SCROLL_VH / TOTAL_SCROLL_VH))) * (FRAME_COUNT - 1);
   }
 
   // The frame Wheels reaches at the moment it fills the screen and sticks.
   function pinnedFrame() {
     if (!section) return 0;
     const progress = window.innerHeight / section.getBoundingClientRect().height;
-    return clamp01(progress / (FRAME_SCROLL_VH / TOTAL_SCROLL_VH)) * (FRAME_COUNT - 1);
+    return getFrameProgress(clamp01(progress / (FRAME_SCROLL_VH / TOTAL_SCROLL_VH))) * (FRAME_COUNT - 1);
   }
 
   return {
