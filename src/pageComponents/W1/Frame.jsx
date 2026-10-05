@@ -131,7 +131,7 @@ const mobileCards = [
   },
   {
     number: '04',
-    title: 'HACKATHONS',
+    title: 'PASSES',
     // description: (
     //   <>
     //     CODE

@@ -79,7 +79,11 @@ vec3 hsv2rgb(vec3 c) {
 // Takes the already-computed delta/distance from the caller so the 3x3
 // neighbour loop in StarLayer() doesn't run length() twice per cell.
 float Star(vec2 uv, float d, float flare) {
-	float m = (0.05 * uGlowIntensity) / d;
+	// d can land arbitrarily close to 0 as a star's oscillating position
+	// crosses a pixel sample, which blew this division up to huge values
+	// and read as a bright white flash flickering across the background.
+	// Clamping the divisor caps how bright a single star core can get.
+	float m = (0.05 * uGlowIntensity) / max(d, 0.02);
 	float rays = smoothstep(0.0, 1.0, 1.0 - abs(uv.x * uv.y * 1000.0));
 	m += rays * flare * uGlowIntensity;
 	uv *= MAT45;
