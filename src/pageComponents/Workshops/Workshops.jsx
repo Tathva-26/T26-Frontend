@@ -2211,7 +2211,7 @@ export default function WorkshopsPage() {
                                   if (el) cardRefs.current[workshop.id] = el
                                   else delete cardRefs.current[workshop.id]
                                 }}
-                                className='relative aspect-[0.9] w-full overflow-hidden bg-[#0d101c]'
+                                className='relative w-full overflow-hidden rounded-md bg-[#0d101c]'
                                 style={{
                                   transformStyle: 'preserve-3d',
                                   transformOrigin: 'center center',
@@ -2229,10 +2229,8 @@ export default function WorkshopsPage() {
                                     else
                                       delete frontFaceRefs.current[workshop.id]
                                   }}
-                                  className='relative flex flex-col justify-between'
+                                  className='relative flex w-full flex-col'
                                   style={{
-                                    width: 'calc(100% - 3px)',
-                                    height: 'calc(100% - 5px)',
                                     transformStyle: 'preserve-3d',
                                     borderTop: `1px solid ${REST_EDGE_HIGHLIGHT_TOP}`,
                                     borderLeft: `1px solid ${REST_EDGE_HIGHLIGHT_LEFT}`,
@@ -2267,102 +2265,38 @@ export default function WorkshopsPage() {
                                     className='workshop-pulse-overlay pointer-events-none absolute inset-0 z-10'
                                   />
 
-                                  {/* ORIGINAL CARD SHAPE — kept at its original
-                                      proportions so the mask, cutout and border
-                                      artwork are not stretched */}
-                                  <div className='absolute inset-x-0 top-0 aspect-[0.9825]'>
-                                    {/* CARD VISUAL ARTWORK — the real event picture, shown directly.
-                                        The description now lives in the hover callout. */}
-                                    <div
-                                      ref={(el) => {
-                                        if (el) artRefs.current[workshop.id] = el
-                                        else delete artRefs.current[workshop.id]
-                                      }}
-                                      className='absolute inset-[0_0.15%_1.61%_0] overflow-hidden bg-[#08090e]'
-                                      style={{
-                                        maskImage:
-                                          "url('https://cdn-next-main.tathva.org/images/workshops/workshop-card-image.png')",
-                                        WebkitMaskImage:
-                                          "url('https://cdn-next-main.tathva.org/images/workshops/workshop-card-image.png')",
-                                        maskPosition: 'center',
-                                        WebkitMaskPosition: 'center',
-                                        maskRepeat: 'no-repeat',
-                                        WebkitMaskRepeat: 'no-repeat',
-                                        maskSize: '100% 100%',
-                                        WebkitMaskSize: '100% 100%',
-                                      }}
-                                    >
-                                      <Image
-                                        src={workshop.image}
-                                        alt={workshop.fullTitle}
-                                        fill
-                                        sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                                        className='object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105'
-                                      />
-                                    </div>
-
-                                    {/* BACKGROUND CUTOUT OUTSIDE THE BORDER */}
-                                    <div
-                                      className='pointer-events-none absolute inset-0 z-15 bg-[#08090e]'
-                                      style={{
-                                        clipPath:
-                                          'polygon(32.18% 90.64%, 100% 90.64%, 100% 100%, 23.29% 100%, 24.64% 99%)',
-                                      }}
+                                  {/* POSTER ARTWORK — plain contained image,
+                                      no mask/cutout/border shaping */}
+                                  <div
+                                    ref={(el) => {
+                                      if (el) artRefs.current[workshop.id] = el
+                                      else delete artRefs.current[workshop.id]
+                                    }}
+                                    className='relative aspect-[2/3] w-full overflow-hidden bg-[#08090e]'
+                                  >
+                                    <Image
+                                      src={workshop.image}
+                                      alt={workshop.fullTitle}
+                                      fill
+                                      sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                                      className='object-contain object-center transition-transform duration-500 ease-out group-hover:scale-105'
                                     />
-
-                                    <div className='pointer-events-none absolute inset-[0_0.15%_1.61%_0] z-30'>
-                                      <svg
-                                        preserveAspectRatio='none'
-                                        overflow='visible'
-                                        className='workshop-card-border absolute inset-[-0.38%] h-full w-full stroke-[#ffffff]'
-                                        viewBox='0 0 135.239 135.639'
-                                        fill='none'
-                                        xmlns='http://www.w3.org/2000/svg'
-                                      >
-                                        <path
-                                          d='M0.510216 132.629V61.5188V3.01022C0.510216 1.6295 1.62951 0.510216 3.01022 0.510216H132.229C133.61 0.510216 134.729 1.6295 134.729 3.01022V120.427C134.729 121.808 133.61 122.927 132.229 122.927H43.5146C42.7568 122.927 42.04 123.271 41.5655 123.862L33.2653 134.195C32.7907 134.785 32.0739 135.129 31.3162 135.129H3.01022C1.6295 135.129 0.510216 134.01 0.510216 132.629Z'
-                                          strokeWidth='1.02043'
-                                        />
-                                      </svg>
-                                    </div>
                                   </div>
 
-                                  {/* EXTRA LABEL SPACE — continues the cutout
-                                      colour below the original card shape so the
-                                      title has room to wrap onto two lines */}
-                                  <div
-                                    className='pointer-events-none absolute inset-x-0 bottom-0 z-15 bg-[#08090e]'
-                                    style={{ top: 'calc(100cqw / 0.9825)' }}
-                                  />
-
-                                  {/* TITLE — max 2 lines. Line 1 sits beside the
-                                      notch, line 2 starts at the card's left edge */}
-                                  <div
-                                    className='absolute left-0 right-0 z-20 text-right'
-                                    style={{
-                                      top: 'calc(100cqw / 0.9825 * 0.9064 + 2.5cqw)',
-                                      paddingLeft: '1cqw',
-                                      paddingRight: '4cqw',
-                                      maxHeight: '13.2cqw',
-                                      overflow: 'hidden',
-                                    }}
-                                  >
-                                    {/* PRICE — sits in the notch cut out of the
-                                        card's bottom-left corner. Same float
-                                        footprint the old invisible spacer used,
-                                        so the title still wraps around it. */}
-                                    <span
-                                      className='m-0 block text-left text-[4.4cqw] font-bold leading-[1.1] text-white'
-                                      style={{
-                                        float: 'left',
-                                        width: '33cqw',
-                                        height: '6.6cqw',
-                                      }}
-                                    >
-                                      {workshop.fee}
-                                    </span>
-                                    <p className='m-0 break-words text-[5.5cqw] font-bold leading-[1.2] text-white'>
+                                  {/* STATIC INFO — title, date/venue, price */}
+                                  <div className='flex flex-col gap-1 px-3 py-2.5'>
+                                    <p className='m-0 truncate text-[0.95rem] font-semibold text-white'>
                                       {workshop.fullTitle || workshop.title}
+                                    </p>
+                                    <p className='m-0 text-xs text-white/60'>
+                                      {workshop.dateMonth} {workshop.dateDay}
+                                      {workshop.time ? ` · ${workshop.time}` : ''}
+                                      {getVenueName(workshop.venue)
+                                        ? ` · ${getVenueName(workshop.venue)}`
+                                        : ''}
+                                    </p>
+                                    <p className='m-0 text-sm font-medium text-white'>
+                                      {workshop.fee}
                                     </p>
                                   </div>
                                 </div>
@@ -2554,18 +2488,6 @@ export default function WorkshopsPage() {
         }
         .group:hover .workshop-image-reveal {
           clip-path: ellipse(150% 110% at 50% 100%);
-        }
-        .group:hover .workshop-card-border {
-          animation: workshop-border-pulse 1.6s ease-in-out infinite;
-        }
-        @keyframes workshop-border-pulse {
-          0%,
-          100% {
-            filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
-          }
-          50% {
-            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.95));
-          }
         }
         .workshop-focus-overlay {
           background: ${FOCUS_OVERLAY_COLOR};

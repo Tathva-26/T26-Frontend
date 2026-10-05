@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 import Checkout from '@/components/Checkout/Checkout'
@@ -47,7 +46,7 @@ export default function EventDetailPage({ id, eventType, label, heading, backHre
       <Navbar />
       <TathvaMenu />
 
-      <main className='mx-auto w-full max-w-[1000px] px-4 pb-16 pt-28 sm:px-6 sm:pt-32 lg:px-8'>
+      <main className='mx-auto w-full max-w-[1280px] px-4 pb-16 pt-28 sm:px-6 sm:pt-32 lg:px-8'>
         <Link
           href={backHref}
           className='mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition-colors hover:text-white'
@@ -75,15 +74,17 @@ export default function EventDetailPage({ id, eventType, label, heading, backHre
           </div>
         ) : event ? (
           <div className='relative w-full rounded-[24px] border border-white/10 bg-[#0d0a17]/90 px-7 py-7 shadow-2xl backdrop-blur-sm sm:px-10 sm:py-9'>
-            <div className='grid gap-x-10 gap-y-8 sm:grid-cols-[340px_minmax(0,1fr)] sm:items-start'>
+            <div className='grid gap-x-10 gap-y-8 sm:grid-cols-[440px_minmax(0,1fr)] sm:items-start'>
               <div>
-                <div className='relative aspect-square overflow-hidden rounded-[10px] border border-[#737373]'>
-                  <Image
+                <div className='relative overflow-hidden rounded-[10px] border border-[#737373] bg-[#08090e]'>
+                  {/* Plain <img>, not next/image `fill`: the box has no
+                      fixed aspect ratio of its own, so it takes the
+                      photo's natural dimensions exactly — full image,
+                      no crop, no letterboxed gaps either side. */}
+                  <img
                     src={event.image}
                     alt={event.fullTitle}
-                    fill
-                    sizes='340px'
-                    className='object-cover object-center'
+                    className='block h-auto w-full'
                   />
                 </div>
 
