@@ -10,7 +10,11 @@ import {
   START_FRAME,
   TOTAL_SCROLL_VH,
   TV_ART_STYLE,
+  HOLD_SCROLL_VH,
+  HOLD_START_VH,
+  frameAtScrollVh,
   getRobowarsTvScreenRect,
+  holdWeightAtScrollVh,
 } from './robowarsHandoff'
 import { holdLoader } from '@/lib/loadGate'
 // import styles from "./WheelsExperience.module.css";
@@ -23,6 +27,13 @@ const FRAME_PROGRESS_END = FRAME_SCROLL_VH / TOTAL_SCROLL_VH
 // screens of it: when the scroll has been still for this long partway through,
 // a "scroll to move the car" pop-up fades in. Any scroll hides it again.
 const SCROLL_HINT_IDLE_MS = 700
+
+// While the footage is held for the car's details, the car idles: it drifts
+// forward LOOP_FRAMES frames and eases back, once every LOOP_SECONDS. A cosine
+// ease-in-out has zero speed at both ends, so the turnaround never shows, and
+// the offset is 0 at the loop's start/end, so it is seamless however long it runs.
+const LOOP_FRAMES = 30
+const LOOP_SECONDS = 8
 
 const getFramePath = (index) => {
   const frameNum = (START_FRAME + index).toString().padStart(3, '0')
@@ -61,6 +72,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
   const introVignetteRef = useRef(null)
   const targetFadeRef = useRef(0)
   const currentFadeRef = useRef(0)
+  const holdWeightRef = useRef(0)
 
   const wheelsSceneRef = useRef(null)
   const wheelsLeftRef = useRef(null)
@@ -296,8 +308,9 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       let tickerY = 0
       if (progress < 0.35) {
         wheelsSceneRef.current.style.visibility = 'visible'
+        // Fully visible through the whole hold (frame HOLD_FRAME ≈ 0.18).
         opacity =
-          progress <= 0.12 ? 1 : Math.max(0, 1 - (progress - 0.12) / 0.2)
+          progress <= 0.2 ? 1 : Math.max(0, 1 - (progress - 0.2) / 0.15)
         const factor = progress / 0.32
         leftY = -factor * 40
         rightY = -factor * 30
@@ -500,9 +513,14 @@ export default function WheelsExperience({ revealUnderlay = false }) {
           ? currentFrameRef.current + difference * lerpRate
           : targetFrameRef.current
 
+      const loopPhase = (performance.now() / 1000 / LOOP_SECONDS) % 1
+      const loopOffset = LOOP_FRAMES * (0.5 - 0.5 * Math.cos(loopPhase * 2 * Math.PI))
       const frameToDraw = Math.min(
         FRAME_COUNT - 1,
-        Math.max(0, Math.round(currentFrameRef.current)),
+        Math.max(
+          0,
+          Math.round(currentFrameRef.current + holdWeightRef.current * loopOffset),
+        ),
       )
       if (
         frameToDraw !== lastDrawnFrameRef.current ||
@@ -610,6 +628,64 @@ export default function WheelsExperience({ revealUnderlay = false }) {
     // landing below is for wheel / trackpad only.
     const touchScreen = window.matchMedia('(pointer: coarse)').matches
     let handoffSnapStarted = false
+
+    // Wheel / trackpad only. Scrolling down into Wheels glides on to the
+    // details hold (APPROACH), and the next scroll down from the hold glides
+    // the rest of the way to Robowars (EXIT) instead of scrubbing through.
+    const HOLD_MID_VH = HOLD_START_VH + HOLD_SCROLL_VH / 2
+    const HOLD_END_VH = HOLD_START_VH + HOLD_SCROLL_VH
+    const APPROACH_FROM_VH = 2 // as soon as Wheels starts coming in
+    const SETTLE_MS = 200 // wheel quiet this long = the gesture that got here is over
+    const easeInOutCubic = (t) =>
+      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+    let gliding = false
+    let approachDone = false
+    let exitArmed = false
+    let armTimer = 0
+    const armExitSoon = () => {
+      window.clearTimeout(armTimer)
+      exitArmed = false
+      armTimer = window.setTimeout(() => {
+        exitArmed = true
+      }, SETTLE_MS)
+    }
+    // Lenis never calls onComplete for a glide that gets cut short (another
+    // section stopping it, say). `gliding` would then stay set forever and every
+    // later snap would be dead, so a timer clears it regardless.
+    let glideTimer = 0
+    const endGlide = () => {
+      window.clearTimeout(glideTimer)
+      if (!gliding) return
+      gliding = false
+      armExitSoon()
+    }
+    const glide = (lenis, target, duration, easing) => {
+      gliding = true
+      exitArmed = false
+      window.clearTimeout(armTimer)
+      window.clearTimeout(glideTimer)
+      glideTimer = window.setTimeout(endGlide, duration * 1000 + 400)
+      lenis.scrollTo(target, {
+        duration,
+        lock: true,
+        force: true,
+        easing,
+        onComplete: endGlide,
+      })
+    }
+    // The later of Wheels' fade completion and Robowars' timeline end: the
+    // exact fully revealed Robowars frame, rather than merely the point where
+    // its underlay first appears.
+    const handoffTarget = (lenis, self) => {
+      const robowarsTimeline = document.querySelector('[data-robowars-timeline]')
+      const scrollerRect = scroller === window ? null : scroller.getBoundingClientRect()
+      const scrollerBottom = scrollerRect ? scrollerRect.bottom : window.innerHeight
+      const robowarsEnd = robowarsTimeline
+        ? lenis.scroll + robowarsTimeline.getBoundingClientRect().bottom - scrollerBottom
+        : self.end
+      return Math.min(lenis.limit, Math.max(self.end, robowarsEnd))
+    }
+
     const trigger = ScrollTrigger.create({
       scroller,
       trigger: containerRef.current,
@@ -631,6 +707,36 @@ export default function WheelsExperience({ revealUnderlay = false }) {
         queueScrollHint(self)
 
         const lenis = window.__lenis
+        const scrollVh = self.progress * TOTAL_SCROLL_VH
+        const vhToScroll = (vh) => self.start + ((self.end - self.start) * vh) / TOTAL_SCROLL_VH
+        const inHold = scrollVh >= HOLD_START_VH && scrollVh <= HOLD_END_VH
+
+        // Any scroll back up re-arms the approach for the next way down.
+        if (scrollVh < APPROACH_FROM_VH || (self.direction < 0 && !gliding))
+          approachDone = false
+
+        if (revealUnderlay && lenis && !touchScreen && !gliding) {
+          if (
+            !approachDone &&
+            self.direction > 0 &&
+            scrollVh >= APPROACH_FROM_VH &&
+            scrollVh < HOLD_MID_VH - 6
+          ) {
+            approachDone = true
+            glide(lenis, vhToScroll(HOLD_MID_VH), 2.8, easeInOutCubic)
+          } else if (exitArmed && inHold && self.direction > 0) {
+            approachDone = true
+            handoffSnapStarted = true
+            glide(lenis, handoffTarget(lenis, self), 4.2, easeInOutCubic)
+          } else if (inHold) {
+            approachDone = true
+            armExitSoon()
+          } else {
+            exitArmed = false
+            window.clearTimeout(armTimer)
+          }
+        }
+
         if (self.direction < 0 && self.progress < FRAME_PROGRESS_END) {
           handoffSnapStarted = false
         } else if (
@@ -638,46 +744,69 @@ export default function WheelsExperience({ revealUnderlay = false }) {
           lenis &&
           !touchScreen &&
           !handoffSnapStarted &&
+          !gliding &&
           self.direction > 0 &&
           self.progress >= FRAME_PROGRESS_END
         ) {
-          // When the frame sequence reaches its final frame, land at the later
-          // of Wheels' fade completion and Robowars' timeline end. This is the
-          // exact fully revealed Robowars frame, rather than merely the point
-          // where its underlay first appears.
+          // When the frame sequence reaches its final frame, land on the
+          // fully revealed Robowars frame.
           handoffSnapStarted = true
-          const robowarsTimeline = document.querySelector('[data-robowars-timeline]')
-          const scrollerRect = scroller === window ? null : scroller.getBoundingClientRect()
-          const scrollerBottom = scrollerRect ? scrollerRect.bottom : window.innerHeight
-          const robowarsEnd = robowarsTimeline
-            ? lenis.scroll + robowarsTimeline.getBoundingClientRect().bottom - scrollerBottom
-            : self.end
-          const target = Math.min(lenis.limit, Math.max(self.end, robowarsEnd))
-
-          lenis.scrollTo(target, {
+          lenis.scrollTo(handoffTarget(lenis, self), {
             duration: 0.9,
             lock: true,
+            force: true,
             easing: (progress) => 1 - Math.pow(1 - progress, 3),
           })
         }
 
         if (self.progress <= FRAME_PROGRESS_END) {
-          targetFrameRef.current =
-            (self.progress / FRAME_PROGRESS_END) * (FRAME_COUNT - 1)
+          const scrollVh = self.progress * TOTAL_SCROLL_VH
+          targetFrameRef.current = frameAtScrollVh(scrollVh)
+          holdWeightRef.current = holdWeightAtScrollVh(scrollVh)
           targetFadeRef.current = 0
         } else {
           targetFrameRef.current = FRAME_COUNT - 1
+          holdWeightRef.current = 0
           targetFadeRef.current =
             (self.progress - FRAME_PROGRESS_END) / (1 - FRAME_PROGRESS_END)
         }
       },
     })
 
+    // One scroll tick down from the hold is enough to leave it: read off the
+    // wheel itself, not off the page having moved.
+    const onHoldWheel = (event) => {
+      const lenis = window.__lenis
+      if (!lenis || touchScreen || !revealUnderlay || event.ctrlKey) return
+      const vh =
+        ((lenis.scroll - trigger.start) / (trigger.end - trigger.start)) *
+        TOTAL_SCROLL_VH
+      const inHold = vh >= HOLD_START_VH && vh <= HOLD_END_VH
+      if (gliding) {
+        if (event.cancelable) event.preventDefault()
+        return
+      }
+      if (!inHold) return
+      if (exitArmed && event.deltaY > 4) {
+        if (event.cancelable) event.preventDefault()
+        approachDone = true
+        handoffSnapStarted = true
+        glide(lenis, handoffTarget(lenis, trigger), 4.2, easeInOutCubic)
+        return
+      }
+      armExitSoon()
+    }
+    if (revealUnderlay && !touchScreen)
+      scroller.addEventListener('wheel', onHoldWheel, { passive: false })
+
     return () => {
+      scroller.removeEventListener('wheel', onHoldWheel)
       isActive = false
       releaseLoader()
       cancelAnimationFrame(animationFrameId)
       window.clearTimeout(scrollHintTimer)
+      window.clearTimeout(armTimer)
+      window.clearTimeout(glideTimer)
       timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
       images.forEach((image) => {
         image.onload = null

@@ -9,15 +9,42 @@ export const SHRINK_START_FRAME = 80;
 
 // Scroll distance (in viewport heights) spent scrubbing through the car frames,
 // followed by extra distance spent fading the docked TV screen to black.
-export const FRAME_SCROLL_VH = 700;
+const SCRUB_SCROLL_VH = 700;
 export const FADE_SCROLL_VH = 70;
+
+// The footage stops on HOLD_FRAME for HOLD_SCROLL_VH of scrolling while the car's
+// details are on screen (the car idles in a seamless loop meanwhile, see
+// WheelsExperience). The hold fades in / out over HOLD_RAMP_VH at either end.
+export const HOLD_FRAME = 24;
+export const HOLD_SCROLL_VH = 120;
+export const HOLD_RAMP_VH = 20;
+
+export const FRAME_SCROLL_VH = SCRUB_SCROLL_VH + HOLD_SCROLL_VH;
 export const TOTAL_SCROLL_VH = FRAME_SCROLL_VH + FADE_SCROLL_VH;
 
+export const HOLD_START_VH = (HOLD_FRAME / (FRAME_COUNT - 1)) * SCRUB_SCROLL_VH;
+
+// Which frame the footage is on `vh` viewport-heights into Wheels' scroll range
+// (counted from where its top edge enters the bottom of the screen).
+export function frameAtScrollVh(vh) {
+  const scrubbed = vh <= HOLD_START_VH ? vh : Math.max(HOLD_START_VH, vh - HOLD_SCROLL_VH);
+  return Math.min(1, Math.max(0, scrubbed / SCRUB_SCROLL_VH)) * (FRAME_COUNT - 1);
+}
+
+// 0..1: how much of the idle loop applies at `vh` (1 in the middle of the hold).
+export function holdWeightAtScrollVh(vh) {
+  const into = Math.min(vh - HOLD_START_VH, HOLD_START_VH + HOLD_SCROLL_VH - vh);
+  return Math.min(1, Math.max(0, into / HOLD_RAMP_VH));
+}
+
 // Wheels is pinned for all but its last viewport-height, and the frames scrub
-// across FRAME_SCROLL_VH / TOTAL_SCROLL_VH of that pinned distance.
-const PINNED_SCROLL_VH = TOTAL_SCROLL_VH - 100;
+// across FRAME_SCROLL_VH / TOTAL_SCROLL_VH of that pinned distance. (The hold is
+// added on top of the original, un-held figure so the Robowars underlay lead,
+// which is measured from the end of Wheels, stays where it was.)
+const PINNED_SCROLL_VH = SCRUB_SCROLL_VH + FADE_SCROLL_VH - 100;
 const SHRINK_START_VH =
-  (SHRINK_START_FRAME / (FRAME_COUNT - 1)) * (FRAME_SCROLL_VH / TOTAL_SCROLL_VH) * PINNED_SCROLL_VH;
+  (SHRINK_START_FRAME / (FRAME_COUNT - 1)) * (SCRUB_SCROLL_VH / (SCRUB_SCROLL_VH + FADE_SCROLL_VH)) * PINNED_SCROLL_VH +
+  HOLD_SCROLL_VH;
 
 // How far (vh) Robowars is pulled up underneath Wheels. It must already be
 // pinned in place when the TV starts shrinking, because that's when Wheels'
