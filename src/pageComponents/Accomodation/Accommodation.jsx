@@ -73,21 +73,41 @@ const accommodationStyles = `
  * recorded by the backend but there is no read-back endpoint for them yet, so
  * the honest ceiling here is "charged, not yet confirmed".
  */
+// The gateway's own words for a payment that did not go through. Easebuzz
+// (behind TIQR) posts these as `status`; src/proxy.js carries it over.
+const NOT_CHARGED = ['USERCANCELLED', 'FAILURE', 'FAILED', 'DROPPED', 'BOUNCED']
+
+function returnOutcome(chargeStatus) {
+  const status = String(chargeStatus ?? '').toUpperCase()
+  if (status === 'SUCCESS') return 'charged'
+  if (NOT_CHARGED.includes(status)) return 'cancelled'
+  // TIQR's own `CHARGED` (and the mock) go through the shared rule.
+  return paymentOutcome({ booking: null, chargeStatus, attemptsLeft: 0 })
+}
+
+const RETURN_COPY = {
+  charged: {
+    title: 'Payment received',
+    body: 'The payment provider says you were charged. Your booking is not confirmed on this page yet — do not pay again. Confirmation will follow by email.',
+  },
+  cancelled: {
+    title: 'Payment not completed',
+    body: 'The payment was cancelled or did not go through, so you have not been charged. You can try again.',
+  },
+  missing: {
+    title: 'We could not find that payment',
+    body: 'Nothing came back to say a payment was made. If you were charged, do not pay again — get in touch and we will sort it out.',
+  },
+}
+
 function PaymentReturn({ chargeStatus, onDismiss }) {
-  const charged =
-    paymentOutcome({ booking: null, chargeStatus, attemptsLeft: 0 }) === 'charged'
+  const copy = RETURN_COPY[returnOutcome(chargeStatus)] ?? RETURN_COPY.missing
 
   return (
     <div className='mt-10 max-w-xl rounded-2xl border border-white/12 bg-black/50 p-6'>
-      <h2 className='text-xl font-semibold'>
-        {charged ? 'Payment received' : 'We could not find that payment'}
-      </h2>
+      <h2 className='text-xl font-semibold'>{copy.title}</h2>
 
-      <p className='mt-2 text-sm leading-relaxed text-white/60'>
-        {charged
-          ? 'The payment provider says you were charged. Your booking is not confirmed on this page yet — do not pay again. Confirmation will follow by email.'
-          : 'Nothing came back to say a payment was made. If you were charged, do not pay again — get in touch and we will sort it out.'}
-      </p>
+      <p className='mt-2 text-sm leading-relaxed text-white/60'>{copy.body}</p>
 
       <div className='mt-5 flex flex-wrap gap-3 text-sm'>
         <button
