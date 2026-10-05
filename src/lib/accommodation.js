@@ -2,11 +2,14 @@
  * Pricing and cart rules for accommodation, over the shapes
  * `GET /api/accommodation/options` actually returns.
  *
- * The API hands back three flat lists rather than a nested catalogue:
+ * The API hands back flat lists rather than a nested catalogue:
  *
  *   rooms        [{ tier, gender, nights, price, onSale }]   one per SKU
- *   food         [{ day, diet, price, onSale }]
  *   availability [{ tier, gender, unit, total, byNight }]    free units per night
+ *   food         [{ day, diet, price, onSale }]              from GET /api/food/options
+ *
+ * Rooms and food are two separate checkouts: food is its own TIQR event, and
+ * one TIQR booking cannot span two events. So the page keeps two carts.
  *
  * so the page's "a tier with prices and stock" view is assembled here rather
  * than served. Two rules drive the assembly:
@@ -20,6 +23,8 @@
  *
  * Enums are the backend's: MALE/FEMALE and VEG/NONVEG, uppercase.
  */
+
+import { feeBreakdown } from '@/lib/fees'
 
 export const GENDERS = [
   { id: 'MALE', label: 'Male' },
@@ -147,11 +152,12 @@ export function tiersFor({ rooms, availability, gender, nights, checkInDay }) {
 /* ---- cart -------------------------------------------------------------- */
 
 /**
- * The cart is a flat list of lines, which is also how it checks out: the
- * backend turns each line into one element of a TIQR bulk booking.
+ * A cart is a flat list of lines, which is also how it checks out: the
+ * backend turns each line into one element of a TIQR bulk booking. There are
+ * two carts — rooms and food — each paid for on its own.
  *
- * At most one stay line — a buyer books one room for one stretch — so adding
- * another replaces it rather than stacking.
+ * The room cart holds at most one stay line — a buyer books one room for one
+ * stretch — so adding another replaces it rather than stacking.
  */
 export const STAY_LINE_ID = 'stay'
 
@@ -196,35 +202,40 @@ export function buildFoodLine(coupon, quantity) {
 export const lineTotal = (line) => line.unitPrice * line.quantity
 export const cartTotal = (lines) =>
   lines.reduce((sum, line) => sum + lineTotal(line), 0)
+
+/**
+ * The buyer-facing breakdown: subtotal, platform fee, GST on the fee, total.
+ *
+ * Fees are applied to the whole basket, not per line, because that is how
+ * TIQR charges it. Worked example from a real checkout: a ₹9,000 basket gives
+ * a fee of ₹225, GST of ₹40.50 and a total of ₹9,265.50, which is what TIQR
+ * charged.
+ */
+export function cartFees(lines) {
+  const base = cartTotal(lines) // paise
+  const fee = feeBreakdown(base)
+  return fee ?? { base: 0, platformFee: 0, gst: 0, total: 0 }
+}
 export const cartCount = (lines) =>
   lines.reduce((sum, line) => sum + line.quantity, 0)
 
 export function withStayLine(lines, line) {
-  const rest = lines.filter((item) => item.kind !== 'stay')
-  return line ? [line, ...rest] : rest
+  return line ? [line] : []
 }
 
 export function withFoodQuantity(lines, coupon, quantity) {
   const id = foodLineId(coupon.day, coupon.diet)
   const rest = lines.filter((item) => item.id !== id)
   if (quantity <= 0) return rest
-  return [...rest, buildFoodLine(coupon, quantity)].sort(sortLines)
-}
-
-/** Stay first, then food in day/diet order, so the cart does not reshuffle. */
-function sortLines(a, b) {
-  if (a.kind !== b.kind) return a.kind === 'stay' ? -1 : 1
-  return a.id.localeCompare(b.id)
+  // Day/diet order, so the cart does not reshuffle as quantities change.
+  return [...rest, buildFoodLine(coupon, quantity)].sort((a, b) =>
+    a.id.localeCompare(b.id),
+  )
 }
 
 export function foodQuantity(lines, coupon) {
   const id = foodLineId(coupon.day, coupon.diet)
   return lines.find((line) => line.id === id)?.quantity ?? 0
-}
-
-export function checkoutBlocker(lines) {
-  if (lines.length === 0) return 'Add a room or food coupons to continue.'
-  return null
 }
 
 /**
@@ -233,22 +244,24 @@ export function checkoutBlocker(lines) {
  */
 export function buildBookingBody(lines) {
   return {
-    items: lines.map((line) =>
-      line.kind === 'stay'
-        ? {
-            kind: 'stay',
-            tier: line.tier,
-            gender: line.gender,
-            checkInDay: line.checkInDay,
-            nights: line.nights,
-            quantity: line.quantity,
-          }
-        : {
-            kind: 'food',
-            day: line.day,
-            diet: line.diet,
-            quantity: line.quantity,
-          },
-    ),
+    items: lines.map((line) => ({
+      kind: 'stay',
+      tier: line.tier,
+      gender: line.gender,
+      checkInDay: line.checkInDay,
+      nights: line.nights,
+      quantity: line.quantity,
+    })),
+  }
+}
+
+/** The body `POST /api/food/book` validates. */
+export function buildFoodBody(lines) {
+  return {
+    items: lines.map((line) => ({
+      day: line.day,
+      diet: line.diet,
+      quantity: line.quantity,
+    })),
   }
 }
