@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useLoader, useThree } from '@react-three/fiber'
 import {
   AdditiveBlending,
@@ -126,7 +126,10 @@ function createEnergy() {
   return texture
 }
 
-export default function CrystalModel({ target, compact = false, reduced = false, onReady, onMood, journey, onProject }) {
+export default function CrystalModel({ target, compact = false, textureCompact = false, reduced = false, onReady, onMood, journey, onProject }) {
+  // Keep the chosen asset set for this scene's lifetime. Performance changes
+  // adjust buffers/effects without suspending the model for another download.
+  const [assetCompact] = useState(textureCompact)
   const details = useExpoDetails()
   const detailGroup = useRef()
   const idleClock = useRef(0)
@@ -166,8 +169,8 @@ export default function CrystalModel({ target, compact = false, reduced = false,
   const [normal, roughness] = useLoader(
     surfaceLoader,
     [
-      '/images/expo/crystal/shell-normal.ktx2',
-      '/images/expo/crystal/shell-roughness.ktx2',
+      assetCompact ? '/images/expo/crystal/shell-normal-mobile.ktx2' : '/images/expo/crystal/shell-normal.ktx2',
+      assetCompact ? '/images/expo/crystal/shell-roughness-mobile.ktx2' : '/images/expo/crystal/shell-roughness.ktx2',
     ],
     (loader) => loader.detectSupport(gl),
   )

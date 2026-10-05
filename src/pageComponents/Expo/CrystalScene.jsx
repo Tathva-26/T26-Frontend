@@ -11,6 +11,36 @@ import ConclaveVeil from "./ConclaveVeil";
 import { interactionTargets, localPointer } from "./crystalGeometry.mjs";
 import { sampleFrameBudget } from './expoRenderBudget.mjs';
 
+function initialCompact() {
+  if (typeof window === 'undefined') return true;
+  return Boolean(window.matchMedia('(pointer: coarse), (max-width: 767px)').matches ||
+    (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
+    (navigator.deviceMemory && navigator.deviceMemory <= 4));
+}
+
+function SceneWarmup({ ready, onFailure, shaderFailed }) {
+  const { gl, scene, camera } = useThree();
+  useEffect(() => {
+    let cancelled = false;
+    ready.current = false;
+    const textures = new Set();
+    scene.traverse(object => {
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) {
+        if (!material) continue;
+        for (const value of Object.values(material)) if (value?.isTexture) textures.add(value);
+        for (const uniform of Object.values(material.uniforms ?? {})) if (uniform.value?.isTexture) textures.add(uniform.value);
+      }
+    });
+    for (const texture of textures) gl.initTexture(texture);
+    gl.compileAsync(scene, camera).then(() => {
+      if (!cancelled && !shaderFailed.current) ready.current = true;
+    }).catch(() => { if (!cancelled) onFailure(); });
+    return () => { cancelled = true; ready.current = false; };
+  }, [gl, scene, camera, ready, onFailure, shaderFailed]);
+  return null;
+}
+
 function SceneEnvironment({ shared }) {
   const { gl, scene, camera, size } = useThree();
   const environment = useLoader(EXRLoader, "/images/expo/crystal/studio.exr");
@@ -78,12 +108,13 @@ function RenderBudget({ compact, degraded, onQuality }) {
 
 export default function CrystalScene({ active, reduced, onReady, onFailure, onLost, onRestored, journey, onProject, transition }) {
   const shaderFailed = useRef(false);
+  const warmupReady = useRef(false);
   const target = useRef({ tiltX: 0, tiltY: 0, x: 0, y: 0, active: false, pressed: false, activation: 0, keyboard: false });
   const feedback = useRef(null);
   const reportMood = (awake) => { if (feedback.current) feedback.current.textContent = awake ? 'The robot awakens.' : ''; };
   const pointer = useRef(null);
   const [dpr, setDpr] = useState(1);
-  const [compact, setCompact] = useState(true);
+  const [compact, setCompact] = useState(initialCompact);
   const [degraded, setDegraded] = useState(false);
   const renderDpr = degraded ? Math.min(dpr, compact ? .8 : 1) : dpr;
   const controlsRect = (element) => element.closest('[data-expo-progress]')?.querySelector('[data-expo-slot]')?.getBoundingClientRect() || element.getBoundingClientRect();
@@ -152,15 +183,16 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
       <Canvas dpr={renderDpr} frameloop={active ? "always" : "never"} camera={{ fov: 32, position: [0, 0, 7], near: .1, far: 30 }} gl={{ alpha: true, antialias: true, powerPreference: "low-power" }} onCreated={({ gl }) => { gl.setClearColor(0, 0); gl.toneMapping = NoToneMapping; gl.transmissionResolutionScale = .75; }} fallback={null}>
         <ContextEvents onFailure={onFailure} onLost={onLost} onRestored={onRestored} shaderFailed={shaderFailed} />
         <RenderBudget compact={compact} degraded={degraded} onQuality={setDegraded} />
-        <CrystalOptics compact={compact || degraded} />
+        <CrystalOptics compact={compact || degraded} warmupReady={warmupReady} onFailure={onFailure} journey={journey} />
         <ambientLight intensity={.08} />
         <directionalLight position={[-3, 4, 3]} color="#7bbaff" intensity={.6} />
         <pointLight position={[1.8, -1.2, 1]} color="#ee49cf" intensity={4} distance={5} decay={2} />
         {/* Readiness includes every asset needed for the entrance, not just the shell. */}
         <Suspense fallback={null}>
           <SceneEnvironment shared={!!journey} />
-          <CrystalModel target={target} reduced={reduced} compact={compact || degraded} onReady={() => { if (!shaderFailed.current) onReady(); }} onMood={reportMood} journey={journey} onProject={onProject} />
+          <CrystalModel target={target} reduced={reduced} compact={compact || degraded} textureCompact={compact} onReady={() => { if (!shaderFailed.current) onReady(); }} onMood={reportMood} journey={journey} onProject={onProject} />
           {transition && journey && <ConclaveVeil journey={journey} compact={compact || degraded} />}
+          <SceneWarmup ready={warmupReady} onFailure={onFailure} shaderFailed={shaderFailed} />
         </Suspense>
       </Canvas>
       <span ref={feedback} aria-live='polite' style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)' }} />

@@ -1,5 +1,38 @@
 # Expo crystal assets and visual implementation
 
+## Mobile rendering update (2026-10-05)
+
+The sections below retain historical implementation/verification notes. Current changes:
+
+- Mobile/coarse-pointer/modest devices load `shell-normal-mobile.ktx2` (1024 x 1024,
+  325,237 bytes) and `shell-roughness-mobile.ktx2` (512 x 512, 92,145 bytes). Desktop
+  retains the original maps. Each scene keeps its initial asset set across quality changes.
+  `scripts/prepare-expo-textures.mjs` promotes existing compressed mips, retaining the
+  original ETC1S codebooks and pixels. `scripts/check-expo-textures.mjs` verifies all
+  retained levels through the Basis transcoder. Asset licensing remains the same.
+- Mobile DPR starts at 1 and can fall to 0.8 after sustained slow frames. Refraction
+  resolution adapts independently; shell transmission remains 1 and shard transmission .85.
+- Clouds sample a repeating 256 x 256 noise texture, with two/four uniform-selected
+  octaves. Quality changes do not replace or recompile the cloud shader. Cloud time
+  survives a canvas pause. Duplicate DOM mist, poster blur and SVG masking are removed.
+- Scene textures are uploaded and materials compiled asynchronously before the first
+  draw. The detail distortion shader is also prepared during scene initialization.
+- Crossing the 768 px layout breakpoint rebuilds Expo with the appropriate timing.
+  Upstream pin changes can still shift the scroll position during a resize.
+  Expo hides the gallery canvas while covered;
+  the existing gallery visibility watcher pauses/resumes it without gallery code edits.
+- `?expoProfile=1` publishes one-second measurements on the crystal canvas's
+  `data-expo-profile` attribute. It reports frame cadence, draw calls/triangles across
+  rendering passes, CPU submission time, DPR and transmission resolution. It is disabled
+  by default. CPU submission time is not GPU execution time, and browser emulation
+  does not establish physical-phone FPS.
+
+Read diagnostics in browser DevTools with:
+
+```js
+JSON.parse(document.querySelector('[data-crystal-control] canvas').dataset.expoProfile)
+```
+
 The user confirmed that they hold a license and explicitly authorized copying igloo assets
 in this conversation on 2026-09-25. No license grant was inferred from the repository README.
 The repository does not contain the user's license document; retain their license terms with

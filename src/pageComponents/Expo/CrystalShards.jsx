@@ -24,6 +24,12 @@ export default function CrystalShards({ journey, compact, reduced, prepareGlass,
   const activation = useRef(0)
   const boundsAt = useRef(-1)
   const picking = useMemo(() => ({ ray: new Raycaster(), pointer: new Vector2(), center: new Vector3(), color: new Color(), hits: [], last: -1, hit: -1 }), [])
+  useEffect(() => {
+    // Compile the colored instancing variant during warm-up, before the first
+    // animation frame creates an instanceColor attribute.
+    picking.color.setRGB(1, 1, 1)
+    for (let index = 0; index < SHARDS.length; index++) mesh.current.setColorAt(index, picking.color)
+  }, [picking])
   useEffect(() => () => geometry.dispose(), [geometry])
   useFrame(({ camera, size: viewport }, delta) => {
     const dt = animationDelta(delta)

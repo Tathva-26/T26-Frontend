@@ -1,28 +1,41 @@
 'use client'
 
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useLoader } from '@react-three/fiber'
-import { TextureLoader, Vector2 } from 'three'
+import { LinearFilter, RepeatWrapping, TextureLoader, Vector2 } from 'three'
+import { animationDelta } from './crystalInteraction.mjs'
 
 // A screen-space cloud pass overlaps the outgoing DOM poster and incoming
 // crystal, using the actual TechConclave background for refracted fragments.
 export default function ConclaveVeil({ journey, compact }) {
   const mesh = useRef(null)
   const material = useRef(null)
-  const background = useLoader(TextureLoader, '/images/techconclave/background.webp')
+  const time = useRef(0)
+  const [background, noiseSource] = useLoader(TextureLoader, ['/images/techconclave/background.webp', '/images/expo/crystal/cloud-noise.png'])
+  const noise = useMemo(() => {
+    const texture = noiseSource.clone()
+    texture.wrapS = texture.wrapT = RepeatWrapping
+    texture.minFilter = texture.magFilter = LinearFilter
+    texture.generateMipmaps = false
+    texture.needsUpdate = true
+    return texture
+  }, [noiseSource])
+  useEffect(() => () => noise.dispose(), [noise])
   const uniforms = useMemo(() => ({
     uTime: { value: 0 }, uProgress: { value: 0 }, uExit: { value: 0 },
     uAspect: { value: 1 }, uImageAspect: { value: background.image.width / background.image.height },
     uBackground: { value: background }, uOrigin: { value: new Vector2(.3, .5) },
-  }), [background])
-  useFrame(({ clock, size }) => {
+    uNoise: { value: noise }, uOctaves: { value: compact ? 2 : 4 },
+  }), [background, noise, compact])
+  useFrame(({ size }, delta) => {
+    time.current += animationDelta(delta)
     if (!material.current) return
     const live = material.current.uniforms
     const pose = journey.current
     mesh.current.visible = pose.exit != null ? pose.exit > .16 && pose.exit < 1 : pose.progress > .03 && pose.progress < .72
     // During the reading hold and detail view there is no cloud pass to update.
     if (!mesh.current.visible) return
-    live.uTime.value = clock.elapsedTime
+    live.uTime.value = time.current
     if (live.uProgress.value !== pose.progress) live.uProgress.value = pose.progress
     const exit = pose.exit ?? 0
     if (live.uExit.value !== exit) live.uExit.value = exit
@@ -35,16 +48,16 @@ export default function ConclaveVeil({ journey, compact }) {
   })
   return <mesh ref={mesh} renderOrder={100} frustumCulled={false}>
     <planeGeometry args={[2, 2]} />
-    <shaderMaterial key={compact ? 'compact' : 'full'} ref={material} transparent depthTest={false} depthWrite={false} uniforms={uniforms}
+    <shaderMaterial ref={material} transparent depthTest={false} depthWrite={false} uniforms={uniforms}
       vertexShader={'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }'}
       fragmentShader={`
         varying vec2 vUv;
         uniform float uTime,uProgress,uExit,uAspect,uImageAspect;
-        uniform sampler2D uBackground;
+        uniform sampler2D uBackground,uNoise;
+        uniform float uOctaves;
         uniform vec2 uOrigin;
-        float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-        float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
-        float fbm(vec2 p){float a=.5,n=0.;for(int i=0;i<${compact ? 2 : 4};i++){n+=noise(p)*a;p=p*2.03+vec2(3.7,8.1);a*=.5;}return n;}
+        float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return texture2D(uNoise,(i+f+.5)/256.).r;}
+        float fbm(vec2 p){float a=.5,n=0.;for(int i=0;i<4;i++){if(float(i)>=uOctaves)break;n+=noise(p)*a;p=p*2.03+vec2(3.7,8.1);a*=.5;}return n;}
         void main(){
           float envelope=smoothstep(.03,.23,uProgress)*(1.-smoothstep(.42,.72,uProgress));
           if(uExit>0.)envelope=smoothstep(.16,.50,uExit)*(1.-smoothstep(.68,1.,uExit));

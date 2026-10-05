@@ -1,5 +1,8 @@
 .bridge { position: relative; isolation: isolate; z-index: 2; }
 .galleryHandoff { position: relative; z-index: 1; margin-top: -100dvh; }
+/* Expo's wrapper pauses the covered gallery canvas without changing its
+   layout, images or scroll trigger. watchVisible resumes it on departure. */
+.galleryHandoff[data-expo-covered='true'] canvas { visibility: hidden; }
 .animated > [data-expo-page] {
   position: absolute;
   bottom: 0;

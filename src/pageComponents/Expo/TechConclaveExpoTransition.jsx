@@ -12,6 +12,7 @@ import HorizontalGallery from '../HorizontalGallery/HorizontalGallery'
 import styles from './ExpoTransition.module.css'
 import expoStyles from './Expo.module.css'
 import { measureExpoLabels, expoLeaderPaths } from './expoLeaders.mjs'
+import { expoTiming } from './expoLayout.mjs'
 
 const subscribeMotion = (callback) => {
   const query = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -20,6 +21,12 @@ const subscribeMotion = (callback) => {
 }
 const motionSnapshot = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const serverSnapshot = () => false
+const subscribeWidth = callback => {
+  const query = window.matchMedia('(max-width: 767px)')
+  query.addEventListener('change', callback)
+  return () => query.removeEventListener('change', callback)
+}
+const widthSnapshot = () => window.matchMedia('(max-width: 767px)').matches
 
 export default function TechConclaveExpoTransition() {
   return <ExpoDetailsProvider><ExpoTransitionContent /></ExpoDetailsProvider>
@@ -28,12 +35,14 @@ export default function TechConclaveExpoTransition() {
 function ExpoTransitionContent() {
   const details = useExpoDetails()
   const animated = useSyncExternalStore(subscribeMotion, motionSnapshot, serverSnapshot)
+  const mobile = useSyncExternalStore(subscribeWidth, widthSnapshot, serverSnapshot)
   const root = useRef(null)
   const crystal = useRef(null)
   const journey = useRef(expoJourney(0))
   const geometry = useRef(null)
   const paths = useRef([])
   const screenPoint = useRef({ x: 0, y: 0 })
+  const gallery = useRef(null)
 
   const project = useCallback((points) => {
     // Canvas and connector SVG share the same viewport; cached geometry avoids
@@ -54,6 +63,7 @@ function ExpoTransitionContent() {
     if (!animated) return
     gsap.registerPlugin(ScrollTrigger)
     const element = root.current
+    const galleryElement = gallery.current
     const tc = element.querySelector('[data-conclave]')
     const page = element.querySelector('[data-expo-page]')
     const plane = element.querySelector('[data-expo-plane]')
@@ -67,11 +77,8 @@ function ExpoTransitionContent() {
     const detailRoot = element.closest('[data-expo-detail-state]')
     const entryCopy = [...copy].filter(node => node !== explore)
     const scroller = document.querySelector('.main-scroll')
-    const mobile = plane.clientWidth < 768
     element.dataset.expoCompact = String(mobile)
-    const exitStart = mobile ? 1.4 : 1.2
-    const duration = exitStart + .45
-    const scrollUnit = mobile ? 1.5 : 2.4
+    const { exitStart, duration, scrollUnit } = expoTiming(mobile)
     element.dataset.expoDuration = duration
     element.dataset.expoExitStart = exitStart
     let trigger
@@ -121,6 +128,9 @@ function ExpoTransitionContent() {
       // the current frame rather than remain hidden or restart the entrance.
       crystal.current.dataset.expoRenderer = state === 'ready' ? 'model' : 'fallback'
       const exit = Math.min(1, Math.max(0, (phase - exitStart) / .45))
+      // The gallery is still covered during entry/hold. Its background watcher
+      // observes CSS visibility, so it can stop until the exit clouds thin out.
+      if (galleryElement) galleryElement.dataset.expoCovered = String(exit < .68)
       const entry = Math.min(1, phase)
       const available = phase >= 1 && phase < exitStart && details.progress.current.state === 'closed'
       if (detailRoot) detailRoot.dataset.expoReady = String(available)
@@ -197,7 +207,10 @@ function ExpoTransitionContent() {
     if (renderer) readiness.observe(renderer, { attributes: true, attributeFilter: ['data-crystal-state'] })
     document.fonts.ready.then(() => { if (!disposed) { measure(); render(trigger?.animation?.progress() ?? 0) } })
     // HeroFrameController can change the page's available height after mount.
-    const refresh = requestAnimationFrame(() => { ScrollTrigger.refresh(); window.__lenis?.resize() })
+    const refresh = requestAnimationFrame(() => {
+      ScrollTrigger.refresh()
+      window.__lenis?.resize()
+    })
     return () => {
       disposed = true
       cancelAnimationFrame(refresh)
@@ -214,9 +227,10 @@ function ExpoTransitionContent() {
       explore.disabled = false
       activate.disabled = false
       delete element.dataset.expoCompact
+      if (galleryElement) delete galleryElement.dataset.expoCovered
       window.__lenis?.resize()
     }
-  }, [animated, project, details])
+  }, [animated, mobile, project, details])
 
   return (
     <>
@@ -232,7 +246,7 @@ function ExpoTransitionContent() {
         </svg>
       </div>}
     </div>
-    <div className={animated ? styles.galleryHandoff : ''}><HorizontalGallery coordinatedEntrance={animated} /></div>
+    <div ref={gallery} className={animated ? styles.galleryHandoff : ''}><HorizontalGallery coordinatedEntrance={animated} /></div>
     </>
   )
 }
