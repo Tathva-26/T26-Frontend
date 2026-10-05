@@ -1267,8 +1267,8 @@ export default function App() {
       <style jsx global>{`
         @font-face {
           font-family: 'VCR OSD Mono';
-          src: url('https://cdn-next-main.tathva.org/fonts/VCR_OSD_MONO.ttf')
-            format('truetype');
+          src: url('https://cdn-next-main.tathva.org/fonts/VCR_OSD_MONO.woff2')
+            format('woff2');
           font-weight: 400;
           font-style: normal;
           font-display: swap;
@@ -1276,8 +1276,8 @@ export default function App() {
 
         @font-face {
           font-family: 'Bebas Neue';
-          src: url('https://cdn-next-main.tathva.org/fonts/BebasNeue-Regular.ttf')
-            format('truetype');
+          src: url('https://cdn-next-main.tathva.org/fonts/BebasNeue-Regular.woff2')
+            format('woff2');
           font-weight: 400;
           font-style: normal;
           font-display: swap;
@@ -1285,8 +1285,8 @@ export default function App() {
 
         @font-face {
           font-family: 'Space Grotesk';
-          src: url('https://cdn-next-main.tathva.org/fonts/SpaceGrotesk-Variable.ttf')
-            format('truetype');
+          src: url('https://cdn-next-main.tathva.org/fonts/SpaceGrotesk-Variable.woff2')
+            format('woff2');
           font-weight: 100 900;
           font-style: normal;
           font-display: swap;
