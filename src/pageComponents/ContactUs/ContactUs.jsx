@@ -1,213 +1,73 @@
 'use client'
 
-import Image from 'next/image'
-import Link from 'next/link'
-import { useState } from 'react'
 import styles from './ContactUs.module.css'
-import Navbar from '@/pageComponents/Navbar/Navbar'
+import Navbar, { FlipText } from '@/pageComponents/Navbar/Navbar'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
-import { BACKEND_ENABLED, PATHS, api, apiErrorMessage, apiFieldErrors } from '@/lib/api'
-import { CONTACT_FIELDS, normalisePhone, validateContact } from '@/lib/validation'
+import Galaxy from '@/components/Galaxy/Galaxy'
+
+const contacts = Array.from({ length: 6 }, (_, index) => ({
+  number: String(index + 1).padStart(2, '0'),
+  name: `PLACEHOLDER NAME ${String(index + 1).padStart(2, '0')}`,
+  designation: 'PLACEHOLDER DESIGNATION',
+  phone: `+91 00000 0000${index + 1}`,
+}))
 
 export default function ContactUs() {
-  const [fieldErrors, setFieldErrors] = useState({})
-  const [status, setStatus] = useState(null)
-  const [submitting, setSubmitting] = useState(false)
-
-  async function handleSubmit(event) {
-    event.preventDefault()
-    if (submitting) return
-
-    const form = event.currentTarget
-    const data = new FormData(form)
-    const values = Object.fromEntries(
-      CONTACT_FIELDS.map((field) => [field, String(data.get(field) ?? '').trim()]),
-    )
-
-    const errors = validateContact(values)
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors)
-      setStatus({ kind: 'error', message: 'Check the highlighted fields and try again.' })
-      return
-    }
-
-    setFieldErrors({})
-
-    if (!BACKEND_ENABLED) {
-      setStatus({
-        kind: 'error',
-        message: 'The contact form is not open yet. Please try again later.',
-      })
-      return
-    }
-
-    setSubmitting(true)
-    setStatus(null)
-
-    try {
-      const response = await api.post(PATHS.contactCreate, {
-        ...values,
-        phone: normalisePhone(values.phone),
-      })
-
-      // The backend signals success with 201. A 200 here is not a success,
-      // so it must not be treated as one.
-      if (response.status !== 201) {
-        setStatus({
-          kind: 'error',
-          message: 'Your message could not be sent. Please try again.',
-        })
-        return
-      }
-
-      form.reset()
-      setStatus({ kind: 'success', message: 'Thanks — your query has reached us.' })
-    } catch (error) {
-      // The form is deliberately left as it was, so nothing has to be retyped.
-      setFieldErrors(apiFieldErrors(error))
-      setStatus({
-        kind: 'error',
-        message: apiErrorMessage(error, 'Your message could not be sent. Please try again.'),
-      })
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  /** Clears a field's error as soon as it is edited, rather than on resubmit. */
-  function handleInput(event) {
-    const { name } = event.target
-    setFieldErrors((previous) => {
-      if (!name || !previous[name]) return previous
-      const next = { ...previous }
-      delete next[name]
-      return next
-    })
-  }
-
-  function fieldProps(name) {
-    const message = fieldErrors[name]
-    return {
-      'aria-invalid': message ? 'true' : undefined,
-      'aria-describedby': message ? `contact-${name}-error` : undefined,
-    }
-  }
-
-  function fieldError(name) {
-    const message = fieldErrors[name]
-    if (!message) return null
-
-    return (
-      <span className={styles.fieldError} id={`contact-${name}-error`} role='alert'>
-        {message}
-      </span>
-    )
-  }
-
   return (
     <div className={styles.page}>
-      {/* <Link className={styles.brand} href="/" aria-label="Tathva home">
-        <Image src="https://cdn-next-main.tathva.org/images/contact-us/tathva-logo.png" alt="Tathva" fill priority sizes="55px" />
-      </Link> */}
-
+      <div className={styles.backdrop} aria-hidden='true'>
+        <Galaxy
+          mouseInteraction={false}
+          hueShift={0}
+          density={0.9}
+          glowIntensity={0.35}
+          saturation={0.55}
+          twinkleIntensity={0}
+          starSpeed={0}
+          rotationSpeed={0.05}
+        />
+      </div>
       <main className={styles.main}>
-        <div className='hidden lg:block'>
-          <Navbar />
+        <div className={styles.navigation}>
+          <div className='hidden lg:block'>
+            <Navbar />
+          </div>
+          <TathvaMenu />
         </div>
-        <TathvaMenu />
+
         <h1 className={styles.title}>CONTACT US</h1>
 
-        <section className={styles.panel} aria-label='Contact form'>
-          <form className={styles.form} onSubmit={handleSubmit} onInput={handleInput} noValidate>
-            <div className={styles.fieldRow}>
-              <label className={styles.topicLabel} htmlFor='contact-topic'>
-                Topic:
-              </label>
-              <input
-                className={styles.control}
-                id='contact-topic'
-                name='topic'
-                {...fieldProps('topic')}
-              />
-              {fieldError('topic')}
-            </div>
-
-            <div className={styles.pairedFields}>
-              <div className={styles.fieldRow}>
-                <label className={styles.nameLabel} htmlFor='contact-name'>
-                  Name:
-                </label>
-                <input
-                  className={styles.control}
-                  id='contact-name'
-                  name='name'
-                  autoComplete='name'
-                  {...fieldProps('name')}
-                />
-                {fieldError('name')}
-              </div>
-              <div className={styles.fieldRow}>
-                <label className={styles.phoneLabel} htmlFor='contact-phone'>
-                  Phone No:
-                </label>
-                <input
-                  className={styles.control}
-                  id='contact-phone'
-                  name='phone'
-                  type='tel'
-                  autoComplete='tel'
-                  inputMode='tel'
-                  {...fieldProps('phone')}
-                />
-                {fieldError('phone')}
-              </div>
-            </div>
-
-            <div className={styles.fieldRow} style={{ display: 'none' }}>
-              <label className={styles.emailLabel} htmlFor='contact-email'>
-                Email:
-              </label>
-              <input
-                className={styles.control}
-                id='contact-email'
-                name='email'
-                type='email'
-                autoComplete='email'
-                {...fieldProps('email')}
-              />
-              {fieldError('email')}
-            </div>
-
-            <div className={`${styles.fieldRow} ${styles.queryRow}`}>
-              <label className={styles.queryLabel} htmlFor='contact-query'>
-                Query:
-              </label>
-              <textarea
-                className={`${styles.control} ${styles.queryControl}`}
-                id='contact-query'
-                name='query'
-                {...fieldProps('query')}
-              />
-              {fieldError('query')}
-            </div>
-
-            <div className={styles.submitArea}>
-              <button className={styles.submitButton} type='submit' disabled={submitting}>
-                {submitting ? 'Sending…' : <>Submit <span aria-hidden='true'>→</span></>}
-              </button>
-              {status && (
-                <p
-                  className={`${styles.formStatus} ${
-                    status.kind === 'success' ? styles.formStatusSuccess : styles.formStatusError
-                  }`}
-                  role={status.kind === 'success' ? 'status' : 'alert'}
-                >
-                  {status.message}
+        <ul className={styles.directory} aria-label='Contact directory'>
+          {contacts.map((contact) => (
+            <li className={styles.contact} key={contact.number}>
+              <span className={styles.number} aria-hidden='true'>
+                {contact.number}
+              </span>
+              <div className={styles.details}>
+                <h2 className={styles.name}>
+                  <FlipText text={contact.name} />
+                </h2>
+                <p className={styles.designation}>
+                  <FlipText text={contact.designation} />
                 </p>
-              )}
-            </div>
-          </form>
-        </section>
+                <a
+                  className={styles.phone}
+                  href={`tel:${contact.phone.replace(/[^\d+]/g, '')}`}
+                  aria-label={`Call ${contact.phone}`}
+                >
+                  <svg
+                    className={styles.phoneIcon}
+                    viewBox='0 0 24 24'
+                    aria-hidden='true'
+                  >
+                    <path d='M6.6 2.8 9.4 2a1.5 1.5 0 0 1 1.8 1l1.1 3.3a1.5 1.5 0 0 1-.6 1.7L9.9 9.3a14 14 0 0 0 4.8 4.8l1.3-1.8a1.5 1.5 0 0 1 1.7-.6l3.3 1.1a1.5 1.5 0 0 1 1 1.8l-.8 2.8a2 2 0 0 1-2 1.5C10.6 20.4 3.6 13.4 5.1 4.8a2 2 0 0 1 1.5-2Z' />
+                  </svg>
+                  <FlipText text={contact.phone} />
+                </a>
+              </div>
+            </li>
+          ))}
+        </ul>
       </main>
     </div>
   )

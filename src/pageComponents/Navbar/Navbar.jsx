@@ -75,7 +75,10 @@ const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4)
 - span's position for the warp math. The span also wires its own
 - pointerenter as a sane default for plain nav-link usage.
  */
-const FlipText = React.forwardRef(function FlipText({ text, className }, ref) {
+export const FlipText = React.forwardRef(function FlipText(
+  { text, className },
+  ref,
+) {
   const rootRef = useRef(null)
   const outgoingRef = useRef([])
   const incomingRef = useRef([])
