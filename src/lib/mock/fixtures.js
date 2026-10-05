@@ -460,10 +460,6 @@ export const ACCOMMODATION = {
     })),
   ),
 
-  food: [1, 2, 3].flatMap((day) =>
-    ['VEG', 'NONVEG'].map((diet) => ({ day, diet, price: 18000, onSale: true })),
-  ),
-
   availability: STOCK.map(({ tier, gender, unit, total }) => {
     const held = HELD[`${tier}|${gender}`] ?? {}
     return {
@@ -478,4 +474,12 @@ export const ACCOMMODATION = {
       },
     }
   }),
+}
+
+/** GET /api/food/options. Food is its own TIQR event, checked out separately. */
+export const FOOD = {
+  notes: ['Each coupon covers breakfast and lunch for its day.'],
+  food: [1, 2, 3].flatMap((day) =>
+    ['VEG', 'NONVEG'].map((diet) => ({ day, diet, price: 18000, onSale: true })),
+  ),
 }

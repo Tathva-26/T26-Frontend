@@ -6,6 +6,9 @@ import { BACKEND_ENABLED, PATHS, api, apiErrorMessage } from '@/lib/api'
 /**
  * Loads room tiers, food coupons and the guest policy notes.
  *
+ * Rooms and food are separate backend resources (food is its own TIQR event
+ * with its own checkout), fetched together because the page shows both.
+ *
  * Follows the same resting-state shape as `useEvents`: `loading` is derived by
  * comparing the request we want against the one we last settled, rather than
  * being written from inside the effect, so a reload cannot leave it stuck.
@@ -25,11 +28,17 @@ export function useAccommodation() {
     const controller = new AbortController()
     let active = true
 
-    api
-      .get(PATHS.accommodationOptions, { signal: controller.signal })
-      .then((response) => {
+    Promise.all([
+      api.get(PATHS.accommodationOptions, { signal: controller.signal }),
+      api.get(PATHS.foodOptions, { signal: controller.signal }),
+    ])
+      .then(([rooms, food]) => {
         if (!active) return
-        setSettled({ key: requestKey, data: response.data ?? null, error: null })
+        setSettled({
+          key: requestKey,
+          data: { ...(rooms.data ?? {}), food: food.data?.food ?? [] },
+          error: null,
+        })
       })
       .catch((requestError) => {
         if (!active || controller.signal.aborted) return
