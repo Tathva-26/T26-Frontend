@@ -25,6 +25,10 @@ const LABEL_FADE = 2;
 
 // Leaving GPC upwards plays the entry backwards, this many times faster.
 const EXIT_SPEED = 1.8;
+// The entry holds the page for a few seconds. A fresh scroll down while it plays (not the tail of
+// the one that brought the page here) is someone wanting to move on: it finishes this many times
+// faster instead of the wheel doing nothing.
+const ENTRY_SKIP_SPEED = 4;
 // The wheel (or a finger) has to be quiet for this long before whatever is scrolled next counts
 // as a new gesture rather than the tail of the one that brought the page here.
 const GESTURE_GAP_MS = 180;
@@ -224,6 +228,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       let braking = false;
       let intent = 0; // upward scroll collected over one gesture while at rest
       let intentTimer = 0;
+      let lastWheelAt = 0; // when the wheel last turned, to tell a fresh gesture from a tail
       const entryTl = gsap.timeline({
         paused: true,
         onUpdate: sync,
@@ -458,6 +463,13 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
 
       function onWheel(event) {
         if (event.ctrlKey) return;
+        const now = performance.now();
+        const fresh = now - lastWheelAt > GESTURE_GAP_MS;
+        lastWheelAt = now;
+        if (phase === "playing" && fresh && event.deltaY > 0) {
+          entryTl.timeScale(ENTRY_SKIP_SPEED);
+          return;
+        }
         if (gated) {
           armGate();
           return;

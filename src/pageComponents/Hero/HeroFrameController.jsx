@@ -35,6 +35,15 @@ const FRAME_GESTURE_GAP_MS = 140
 // ...and never sooner than this after Frame took over, however the wheel reports its events
 // (a free-spinning mouse wheel can leave gaps longer than the one above mid-spin).
 const FRAME_MIN_DWELL_MS = 500
+// Trackpads: a swipe's momentum is a tail of wheel events that only dies away, so the wheel may
+// never go quiet for FRAME_GESTURE_GAP_MS before the next swipe is made on top of it. A delta at
+// least this much stronger than the one before it (ratio, plus px, and never weaker than MIN) is
+// that new swipe. Ignored for the first FRAME_SURGE_AFTER_MS, while the swipe that opened the
+// portal may still be building up.
+const FRAME_SURGE_RATIO = 1.4
+const FRAME_SURGE_PX = 4
+const FRAME_SURGE_MIN_PX = 12
+const FRAME_SURGE_AFTER_MS = 150
 
 // Frame -> content. Leaving W1 is a single eased glide down to the first section rather than
 // whatever the wheel happened to deliver, and it is locked, so a hard scroll can't carry past it.
@@ -150,6 +159,8 @@ export default function HeroFrameController({ children }) {
   const frameGateClosedRef = useRef(false)
   const frameLastWheelAtRef = useRef(0)
   const frameEnteredAtRef = useRef(0)
+  const frameLastStrengthRef = useRef(0)
+  const frameSurgedRef = useRef(false) // a new swipe was seen while the gate was still closed
 
   useEffect(() => {
     sectionRef.current = section
@@ -167,6 +178,7 @@ export default function HeroFrameController({ children }) {
       sectionRef.current = target
       if (target === 'frame') {
         frameGateClosedRef.current = true
+        frameSurgedRef.current = false
         frameLastWheelAtRef.current = performance.now()
         frameEnteredAtRef.current = performance.now()
       }
@@ -176,6 +188,7 @@ export default function HeroFrameController({ children }) {
       sectionRef.current = target
       if (target === 'frame') {
         frameGateClosedRef.current = true
+        frameSurgedRef.current = false
         frameLastWheelAtRef.current = performance.now()
         frameEnteredAtRef.current = performance.now()
       }
@@ -218,11 +231,20 @@ export default function HeroFrameController({ children }) {
         const now = timeStamp ?? performance.now()
         const quietFor = now - frameLastWheelAtRef.current
         frameLastWheelAtRef.current = now
+        const strength = Math.abs(deltaY)
+        if (
+          strength >= FRAME_SURGE_MIN_PX &&
+          strength >
+            frameLastStrengthRef.current * FRAME_SURGE_RATIO + FRAME_SURGE_PX &&
+          now - frameEnteredAtRef.current >= FRAME_SURGE_AFTER_MS
+        )
+          frameSurgedRef.current = true
+        frameLastStrengthRef.current = strength
         if (deltaY < 0) {
           returnToHero()
         } else if (deltaY > 0) {
           if (frameGateClosedRef.current) {
-            if (quietFor < FRAME_GESTURE_GAP_MS) return
+            if (quietFor < FRAME_GESTURE_GAP_MS && !frameSurgedRef.current) return
             if (now - frameEnteredAtRef.current < FRAME_MIN_DWELL_MS) return
             frameGateClosedRef.current = false
           }
