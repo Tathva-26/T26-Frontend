@@ -60,6 +60,17 @@ export function unitLabel(unit, count = 1) {
 /* ---- days ------------------------------------------------------------- */
 
 /**
+ * The API numbers nights and food days 1–3; these are the calendar dates.
+ * Night 1 is 9 Oct 11 AM to 10 Oct 10 AM, and food day 1 is 9 Oct.
+ */
+const FIRST_DAY = { date: 9, month: 'Oct' }
+
+/** Day/night number (1-based) → "9 Oct". */
+export function festDate(day) {
+  return `${FIRST_DAY.date + day - 1} ${FIRST_DAY.month}`
+}
+
+/**
  * Which days a stay of `nights` can start on, given a fest of `festNights`.
  * A 3-night stay can only begin on day 1. Length alone is not bookable
  * information — the hostel has to know which nights are held.
@@ -76,9 +87,9 @@ export function clampCheckInDay(day, nights, festNights = 3) {
   return allowed.includes(day) ? day : allowed[allowed.length - 1]
 }
 
+/** "9 Oct 11 AM – 11 Oct 10 AM": check-in on the first night, out the morning after the last. */
 export function stayDayLabel(checkInDay, nights) {
-  const end = checkInDay + nights - 1
-  return checkInDay === end ? `Day ${checkInDay}` : `Day ${checkInDay} – Day ${end}`
+  return `${festDate(checkInDay)} 11 AM – ${festDate(checkInDay + nights)} 10 AM`
 }
 
 const nightsHeld = (checkInDay, nights) =>
@@ -183,7 +194,7 @@ export function foodLineId(day, diet) {
 }
 
 export function foodName(day, diet) {
-  return `Day ${day} · ${diet === 'VEG' ? 'Veg' : 'Non-Veg'}`
+  return `${festDate(day)} · ${diet === 'VEG' ? 'Veg' : 'Non-Veg'}`
 }
 
 export function buildFoodLine(coupon, quantity) {
