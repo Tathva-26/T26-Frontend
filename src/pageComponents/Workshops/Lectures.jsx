@@ -49,7 +49,8 @@ const CARD_LABEL = 'Lecture'
 
 // `picture` is non-null on every event in production today, but the field is
 // nullable and next/image requires a src.
-const FALLBACK_IMAGE = 'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
+const FALLBACK_IMAGE =
+  'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
 
 // Tunable hover-response constants — focal card (Step 3 movement unchanged)
 const MAX_TRANSLATE = 15
@@ -1671,7 +1672,9 @@ export default function LecturesPage() {
     stopTicker()
 
     if (pageRef.current) {
-      gsap.set(pageRef.current, { clearProps: 'opacity,transform,transformOrigin' })
+      gsap.set(pageRef.current, {
+        clearProps: 'opacity,transform,transformOrigin',
+      })
     }
 
     Object.values(cardRefs.current).forEach((cardEl) => {
@@ -1856,7 +1859,9 @@ export default function LecturesPage() {
   // UI searched `item.instructor`, which the API has no field for.
   const filteredLectures = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    return query ? events.filter((item) => item.searchText.includes(query)) : events
+    return query
+      ? events.filter((item) => item.searchText.includes(query))
+      : events
   }, [events, searchQuery])
 
   return (
@@ -1875,10 +1880,7 @@ export default function LecturesPage() {
       </div>
 
       {/* MAIN CONTAINER */}
-      <main
-        ref={pageRef}
-        className='relative z-10 px-4 sm:px-6 lg:px-8 pt-4'
-      >
+      <main ref={pageRef} className='relative z-10 px-4 sm:px-6 lg:px-8 pt-4'>
         {/* Step 11 — global dark focus overlay. Lives inside <main> so the
             raised focal column (z 20) sits above it (z 15) while every other
             column sits below. Purely visual; never blocks pointer events. */}
@@ -1893,7 +1895,7 @@ export default function LecturesPage() {
         <div className='relative w-full overflow-hidden group mb-8'>
           <div className='relative aspect-[677/197] w-full'>
             <Image
-              src='https://cdn-next-main.tathva.org/images/lectures/cosmic-banner.webp?v=2'
+              src='https://cdn-next-main.tathva.org/images/lectures/cosmic-banner.webp'
               alt="Tathva '26 Lectures Cosmic Supernova Banner"
               fill
               priority
@@ -2347,21 +2349,25 @@ export default function LecturesPage() {
           -webkit-mask-repeat: no-repeat;
           mask-repeat: no-repeat;
           -webkit-mask-image: radial-gradient(
-            circle at calc(var(--focus-x, 0) * 1px) calc(var(--focus-y, 0) * 1px),
+            circle at calc(var(--focus-x, 0) * 1px)
+              calc(var(--focus-y, 0) * 1px),
             transparent 0px,
             transparent calc(var(--focus-hole, 0) * 1px),
             black calc(var(--focus-hole, 0) * 1px + ${FOCUS_MASK_EDGE}px),
             black calc(var(--focus-reveal, 0) * 1px),
-            transparent calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
+            transparent
+              calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
             transparent 100%
           );
           mask-image: radial-gradient(
-            circle at calc(var(--focus-x, 0) * 1px) calc(var(--focus-y, 0) * 1px),
+            circle at calc(var(--focus-x, 0) * 1px)
+              calc(var(--focus-y, 0) * 1px),
             transparent 0px,
             transparent calc(var(--focus-hole, 0) * 1px),
             black calc(var(--focus-hole, 0) * 1px + ${FOCUS_MASK_EDGE}px),
             black calc(var(--focus-reveal, 0) * 1px),
-            transparent calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
+            transparent
+              calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
             transparent 100%
           );
         }
@@ -2371,12 +2377,10 @@ export default function LecturesPage() {
           opacity: 0;
           border-radius: inherit;
           background: radial-gradient(
-            circle at
-              calc(var(--pulse-x, 50) * 1%)
+            circle at calc(var(--pulse-x, 50) * 1%)
               calc(var(--pulse-y, 50) * 1%),
             rgba(255, 255, 255, var(--pulse-alpha, 0)) 0%,
-            rgba(255, 255, 255, 0)
-              calc(var(--pulse-radius, 0) * 1%)
+            rgba(255, 255, 255, 0) calc(var(--pulse-radius, 0) * 1%)
           );
         }
 
@@ -2387,20 +2391,29 @@ export default function LecturesPage() {
         }
 
         .lecture-activation-overlay::before {
-          content: "";
+          content: '';
           position: absolute;
           inset: 0;
           background: radial-gradient(
             circle at var(--activation-x, 50%) var(--activation-y, 50%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% - ${ACTIVATION_RING_BAND}%),
-            rgba(255, 255, 255, ${ACTIVATION_GLOW_ALPHA}) calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% + ${ACTIVATION_RING_BAND}%)
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% -
+                  ${ACTIVATION_RING_BAND}%
+              ),
+            rgba(255, 255, 255, ${ACTIVATION_GLOW_ALPHA})
+              calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% +
+                  ${ACTIVATION_RING_BAND}%
+              )
           );
           mix-blend-mode: screen;
         }
 
         .lecture-activation-overlay::after {
-          content: "";
+          content: '';
           position: absolute;
           inset: 0;
           background-image:
@@ -2422,19 +2435,36 @@ export default function LecturesPage() {
           mix-blend-mode: overlay;
           -webkit-mask-image: radial-gradient(
             circle at var(--activation-x, 50%) var(--activation-y, 50%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% - ${ACTIVATION_GRID_BAND}%),
-            black calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% + ${ACTIVATION_GRID_BAND}%)
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% -
+                  ${ACTIVATION_GRID_BAND}%
+              ),
+            black
+              calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% +
+                  ${ACTIVATION_GRID_BAND}%
+              )
           );
           mask-image: radial-gradient(
             circle at var(--activation-x, 50%) var(--activation-y, 50%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% - ${ACTIVATION_GRID_BAND}%),
-            black calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% + ${ACTIVATION_GRID_BAND}%)
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% -
+                  ${ACTIVATION_GRID_BAND}%
+              ),
+            black
+              calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% +
+                  ${ACTIVATION_GRID_BAND}%
+              )
           );
         }
       `}</style>
-
     </div>
   )
 }
