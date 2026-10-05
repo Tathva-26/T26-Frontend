@@ -10,6 +10,7 @@ import {
   START_FRAME,
   TOTAL_SCROLL_VH,
   TV_ART_STYLE,
+  HOLD_FRAME,
   HOLD_SCROLL_VH,
   HOLD_START_VH,
   frameAtScrollVh,
@@ -29,11 +30,14 @@ const FRAME_PROGRESS_END = FRAME_SCROLL_VH / TOTAL_SCROLL_VH
 const SCROLL_HINT_IDLE_MS = 700
 
 // While the footage is held for the car's details, the car idles: it drifts
-// forward LOOP_FRAMES frames and eases back, once every LOOP_SECONDS. A cosine
-// ease-in-out has zero speed at both ends, so the turnaround never shows, and
-// the offset is 0 at the loop's start/end, so it is seamless however long it runs.
+// forward LOOP_FRAMES frames and back, once every LOOP_SECONDS, at a steady
+// speed with rounded turnarounds. The offset is 0 at the loop's start/end, so
+// it is seamless however long it runs, and positions between two frames are
+// drawn as a cross-fade of both, so the slow playback doesn't step.
 const LOOP_FRAMES = 30
 const LOOP_SECONDS = 8
+// 0..1: how close the loop's wave is to a pure triangle (1 = hard turnarounds).
+const LOOP_SHARPNESS = 0.92
 
 const getFramePath = (index) => {
   const frameNum = (START_FRAME + index).toString().padStart(3, '0')
@@ -223,13 +227,17 @@ export default function WheelsExperience({ revealUnderlay = false }) {
 
     let loadedCount = 0
     const images = []
-    const renderFrame = (index) => {
+    const isReady = (image) =>
+      Boolean(image && image.complete && image.naturalWidth !== 0)
+    // `blend` (0..1) cross-fades the next frame over this one, so a position
+    // between two frames is drawn as one instead of snapping to the nearer.
+    const renderFrame = (index, blend = 0) => {
       const canvas = canvasRef.current
       if (!canvas) return false
       const context = canvas.getContext('2d')
       if (!context) return false
       const image = imagesRef.current[index]
-      if (!image || !image.complete || image.naturalWidth === 0) return false
+      if (!isReady(image)) return false
       if (coverRef.w <= 0 || coverRef.h <= 0) updateCanvasDimensions()
 
       let panRatio = 1
@@ -259,6 +267,22 @@ export default function WheelsExperience({ revealUnderlay = false }) {
         coverRef.w,
         coverRef.h,
       )
+      const nextImage = imagesRef.current[index + 1]
+      if (blend > 0.01 && isReady(nextImage)) {
+        context.globalAlpha = blend
+        context.drawImage(
+          nextImage,
+          0,
+          0,
+          nextImage.naturalWidth,
+          nextImage.naturalHeight,
+          coverRef.x - scrollShiftX,
+          coverRef.y,
+          coverRef.w,
+          coverRef.h,
+        )
+        context.globalAlpha = 1
+      }
       return true
     }
 
@@ -286,7 +310,13 @@ export default function WheelsExperience({ revealUnderlay = false }) {
           releaseLoader()
         }
       }
-      image.onload = () => handleImageLoad(index)
+      image.onload = () => {
+        // The idle loop cycles these frames continuously: have them decoded
+        // up front rather than on first draw, which shows as a hitch.
+        if (index >= HOLD_FRAME && index <= HOLD_FRAME + LOOP_FRAMES + 1)
+          image.decode?.().catch(() => {})
+        handleImageLoad(index)
+      }
       image.onerror = () => handleImageLoad(index)
       images.push(image)
     }
@@ -513,21 +543,41 @@ export default function WheelsExperience({ revealUnderlay = false }) {
           ? currentFrameRef.current + difference * lerpRate
           : targetFrameRef.current
 
-      const loopPhase = (performance.now() / 1000 / LOOP_SECONDS) % 1
-      const loopOffset = LOOP_FRAMES * (0.5 - 0.5 * Math.cos(loopPhase * 2 * Math.PI))
-      const frameToDraw = Math.min(
-        FRAME_COUNT - 1,
-        Math.max(
-          0,
-          Math.round(currentFrameRef.current + holdWeightRef.current * loopOffset),
-        ),
-      )
+      // Idle loop while held: a near-triangle wave (constant speed, with just
+      // the turnarounds rounded off) rather than a cosine, which crawls for so
+      // long at each end that the car looked like it had hung there.
+      const holdWeight = holdWeightRef.current
+      let frameToDraw
+      let blend = 0
+      if (holdWeight > 0) {
+        const loopPhase = (performance.now() / 1000 / LOOP_SECONDS) % 1
+        const wave =
+          Math.asin(LOOP_SHARPNESS * Math.sin(loopPhase * 2 * Math.PI - Math.PI / 2)) /
+          Math.asin(LOOP_SHARPNESS)
+        const exact = Math.min(
+          FRAME_COUNT - 1,
+          Math.max(
+            0,
+            currentFrameRef.current + holdWeight * LOOP_FRAMES * (wave + 1) / 2,
+          ),
+        )
+        frameToDraw = Math.floor(exact)
+        blend = exact - frameToDraw
+      } else {
+        frameToDraw = Math.min(
+          FRAME_COUNT - 1,
+          Math.max(0, Math.round(currentFrameRef.current)),
+        )
+      }
+      // Sub-frame positions only matter while blending: quantise them so a
+      // still page doesn't redraw the canvas every frame for nothing.
+      const drawKey = frameToDraw + Math.round(blend * 32) / 32
       if (
-        frameToDraw !== lastDrawnFrameRef.current ||
+        drawKey !== lastDrawnFrameRef.current ||
         lastDrawnFrameRef.current === -1
       ) {
-        if (renderFrame(frameToDraw)) {
-          lastDrawnFrameRef.current = frameToDraw
+        if (renderFrame(frameToDraw, blend)) {
+          lastDrawnFrameRef.current = drawKey
         } else {
           for (let offset = 1; offset < FRAME_COUNT; offset += 1) {
             const previous = frameToDraw - offset
@@ -590,8 +640,10 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       updateLayoutMetrics()
       updateTvShrinkAnimation(currentFrameRef.current)
       updateIntroVignette(currentFrameRef.current)
+      const lastDrawn = lastDrawnFrameRef.current
       renderFrame(
-        lastDrawnFrameRef.current >= 0 ? lastDrawnFrameRef.current : 0,
+        lastDrawn >= 0 ? Math.floor(lastDrawn) : 0,
+        lastDrawn >= 0 ? lastDrawn % 1 : 0,
       )
     }
     window.addEventListener('resize', handleResize)
@@ -658,7 +710,10 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       if (!gliding) return
       gliding = false
       armExitSoon()
+      onGlideEnd?.()
     }
+    // Touch screens: called once a glide has landed, to note where the page now rests.
+    let onGlideEnd = null
     const glide = (lenis, target, duration, easing) => {
       gliding = true
       exitArmed = false
@@ -667,11 +722,36 @@ export default function WheelsExperience({ revealUnderlay = false }) {
       glideTimer = window.setTimeout(endGlide, duration * 1000 + 400)
       lenis.scrollTo(target, {
         duration,
-        lock: true,
+        // A finger can't be locked out of native scrolling; it just takes the page back.
+        lock: !touchScreen,
         force: true,
         easing,
         onComplete: endGlide,
       })
+    }
+    // Where the page rests when GPC (the section before Wheels) has the screen: the top of its track.
+    const gpcRestTarget = (lenis) => {
+      const track = document.querySelector('.gpc-track')
+      if (!track) return null
+      const scrollerTop = scroller === window ? 0 : scroller.getBoundingClientRect().top
+      return Math.max(0, lenis.scroll + track.getBoundingClientRect().top - scrollerTop)
+    }
+    // The snap a movement in `direction` deserves from `vh` (null = leave it).
+    // Down: before the hold -> the hold; from the hold on -> Robowars.
+    // Up: from below the hold -> the hold; from the hold or above -> GPC.
+    const DEAD_VH = 2 // a glide may land this close to the hold and still count as on it
+    const snapFor = (lenis, trig, vh, direction) => {
+      if (vh < APPROACH_FROM_VH || vh > TOTAL_SCROLL_VH) return null
+      const vhToScroll = (v) => trig.start + ((trig.end - trig.start) * v) / TOTAL_SCROLL_VH
+      if (direction > 0) {
+        if (vh < HOLD_MID_VH - DEAD_VH)
+          return { to: vhToScroll(HOLD_MID_VH), seconds: 2.8, handoff: false }
+        return { to: handoffTarget(lenis, trig), seconds: 4.2, handoff: true }
+      }
+      if (vh > HOLD_END_VH)
+        return { to: vhToScroll(HOLD_MID_VH), seconds: 4.2, handoff: false }
+      const rest = gpcRestTarget(lenis)
+      return rest === null ? null : { to: rest, seconds: 4.2, handoff: false }
     }
     // The later of Wheels' fade completion and Robowars' timeline end: the
     // exact fully revealed Robowars frame, rather than merely the point where
@@ -720,7 +800,7 @@ export default function WheelsExperience({ revealUnderlay = false }) {
             !approachDone &&
             self.direction > 0 &&
             scrollVh >= APPROACH_FROM_VH &&
-            scrollVh < HOLD_MID_VH - 6
+            scrollVh < HOLD_MID_VH - 2
           ) {
             approachDone = true
             glide(lenis, vhToScroll(HOLD_MID_VH), 2.8, easeInOutCubic)
@@ -728,6 +808,19 @@ export default function WheelsExperience({ revealUnderlay = false }) {
             approachDone = true
             handoffSnapStarted = true
             glide(lenis, handoffTarget(lenis, self), 4.2, easeInOutCubic)
+          } else if (self.direction < 0) {
+            // Scrolling back up: from below the hold it lands on the hold; from
+            // inside it (once the wheel has settled) it goes back up to GPC.
+            const snap =
+              scrollVh > HOLD_END_VH || (exitArmed && inHold) || scrollVh < HOLD_START_VH
+                ? snapFor(lenis, self, scrollVh, -1)
+                : null
+            if (snap) {
+              handoffSnapStarted = false
+              glide(lenis, snap.to, snap.seconds, easeInOutCubic)
+            } else if (inHold) {
+              armExitSoon()
+            }
           } else if (inHold) {
             approachDone = true
             armExitSoon()
@@ -787,20 +880,80 @@ export default function WheelsExperience({ revealUnderlay = false }) {
         return
       }
       if (!inHold) return
-      if (exitArmed && event.deltaY > 4) {
-        if (event.cancelable) event.preventDefault()
-        approachDone = true
-        handoffSnapStarted = true
-        glide(lenis, handoffTarget(lenis, trigger), 4.2, easeInOutCubic)
-        return
+      if (exitArmed && Math.abs(event.deltaY) > 4) {
+        const down = event.deltaY > 0
+        const snap = snapFor(lenis, trigger, vh, down ? 1 : -1)
+        if (snap) {
+          if (event.cancelable) event.preventDefault()
+          approachDone = down
+          handoffSnapStarted = snap.handoff
+          glide(lenis, snap.to, snap.seconds, easeInOutCubic)
+          return
+        }
       }
       armExitSoon()
     }
     if (revealUnderlay && !touchScreen)
       scroller.addEventListener('wheel', onHoldWheel, { passive: false })
 
+    // Phones: the page scrolls natively (finger, then momentum), so nothing is
+    // run against it while it moves. Once it has come to rest with the finger
+    // off, it is eased on to wherever that swipe was heading, exactly as the
+    // wheel does above: a swipe is a gesture, not a distance.
+    const TOUCH_IDLE_MS = 160
+    const TOUCH_MIN_PX = 24 // less than this isn't a swipe
+    let touchTimer = 0
+    let fingerDown = false
+    let rested = scroller.scrollTop
+    const touchVh = () =>
+      ((scroller.scrollTop - trigger.start) / (trigger.end - trigger.start)) *
+      TOTAL_SCROLL_VH
+    const settleTouch = () => {
+      const lenis = window.__lenis
+      if (!lenis || fingerDown || gliding || lenis.isStopped) return
+      const scroll = scroller.scrollTop
+      const travelled = scroll - rested
+      rested = scroll
+      if (Math.abs(travelled) < TOUCH_MIN_PX) return
+      const snap = snapFor(lenis, trigger, touchVh(), travelled > 0 ? 1 : -1)
+      if (!snap) return
+      handoffSnapStarted = snap.handoff
+      glide(lenis, snap.to, snap.seconds, easeInOutCubic)
+    }
+    const settleTouchSoon = () => {
+      window.clearTimeout(touchTimer)
+      if (!gliding) touchTimer = window.setTimeout(settleTouch, TOUCH_IDLE_MS)
+    }
+    const onTouchStart = () => {
+      fingerDown = true
+      window.clearTimeout(touchTimer)
+      // Lenis drops its own glide as the finger moves, without telling anyone.
+      if (gliding) {
+        gliding = false
+        window.clearTimeout(glideTimer)
+      }
+    }
+    const onTouchEnd = (event) => {
+      fingerDown = event.touches.length > 0
+      if (!fingerDown) settleTouchSoon()
+    }
+    if (revealUnderlay && touchScreen) {
+      onGlideEnd = () => {
+        rested = scroller.scrollTop
+      }
+      scroller.addEventListener('scroll', settleTouchSoon, { passive: true })
+      scroller.addEventListener('touchstart', onTouchStart, { passive: true })
+      scroller.addEventListener('touchend', onTouchEnd, { passive: true })
+      scroller.addEventListener('touchcancel', onTouchEnd, { passive: true })
+    }
+
     return () => {
       scroller.removeEventListener('wheel', onHoldWheel)
+      scroller.removeEventListener('scroll', settleTouchSoon)
+      scroller.removeEventListener('touchstart', onTouchStart)
+      scroller.removeEventListener('touchend', onTouchEnd)
+      scroller.removeEventListener('touchcancel', onTouchEnd)
+      window.clearTimeout(touchTimer)
       isActive = false
       releaseLoader()
       cancelAnimationFrame(animationFrameId)
