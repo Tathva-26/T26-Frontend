@@ -1,5 +1,18 @@
 # Expo crystal assets and visual implementation
 
+## Phone touch and shader correction (2026-10-05)
+
+- Glass rim and mist falloffs square signed coordinates by multiplication.
+  GLSL `pow(x, 2.)` is undefined for negative x; on some GPUs this can propagate
+  invalid values into the entire glass colour. Shell/shard transmission is unchanged.
+- Touch starts only within the measured crystal slot. After a 10 px tolerance,
+  vertical/ambiguous gestures stay with page scrolling; horizontal drags capture
+  the pointer and apply relative tilt. Touch release clears hover feedback.
+- Mobile Explore spans the content width with a 52 px minimum target. Desktop
+  connector lines are hidden on phones, where they crossed the button and copy.
+- `scripts/check-expo-touch.mjs` validates gesture classification and relative
+  touch tilt. Actual iPhone rendering and native gestures still require device testing.
+
 ## Mobile rendering update (2026-10-05)
 
 The sections below retain historical implementation/verification notes. Current changes:

@@ -63,9 +63,11 @@ function prepareGlass(shader) {
     '#include <transmission_pars_fragment>',
     transmission,
   )
+  // GLSL pow(negative, 2.) is undefined even with an integer exponent.
+  // Multiply signed offsets instead: Apple GPUs can otherwise output black.
   shader.fragmentShader = shader.fragmentShader.replace(
     'vec3 outgoingLight = totalDiffuse + totalSpecular + totalEmissiveRadiance;',
-    'float edge = pow(clamp(1. - abs(dot(normal, normalize(vViewPosition))), 0., 1.), 1.3); vec3 edgeTint = mix(vec3(.65,.82,1.),vec3(1.,.35,.85),smoothstep(.2,1.5,vExpoWorldPosition.x-vExpoWorldPosition.y*.3)); float pink = exp(-8.*pow(vExpoWorldPosition.x-.75,2.)-2.*pow(vExpoWorldPosition.y+.6,2.)); vec3 rimGlow = (vec3(.012,.035,.075)+vec3(.45,.045,.32)*pink)*edge; vec3 outgoingLight = totalDiffuse + totalSpecular * mix(.24,1.25,edge) * edgeTint + totalEmissiveRadiance + rimGlow;',
+    'float edge = pow(clamp(1. - abs(dot(normal, normalize(vViewPosition))), 0., 1.), 1.3); vec3 edgeTint = mix(vec3(.65,.82,1.),vec3(1.,.35,.85),smoothstep(.2,1.5,vExpoWorldPosition.x-vExpoWorldPosition.y*.3)); vec2 pinkOffset = vExpoWorldPosition.xy - vec2(.75,-.6); float pink = exp(-dot(pinkOffset*pinkOffset,vec2(8.,2.))); vec3 rimGlow = (vec3(.012,.035,.075)+vec3(.45,.045,.32)*pink)*edge; vec3 outgoingLight = totalDiffuse + totalSpecular * mix(.24,1.25,edge) * edgeTint + totalEmissiveRadiance + rimGlow;',
   )
 }
 
@@ -421,7 +423,7 @@ export default function CrystalModel({ target, compact = false, textureCompact =
         <planeGeometry />
         <shaderMaterial transparent depthWrite={false} blending={AdditiveBlending} uniforms={mistUniforms}
           vertexShader={'varying vec2 vUv; void main(){vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }'}
-          fragmentShader={'uniform float time,opacity; varying vec2 vUv; float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);} float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);} void main(){vec2 p=vUv*vec2(5.,2.)+vec2(time*.06,-time*.015);float n=noise(p)*.65+noise(p*2.1)*.35; float feather=smoothstep(0.,.18,vUv.x)*smoothstep(0.,.18,1.-vUv.x)*smoothstep(0.,.22,vUv.y)*smoothstep(0.,.22,1.-vUv.y);float band=exp(-pow((vUv.y-.5-sin(vUv.x*6.+time*.12)*.12)*4.,2.));gl_FragColor=vec4(.20,.43,.65,opacity*feather*band*smoothstep(.24,.72,n));\n#include <colorspace_fragment>\n}'} />
+          fragmentShader={'uniform float time,opacity; varying vec2 vUv; float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);} float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);} void main(){vec2 p=vUv*vec2(5.,2.)+vec2(time*.06,-time*.015);float n=noise(p)*.65+noise(p*2.1)*.35; float feather=smoothstep(0.,.18,vUv.x)*smoothstep(0.,.18,1.-vUv.x)*smoothstep(0.,.22,vUv.y)*smoothstep(0.,.22,1.-vUv.y);float bandOffset=(vUv.y-.5-sin(vUv.x*6.+time*.12)*.12)*4.; float band=exp(-bandOffset*bandOffset);gl_FragColor=vec4(.20,.43,.65,opacity*feather*band*smoothstep(.24,.72,n));\n#include <colorspace_fragment>\n}'} />
       </mesh>
       <group>
         <mesh

@@ -10,6 +10,7 @@ import CrystalModel from "./CrystalModel";
 import ConclaveVeil from "./ConclaveVeil";
 import { interactionTargets, localPointer } from "./crystalGeometry.mjs";
 import { sampleFrameBudget } from './expoRenderBudget.mjs';
+import { touchGesture, insideCrystalSlot } from './crystalTouch.mjs';
 
 function initialCompact() {
   if (typeof window === 'undefined') return true;
@@ -126,6 +127,12 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
   const update = (event) => {
     const touch = event.pointerType !== "mouse";
     if (touch && pointer.current?.id !== event.pointerId) return;
+    if (touch) {
+      const gesture = pointer.current;
+      gesture.mode = touchGesture(event.clientX - gesture.clientX, event.clientY - gesture.clientY, gesture.mode);
+      if (gesture.mode === 'scroll') { reset(); return; }
+      if (gesture.mode === 'drag' && !event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.setPointerCapture(event.pointerId);
+    }
     const rect = event.currentTarget.getBoundingClientRect();
     const point = localPointer(event.clientX, event.clientY, rect);
     const local = localPointer(event.clientX, event.clientY, controlsRect(event.currentTarget));
@@ -138,8 +145,10 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
   };
   const down = (event) => {
     if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
-    pointer.current = { id: event.pointerId, clientX: event.clientX, clientY: event.clientY, moved: false, start: localPointer(event.clientX, event.clientY, controlsRect(event.currentTarget)) };
-    event.currentTarget.setPointerCapture(event.pointerId);
+    const slot = controlsRect(event.currentTarget);
+    if (event.pointerType !== 'mouse' && !insideCrystalSlot(event.clientX, event.clientY, slot)) return;
+    pointer.current = { id: event.pointerId, clientX: event.clientX, clientY: event.clientY, moved: false, mode: 'pending', start: localPointer(event.clientX, event.clientY, slot) };
+    if (event.pointerType === 'mouse') event.currentTarget.setPointerCapture(event.pointerId);
     update(event);
   };
   const keyboard = (event) => {
@@ -158,11 +167,11 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
     if (pointer.current && pointer.current.id !== event.pointerId) return;
     if (event.type === 'pointerup' && pointer.current && !pointer.current.moved) {
       update(event);
-      if (!pointer.current.moved) { target.current.activation++; target.current.opener = event.currentTarget; event.currentTarget.focus({ preventScroll: true }); }
+      if (pointer.current && !pointer.current.moved) { target.current.activation++; target.current.opener = event.currentTarget; event.currentTarget.focus({ preventScroll: true }); }
     }
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     pointer.current = null;
-    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: event.type === 'pointerup', pressed: false, keyboard: false });
+    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: event.type === 'pointerup' && event.pointerType === 'mouse', pressed: false, keyboard: false });
   };
 
   useEffect(() => {

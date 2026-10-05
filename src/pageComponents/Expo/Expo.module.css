@@ -81,9 +81,11 @@
  .description { left: 77%; top: 53%; width: 20%; } .explore { left: 13%; }
 }
 @media (max-width: 767px) {
- .stage { height: max(100svh, 780px); min-height: 780px; } .title { left: 6%; top: 11%; } .desktopTitle { font-size: 23vw; }
- .intro { left: 7%; top: 24%; width: 74%; font-size: 14px; line-height: 1.4; } .crystalSlot { left: 10%; top: 37%; width: 80%; height: 36%; }
- .description { left: 7%; top: 83%; width: 86%; font-size: 14px; line-height: 1.4; } .explore { left: auto; right: 6%; top: 75%; font-size: 18px; }
+ .desktopLines { display: none; }
+ .stage { height: max(100svh, 740px); min-height: 740px; } .title { left: 7%; top: 11%; } .desktopTitle { font-size: clamp(70px, 22vw, 130px); }
+ .intro { left: 7%; top: 24%; width: 86%; font-size: 14px; line-height: 1.4; } .crystalSlot { left: 7%; top: 37%; width: 86%; height: 34%; }
+ .description { left: 7%; top: 83%; width: 86%; font-size: 14px; line-height: 1.4; }
+ .explore { left: 7%; right: 7%; top: 74%; min-height: 52px; font-size: 18px; touch-action: manipulation; }
 }
 @media (max-height: 520px) and (max-width: 1023px) and (orientation: landscape) {
  .title { left: 42%; top: 12%; } .desktopTitle { font-size: 13vw; } .intro { left: 7%; top: 26%; width: 26%; font-size: 12px; line-height: 1.35; }

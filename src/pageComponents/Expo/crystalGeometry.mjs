@@ -85,6 +85,7 @@ export function localPointer(clientX, clientY, rect) {
 }
 
 export function interactionTargets(point, drag, touch = false) {
+  if (touch) return { tiltX: 0, tiltY: Math.max(-.35, Math.min(.35, drag.x * .8)), x: 0, y: 0 };
   const gain = touch ? .75 : 1;
   return {
     tiltX: Math.max(-.15, Math.min(.15, -point.y * .105 - drag.y * .16)) * gain,
