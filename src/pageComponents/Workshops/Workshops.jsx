@@ -50,7 +50,8 @@ const CARD_LABEL = 'Workshop'
 
 // `picture` is non-null on every event in production today, but the field is
 // nullable and next/image requires a src.
-const FALLBACK_IMAGE = 'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
+const FALLBACK_IMAGE =
+  'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
 
 // Tunable hover-response constants — focal card (Step 3 movement unchanged)
 const MAX_TRANSLATE = 15
@@ -65,8 +66,8 @@ const LEAVE_DURATION = 0.6
 const EASE = 'power2.out'
 
 // Focal-card material/depth response (Step 5)
-const REST_EDGE_BG = 'rgba(18, 18, 24, 0.95)'
-const FOCUS_EDGE_BG = 'rgba(9, 9, 13, 0.98)'
+const REST_EDGE_BG = 'transparent'
+const FOCUS_EDGE_BG = 'transparent'
 const REST_EDGE_HIGHLIGHT_TOP = 'rgba(255,255,255,0.08)'
 const FOCUS_EDGE_HIGHLIGHT_TOP = 'rgba(255,255,255,0.18)'
 const REST_EDGE_HIGHLIGHT_LEFT = 'rgba(255,255,255,0.05)'
@@ -1673,7 +1674,9 @@ export default function WorkshopsPage() {
     stopTicker()
 
     if (pageRef.current) {
-      gsap.set(pageRef.current, { clearProps: 'opacity,transform,transformOrigin' })
+      gsap.set(pageRef.current, {
+        clearProps: 'opacity,transform,transformOrigin',
+      })
     }
 
     Object.values(cardRefs.current).forEach((cardEl) => {
@@ -1858,7 +1861,9 @@ export default function WorkshopsPage() {
   // UI searched `item.instructor`, which the API has no field for.
   const filteredWorkshops = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    return query ? events.filter((item) => item.searchText.includes(query)) : events
+    return query
+      ? events.filter((item) => item.searchText.includes(query))
+      : events
   }, [events, searchQuery])
 
   return (
@@ -1881,7 +1886,7 @@ export default function WorkshopsPage() {
           <Link href='/' className='flex items-center gap-3 group'>
             <div className='relative h-8 sm:h-9 w-9 sm:w-10 flex items-center justify-center'>
               <Image
-                src='https://cdn-next-main.tathva.org/images/workshops/tathva-emblem.png'
+                src='https://cdn-next-main.tathva.org/images/workshops/tathva-emblem.png?v=2'
                 alt='Tathva Logo'
                 width={40}
                 height={36}
@@ -2014,10 +2019,7 @@ export default function WorkshopsPage() {
       </div>
 
       {/* MAIN CONTAINER */}
-      <main
-        ref={pageRef}
-        className='relative z-10 px-4 sm:px-6 lg:px-8 pt-4'
-      >
+      <main ref={pageRef} className='relative z-10 px-4 sm:px-6 lg:px-8 pt-4'>
         {/* Step 11 — global dark focus overlay. Lives inside <main> so the
             raised focal column (z 20) sits above it (z 15) while every other
             column sits below. Purely visual; never blocks pointer events. */}
@@ -2281,6 +2283,13 @@ export default function WorkshopsPage() {
                                       sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
                                       className='object-contain object-center transition-transform duration-500 ease-out group-hover:scale-105'
                                     />
+                                    {workshop.bookingClosed && (
+                                      <div className='pointer-events-none absolute inset-0 z-20 flex items-center justify-center'>
+                                        <span className='rounded-full border border-white/35 bg-black/75 px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-lg'>
+                                          Booking closed
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
 
                                   {/* STATIC INFO — title, date/venue, price */}
@@ -2290,7 +2299,9 @@ export default function WorkshopsPage() {
                                     </p>
                                     <p className='m-0 text-xs text-white/60'>
                                       {workshop.dateMonth} {workshop.dateDay}
-                                      {workshop.time ? ` · ${workshop.time}` : ''}
+                                      {workshop.time
+                                        ? ` · ${workshop.time}`
+                                        : ''}
                                       {getVenueName(workshop.venue)
                                         ? ` · ${getVenueName(workshop.venue)}`
                                         : ''}
@@ -2494,21 +2505,25 @@ export default function WorkshopsPage() {
           -webkit-mask-repeat: no-repeat;
           mask-repeat: no-repeat;
           -webkit-mask-image: radial-gradient(
-            circle at calc(var(--focus-x, 0) * 1px) calc(var(--focus-y, 0) * 1px),
+            circle at calc(var(--focus-x, 0) * 1px)
+              calc(var(--focus-y, 0) * 1px),
             transparent 0px,
             transparent calc(var(--focus-hole, 0) * 1px),
             black calc(var(--focus-hole, 0) * 1px + ${FOCUS_MASK_EDGE}px),
             black calc(var(--focus-reveal, 0) * 1px),
-            transparent calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
+            transparent
+              calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
             transparent 100%
           );
           mask-image: radial-gradient(
-            circle at calc(var(--focus-x, 0) * 1px) calc(var(--focus-y, 0) * 1px),
+            circle at calc(var(--focus-x, 0) * 1px)
+              calc(var(--focus-y, 0) * 1px),
             transparent 0px,
             transparent calc(var(--focus-hole, 0) * 1px),
             black calc(var(--focus-hole, 0) * 1px + ${FOCUS_MASK_EDGE}px),
             black calc(var(--focus-reveal, 0) * 1px),
-            transparent calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
+            transparent
+              calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
             transparent 100%
           );
         }
@@ -2518,12 +2533,10 @@ export default function WorkshopsPage() {
           opacity: 0;
           border-radius: inherit;
           background: radial-gradient(
-            circle at
-              calc(var(--pulse-x, 50) * 1%)
+            circle at calc(var(--pulse-x, 50) * 1%)
               calc(var(--pulse-y, 50) * 1%),
             rgba(255, 255, 255, var(--pulse-alpha, 0)) 0%,
-            rgba(255, 255, 255, 0)
-              calc(var(--pulse-radius, 0) * 1%)
+            rgba(255, 255, 255, 0) calc(var(--pulse-radius, 0) * 1%)
           );
         }
 
@@ -2534,20 +2547,29 @@ export default function WorkshopsPage() {
         }
 
         .workshop-activation-overlay::before {
-          content: "";
+          content: '';
           position: absolute;
           inset: 0;
           background: radial-gradient(
             circle at var(--activation-x, 50%) var(--activation-y, 50%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% - ${ACTIVATION_RING_BAND}%),
-            rgba(255, 255, 255, ${ACTIVATION_GLOW_ALPHA}) calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% + ${ACTIVATION_RING_BAND}%)
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% -
+                  ${ACTIVATION_RING_BAND}%
+              ),
+            rgba(255, 255, 255, ${ACTIVATION_GLOW_ALPHA})
+              calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% +
+                  ${ACTIVATION_RING_BAND}%
+              )
           );
           mix-blend-mode: screen;
         }
 
         .workshop-activation-overlay::after {
-          content: "";
+          content: '';
           position: absolute;
           inset: 0;
           background-image:
@@ -2569,19 +2591,36 @@ export default function WorkshopsPage() {
           mix-blend-mode: overlay;
           -webkit-mask-image: radial-gradient(
             circle at var(--activation-x, 50%) var(--activation-y, 50%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% - ${ACTIVATION_GRID_BAND}%),
-            black calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% + ${ACTIVATION_GRID_BAND}%)
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% -
+                  ${ACTIVATION_GRID_BAND}%
+              ),
+            black
+              calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% +
+                  ${ACTIVATION_GRID_BAND}%
+              )
           );
           mask-image: radial-gradient(
             circle at var(--activation-x, 50%) var(--activation-y, 50%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% - ${ACTIVATION_GRID_BAND}%),
-            black calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% + ${ACTIVATION_GRID_BAND}%)
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% -
+                  ${ACTIVATION_GRID_BAND}%
+              ),
+            black
+              calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% +
+                  ${ACTIVATION_GRID_BAND}%
+              )
           );
         }
       `}</style>
-
     </div>
   )
 }
