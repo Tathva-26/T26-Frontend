@@ -65,8 +65,8 @@ const LEAVE_DURATION = 0.6
 const EASE = 'power2.out'
 
 // Focal-card material/depth response (Step 5)
-const REST_EDGE_BG = 'rgba(18, 18, 24, 0.95)'
-const FOCUS_EDGE_BG = 'rgba(9, 9, 13, 0.98)'
+const REST_EDGE_BG = 'transparent'
+const FOCUS_EDGE_BG = 'transparent'
 const REST_EDGE_HIGHLIGHT_TOP = 'rgba(255,255,255,0.08)'
 const FOCUS_EDGE_HIGHLIGHT_TOP = 'rgba(255,255,255,0.18)'
 const REST_EDGE_HIGHLIGHT_LEFT = 'rgba(255,255,255,0.05)'
@@ -1895,7 +1895,7 @@ export default function LecturesPage() {
         <div className='relative w-full overflow-hidden group mb-8'>
           <div className='relative aspect-[677/197] w-full'>
             <Image
-              src='https://cdn-next-main.tathva.org/images/lectures/cosmic-banner.webp'
+              src='https://cdn-next-main.tathva.org/images/lectures/cosmic-banner.webp?v=2'
               alt="Tathva '26 Lectures Cosmic Supernova Banner"
               fill
               priority
@@ -2142,6 +2142,13 @@ export default function LecturesPage() {
                                       sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
                                       className='object-contain object-center transition-transform duration-500 ease-out group-hover:scale-105'
                                     />
+                                    {lecture.bookingClosed && (
+                                      <div className='pointer-events-none absolute inset-0 z-20 flex items-center justify-center'>
+                                        <span className='rounded-full border border-white/35 bg-black/75 px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-lg'>
+                                          Booking closed
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
 
                                   {/* STATIC INFO — title, date/venue, price */}
