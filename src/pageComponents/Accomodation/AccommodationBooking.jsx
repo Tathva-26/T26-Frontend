@@ -1,8 +1,11 @@
 'use client'
 
 /**
- * PARKED: the full accommodation booking page (rooms, food coupons, cart,
- * fee breakdown, payment return screen).
+ * PARKED: the full accommodation booking page (rooms, food coupons, two
+ * carts with fee breakdowns, payment return screen).
+ *
+ * Rooms and food check out separately: food coupons are their own TIQR event
+ * (POST /api/food/book), and one TIQR booking cannot span two events.
  *
  * Not rendered at the moment. /accommodation shows "Coming soon" from
  * ./Accommodation.jsx while the TIQR return redirect and per-line amounts are
@@ -27,10 +30,10 @@ import {
   GENDERS,
   STAY_NIGHTS,
   buildBookingBody,
+  buildFoodBody,
   buildStayLine,
   cartCount,
   cartFees,
-  checkoutBlocker,
   clampCheckInDay,
   foodName,
   foodQuantity,
@@ -85,7 +88,7 @@ function PaymentReturn({ chargeStatus, onDismiss }) {
 
       <p className='mt-2 text-sm leading-relaxed text-white/60'>
         {charged
-          ? 'The payment provider says you were charged. Your room is not confirmed on this page yet — do not pay again. Confirmation will follow by email.'
+          ? 'The payment provider says you were charged. Your booking is not confirmed on this page yet — do not pay again. Confirmation will follow by email.'
           : 'Nothing came back to say a payment was made. If you were charged, do not pay again — get in touch and we will sort it out.'}
       </p>
 
@@ -168,6 +171,88 @@ function Stepper({ value, min = 0, max, onChange, label }) {
   )
 }
 
+/**
+ * One cart and its Pay button. Rooms and food each get one, because each is
+ * a separate payment on a separate TIQR event.
+ */
+function CartPanel({ title, lines, emptyText, payLabel, isSignedIn, submitting, error, onCheckout }) {
+  const fees = cartFees(lines)
+  const count = cartCount(lines)
+
+  return (
+    <section className='rounded-2xl border border-white/12 bg-black/50 p-5 backdrop-blur-sm'>
+      <h2 className='text-xs font-semibold uppercase tracking-[0.18em] text-white/45'>
+        {title}
+        {count > 0 ? ` · ${count}` : ''}
+      </h2>
+
+      {lines.length === 0 ? (
+        <p className='mt-3 text-sm text-white/50'>{emptyText}</p>
+      ) : (
+        <>
+          <ul className='mt-3 space-y-3'>
+            {lines.map((line) => (
+              <li key={line.id} className='flex justify-between gap-3 text-sm'>
+                <div className='min-w-0'>
+                  <p className='truncate font-medium'>{line.name}</p>
+                  <p className='mt-0.5 text-xs text-white/45'>
+                    {line.detail}
+                    {line.kind === 'food' ? ` · ×${line.quantity}` : ''}
+                  </p>
+                </div>
+                <span className='shrink-0 tabular-nums'>
+                  {formatPrice(lineTotal(line))}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {/* TIQR adds the platform fee and GST on top of the ticket prices
+              at checkout, so the breakdown shows what will actually be
+              charged. Matches its own total exactly. */}
+          <dl className='mt-5 space-y-1.5 border-t border-white/12 pt-4 text-sm'>
+            <div className='flex justify-between text-white/60'>
+              <dt>Subtotal</dt>
+              <dd className='tabular-nums'>{formatPrice(fees.base)}</dd>
+            </div>
+            <div className='flex justify-between text-white/60'>
+              <dt>Platform fee (2.5%)</dt>
+              <dd className='tabular-nums'>{formatPrice(fees.platformFee)}</dd>
+            </div>
+            <div className='flex justify-between text-white/60'>
+              <dt>GST on fee (18%)</dt>
+              <dd className='tabular-nums'>{formatPrice(fees.gst)}</dd>
+            </div>
+            <div className='flex justify-between pt-1.5 text-base font-semibold text-white'>
+              <dt>Total</dt>
+              <dd className='tabular-nums'>{formatPrice(fees.total)}</dd>
+            </div>
+          </dl>
+
+          <button
+            type='button'
+            onClick={onCheckout}
+            disabled={submitting}
+            className='mt-4 w-full rounded-xl border border-[rgba(var(--violet),0.5)] bg-[rgba(var(--violet),0.22)] px-4 py-3 text-sm font-semibold uppercase tracking-wider transition-colors hover:bg-[rgba(var(--violet),0.34)] disabled:cursor-not-allowed disabled:opacity-40'
+          >
+            {submitting
+              ? 'Opening payment…'
+              : isSignedIn
+                ? payLabel
+                : 'Sign in to book'}
+          </button>
+        </>
+      )}
+
+      {error ? (
+        <p className='mt-2 text-xs text-red-300' role='alert'>
+          {error}
+        </p>
+      ) : null}
+    </section>
+  )
+}
+
 export default function AccommodationBooking() {
   const inNavbarScope = useNavbarScope()
   const router = useRouter()
@@ -190,9 +275,13 @@ export default function AccommodationBooking() {
   const [checkInDay, setCheckInDay] = useState(1)
   const [tierId, setTierId] = useState(null)
   const [roomCount, setRoomCount] = useState(1)
+  // Two carts, two payments: `lines` is the room (at most one stay line),
+  // `foodLines` the coupons.
   const [lines, setLines] = useState([])
-  const [submitting, setSubmitting] = useState(false)
-  const [bookingError, setBookingError] = useState(null)
+  const [foodLines, setFoodLines] = useState([])
+  // Which cart is mid-checkout ('room' | 'food'), and the error per cart.
+  const [submitting, setSubmitting] = useState(null)
+  const [checkoutErrors, setCheckoutErrors] = useState({})
 
   /* The API serves flat SKU rows; the "tier with a price and some stock left"
      the page wants is assembled per gender and per chosen stay. */
@@ -205,10 +294,6 @@ export default function AccommodationBooking() {
   )
 
   const tier = tiers.find((row) => row.tier === tierId) ?? null
-
-  const fees = cartFees(lines)
-  const count = cartCount(lines)
-  const blocker = checkoutBlocker(lines)
 
   const chargeStatus = searchParams.get('status')
   const returning = chargeStatus !== null
@@ -302,32 +387,34 @@ export default function AccommodationBooking() {
     syncStay({ tier: next, quantity: capped })
   }
 
-  async function handleCheckout() {
+  async function checkout(cart) {
     if (!isSignedIn) {
       signIn()
       return
     }
 
-    setSubmitting(true)
-    setBookingError(null)
+    const [path, body] =
+      cart === 'food'
+        ? [PATHS.foodBook, buildFoodBody(foodLines)]
+        : [PATHS.accommodationBook, buildBookingBody(lines)]
+    const failWith = (message) => {
+      setCheckoutErrors((current) => ({ ...current, [cart]: message }))
+      setSubmitting(null)
+    }
+
+    setSubmitting(cart)
+    setCheckoutErrors((current) => ({ ...current, [cart]: null }))
     try {
-      const { data } = await api.post(
-        PATHS.accommodationBook,
-        buildBookingBody(lines),
-      )
+      const { data } = await api.post(path, body)
       // Deliberately not re-enabling the button on success — the navigation is
       // already underway, and a second submit mid-redirect is a second charge.
       if (data?.redir_url) {
         window.location.assign(data.redir_url)
         return
       }
-      setBookingError('The payment page could not be opened. Please try again.')
-      setSubmitting(false)
+      failWith('The payment page could not be opened. Please try again.')
     } catch (requestError) {
-      setBookingError(
-        apiErrorMessage(requestError, 'Could not complete that booking.'),
-      )
-      setSubmitting(false)
+      failWith(apiErrorMessage(requestError, 'Could not complete that booking.'))
     }
   }
 
@@ -360,6 +447,7 @@ export default function AccommodationBooking() {
                  route into the return URL, where it would otherwise survive
                  and invite a second payment. */
               setLines([])
+              setFoodLines([])
               router.replace('/accommodation')
             }}
           />
@@ -497,12 +585,13 @@ export default function AccommodationBooking() {
                 </h2>
                 <p className='mt-1 text-sm text-white/50'>
                   Breakfast + Lunch, {formatPrice(food[0]?.price ?? 0)} per day.
-                  Buy any mix of days.
+                  Buy any mix of days, with or without a room — food is paid
+                  for separately.
                 </p>
 
                 <div className='mt-4 grid gap-3 sm:grid-cols-2'>
                   {food.map((coupon) => {
-                    const quantity = foodQuantity(lines, coupon)
+                    const quantity = foodQuantity(foodLines, coupon)
                     const label = foodName(coupon.day, coupon.diet)
                     return (
                       <div
@@ -523,7 +612,7 @@ export default function AccommodationBooking() {
                           label={label}
                           value={quantity}
                           onChange={(next) =>
-                            setLines((current) =>
+                            setFoodLines((current) =>
                               withFoodQuantity(current, coupon, next),
                             )
                           }
@@ -535,79 +624,28 @@ export default function AccommodationBooking() {
               </section>
             </div>
 
-            {/* Cart */}
-            <aside className='rounded-2xl border border-white/12 bg-black/50 p-5 backdrop-blur-sm lg:sticky lg:top-28'>
-              <h2 className='text-xs font-semibold uppercase tracking-[0.18em] text-white/45'>
-                Your cart{count > 0 ? ` · ${count}` : ''}
-              </h2>
-
-              {lines.length === 0 ? (
-                <p className='mt-3 text-sm text-white/50'>Nothing added yet.</p>
-              ) : (
-                <ul className='mt-3 space-y-3'>
-                  {lines.map((line) => (
-                    <li key={line.id} className='flex justify-between gap-3 text-sm'>
-                      <div className='min-w-0'>
-                        <p className='truncate font-medium'>{line.name}</p>
-                        <p className='mt-0.5 text-xs text-white/45'>
-                          {line.detail}
-                          {line.kind === 'food' ? ` · ×${line.quantity}` : ''}
-                        </p>
-                      </div>
-                      <span className='shrink-0 tabular-nums'>
-                        {formatPrice(lineTotal(line))}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {/* TIQR adds the platform fee and GST on top of the ticket
-                  prices at checkout, so the breakdown shows the buyer what they
-                  will actually be charged. Matches its own total exactly. */}
-              <dl className='mt-5 space-y-1.5 border-t border-white/12 pt-4 text-sm'>
-                <div className='flex justify-between text-white/60'>
-                  <dt>Subtotal</dt>
-                  <dd className='tabular-nums'>{formatPrice(fees.base)}</dd>
-                </div>
-                <div className='flex justify-between text-white/60'>
-                  <dt>Platform fee (2.5%)</dt>
-                  <dd className='tabular-nums'>{formatPrice(fees.platformFee)}</dd>
-                </div>
-                <div className='flex justify-between text-white/60'>
-                  <dt>GST on fee (18%)</dt>
-                  <dd className='tabular-nums'>{formatPrice(fees.gst)}</dd>
-                </div>
-                <div className='flex justify-between pt-1.5 text-base font-semibold text-white'>
-                  <dt>Total</dt>
-                  {/* formatPrice(0) is "Free", which is right for a free ticket
-                      and wrong for an empty basket. */}
-                  <dd className='tabular-nums'>
-                    {lines.length === 0 ? '₹0' : formatPrice(fees.total)}
-                  </dd>
-                </div>
-              </dl>
-
-              <button
-                type='button'
-                onClick={handleCheckout}
-                disabled={!!blocker || submitting}
-                className='mt-4 w-full rounded-xl border border-[rgba(var(--violet),0.5)] bg-[rgba(var(--violet),0.22)] px-4 py-3 text-sm font-semibold uppercase tracking-wider transition-colors hover:bg-[rgba(var(--violet),0.34)] disabled:cursor-not-allowed disabled:opacity-40'
-              >
-                {submitting
-                  ? 'Opening payment…'
-                  : isSignedIn
-                    ? 'Checkout'
-                    : 'Sign in to book'}
-              </button>
-
-              {bookingError ? (
-                <p className='mt-2 text-xs text-red-300' role='alert'>
-                  {bookingError}
-                </p>
-              ) : blocker ? (
-                <p className='mt-2 text-xs text-white/45'>{blocker}</p>
-              ) : null}
+            {/* Two carts, because rooms and food are two payments. */}
+            <aside className='space-y-4 lg:sticky lg:top-28'>
+              <CartPanel
+                title='Room'
+                lines={lines}
+                emptyText='No room picked yet.'
+                payLabel='Pay for room'
+                isSignedIn={isSignedIn}
+                submitting={submitting === 'room'}
+                error={checkoutErrors.room}
+                onCheckout={() => checkout('room')}
+              />
+              <CartPanel
+                title='Food coupons'
+                lines={foodLines}
+                emptyText='No coupons added yet.'
+                payLabel='Pay for food'
+                isSignedIn={isSignedIn}
+                submitting={submitting === 'food'}
+                error={checkoutErrors.food}
+                onCheckout={() => checkout('food')}
+              />
             </aside>
           </div>
         )}

@@ -19,6 +19,7 @@
 import { AxiosError } from 'axios'
 import {
   ACCOMMODATION,
+  FOOD,
   BOOKINGS,
   EVENTS,
   REFERRALS,
@@ -322,7 +323,7 @@ function createBooking(config, body) {
 /* ---- accommodation --------------------------------------------------- */
 
 /**
- * Books a cart of stay + food lines.
+ * Books a room cart (stay lines only; food has its own checkout).
  *
  * Validated in the order the real thing would have to: the cart has to make
  * sense before stock is touched, and stock is checked against the gender the
@@ -354,18 +355,6 @@ function createAccommodationBooking(config, body) {
 		const quantity = Number(item.quantity)
 		if (!Number.isInteger(quantity) || quantity < 1) {
 			return fail(config, 400, { error: `Invalid quantity for ${item.kind} line` })
-		}
-
-		if (item.kind === 'food') {
-			const rate = ACCOMMODATION.food.find(
-				(row) => row.day === Number(item.day) && row.diet === item.diet,
-			)
-			if (!rate) {
-				return fail(config, 404, { error: `No food coupon for day ${item.day} ${item.diet}` })
-			}
-			if (!rate.onSale) return fail(config, 409, { error: 'Food coupons are not on sale yet' })
-			amount += rate.price * quantity
-			continue
 		}
 
 		if (item.kind !== 'stay') {
@@ -428,6 +417,43 @@ function createAccommodationBooking(config, body) {
 	return respond(config, 201, {
 		message: 'Booking created',
 		bookingUid: 'mock-accommodation-uid',
+		amount,
+		redir_url: '/accommodation?status=CHARGED&signature=mock-signature',
+	})
+}
+
+/** Books a food-coupon cart, as food.service.js would. */
+function createFoodOrder(config, body) {
+	if (!signedIn()) return notSignedIn(config)
+
+	const items = Array.isArray(body.items) ? body.items : []
+	if (items.length === 0) return fail(config, 400, { error: 'Cart is empty' })
+
+	if (!currentUser.phone) {
+		return fail(config, 400, {
+			message: 'Add a phone number to your profile before booking',
+		})
+	}
+
+	let amount = 0
+	for (const item of items) {
+		const quantity = Number(item.quantity)
+		if (!Number.isInteger(quantity) || quantity < 1) {
+			return fail(config, 400, { error: 'Invalid quantity for a food line' })
+		}
+		const rate = FOOD.food.find(
+			(row) => row.day === Number(item.day) && row.diet === item.diet,
+		)
+		if (!rate) {
+			return fail(config, 404, { error: `No food coupon for day ${item.day} ${item.diet}` })
+		}
+		if (!rate.onSale) return fail(config, 409, { error: 'Food coupons are not on sale yet' })
+		amount += rate.price * quantity
+	}
+
+	return respond(config, 201, {
+		message: 'Order created',
+		bookingUid: 'mock-food-uid',
 		amount,
 		redir_url: '/accommodation?status=CHARGED&signature=mock-signature',
 	})
@@ -526,6 +552,14 @@ export async function mockAdapter(config) {
 
   if (method === 'post' && path === '/api/accommodation/book') {
     return createAccommodationBooking(config, body)
+  }
+
+  if (method === 'get' && path === '/api/food/options') {
+    return respond(config, 200, FOOD)
+  }
+
+  if (method === 'post' && path === '/api/food/book') {
+    return createFoodOrder(config, body)
   }
 
   if (method === 'get' && path === '/healthz') {

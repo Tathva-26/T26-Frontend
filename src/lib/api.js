@@ -50,6 +50,9 @@ export const PATHS = {
   seatCount: '/api/seat_count/',
   accommodationOptions: '/api/accommodation/options',
   accommodationBook: '/api/accommodation/book',
+  // Food coupons are their own TIQR event with their own checkout.
+  foodOptions: '/api/food/options',
+  foodBook: '/api/food/book',
   healthz: '/healthz',
 }
 
