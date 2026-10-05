@@ -43,11 +43,11 @@
   object-fit: contain;
   pointer-events: none;
   opacity: var(--journey-fallback-opacity, 1);
-  transition: opacity 0.65s ease;
+
 }
 .canvas {
-  opacity: 0;
-  transition: opacity 0.65s ease;
+  opacity: 1;
+
   pointer-events: none;
 }
 .ready .canvas {
@@ -103,3 +103,6 @@
 .crystalSlot:has(.fallbackActivate) { z-index: 4; pointer-events: none; }
 .page:has([data-crystal-state="ready"]) .fallbackActivate { display: none; }
 .fallbackActivate:focus-visible { outline: 2px solid #91dcff; outline-offset: 4px; }
+
+/* Loading now uses procedural WebGL geometry, including its own silhouette. */
+.fallbackShards { display: none; }

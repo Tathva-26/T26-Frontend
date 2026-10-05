@@ -74,7 +74,7 @@ function ExpoTransitionContent() {
     const copy = page.querySelectorAll(`.${expoStyles.title}, .${expoStyles.intro}, .${expoStyles.description}, .${expoStyles.explore}`)
     const explore = page.querySelector('[data-expo-explore]')
     const activate = page.querySelector('[data-expo-slot] button')
-    const fallback = crystal.current.querySelector('img')
+
     const renderer = crystal.current.querySelector('[data-crystal-state]')
     const detailRoot = element.closest('[data-expo-detail-state]')
     const entryCopy = [...copy].filter(node => node !== explore)
@@ -163,7 +163,6 @@ function ExpoTransitionContent() {
       })
       // Keep opacity in CSS so the ready state can hide the illustration when
       // the model loads, even if scrolling is paused at that moment.
-      if (state !== 'ready') gsap.set(fallback, { '--journey-fallback-opacity': pose.opacity, width: box.slotWidth, height: box.slotHeight, x: x - box.slotWidth / 2, y: y - box.slotHeight / 2, scale: pose.scale * 8 / (8 - pose.depth), rotationX: pose.pitch * 180 / Math.PI })
       // ConclaveVeil owns the cloud field; the poster only needs a compositor
       // opacity fade, without another noise filter or full-screen blur pass.
       page.style.pointerEvents = available ? 'auto' : 'none'

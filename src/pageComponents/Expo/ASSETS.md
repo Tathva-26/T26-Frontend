@@ -332,3 +332,6 @@ keyboard wake, reduced motion, the shared model's pre-entry readiness and the
 gallery's first card. Physical-device FPS is not measured. Production build
 was blocked by existing Google Fonts network failures; a network-enabled retry
 encountered Windows EPERM while unlinking a generated `.next/build` chunk.
+
+### Immediate scene preparation
+Expo mounts its client-only canvas immediately rather than waiting for the 1200px intersection threshold. Asset decoding, uploads and shader warmup run before arrival; after the first detailed frame the offscreen canvas pauses. A download-free procedural 3D crystal replaces the image during cold loading and follows the same journey pose. Shader compilation retains its last frame, and readiness has no 650ms opacity transition. Browser initialization and uncached network transfers still take time; the final glass materials are unchanged.

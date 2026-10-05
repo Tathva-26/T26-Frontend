@@ -8,6 +8,7 @@ import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import CrystalOptics from './CrystalOptics'
 import CrystalModel from "./CrystalModel";
 import ConclaveVeil from "./ConclaveVeil";
+import LoadingCrystal from './LoadingCrystal';
 import { interactionTargets, localPointer } from "./crystalGeometry.mjs";
 import { sampleFrameBudget } from './expoRenderBudget.mjs';
 import { touchGesture, insideCrystalSlot } from './crystalTouch.mjs';
@@ -19,10 +20,11 @@ function initialCompact() {
     (navigator.deviceMemory && navigator.deviceMemory <= 4));
 }
 
-function SceneWarmup({ ready, onFailure, shaderFailed }) {
+function SceneWarmup({ ready, assetsMounted, onFailure, shaderFailed }) {
   const { gl, scene, camera } = useThree();
   useEffect(() => {
     let cancelled = false;
+    assetsMounted.current = true;
     ready.current = false;
     const textures = new Set();
     scene.traverse(object => {
@@ -37,8 +39,8 @@ function SceneWarmup({ ready, onFailure, shaderFailed }) {
     gl.compileAsync(scene, camera).then(() => {
       if (!cancelled && !shaderFailed.current) ready.current = true;
     }).catch(() => { if (!cancelled) onFailure(); });
-    return () => { cancelled = true; ready.current = false; };
-  }, [gl, scene, camera, ready, onFailure, shaderFailed]);
+    return () => { cancelled = true; ready.current = false; assetsMounted.current = false; };
+  }, [gl, scene, camera, ready, assetsMounted, onFailure, shaderFailed]);
   return null;
 }
 
@@ -110,6 +112,7 @@ function RenderBudget({ compact, degraded, onQuality }) {
 export default function CrystalScene({ active, reduced, onReady, onFailure, onLost, onRestored, journey, onProject, transition }) {
   const shaderFailed = useRef(false);
   const warmupReady = useRef(false);
+  const assetsMounted = useRef(false);
   const target = useRef({ tiltX: 0, tiltY: 0, x: 0, y: 0, active: false, pressed: false, activation: 0, keyboard: false });
   const feedback = useRef(null);
   const reportMood = (awake) => { if (feedback.current) feedback.current.textContent = awake ? 'The robot awakens.' : ''; };
@@ -195,16 +198,16 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
       <Canvas dpr={renderDpr} frameloop={active ? "always" : "never"} camera={{ fov: 32, position: [0, 0, 7], near: .1, far: 30 }} gl={{ alpha: true, antialias: true, powerPreference: "low-power" }} onCreated={({ gl }) => { gl.setClearColor(0, 0); gl.toneMapping = NoToneMapping; gl.transmissionResolutionScale = .75; }} fallback={null}>
         <ContextEvents onFailure={onFailure} onLost={onLost} onRestored={onRestored} shaderFailed={shaderFailed} />
         <RenderBudget compact={compact} degraded={degraded} onQuality={setDegraded} />
-        <CrystalOptics compact={compact || degraded} warmupReady={warmupReady} onFailure={onFailure} journey={journey} />
+        <CrystalOptics compact={compact || degraded} warmupReady={warmupReady} assetsMounted={assetsMounted} onFailure={onFailure} journey={journey} />
         <ambientLight intensity={.08} />
         <directionalLight position={[-3, 4, 3]} color="#7bbaff" intensity={.6} />
         <pointLight position={[1.8, -1.2, 1]} color="#ee49cf" intensity={4} distance={5} decay={2} />
         {/* Readiness includes every asset needed for the entrance, not just the shell. */}
-        <Suspense fallback={null}>
+        <Suspense fallback={<LoadingCrystal journey={journey} target={target} reduced={reduced} />}>
           <SceneEnvironment shared={!!journey} />
           <CrystalModel target={target} reduced={reduced} compact={compact || degraded} textureCompact={compact} onReady={() => { if (!shaderFailed.current) onReady(); }} onMood={reportMood} journey={journey} onProject={onProject} />
           {transition && journey && <ConclaveVeil journey={journey} compact={compact || degraded} />}
-          <SceneWarmup ready={warmupReady} onFailure={onFailure} shaderFailed={shaderFailed} />
+          <SceneWarmup ready={warmupReady} assetsMounted={assetsMounted} onFailure={onFailure} shaderFailed={shaderFailed} />
         </Suspense>
       </Canvas>
       <span ref={feedback} aria-live='polite' style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)' }} />

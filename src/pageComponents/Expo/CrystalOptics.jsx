@@ -7,7 +7,7 @@ import { HalfFloatType, Mesh, OrthographicCamera, PlaneGeometry, Scene, ShaderMa
 import { useExpoDetails } from './ExpoDetails'
 import { detailMotion } from './expoDetailMotion.mjs'
 
-export default function CrystalOptics({ compact, warmupReady, onFailure, journey }) {
+export default function CrystalOptics({ compact, warmupReady, assetsMounted, onFailure, journey }) {
   const gl = useThree(state => state.gl)
   const details = useExpoDetails()
   const target = useRef(null)
@@ -85,7 +85,9 @@ export default function CrystalOptics({ compact, warmupReady, onFailure, journey
   }, [gl, pass, onFailure])
   // Positive priority owns rendering. Idle takes the exact normal one-render path.
   useFrame(({ gl, scene, camera, size }, delta) => {
-    if (warmupReady && !warmupReady.current) return
+    // Render the procedural loading scene while downloads run. During shader
+    // compilation retain that frame instead of drawing incomplete materials.
+    if (warmupReady && !warmupReady.current && assetsMounted?.current) return
     const sample = profile.current
     const stage = details?.progress.current.state !== 'closed' && details?.progress.current.state ? 'details' :
       journey?.current.exit > 0 ? 'exit' : (journey?.current.progress ?? 1) < 1 ? 'entry' : 'idle'
