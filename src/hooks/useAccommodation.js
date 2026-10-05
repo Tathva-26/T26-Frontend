@@ -67,6 +67,8 @@ export function useAccommodation() {
     food: settled.data?.food ?? [],
     availability: settled.data?.availability ?? [],
     notes: settled.data?.notes ?? [],
+    // False while an admin has paused bookings; the backend refuses them too.
+    bookingsOpen: settled.data?.bookingsOpen ?? true,
     festNights: settled.data?.festNights ?? 3,
     checkIn: settled.data?.checkIn ?? null,
     checkOut: settled.data?.checkOut ?? null,
