@@ -551,34 +551,32 @@ export const Frame = ({ onScrollUp, onScroll, isActive }) => {
     }
 
     let touchStartY = 0
+    let touchActive = false
     const handleTouchStart = (e) => {
       touchStartY = e.touches[0].clientY
-    }
-    const handleTouchMove = (e) => {
-      const currentY = e.touches[0].clientY
-      const delta = touchStartY - currentY
-      touchStartY = currentY
-      if (typeof onScroll === 'function') {
-        onScroll(delta * 1.5)
-      }
+      touchActive = true
     }
     const handleTouchEnd = (e) => {
-      if (typeof onScroll !== 'function' && typeof onScrollUp === 'function') {
-        const delta =
-          touchStartY - (e.changedTouches?.[0]?.clientY || touchStartY)
-        if (delta < -40) onScrollUp()
-      }
+      if (!touchActive) return
+      touchActive = false
+      const endY = e.changedTouches?.[0]?.clientY ?? touchStartY
+      const delta = touchStartY - endY
+      if (typeof onScroll === 'function') onScroll(delta * 1.5)
+      else if (typeof onScrollUp === 'function' && delta < -40) onScrollUp()
+    }
+    const handleTouchCancel = () => {
+      touchActive = false
     }
 
     window.addEventListener('wheel', handleWheel, { passive: false })
     window.addEventListener('touchstart', handleTouchStart, { passive: true })
-    window.addEventListener('touchmove', handleTouchMove, { passive: true })
     window.addEventListener('touchend', handleTouchEnd, { passive: true })
+    window.addEventListener('touchcancel', handleTouchCancel, { passive: true })
     return () => {
       window.removeEventListener('wheel', handleWheel)
       window.removeEventListener('touchstart', handleTouchStart)
-      window.removeEventListener('touchmove', handleTouchMove)
       window.removeEventListener('touchend', handleTouchEnd)
+      window.removeEventListener('touchcancel', handleTouchCancel)
     }
   }, [onScrollUp, onScroll, isActive])
 
