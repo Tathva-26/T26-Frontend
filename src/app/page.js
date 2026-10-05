@@ -8,7 +8,7 @@ import Frontend from '@/pageComponents/Team/Frontend'
 import Backend from '@/pageComponents/Team/Backend'
 import Uiux from '@/pageComponents/Team/UIUX'
 import TechConclaveExpoTransition from '@/pageComponents/Expo/TechConclaveExpoTransition'
-import TechConclave from '@/pageComponents/TechConclave/TechConclave'
+import TechConclave, { TechConclaveSection } from '@/pageComponents/TechConclave/TechConclave'
 import HorizontalGallery from '@/pageComponents/HorizontalGallery/HorizontalGallery'
 import Expo from '@/pageComponents/Expo/Expo'
 import Footer from '@/pageComponents/Footer/Footer'
@@ -47,11 +47,11 @@ export default function Home() {
           <RobowarsPage />
         </div>
         {/* Expo + its scroll-pinned transition are hidden for now; TechConclave stays. */}
-        <div className='relative w-full'>
+        <TechConclaveSection>
           <TechConclave />
           <div className='pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-black to-transparent sm:h-36' />
           <div className='pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-black to-transparent sm:h-36' />
-        </div>
+        </TechConclaveSection>
         {/* <TechConclaveExpoTransition /> */}
         <HorizontalGallery />
         <Footer />

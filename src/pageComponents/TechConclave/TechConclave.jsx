@@ -1261,6 +1261,85 @@ export default function TechConclave() {
   )
 }
 
+/**
+ * Wraps the whole section and snaps it flush into (or fully past) view —
+ * same snap mechanism as Robowars' hero: the snap lives on a *scrubbed*
+ * timeline's scrollTrigger (not a bare `ScrollTrigger.create()`), which is
+ * what actually arms GSAP's scroll-stopped detection reliably — a snap
+ * with no scrub attached to it never fired. The timeline itself drives a
+ * throwaway object, not anything visual; only the scrub/snap machinery is
+ * being reused.
+ *
+ * Lenis owns `.main-scroll`'s real scrollTop on its own rAF tick, so
+ * letting ScrollTrigger's snap tween that value itself would fight Lenis
+ * for it every frame. Instead `snapTo` hands the actual move to
+ * `lenis.scrollTo()` and returns the *current* value so ScrollTrigger just
+ * rests where it is while Lenis eases there — same handoff Robowars uses.
+ */
+export function TechConclaveSection({ children, className = '' }) {
+  const rootRef = React.useRef(null)
+
+  React.useLayoutEffect(() => {
+    const root = rootRef.current
+    if (!root || window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+      return undefined
+    const scroller = root.closest('.main-scroll')
+
+    const ctx = gsap.context(() => {
+      const dummy = { p: 0 }
+      gsap.to(dummy, {
+        p: 1,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: root,
+          scroller,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+          invalidateOnRefresh: true,
+          snap: {
+            snapTo: (value, self) => {
+              const lenis = window.__lenis
+              if (!lenis || lenis.isStopped || lenis.isLocked) return value
+
+              const target = value < 0.5 ? 0 : 1
+              if (Math.abs(target - value) < 0.001) return value
+
+              const range = self.end - self.start
+              lenis.scrollTo(self.start + range * target, {
+                duration: 0.5,
+                easing: (t) => 1 - Math.pow(1 - t, 3),
+              })
+              return value
+            },
+            duration: { min: 0.2, max: 0.5 },
+            ease: 'power2.out',
+          },
+        },
+      })
+
+      // Everything above this section (Hero, Artist, GPC, Wheels, Robowars)
+      // pins/resizes itself well after first paint — fonts, images, and
+      // each section's own ScrollTrigger all shift this trigger's true
+      // start/end position later. Without a refresh once that settles, the
+      // snap keeps using whatever (wrong, too-early) offsets it was first
+      // measured with, and jumps to a stale position instead of this
+      // section's real top/bottom.
+      const onSettle = () => ScrollTrigger.refresh()
+      window.addEventListener('load', onSettle, { once: true })
+      document.fonts?.ready.then(onSettle)
+    }, root)
+
+    return () => ctx.revert()
+  }, [])
+
+  return (
+    <div ref={rootRef} className={`relative w-full ${className}`}>
+      {children}
+    </div>
+  )
+}
+
 const css = `
 @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500&display=swap");
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@800&display=swap');
