@@ -37,6 +37,7 @@ function ExpoTransitionContent() {
   const animated = useSyncExternalStore(subscribeMotion, motionSnapshot, serverSnapshot)
   const mobile = useSyncExternalStore(subscribeWidth, widthSnapshot, serverSnapshot)
   const root = useRef(null)
+  const pinSpace = useRef(null)
   const crystal = useRef(null)
   const journey = useRef(expoJourney(0))
   const geometry = useRef(null)
@@ -63,6 +64,7 @@ function ExpoTransitionContent() {
     if (!animated) return
     gsap.registerPlugin(ScrollTrigger)
     const element = root.current
+    const spacer = pinSpace.current
     const galleryElement = gallery.current
     const tc = element.querySelector('[data-conclave]')
     const page = element.querySelector('[data-expo-page]')
@@ -83,9 +85,18 @@ function ExpoTransitionContent() {
     element.dataset.expoExitStart = exitStart
     let trigger
     let disposed = false
+    let canvasWidth = 0, canvasHeight = 0
 
     const measure = () => {
       if (disposed) return
+      if (mobile) {
+        // Native sticky stays in the scrolling compositor on iOS. A JS pin
+        // inside the overflow scroller can trail the finger by a frame.
+        const height = element.getBoundingClientRect().height
+        const viewportHeight = plane.clientHeight
+        spacer.style.height = `${height + viewportHeight * scrollUnit * duration}px`
+        element.style.setProperty('--expo-pin-top', `${viewportHeight - height}px`)
+      }
       const viewport = plane.getBoundingClientRect()
       const destination = slot.getBoundingClientRect()
       const robot = [...tc.querySelectorAll('img')].filter(image => {
@@ -142,17 +153,21 @@ function ExpoTransitionContent() {
       pose.layout = box
       journey.current = pose
       const { x, y } = journeyScreenPoint(pose, box, screenPoint.current)
+      if (canvasWidth !== box.width || canvasHeight !== box.height) {
+        gsap.set(crystal.current, { width: box.width, height: box.height })
+        canvasWidth = box.width; canvasHeight = box.height
+      }
       gsap.set(crystal.current, {
-        width: box.width, height: box.height, opacity: exit > 0 ? 1 : pose.opacity,
+        opacity: exit > 0 ? 1 : pose.opacity,
         pointerEvents: entry > .72 && exit === 0 ? 'auto' : 'none',
       })
       // Keep opacity in CSS so the ready state can hide the illustration when
       // the model loads, even if scrolling is paused at that moment.
-      gsap.set(fallback, { '--journey-fallback-opacity': pose.opacity, width: box.slotWidth, height: box.slotHeight, x: x - box.slotWidth / 2, y: y - box.slotHeight / 2, scale: pose.scale * 8 / (8 - pose.depth), rotationX: pose.pitch * 180 / Math.PI })
+      if (state !== 'ready') gsap.set(fallback, { '--journey-fallback-opacity': pose.opacity, width: box.slotWidth, height: box.slotHeight, x: x - box.slotWidth / 2, y: y - box.slotHeight / 2, scale: pose.scale * 8 / (8 - pose.depth), rotationX: pose.pitch * 180 / Math.PI })
       // ConclaveVeil owns the cloud field; the poster only needs a compositor
       // opacity fade, without another noise filter or full-screen blur pass.
       page.style.pointerEvents = available ? 'auto' : 'none'
-      gsap.set(lines, { scale: 1 - exit * .65, transformOrigin: `${box.endX}px ${box.endY}px` })
+      if (!mobile) gsap.set(lines, { scale: 1 - exit * .65, transformOrigin: `${box.endX}px ${box.endY}px` })
       if (state !== 'ready' || crystal.current.dataset.expoRenderer === 'fallback') {
         const effectiveScale = pose.scale * 8 / (8 - pose.depth)
         const points = [[-.25, -.18], [.27, -.10], [.25, .18], [-.12, .30]].map(([dx, dy]) => ({ x: (x + dx * box.slotWidth * effectiveScale) / box.width * 2 - 1, y: 1 - (y + dy * box.slotHeight * effectiveScale) / box.height * 2 }))
@@ -169,12 +184,16 @@ function ExpoTransitionContent() {
       measure()
       const timeline = gsap.timeline({
         scrollTrigger: {
-          id: 'techconclave-expo', trigger: element, pin: element,
+          id: 'techconclave-expo', trigger: mobile ? spacer : element, pin: mobile ? false : element,
           scroller: scroller || undefined,
-          start: 'bottom bottom', end: () => `+=${plane.clientHeight * scrollUnit * duration}`,
-          // Lenis already smooths input. Additional scrub lag can leave the
-          // exit clouds onscreen while the gallery has advanced underneath.
-          scrub: true, invalidateOnRefresh: true, anticipatePin: 1,
+          start: mobile ? () => {
+            const offset = plane.clientHeight - element.getBoundingClientRect().height
+            return `top top${offset >= 0 ? '+=' : '-='}${Math.abs(offset)}`
+          } : 'bottom bottom',
+          end: () => `+=${plane.clientHeight * scrollUnit * duration}`,
+          // Lenis smooths wheels, but touch scroll is native (syncTouch is off).
+          // A short phone scrub fills gaps between native scroll events.
+          scrub: mobile ? .12 : true, invalidateOnRefresh: true, anticipatePin: 1,
           // Upstream Artist/Wheels pins register in effects after this layout
           // effect. Measure Expo after their pin spacing has been applied.
           refreshPriority: -10,
@@ -217,6 +236,8 @@ function ExpoTransitionContent() {
       resize.disconnect()
       readiness.disconnect()
       context.revert()
+      spacer.style.removeProperty('height')
+      element.style.removeProperty('--expo-pin-top')
       page.style.removeProperty('pointer-events')
       delete element.dataset.expoProgress
       delete element.dataset.expoStart
@@ -234,17 +255,19 @@ function ExpoTransitionContent() {
 
   return (
     <>
-    <div ref={root} className={`${styles.bridge} ${animated ? styles.animated : ''}`}>
+    <div ref={pinSpace}>
+    <div ref={root} className={`${styles.bridge} ${animated ? styles.animated : ''} ${animated && mobile ? styles.mobilePin : ''}`}>
       <div data-conclave><TechConclave /></div>
       <Expo sharedCrystal={animated} />
       {animated && <div className={styles.plane} data-expo-plane>
         <div ref={crystal} className={styles.crystal}>
-          <Crystal3D journey={journey} onProject={projectModel} transition />
+          <Crystal3D journey={journey} onProject={mobile ? undefined : projectModel} transition />
         </div>
         <svg className={styles.connectors} data-expo-connectors aria-hidden='true'>
           {[0, 1, 2].map((index) => <path key={index} ref={(node) => { paths.current[index] = node }} />)}
         </svg>
       </div>}
+    </div>
     </div>
     <div ref={gallery} className={animated ? styles.galleryHandoff : ''}><HorizontalGallery coordinatedEntrance={animated} /></div>
     </>

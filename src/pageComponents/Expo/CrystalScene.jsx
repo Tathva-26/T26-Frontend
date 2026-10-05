@@ -118,11 +118,11 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
   const [compact, setCompact] = useState(initialCompact);
   const [degraded, setDegraded] = useState(false);
   const renderDpr = degraded ? Math.min(dpr, compact ? .8 : 1) : dpr;
-  const controlsRect = (element) => element.closest('[data-expo-progress]')?.querySelector('[data-expo-slot]')?.getBoundingClientRect() || element.getBoundingClientRect();
+  const controlsRect = (element) => element.closest('[data-expo-progress], [data-expo-page]')?.querySelector('[data-expo-slot]')?.getBoundingClientRect() || element.getBoundingClientRect();
 
   const reset = () => {
     pointer.current = null;
-    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: false, pressed: false, keyboard: false });
+    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: false, pressed: false, dragging: false, keyboard: false });
   };
   const update = (event) => {
     const touch = event.pointerType !== "mouse";
@@ -133,21 +133,24 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
       if (gesture.mode === 'scroll') { reset(); return; }
       if (gesture.mode === 'drag' && !event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.setPointerCapture(event.pointerId);
     }
-    const rect = event.currentTarget.getBoundingClientRect();
+    // A captured drag stays in the coordinate system measured at touch-down.
+    // Avoid layout reads and changing drag sensitivity as browser chrome moves.
+    const rect = touch ? pointer.current.rect : event.currentTarget.getBoundingClientRect();
     const point = localPointer(event.clientX, event.clientY, rect);
-    const local = localPointer(event.clientX, event.clientY, controlsRect(event.currentTarget));
+    const local = localPointer(event.clientX, event.clientY, touch ? pointer.current.slot : controlsRect(event.currentTarget));
     const start = pointer.current?.start;
     const drag = start ? { x: local.x - start.x, y: local.y - start.y } : { x: 0, y: 0 };
     if (pointer.current && Math.hypot(event.clientX - pointer.current.clientX, event.clientY - pointer.current.clientY) > 8) pointer.current.moved = true;
     target.current.pressed = Boolean(pointer.current && !pointer.current.moved);
     const { tiltX, tiltY } = interactionTargets(local, drag, touch);
-    Object.assign(target.current, { tiltX, tiltY, x: point.x, y: point.y, active: true, keyboard: false });
+    const dragging = touch && pointer.current.mode === 'drag';
+    Object.assign(target.current, { tiltX, tiltY, x: point.x, y: point.y, active: !dragging, touch, dragging, keyboard: false });
   };
   const down = (event) => {
     if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
     const slot = controlsRect(event.currentTarget);
     if (event.pointerType !== 'mouse' && !insideCrystalSlot(event.clientX, event.clientY, slot)) return;
-    pointer.current = { id: event.pointerId, clientX: event.clientX, clientY: event.clientY, moved: false, mode: 'pending', start: localPointer(event.clientX, event.clientY, slot) };
+    pointer.current = { id: event.pointerId, clientX: event.clientX, clientY: event.clientY, moved: false, mode: 'pending', slot, rect: event.currentTarget.getBoundingClientRect(), start: localPointer(event.clientX, event.clientY, slot) };
     if (event.pointerType === 'mouse') event.currentTarget.setPointerCapture(event.pointerId);
     update(event);
   };
@@ -159,7 +162,7 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
     const slot = controlsRect(event.currentTarget);
     const point = localPointer(slot.left + slot.width / 2, slot.top + slot.height / 2, event.currentTarget.getBoundingClientRect());
     if (activate && !event.repeat) { target.current.activation++; target.current.opener = event.currentTarget; }
-    Object.assign(target.current, { x: point.x, y: point.y, active: true, keyboard: true,
+    Object.assign(target.current, { x: point.x, y: point.y, active: true, touch: false, dragging: false, keyboard: true,
       tiltX: Math.max(-.15, Math.min(.15, target.current.tiltX + (event.key === 'ArrowUp' ? -.035 : event.key === 'ArrowDown' ? .035 : 0))),
       tiltY: Math.max(-.22, Math.min(.22, target.current.tiltY + (event.key === 'ArrowLeft' ? -.045 : event.key === 'ArrowRight' ? .045 : 0))) });
   };
@@ -171,7 +174,7 @@ export default function CrystalScene({ active, reduced, onReady, onFailure, onLo
     }
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     pointer.current = null;
-    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: event.type === 'pointerup' && event.pointerType === 'mouse', pressed: false, keyboard: false });
+    Object.assign(target.current, { tiltX: 0, tiltY: 0, active: event.type === 'pointerup' && event.pointerType === 'mouse', pressed: false, dragging: false, keyboard: false });
   };
 
   useEffect(() => {

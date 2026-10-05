@@ -2,6 +2,23 @@
 
 ## Phone touch and shader correction (2026-10-05)
 
+Recording follow-up: Expo now uses a native CSS sticky pin on phone layouts,
+with a local spacer preserving the existing scroll distance. ScrollTrigger drives
+the animation timeline but no longer transforms the pinned mobile section on each
+scroll update. The sticky offset aligns the bottom of TechConclave with the stable
+Expo viewport, including when the poster is shorter than the viewport. Desktop
+retains its ScrollTrigger pin. This addresses the compositor/JavaScript pin mismatch;
+the recording alone cannot establish GPU frame times.
+
+Follow-up for drag/scroll jitter: touch input caches its coordinate rectangles at
+pointer-down and uses exponential damping without spring overshoot, hover gain
+or camera parallax. Dragging does not run hover surface/shard raycasts. The mobile
+transition canvas and gallery handoff use stable `svh` sizing rather than resizing
+their buffers with Safari browser chrome. Native touch scrolling gets a 120 ms
+scrub; desktop wheel scrolling retains its existing timing. Hidden placeholder and
+mobile connector work is skipped after readiness. Physical iPhone testing remains
+necessary to establish frame cadence and touch feel.
+
 - Glass rim and mist falloffs square signed coordinates by multiplication.
   GLSL `pow(x, 2.)` is undefined for negative x; on some GPUs this can propagate
   invalid values into the entire glass colour. Shell/shard transmission is unchanged.

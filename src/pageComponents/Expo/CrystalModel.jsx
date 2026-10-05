@@ -135,6 +135,7 @@ export default function CrystalModel({ target, compact = false, textureCompact =
   const details = useExpoDetails()
   const detailGroup = useRef()
   const idleClock = useRef(0)
+  const idleWeight = useRef(1)
   const interactionClock = useRef(0)
   const readiness = useRef({ available: false, at: -10 })
   const shardResonance = useRef(0)
@@ -335,10 +336,18 @@ export default function CrystalModel({ target, compact = false, textureCompact =
     fractures.current.uniforms.hover.value = hover
     fractures.current.uniforms.pulse.value = pulse + readyPulse * .25 + press * .4 + surge * .65
     fractures.current.uniforms.pointer.value.copy(lightPoint)
-    const sx = springStep(body.rotation.x, life.current.vx, target.current.tiltX * influence * (1 + hover * .55), dt, frameResults.current.springX)
-    const sy = springStep(body.rotation.y, life.current.vy, target.current.tiltY * influence * (1 + hover * .55), dt, frameResults.current.springY)
-    body.rotation.x = sx.position; life.current.vx = sx.velocity
-    body.rotation.y = sy.position; life.current.vy = sy.velocity
+    const touchInput = target.current.touch
+    if (touchInput) {
+      // Follow the finger without spring overshoot or ray-hit-dependent gain.
+      body.rotation.x = MathUtils.damp(body.rotation.x, target.current.tiltX * influence, 28, dt)
+      body.rotation.y = MathUtils.damp(body.rotation.y, target.current.tiltY * influence, 28, dt)
+      life.current.vx = life.current.vy = 0
+    } else {
+      const sx = springStep(body.rotation.x, life.current.vx, target.current.tiltX * influence * (1 + hover * .55), dt, frameResults.current.springX)
+      const sy = springStep(body.rotation.y, life.current.vy, target.current.tiltY * influence * (1 + hover * .55), dt, frameResults.current.springY)
+      body.rotation.x = sx.position; life.current.vx = sx.velocity
+      body.rotation.y = sy.position; life.current.vy = sy.velocity
+    }
     if (inDetails && savedPose.current) {
       body.rotation.x = savedPose.current.x * motion.interaction
       body.rotation.y = savedPose.current.y * motion.interaction
@@ -353,8 +362,8 @@ export default function CrystalModel({ target, compact = false, textureCompact =
       // Match the old slot's 3.8-unit framing, while using one viewport camera.
       const baseScale = Math.tan(camera.fov * Math.PI / 360) * 16 * pose.layout.slotHeight / size.height / 3.8
       travel.current.scale.setScalar(baseScale * pose.scale)
-      camera.position.x = MathUtils.damp(camera.position.x, target.current.tiltY * .4 * influence, 3.2, dt)
-      camera.position.y = MathUtils.damp(camera.position.y, -target.current.tiltX * .3 * influence, 3.2, dt)
+      camera.position.x = MathUtils.damp(camera.position.x, touchInput ? 0 : target.current.tiltY * .4 * influence, 3.2, dt)
+      camera.position.y = MathUtils.damp(camera.position.y, touchInput ? 0 : -target.current.tiltX * .3 * influence, 3.2, dt)
       if (inDetails && savedPose.current) {
         camera.position.x = savedPose.current.cameraX * motion.interaction
         camera.position.y = savedPose.current.cameraY * motion.interaction
@@ -370,8 +379,10 @@ export default function CrystalModel({ target, compact = false, textureCompact =
       detailGroup.current.getWorldPosition(anchor).project(camera)
       details.setCenter(anchor.x * .5 + .5, anchor.y * .5 + .5)
     }
-    idle.current.position.y = (Math.sin(idleTime * .85) * .035 + Math.sin(idleTime * .31) * .012) * influence
-    idle.current.rotation.set(Math.sin(idleTime * .48) * .055 * influence, (Math.sin(idleTime * .24) * .18 + Math.sin(idleTime * .53) * .035) * influence, Math.sin(idleTime * .39) * .045 * influence)
+    idleWeight.current = MathUtils.damp(idleWeight.current, target.current.dragging ? 0 : 1, 18, dt)
+    const idleInfluence = influence * idleWeight.current
+    idle.current.position.y = (Math.sin(idleTime * .85) * .035 + Math.sin(idleTime * .31) * .012) * idleInfluence
+    idle.current.rotation.set(Math.sin(idleTime * .48) * .055 * idleInfluence, (Math.sin(idleTime * .24) * .18 + Math.sin(idleTime * .53) * .035) * idleInfluence, Math.sin(idleTime * .39) * .045 * idleInfluence)
     robotMotion.current.rotation.set(
       MathUtils.damp(robotMotion.current.rotation.x, (.035 * Math.sin(visualTime * .43) - body.rotation.x * .35 + lightPoint.y * hover * .055 + Math.sin(age * 9) * pulse * .09) * influence, 2.8, dt),
       .12 + MathUtils.damp(robotMotion.current.rotation.y - .12, (awake ? -.12 : .065 * Math.sin(visualTime * .35) - body.rotation.y * .30 + lightPoint.x * hover * .10) * influence, 2.8, dt),

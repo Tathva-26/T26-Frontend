@@ -1,4 +1,5 @@
 .bridge { position: relative; isolation: isolate; z-index: 2; }
+.mobilePin { position: sticky; top: var(--expo-pin-top, 0px); }
 .galleryHandoff { position: relative; z-index: 1; margin-top: -100dvh; }
 /* Expo's wrapper pauses the covered gallery canvas without changing its
    layout, images or scroll trigger. watchVisible resumes it on departure. */
@@ -32,6 +33,12 @@
   z-index: 3;
   pointer-events: none;
   overflow: clip;
+}
+/* Safari's moving address bar must not resize the canvas/transmission buffers
+   and remeasure the pinned scene on every scroll. Rotation still updates svh. */
+@media (max-width: 767px) {
+  .plane, .animated > [data-expo-page] { height: 100svh; }
+  .galleryHandoff { margin-top: -100svh; }
 }
 .crystal {
   position: absolute;

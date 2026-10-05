@@ -72,7 +72,7 @@ function ExpoContent({ sharedCrystal = false }) {
         <div className={styles.crystalSlot} data-expo-slot>
         <button className={styles.fallbackActivate} aria-label='Explore the Tathva crystal' aria-haspopup='dialog' onClick={event => details.open(event.currentTarget)} />
         </div>
-        {!sharedCrystal && <div className={styles.standaloneCrystal}><Crystal3D journey={journey} onProject={project} preload /></div>}
+        {!sharedCrystal && <div className={styles.standaloneCrystal}><Crystal3D journey={journey} onProject={points => { if (layout.current?.width >= 768) project(points) }} preload /></div>}
         <p className={styles.description} data-expo-description>
           National Institute of
           Technology, Calicut.
