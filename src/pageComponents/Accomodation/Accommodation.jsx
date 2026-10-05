@@ -32,6 +32,7 @@ import {
   cartCount,
   cartFees,
   clampCheckInDay,
+  festDate,
   foodName,
   foodQuantity,
   lineTotal,
@@ -556,7 +557,7 @@ export default function Accommodation() {
                               : 'border-white/15 hover:bg-white/10'
                           }`}
                         >
-                          Day {day}
+                          {festDate(day)}
                         </button>
                       ))}
                       <span className='text-xs text-white/40'>
