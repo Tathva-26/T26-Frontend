@@ -284,6 +284,32 @@ export const EVENTS = [
     createdAt: '2026-08-10T03:30:00.000Z',
     updatedAt: '2026-09-30T03:30:00.000Z',
   },
+  {
+    // The one bulk-bookable event (BULK_EVENTS in lib/booking.js).
+    id: 105,
+    tiqrEventId: 2243,
+    ticketId: 3483,
+    type: 'passes',
+    heading: 'All Day Student Pass',
+    datetime: '2026-10-08T18:30:00.000Z',
+    startTime: '2026-10-08T18:30:00.000Z',
+    endTime: '2026-10-09T18:29:00.000Z',
+    price: 3000,
+    venueId: null,
+    venue: null,
+    description: 'Entry for the day, with access to events across campus. Proshow not included.',
+    extraInfo: null,
+    picture: 'https://cdn.tathva.org/events/pass-day1.webp',
+    teamSize: null,
+    isTeamEvent: false,
+    committee: null,
+    ticketsRemaining: 999,
+    dynamicPricing: false,
+    status: 'OPEN',
+    passcodeRequired: false,
+    createdAt: '2026-10-06T14:45:12.204Z',
+    updatedAt: '2026-10-06T15:43:31.888Z',
+  },
 
   /* ---- drafts: these must NEVER appear in a public response ---------- */
   {
