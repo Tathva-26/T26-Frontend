@@ -1,5 +1,68 @@
 # Expo crystal assets and visual implementation
 
+## Phone touch and shader correction (2026-10-05)
+
+Recording follow-up: Expo now uses a native CSS sticky pin on phone layouts,
+with a local spacer preserving the existing scroll distance. ScrollTrigger drives
+the animation timeline but no longer transforms the pinned mobile section on each
+scroll update. The sticky offset aligns the bottom of TechConclave with the stable
+Expo viewport, including when the poster is shorter than the viewport. Desktop
+retains its ScrollTrigger pin. This addresses the compositor/JavaScript pin mismatch;
+the recording alone cannot establish GPU frame times.
+
+Follow-up for drag/scroll jitter: touch input caches its coordinate rectangles at
+pointer-down and uses exponential damping without spring overshoot, hover gain
+or camera parallax. Dragging does not run hover surface/shard raycasts. The mobile
+transition canvas and gallery handoff use stable `svh` sizing rather than resizing
+their buffers with Safari browser chrome. Native touch scrolling gets a 120 ms
+scrub; desktop wheel scrolling retains its existing timing. Hidden placeholder and
+mobile connector work is skipped after readiness. Physical iPhone testing remains
+necessary to establish frame cadence and touch feel.
+
+- Glass rim and mist falloffs square signed coordinates by multiplication.
+  GLSL `pow(x, 2.)` is undefined for negative x; on some GPUs this can propagate
+  invalid values into the entire glass colour. Shell/shard transmission is unchanged.
+- Touch starts only within the measured crystal slot. After a 10 px tolerance,
+  vertical/ambiguous gestures stay with page scrolling; horizontal drags capture
+  the pointer and apply relative tilt. Touch release clears hover feedback.
+- Mobile Explore spans the content width with a 52 px minimum target. Desktop
+  connector lines are hidden on phones, where they crossed the button and copy.
+- `scripts/check-expo-touch.mjs` validates gesture classification and relative
+  touch tilt. Actual iPhone rendering and native gestures still require device testing.
+
+## Mobile rendering update (2026-10-05)
+
+The sections below retain historical implementation/verification notes. Current changes:
+
+- Mobile/coarse-pointer/modest devices load `shell-normal-mobile.ktx2` (1024 x 1024,
+  325,237 bytes) and `shell-roughness-mobile.ktx2` (512 x 512, 92,145 bytes). Desktop
+  retains the original maps. Each scene keeps its initial asset set across quality changes.
+  `scripts/prepare-expo-textures.mjs` promotes existing compressed mips, retaining the
+  original ETC1S codebooks and pixels. `scripts/check-expo-textures.mjs` verifies all
+  retained levels through the Basis transcoder. Asset licensing remains the same.
+- Mobile DPR starts at 1 and can fall to 0.8 after sustained slow frames. Refraction
+  resolution adapts independently; shell transmission remains 1 and shard transmission .85.
+- Clouds sample a repeating 256 x 256 noise texture, with two/four uniform-selected
+  octaves. Quality changes do not replace or recompile the cloud shader. Cloud time
+  survives a canvas pause. Duplicate DOM mist, poster blur and SVG masking are removed.
+- Scene textures are uploaded and materials compiled asynchronously before the first
+  draw. The detail distortion shader is also prepared during scene initialization.
+- Crossing the 768 px layout breakpoint rebuilds Expo with the appropriate timing.
+  Upstream pin changes can still shift the scroll position during a resize.
+  Expo hides the gallery canvas while covered;
+  the existing gallery visibility watcher pauses/resumes it without gallery code edits.
+- `?expoProfile=1` publishes one-second measurements on the crystal canvas's
+  `data-expo-profile` attribute. It reports frame cadence, draw calls/triangles across
+  rendering passes, CPU submission time, DPR and transmission resolution. It is disabled
+  by default. CPU submission time is not GPU execution time, and browser emulation
+  does not establish physical-phone FPS.
+
+Read diagnostics in browser DevTools with:
+
+```js
+JSON.parse(document.querySelector('[data-crystal-control] canvas').dataset.expoProfile)
+```
+
 The user confirmed that they hold a license and explicitly authorized copying igloo assets
 in this conversation on 2026-09-25. No license grant was inferred from the repository README.
 The repository does not contain the user's license document; retain their license terms with
@@ -245,18 +308,23 @@ The global navigation is unchanged.
 The live crystal keeps the existing licensed geometry, cursor response and
 independent robot, with brighter reflections and internal fracture highlights.
 It approximates the raster artwork; it is not an exact 3D reconstruction.
-`crystal-figma.png` is the original transparent image fill from node `1490:2684`,
+`crystal-figma.webp` is the optimized transparent image fill from node `1490:2684`,
 used only for loading, reduced motion and renderer failure. No temporary Figma
 URLs are referenced at runtime.
 
-Surrounding shards removed; central crystal only. No new animation timeline, dependencies,
+Six code-built faceted shards share one 80-triangle geometry and physical
+material in an instanced mesh; compact devices use four. Their transforms are
+static relative to the crystal group, with visibility tied to existing journey
+weights. Matrix uploads stop once the reveal weight settles. SVG facets supply
+decorations when WebGL is unavailable. No new animation timeline, dependencies,
 postprocessing or render target was added. Existing scroll curves and durations
-are unchanged.
+are unchanged. The Figma motion export had empty animation targets, so no new
+shard motion was inferred from its two-second cohort.
 
 Leaders use measured resting text/button bounds and four projected crystal
 anchors. Portrait leaders route outside the text; the right-hand desktop leader
 forms the reference triangle. Standalone Expo now shares the same viewport scene
-framing.
+framing, so decorative shards are not clipped to the crystal slot.
 
 Scoped lint and motion/interaction scripts passed. Browser checks covered
 320/390 px phones, 667 px landscape, 820 px tablet and desktop, modal/Escape,
@@ -264,3 +332,15 @@ keyboard wake, reduced motion, the shared model's pre-entry readiness and the
 gallery's first card. Physical-device FPS is not measured. Production build
 was blocked by existing Google Fonts network failures; a network-enabled retry
 encountered Windows EPERM while unlinking a generated `.next/build` chunk.
+
+### Immediate scene preparation
+Expo mounts its client-only canvas immediately rather than waiting for the 1200px intersection threshold. Asset decoding, uploads and shader warmup run before arrival; after the first detailed frame the offscreen canvas pauses. A download-free procedural 3D crystal replaces the image during cold loading and follows the same journey pose. Shader compilation retains its last frame, and readiness has no 650ms opacity transition. Browser initialization and uncached network transfers still take time; the final glass materials are unchanged.
+
+### Igloo-inspired visual refinement
+The inner energy shell now samples the existing cloud-noise texture twice to produce slow cyan/purple caustic ridges, with no added rendering pass. A fixed twelve-node network surrounds the robot: two draw calls, eighteen desktop/twelve compact connections, no neighbour searches or per-frame geometry allocations. Its emission is drawn after the transmission shell and before the robot, because transmission depth would otherwise hide it. Entry settles shards in staggered order; Explore draws them inward before the existing fade. Motion follows reversible progress curves and reduced-motion preferences. Existing glass transmission and reflection parameters are preserved; physical-phone frame cadence still requires device testing.
+
+### Surface and transition polish (2026-10-06)
+A local shell-space clearing patch reduces roughness around picked surface points or existing horizontal-touch coordinates, then damps back after release. It adds no frost render target or touch raycasts and is disabled under reduced motion. Explore uses angular fracture wedges in the existing optical shader and preserves the idle bypass. Neutral-blue key lighting and softened purple highlights retain full shell transmission. Mist is narrower, lower and faded by view-space depth. The download-free loading crystal now has a navy glass-like shell and procedural blue robot proxy. Mobile viewport rendering and detail open/close are checked in the browser; actual iPhone GPU performance remains unmeasured.
+
+### Interface Expo detail copy
+The detail panel now uses the supplied Interface Expo description and two-line heading. TextType has an opt-in single-pass batched mode, revealing from elapsed time at 2ms per character with at most one React update per animation frame. Legacy usage remains unchanged. Typing mounts after the detail transition and restarts each opening; close cancels its frame and removes the CSS cursor animation. A hidden full paragraph reserves layout height, a separate accessible paragraph exposes complete content without live announcements, and Show full text/reduced motion bypass typing. The 787-character copy completes in approximately 1.574 seconds after typing starts. Mobile rendering, Explore activation, crystal keyboard activation and reveal control were verified.

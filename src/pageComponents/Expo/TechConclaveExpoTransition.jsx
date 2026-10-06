@@ -12,24 +12,21 @@ import HorizontalGallery from '../HorizontalGallery/HorizontalGallery'
 import styles from './ExpoTransition.module.css'
 import expoStyles from './Expo.module.css'
 import { measureExpoLabels, expoLeaderPaths } from './expoLeaders.mjs'
+import { expoTiming } from './expoLayout.mjs'
 
-// The pinned scroll-journey (camera rig, GSAP ScrollTrigger pin, procedural
-// mist) is a desktop-only experience. Phones get the older, lightweight Expo
-// presentation instead: the standalone crystal + copy, laid out inline with
-// normal scroll — no pin, no scroll-triggered animation, no extra WebGL rig.
-const MOBILE_QUERY = '(max-width: 767px)'
 const subscribeMotion = (callback) => {
-  const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
-  const mobile = window.matchMedia(MOBILE_QUERY)
-  motion.addEventListener('change', callback)
-  mobile.addEventListener('change', callback)
-  return () => {
-    motion.removeEventListener('change', callback)
-    mobile.removeEventListener('change', callback)
-  }
+  const query = window.matchMedia('(prefers-reduced-motion: reduce)')
+  query.addEventListener('change', callback)
+  return () => query.removeEventListener('change', callback)
 }
-const motionSnapshot = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches && !window.matchMedia(MOBILE_QUERY).matches
+const motionSnapshot = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const serverSnapshot = () => false
+const subscribeWidth = callback => {
+  const query = window.matchMedia('(max-width: 767px)')
+  query.addEventListener('change', callback)
+  return () => query.removeEventListener('change', callback)
+}
+const widthSnapshot = () => window.matchMedia('(max-width: 767px)').matches
 
 export default function TechConclaveExpoTransition() {
   return <ExpoDetailsProvider><ExpoTransitionContent /></ExpoDetailsProvider>
@@ -38,18 +35,25 @@ export default function TechConclaveExpoTransition() {
 function ExpoTransitionContent() {
   const details = useExpoDetails()
   const animated = useSyncExternalStore(subscribeMotion, motionSnapshot, serverSnapshot)
+  const mobile = useSyncExternalStore(subscribeWidth, widthSnapshot, serverSnapshot)
   const root = useRef(null)
+  const pinSpace = useRef(null)
   const crystal = useRef(null)
   const journey = useRef(expoJourney(0))
   const geometry = useRef(null)
   const paths = useRef([])
+  const screenPoint = useRef({ x: 0, y: 0 })
+  const gallery = useRef(null)
 
   const project = useCallback((points) => {
     // Canvas and connector SVG share the same viewport; cached geometry avoids
     // forced layout reads for every animated frame.
     const plane = geometry.current
     if (!plane) return
-    expoLeaderPaths(points, plane).forEach((path, index) => paths.current[index]?.setAttribute('d', path))
+    expoLeaderPaths(points, plane).forEach((path, index) => {
+      const node = paths.current[index]
+      if (node && node.getAttribute('d') !== path) node.setAttribute('d', path)
+    })
   }, [])
 
   const projectModel = useCallback((points) => {
@@ -60,30 +64,45 @@ function ExpoTransitionContent() {
     if (!animated) return
     gsap.registerPlugin(ScrollTrigger)
     const element = root.current
+    const spacer = pinSpace.current
+    const galleryElement = gallery.current
     const tc = element.querySelector('[data-conclave]')
     const page = element.querySelector('[data-expo-page]')
     const plane = element.querySelector('[data-expo-plane]')
     const slot = element.querySelector('[data-expo-slot]')
-    const mist = element.querySelector('[data-expo-mist]')
     const lines = element.querySelector('[data-expo-connectors]')
     const copy = page.querySelectorAll(`.${expoStyles.title}, .${expoStyles.intro}, .${expoStyles.description}, .${expoStyles.explore}`)
     const explore = page.querySelector('[data-expo-explore]')
+    const activate = page.querySelector('[data-expo-slot] button')
+
+    const renderer = crystal.current.querySelector('[data-crystal-state]')
+    const detailRoot = element.closest('[data-expo-detail-state]')
     const entryCopy = [...copy].filter(node => node !== explore)
     const scroller = document.querySelector('.main-scroll')
-    const mobile = plane.clientWidth < 768
-    const exitStart = mobile ? 1.4 : 1.2
-    const duration = exitStart + .45
-    const scrollUnit = mobile ? 1.5 : 2.4
+    element.dataset.expoCompact = String(mobile)
+    const { exitStart, duration, scrollUnit } = expoTiming(mobile)
     element.dataset.expoDuration = duration
     element.dataset.expoExitStart = exitStart
     let trigger
     let disposed = false
+    let canvasWidth = 0, canvasHeight = 0
 
     const measure = () => {
       if (disposed) return
+      if (mobile) {
+        // Native sticky stays in the scrolling compositor on iOS. A JS pin
+        // inside the overflow scroller can trail the finger by a frame.
+        const height = element.getBoundingClientRect().height
+        const viewportHeight = plane.clientHeight
+        spacer.style.height = `${height + viewportHeight * scrollUnit * duration}px`
+        element.style.setProperty('--expo-pin-top', `${viewportHeight - height}px`)
+      }
       const viewport = plane.getBoundingClientRect()
       const destination = slot.getBoundingClientRect()
-      const robot = [...tc.querySelectorAll('img[src="https://cdn-next-main.tathva.org/images/techconclave/robot.webp"]')]
+      const robot = [...tc.querySelectorAll('img')].filter(image => {
+        const pathname = new URL(image.currentSrc || image.src, window.location.href).pathname
+        return pathname === '/images/techconclave/robot.webp'
+      })
         .find((image) => image.getBoundingClientRect().width > 0)
       const source = robot?.getBoundingClientRect()
       const tcBox = tc.getBoundingClientRect()
@@ -114,48 +133,40 @@ function ExpoTransitionContent() {
       // Preserve entry/exit speed and give phones a .6-viewport reading hold;
       // desktop retains its .48-viewport hold and 1.08-viewport departure.
       const phase = details.progress.current.state !== 'closed' && details.progress.current.frozenPhase != null ? details.progress.current.frozenPhase : progress * duration
-      const state = crystal.current.querySelector('[data-crystal-state]')?.dataset.crystalState
+      const state = renderer?.dataset.crystalState
       // Readiness, not the timing of the first scroll, owns renderer selection.
       // Both representations consume this same pose; a late model must join
       // the current frame rather than remain hidden or restart the entrance.
       crystal.current.dataset.expoRenderer = state === 'ready' ? 'model' : 'fallback'
       const exit = Math.min(1, Math.max(0, (phase - exitStart) / .45))
+      // The gallery is still covered during entry/hold. Its background watcher
+      // observes CSS visibility, so it can stop until the exit clouds thin out.
+      if (galleryElement) galleryElement.dataset.expoCovered = String(exit < .68)
       const entry = Math.min(1, phase)
-      const detailRoot = element.closest('[data-expo-detail-state]')
       const available = phase >= 1 && phase < exitStart && details.progress.current.state === 'closed'
       if (detailRoot) detailRoot.dataset.expoReady = String(available)
       explore.disabled = !available
-      page.querySelector('[data-expo-slot] button').disabled = !available
+      activate.disabled = !available
       const pose = phase > exitStart ? expoExit(exit) : expoJourney(entry)
       const box = geometry.current
       if (!box) return
       pose.layout = box
       journey.current = pose
-      const { x, y } = journeyScreenPoint(pose, box)
-      const interactive = entry > .72 && exit === 0
+      const { x, y } = journeyScreenPoint(pose, box, screenPoint.current)
+      if (canvasWidth !== box.width || canvasHeight !== box.height) {
+        gsap.set(crystal.current, { width: box.width, height: box.height })
+        canvasWidth = box.width; canvasHeight = box.height
+      }
       gsap.set(crystal.current, {
-        width: box.width, height: box.height, opacity: exit > 0 ? 1 : pose.opacity,
-        pointerEvents: interactive ? 'auto' : 'none',
+        opacity: exit > 0 ? 1 : pose.opacity,
+        pointerEvents: entry > .72 && exit === 0 ? 'auto' : 'none',
       })
-      // The model's canvas wrapper sets its own pointer-events, which wins over
-      // the container's: see .crystal[data-expo-interactive] in the CSS.
-      crystal.current.dataset.expoInteractive = String(interactive)
-      const fallback = crystal.current.querySelector('img')
       // Keep opacity in CSS so the ready state can hide the illustration when
       // the model loads, even if scrolling is paused at that moment.
-      gsap.set(fallback, { '--journey-fallback-opacity': pose.opacity, width: box.slotWidth, height: box.slotHeight, x: x - box.slotWidth / 2, y: y - box.slotHeight / 2, scale: pose.scale * 8 / (8 - pose.depth), rotationX: pose.pitch * 180 / Math.PI })
-      const veil = exit > 0 ? Math.sin(exit * Math.PI) : Math.sin(Math.PI * Math.min(1, Math.max(0, (entry - .04) / .66)))
-      gsap.set(mist, { opacity: veil * .48, '--veil-drift': `${progress * -18}%` })
-      gsap.set(tc, { filter: `blur(${veil * 3}px) saturate(${1 - veil * .35})` })
-      // Erode the poster through a fixed cloud field, rather than opening a
-      // geometric window around the incoming exhibit. Alpha thresholds are
-      // deterministic so reversing scroll reconstructs the same poster.
-      const dissolve = Math.min(1, Math.max(0, (entry - .16) / .36))
-      const cloudMask = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640"><filter id="cloud"><feTurbulence type="fractalNoise" baseFrequency=".012 .018" numOctaves="3" seed="7"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 4 4 4 0 ${2 - dissolve * 14}"/></filter><rect width="100%" height="100%" filter="url(#cloud)"/></svg>`
-      tc.style.maskImage = dissolve === 0 ? 'none' : `url("data:image/svg+xml,${encodeURIComponent(cloudMask)}")`
-      tc.style.maskSize = '100% 100%'
+      // ConclaveVeil owns the cloud field; the poster only needs a compositor
+      // opacity fade, without another noise filter or full-screen blur pass.
       page.style.pointerEvents = available ? 'auto' : 'none'
-      gsap.set(lines, { scale: 1 - exit * .65, transformOrigin: `${box.endX}px ${box.endY}px` })
+      if (!mobile) gsap.set(lines, { scale: 1 - exit * .65, transformOrigin: `${box.endX}px ${box.endY}px` })
       if (state !== 'ready' || crystal.current.dataset.expoRenderer === 'fallback') {
         const effectiveScale = pose.scale * 8 / (8 - pose.depth)
         const points = [[-.25, -.18], [.27, -.10], [.25, .18], [-.12, .30]].map(([dx, dy]) => ({ x: (x + dx * box.slotWidth * effectiveScale) / box.width * 2 - 1, y: 1 - (y + dy * box.slotHeight * effectiveScale) / box.height * 2 }))
@@ -172,12 +183,16 @@ function ExpoTransitionContent() {
       measure()
       const timeline = gsap.timeline({
         scrollTrigger: {
-          id: 'techconclave-expo', trigger: element, pin: element,
+          id: 'techconclave-expo', trigger: mobile ? spacer : element, pin: mobile ? false : element,
           scroller: scroller || undefined,
-          start: 'bottom bottom', end: () => `+=${plane.clientHeight * scrollUnit * duration}`,
-          // Lenis already smooths input. Additional scrub lag can leave the
-          // exit clouds onscreen while the gallery has advanced underneath.
-          scrub: true, invalidateOnRefresh: true, anticipatePin: 1,
+          start: mobile ? () => {
+            const offset = plane.clientHeight - element.getBoundingClientRect().height
+            return `top top${offset >= 0 ? '+=' : '-='}${Math.abs(offset)}`
+          } : 'bottom bottom',
+          end: () => `+=${plane.clientHeight * scrollUnit * duration}`,
+          // Lenis smooths wheels, but touch scroll is native (syncTouch is off).
+          // A short phone scrub fills gaps between native scroll events.
+          scrub: mobile ? .12 : true, invalidateOnRefresh: true, anticipatePin: 1,
           // Upstream Artist/Wheels pins register in effects after this layout
           // effect. Measure Expo after their pin spacing has been applied.
           refreshPriority: -10,
@@ -207,19 +222,21 @@ function ExpoTransitionContent() {
     resize.observe(plane)
     // Asset completion updates the current pose even while scrolling is idle.
     const readiness = new MutationObserver(() => render(trigger?.animation?.progress() ?? 0))
-    const renderer = crystal.current.querySelector('[data-crystal-state]')
     if (renderer) readiness.observe(renderer, { attributes: true, attributeFilter: ['data-crystal-state'] })
     document.fonts.ready.then(() => { if (!disposed) { measure(); render(trigger?.animation?.progress() ?? 0) } })
     // HeroFrameController can change the page's available height after mount.
-    const refresh = requestAnimationFrame(() => { ScrollTrigger.refresh(); window.__lenis?.resize() })
+    const refresh = requestAnimationFrame(() => {
+      ScrollTrigger.refresh()
+      window.__lenis?.resize()
+    })
     return () => {
       disposed = true
       cancelAnimationFrame(refresh)
       resize.disconnect()
       readiness.disconnect()
       context.revert()
-      tc.style.removeProperty('mask-image')
-      tc.style.removeProperty('mask-size')
+      spacer.style.removeProperty('height')
+      element.style.removeProperty('--expo-pin-top')
       page.style.removeProperty('pointer-events')
       delete element.dataset.expoProgress
       delete element.dataset.expoStart
@@ -228,27 +245,30 @@ function ExpoTransitionContent() {
       delete element.dataset.expoDuration
       delete element.dataset.expoExitStart
       explore.disabled = false
-      page.querySelector('[data-expo-slot] button').disabled = false
+      activate.disabled = false
+      delete element.dataset.expoCompact
+      if (galleryElement) delete galleryElement.dataset.expoCovered
       window.__lenis?.resize()
     }
-  }, [animated, project, details])
+  }, [animated, mobile, project, details])
 
   return (
     <>
-    <div ref={root} className={`${styles.bridge} ${animated ? styles.animated : ''}`}>
+    <div ref={pinSpace}>
+    <div ref={root} className={`${styles.bridge} ${animated ? styles.animated : ''} ${animated && mobile ? styles.mobilePin : ''}`}>
       <div data-conclave><TechConclave /></div>
       <Expo sharedCrystal={animated} />
       {animated && <div className={styles.plane} data-expo-plane>
-        <div className={styles.mist} data-expo-mist aria-hidden='true' />
         <div ref={crystal} className={styles.crystal}>
-          <Crystal3D journey={journey} onProject={projectModel} preload />
+          <Crystal3D journey={journey} onProject={mobile ? undefined : projectModel} transition />
         </div>
         <svg className={styles.connectors} data-expo-connectors aria-hidden='true'>
           {[0, 1, 2].map((index) => <path key={index} ref={(node) => { paths.current[index] = node }} />)}
         </svg>
       </div>}
     </div>
-    <div className={animated ? styles.galleryHandoff : ''}><HorizontalGallery coordinatedEntrance={animated} /></div>
+    </div>
+    <div ref={gallery} className={animated ? styles.galleryHandoff : ''}><HorizontalGallery coordinatedEntrance={animated} /></div>
     </>
   )
 }

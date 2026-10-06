@@ -1,5 +1,9 @@
 .bridge { position: relative; isolation: isolate; z-index: 2; }
+.mobilePin { position: sticky; top: var(--expo-pin-top, 0px); }
 .galleryHandoff { position: relative; z-index: 1; margin-top: -100dvh; }
+/* Expo's wrapper pauses the covered gallery canvas without changing its
+   layout, images or scroll trigger. watchVisible resumes it on departure. */
+.galleryHandoff[data-expo-covered='true'] canvas { visibility: hidden; }
 .animated > [data-expo-page] {
   position: absolute;
   bottom: 0;
@@ -19,7 +23,7 @@
 .animated > [data-expo-page] > section > p,
 .animated > [data-expo-page] > section > button { z-index: 5; }
 .animated > [data-expo-page] > section > h1 { z-index: 1; }
-.animated > [data-expo-page] svg[aria-hidden] { visibility: hidden; }
+.animated > [data-expo-page] svg[aria-hidden]:not([data-expo-fallback-shards]) { visibility: hidden; }
 .plane {
   position: absolute;
   bottom: 0;
@@ -29,6 +33,12 @@
   z-index: 3;
   pointer-events: none;
   overflow: clip;
+}
+/* Safari's moving address bar must not resize the canvas/transmission buffers
+   and remeasure the pinned scene on every scroll. Rotation still updates svh. */
+@media (max-width: 767px) {
+  .plane, .animated > [data-expo-page] { height: 100svh; }
+  .galleryHandoff { margin-top: -100svh; }
 }
 .crystal {
   position: absolute;
@@ -40,26 +50,9 @@
   pointer-events: none;
 }
 .crystal img { inset: auto; top: 0; left: 0; transform-origin: center; }
-/* While the crystal is not interactive (the Tech Conclave poster is still the
-   page), nothing inside it may take the pointer. Its canvas wrapper sets
-   pointer-events: auto itself, which overrides the container's `none`, so the
-   invisible canvas covered the whole viewport and the speaker cards under it
-   never saw a hover. */
-.crystal[data-expo-interactive='false'] * { pointer-events: none !important; }
 .crystal[data-expo-renderer='fallback'] [data-crystal-control] { visibility: hidden; }
 .crystal[data-expo-renderer='fallback'] img { opacity: var(--journey-fallback-opacity, 1); }
-.mist {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  background: linear-gradient(115deg, transparent 8%, #9cb8cc55 38%, #556c9455 62%, transparent 94%);
-  transform: translateY(var(--veil-drift, 0%));
-  filter: blur(16px);
-  mix-blend-mode: screen;
-}
+.animated:has([data-crystal-state='ready']):not(:has([data-expo-renderer='fallback'])) [data-expo-fallback-shards] { visibility: hidden; }
 .connectors {
   position: absolute;
   inset: 0;
@@ -71,8 +64,5 @@
   opacity: 0;
 }
 .connectors path { vector-effect: non-scaling-stroke; }
-@media (max-width: 767px) {
-  .mist { filter: blur(14px); }
-}
 
 .animated:has([data-crystal-state="ready"]):not(:has([data-expo-renderer="fallback"])) [data-expo-slot] button { display: none; }
