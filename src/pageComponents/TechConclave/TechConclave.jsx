@@ -250,13 +250,13 @@ function useIntroAnimation(ref) {
 const SPEAKERS = [
   {
     name: 'Joseph Annamkutty Jose',
-    role: '9 Oct · 3-4PM · Aryabhatta Hall',
-    bio: 'Join us for an engaging talk show with Joseph Annamkutty Jose, renowned speaker, author, and motivator. The session will feature an interactive segment, giving the audience an opportunity to connect and engage with him.',
+    role: 'Beyond the Noise · 9 Oct · 3-4:30PM · Aryabhatta Hall',
+    bio: 'Join us for an engaging talk show with Joseph Annamkutty Jose, renowned storyteller and writer.The session will feature an interactive segment, giving the audience an opportunity to connect and engage with him.',
     side: 'left',
   },
   {
     name:' Mahadevan A R',
-    role: '10 Oct · 3-4PM · Aryabhatta Hall',
+    role: 'Laugh Out Loud(LOL!!) · 10 Oct · 3-4PM · Aryabhatta Hall',
     bio: 'Get ready for an evening of laughter with Mahadevan A.R. and his Malayalam stand-up comedy show.',
     side: 'right',
   },
