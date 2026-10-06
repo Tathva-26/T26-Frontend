@@ -128,20 +128,23 @@ export default function ScrollDownCue() {
           bottom: max(20px, env(safe-area-inset-bottom));
           left: 50%;
           display: grid;
-          width: 42px;
-          height: 42px;
+          width: 48px;
+          height: 58px;
           place-items: center;
           padding: 0;
           transform: translateX(-50%);
-          border: 1px solid rgb(255 255 255 / 34%);
-          border-radius: 50%;
-          background: rgb(7 10 20 / 72%);
+          border: 0;
+          background: transparent;
           color: white;
-          box-shadow:
-            0 0 18px rgb(129 140 248 / 32%),
-            inset 0 0 12px rgb(255 255 255 / 8%);
           cursor: pointer;
-          backdrop-filter: blur(8px);
+          filter: drop-shadow(0 0 5px rgb(255 255 255 / 80%))
+            drop-shadow(0 0 12px rgb(89 113 255 / 80%));
+        }
+
+        .scroll-down-cue:focus-visible {
+          border-radius: 8px;
+          outline: 2px solid rgb(255 255 255 / 85%);
+          outline-offset: 2px;
         }
 
         .scroll-down-cue::after {
@@ -179,31 +182,44 @@ export default function ScrollDownCue() {
         }
 
         .scroll-down-cue svg {
-          width: 21px;
-          height: 21px;
+          width: 34px;
+          height: 48px;
           fill: none;
           stroke: currentColor;
           stroke-linecap: round;
           stroke-linejoin: round;
-          stroke-width: 2;
-          filter: drop-shadow(0 0 4px rgb(255 255 255 / 65%));
-          animation: scroll-down-cue-bounce 1.6s ease-in-out infinite;
+          stroke-width: 2.5;
         }
 
-        @keyframes scroll-down-cue-bounce {
+        .scroll-down-cue path {
+          animation: scroll-down-cue-drop 1.35s ease-in-out infinite;
+        }
+
+        .scroll-down-cue path:nth-child(2) {
+          animation-delay: 150ms;
+        }
+
+        .scroll-down-cue path:nth-child(3) {
+          animation-delay: 300ms;
+        }
+
+        @keyframes scroll-down-cue-drop {
           0%,
           100% {
-            transform: translateY(-2px);
+            opacity: 0.35;
+            transform: translateY(-3px);
           }
 
-          55% {
-            transform: translateY(5px);
+          45% {
+            opacity: 1;
+            transform: translateY(3px);
           }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .scroll-down-cue svg {
+          .scroll-down-cue path {
             animation: none;
+            opacity: 1;
           }
         }
       `}</style>
@@ -214,8 +230,10 @@ export default function ScrollDownCue() {
         onClick={scrollDown}
         hidden={!visible}
       >
-        <svg viewBox='0 0 24 24' aria-hidden='true'>
-          <path d='M12 4v15m-6-6 6 6 6-6' />
+        <svg viewBox='0 0 24 36' aria-hidden='true'>
+          <path d='m6 5 6 6 6-6' />
+          <path d='m6 15 6 6 6-6' />
+          <path d='m6 25 6 6 6-6' />
         </svg>
       </button>
     </>
