@@ -39,7 +39,6 @@ export default function TathvaPasses() {
 
   const active = passes[activeIndex] ?? null
 
-
   const handlePrev = () => {
     vibrate()
     setChosenIndex(activeIndex === 0 ? passes.length - 1 : activeIndex - 1)
@@ -109,8 +108,8 @@ export default function TathvaPasses() {
 
         {/* -------------------------------------------------------------
             TICKET CAROUSEL & NAVIGATION
-            Mobile: Vertical rotation (Top/Center/Bottom) with middle largest
-            Desktop: Horizontal rotation (Left/Center/Right)
+            Mobile: Vertical rotation (Top/Center/Bottom/Far) with middle largest
+            Desktop: Horizontal rotation (Left/Center/Right + Far at bottom middle)
         ------------------------------------------------------------- */}
         <div className='relative mt-32 sm:mt-16 md:mt-20 lg:mt-24 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
           {/* Left Arrow Button (Previous) */}
@@ -146,32 +145,47 @@ export default function TathvaPasses() {
               const isLeft = offset === -1
               const isRight = offset === 1
 
-              /* Three slots, so a fourth pass has nowhere of its own: it
-                 parks in the right slot, behind the real right card. Both
-                 used to carry z-10, which left paint order — i.e. array
-                 order — to break the tie, and the spare covered the right
-                 card on three of every four steps. Layering each slot
-                 explicitly keeps the spare behind wherever it lands. */
-              const layer = isCenter
-                ? 'z-30'
-                : isLeft || isRight
-                  ? 'z-20'
-                  : 'z-10'
+              /* With exactly 4 passes, the leftover card (offset ±2) gets its
+                 own "far" slot (bottom middle on desktop, bottom of the
+                 vertical stack on phones), so all four stay visible and each
+                 one travels around the loop as you navigate.
+                 With 5+ passes, anything beyond the four slots is parked
+                 invisibly so it can't pile up behind another card. */
+              const isFar =
+                !isCenter && !isLeft && !isRight && passes.length === 4
+              const isHidden = !isCenter && !isLeft && !isRight && !isFar
+
+              /* Each slot gets an explicit layer so paint order never falls
+                 back to array order: centre on top, side cards next, the far
+                 card behind the right one. */
+              const layer = isCenter ? 'z-30' : isLeft || isRight ? 'z-20' : 'z-10'
 
               return (
                 <div
                   key={ticket.id}
+                  aria-hidden={isHidden}
                   onClick={() => {
+                    if (isHidden) return
                     vibrate()
                     setChosenIndex(index)
                   }}
-                  className={`absolute left-1/2 top-1/2 cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${layer} ${
+                  className={`absolute left-1/2 top-1/2 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu will-change-transform ${layer} ${
+                    isHidden ? 'pointer-events-none' : 'cursor-pointer'
+                  } ${
                     isCenter
                       ? // Dead centre, elevated a bit more on desktop for the hero look.
                         '-translate-x-1/2 -translate-y-1/2 sm:-translate-y-[58%] md:-translate-y-[62%] scale-110 sm:scale-115 md:scale-120 opacity-100 drop-shadow-[0_25px_55px_rgba(0,0,0,0.95)]'
                       : isLeft
-                        ? '-translate-x-1/2 sm:-translate-x-[95%] md:-translate-x-[100%] lg:-translate-x-[105%] -translate-y-[66%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
-                        : '-translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] -translate-y-[34%] sm:-translate-y-[28%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        ? '-translate-x-1/2 sm:-translate-x-[95%] md:-translate-x-[100%] lg:-translate-x-[105%] -translate-y-[66%] sm:-translate-y-[44%] md:-translate-y-[45%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                        : isRight
+                          ? '-translate-x-1/2 sm:translate-x-[-5%] md:translate-x-[0%] lg:translate-x-[5%] -translate-y-[34%] sm:-translate-y-[44%] md:-translate-y-[45%] scale-75 sm:scale-80 opacity-75 sm:opacity-85 hover:opacity-100 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]'
+                          : isFar
+                            ? // Fourth slot.
+                              // Phone: below the "next" card, tucked behind it, so a strip peeks out.
+                              // Desktop: bottom middle, between the left and right cards (unchanged).
+                              '-translate-x-1/2 -translate-y-[27%] scale-65 sm:-translate-y-[30%] md:-translate-y-[28%] sm:scale-70 opacity-70 sm:opacity-90 hover:opacity-100 drop-shadow-[0_10px_20px_rgba(0,0,0,0.7)]'
+                            : // 5th+ pass: parked invisibly.
+                              '-translate-x-1/2 -translate-y-1/2 scale-50 opacity-0'
                   }`}
                 >
                   <div className='relative w-[360px] sm:w-[420px] md:w-[540px] lg:w-[640px] xl:w-[700px]'>
@@ -220,7 +234,7 @@ export default function TathvaPasses() {
         {/*
           * The artwork promises "REGISTER" but nothing was ever clickable.
           * The control belongs to whichever pass is centred.
-          */}
+        */}
         <div className='relative z-30 mt-8 flex min-h-[210px] w-full max-w-[320px] flex-col justify-center sm:mt-10 sm:min-h-[230px] sm:max-w-[420px] md:max-w-[460px] rounded-2xl border border-white/15 bg-black/35 px-6 py-6 backdrop-blur-sm shadow-[0_0_50px_rgba(91,99,230,0.35)]'>
           {loading ? (
             <p className='text-center text-base sm:text-lg tracking-[0.18em] text-white/60'>

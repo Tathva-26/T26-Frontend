@@ -1,5 +1,36 @@
 # Tathva Expo handoff
 
+## Optimization update — 2026-10-04
+
+Current branch: `fix/expo_optimization-adithyaa`. This update supersedes the
+older renderer-latch and timing descriptions below: current entry hold ends
+at phase 1.2 on desktop and 1.4 on mobile; departure lasts .45 phase units.
+
+- Homepage crystal loading starts within 1200 px of the viewport. Standalone
+  `/expo` still requests it immediately. Readiness includes a GPU warm-up frame.
+- A late model becomes visible as soon as its shell renders. There is no
+  phase admission gate. Reduced motion retains the 3D scene with idle motion
+  suppressed. The image is only a loading/error placeholder.
+- Edge lighting owns its own world-position varying, independent of Three's
+  transmission define, including instanced reflection-only compact shards.
+- Context loss keeps the canvas mounted; restoration rebuilds the scene.
+  Shader failures are reported rather than silently marked ready; Retry 3D
+  is available for a real loading/renderer failure.
+- Desktop poster masks reuse 33 deterministic thresholds. Compact viewport
+  transitions omit poster blur/masks and hide DOM mist when the model is live.
+- Cloud shaders use two noise octaves on compact hardware and four otherwise;
+  their mesh is hidden outside the transition interval.
+- Frame-time sampling reduces DPR/transmission resolution after two slow
+  three-second windows; four fast windows restore quality. Long resume gaps
+  are excluded. Quality changes preserve glass appearance: shell transmission
+  stays at 1, shard transmission at .85 and shard roughness at .08. Compact
+  budgets reduce resolution, particle/shard count and cloud complexity instead.
+- Model DOM references are cached; connector projection is limited to 20/30 Hz.
+  Inactive shard instances are skipped and bounds refresh matches picking cadence.
+
+Additional check: `node scripts/check-expo-render-budget.mjs`.
+Physical-device FPS and production build performance remain unmeasured.
+
 Repo: T26-Frontend
 Branch: dev/expo-adithyaa
 Stack: Next.js 16.3.4, React 19, Three.js/R3F, GSAP ScrollTrigger, Lenis.

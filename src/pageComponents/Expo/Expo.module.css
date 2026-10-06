@@ -1,5 +1,5 @@
-@font-face { font-family: 'Expo Bowlby'; src: url('https://cdn-next-main.tathva.org/fonts/BowlbyOneSC-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Expo Alexandria'; src: url('https://cdn-next-main.tathva.org/fonts/Alexandria-Variable.ttf') format('truetype'); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Expo Bowlby'; src: url('/fonts/BowlbyOneSC-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Expo Alexandria'; src: url('/fonts/Alexandria-Variable.ttf') format('truetype'); font-weight: 100 900; font-style: normal; font-display: swap; }
 .page { min-height: 100dvh; overflow-x: clip; background: #131219; color: #fff; }
 .stage { isolation: isolate; position: relative; width: 100%; min-height: 600px; height: max(100dvh, 49.3vw); overflow: hidden; background: #131219; }
 .stage::after { content: ''; position: absolute; inset: auto 0 0; height: 6vh; background: linear-gradient(transparent, #080808); pointer-events: none; z-index: 4; }
@@ -43,11 +43,11 @@
   object-fit: contain;
   pointer-events: none;
   opacity: var(--journey-fallback-opacity, 1);
-  transition: opacity 0.65s ease;
+
 }
 .canvas {
-  opacity: 0;
-  transition: opacity 0.65s ease;
+  opacity: 1;
+
   pointer-events: none;
 }
 .ready .canvas {
@@ -57,6 +57,7 @@
 .ready .fallback {
   opacity: 0;
 }
+.crystal[data-crystal-state='error'] .fallback { display: none; }
 .canvas canvas {
   touch-action: pan-y pinch-zoom;
   outline: none;
@@ -73,15 +74,18 @@
   overflow: hidden;
   clip-path: inset(50%);
 }
+.retry { position: absolute; bottom: 12%; left: 40%; z-index: 6; padding: 10px 16px; color: #fff; background: #183b50; border: 1px solid #91dcff; cursor: pointer; pointer-events: auto; }
 @media (min-width: 768px) and (max-width: 1023px) {
  .title { left: 30%; top: 10%; } .desktopTitle { font-size: 17vw; }
  .intro { left: 9%; top: 25%; width: 22%; } .crystalSlot { left: 25%; top: 25%; width: 48%; height: 65%; }
  .description { left: 77%; top: 53%; width: 20%; } .explore { left: 13%; }
 }
 @media (max-width: 767px) {
- .stage { height: max(100svh, 780px); min-height: 780px; } .title { left: 6%; top: 11%; } .desktopTitle { font-size: 23vw; }
- .intro { left: 7%; top: 24%; width: 74%; font-size: 14px; line-height: 1.4; } .crystalSlot { left: 10%; top: 37%; width: 80%; height: 36%; }
- .description { left: 7%; top: 83%; width: 86%; font-size: 14px; line-height: 1.4; } .explore { left: auto; right: 6%; top: 75%; font-size: 18px; }
+ .desktopLines { display: none; }
+ .stage { height: max(100svh, 740px); min-height: 740px; } .title { left: 7%; top: 11%; } .desktopTitle { font-size: clamp(70px, 22vw, 130px); }
+ .intro { left: 7%; top: 24%; width: 86%; font-size: 14px; line-height: 1.4; } .crystalSlot { left: 7%; top: 37%; width: 86%; height: 34%; }
+ .description { left: 7%; top: 83%; width: 86%; font-size: 14px; line-height: 1.4; }
+ .explore { left: 7%; right: 7%; top: 74%; min-height: 52px; font-size: 18px; touch-action: manipulation; }
 }
 @media (max-height: 520px) and (max-width: 1023px) and (orientation: landscape) {
  .title { left: 42%; top: 12%; } .desktopTitle { font-size: 13vw; } .intro { left: 7%; top: 26%; width: 26%; font-size: 12px; line-height: 1.35; }
@@ -91,8 +95,14 @@
 .standaloneCrystal { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .standaloneCrystal [data-crystal-control] { pointer-events: auto; }
 .standaloneCrystal .fallback { inset: auto; left: var(--expo-slot-left); top: var(--expo-slot-top); width: var(--expo-slot-width); height: var(--expo-slot-height); }
+.fallbackShards { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+.stage:has([data-crystal-state='ready']) .fallbackShards { visibility: hidden; }
+@media (max-width: 767px) { .fallbackShards use:nth-of-type(n+5) { display: none; } }
 
 .fallbackActivate { position: absolute; inset: 10% 20%; border: 0; background: transparent; cursor: pointer; pointer-events: auto; }
 .crystalSlot:has(.fallbackActivate) { z-index: 4; pointer-events: none; }
 .page:has([data-crystal-state="ready"]) .fallbackActivate { display: none; }
 .fallbackActivate:focus-visible { outline: 2px solid #91dcff; outline-offset: 4px; }
+
+/* Loading now uses procedural WebGL geometry, including its own silhouette. */
+.fallbackShards { display: none; }

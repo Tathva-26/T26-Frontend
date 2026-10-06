@@ -13,7 +13,7 @@ const fontFaceStyles = `
 
 @font-face {
   font-family: 'Event Detail Fragment Serif';
-  src: url('https://cdn-next-main.tathva.org/fonts/PPFragment-SerifExtraBold.otf') format('opentype');
+  src: url('https://cdn-next-main.tathva.org/fonts/PPFragment-SerifExtraBold.woff2') format('woff2');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -34,7 +34,7 @@ const fontFaceStyles = `
  * just routed to instead of opened over the list — so an event has its own
  * shareable URL (`/<eventType>/<id>`), matching how the old site worked.
  */
-export default function EventDetailPage({ id, eventType, label, heading, backHref }) {
+export default function EventDetailPage({ id, label, heading, backHref }) {
   const { event, loading, error, notFound } = useEventDetails(id, {
     label,
     fallbackImage: FALLBACK_IMAGE,
@@ -46,7 +46,7 @@ export default function EventDetailPage({ id, eventType, label, heading, backHre
       <Navbar />
       <TathvaMenu />
 
-      <main className='mx-auto w-full max-w-[1280px] px-4 pb-16 pt-28 sm:px-6 sm:pt-32 lg:px-8'>
+      <main className='mx-auto w-full max-w-[1280px] px-4 pb-16 pt-28 lg:pt-20 sm:px-6 sm:pt-32 lg:px-8'>
         <Link
           href={backHref}
           className='mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition-colors hover:text-white'
@@ -54,7 +54,7 @@ export default function EventDetailPage({ id, eventType, label, heading, backHre
           <svg className='h-4 w-4' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
             <path strokeLinecap='round' strokeLinejoin='round' d='M15 19l-7-7 7-7' />
           </svg>
-          Back to {heading}
+          Back to {heading} 
         </Link>
 
         {loading ? (
@@ -74,9 +74,9 @@ export default function EventDetailPage({ id, eventType, label, heading, backHre
           </div>
         ) : event ? (
           <div className='relative w-full rounded-[24px] border border-white/10 bg-[#0d0a17]/90 px-7 py-7 shadow-2xl backdrop-blur-sm sm:px-10 sm:py-9'>
-            <div className='grid gap-x-10 gap-y-8 sm:grid-cols-[440px_minmax(0,1fr)] sm:items-start'>
-              <div>
-                <div className='relative overflow-hidden rounded-[10px] border border-[#737373] bg-[#08090e]'>
+            <div className='grid gap-x-10 gap-y-8 sm:grid-cols-[440px_minmax(0,1fr)] sm:items-start lg:grid-rows-[auto_auto]'>
+              <div className='lg:contents'>
+                <div className='relative overflow-hidden rounded-[10px] border border-[#737373] bg-[#08090e] lg:col-start-1 lg:row-start-1'>
                   {/* Plain <img>, not next/image `fill`: the box has no
                       fixed aspect ratio of its own, so it takes the
                       photo's natural dimensions exactly — full image,
@@ -88,7 +88,8 @@ export default function EventDetailPage({ id, eventType, label, heading, backHre
                   />
                 </div>
 
-                <div className='mt-3 flex items-end justify-between px-1'>
+                <div className='mt-3 lg:col-start-1 lg:row-start-2 lg:self-start'>
+                  <div className='flex items-center justify-between px-1'>
                   <span className='flex items-baseline leading-none text-white'>
                     {event.priceInPaise > 0 ? (
                       <>
@@ -101,55 +102,63 @@ export default function EventDetailPage({ id, eventType, label, heading, backHre
                       <span className='event-detail-jaro text-4xl'>{event.fee}</span>
                     )}
                   </span>
-                  <span className='font-bold text-lg leading-none text-white'>
+                  <span className='font-bold text-3xl leading-none text-white'>
                     {event.dateDay} {event.dateMonth}
                   </span>
-                </div>
+                  </div>
 
-                <div className='mt-2 [&_button]:py-3 [&_button]:text-base [&_dl]:text-xs'>
-                  <Checkout event={event} />
+                  <div className='mt-2 [&_button]:py-3 [&_button]:text-base [&_dl]:text-xs'>
+                    <Checkout event={event} />
+                  </div>
                 </div>
               </div>
 
-              <div className='pt-2' style={{ containerType: 'inline-size' }}>
-                <h1 className='event-detail-fragment-serif max-w-full overflow-hidden whitespace-nowrap text-[clamp(2.25rem,8cqw,4rem)] leading-none text-white'>
-                  {heading}
-                </h1>
+              <div className='pt-2 lg:contents' style={{ containerType: 'inline-size' }}>
 
-                <div className='mt-7 space-y-2'>
-                  <h3 className='text-lg font-semibold text-[#e2e2e2]'>
-                    {event.fullTitle}
+                <div className='mt-7 space-y-2 lg:col-start-2 lg:row-start-1'>
+                  <div className="flex justify-between items-start">
+                  <h3 className='text-3xl md:text-5xl font-semibold text-[#e2e2e2]'>
+                    {event.fullTitle} 
                   </h3>
-                  <p className='text-sm leading-[1.6] text-[#8d8d8d]'>{event.description}</p>
+                  <h3> {event.bookingClosed && <p className='text-white bg-red-500 rounded-xl text-sm md:text-xl font-bold p-2 md:p-2 text-center'>Closed</p>}</h3>
+                  </div>
+                  <div className='flex items-center'>
+                    <p className='md:text-lg  leading-[1.6] text-[#8d8d8d]'>{event.description}</p>
+                  </div>
                 </div>
+                
+                <div className='flex flex-col lg:flex-row lg:items-start lg:justify-between lg:gap-4 lg:col-start-2 lg:row-start-2'>
 
-                {(event.isTeamEvent || event.bookingClosed) && (
-                  <div className='mt-4 space-y-1 text-xs uppercase leading-tight text-white'>
+                  {(event.venueFull || event.time) && (
+                  <div className='mt-5 space-y-1 text-xs uppercase leading-tight text-white'>
+                    <span className='text-lg md:text-xl font-bold'>{event.time && <p>{event.time}</p>}</span>
+                    {event.venueFull && <p className='text-[#8d8d8d]'>{event.venueFull}</p>}
+                  </div>
+                )}
+                <div>
+                {(event.isTeamEvent) && (
+                  <div className='mt-4 space-y-1  lg:text-center lg:text-lg lg:bg-[#3B82C4] rounded-2xl  lg:p-3 font-bold uppercase leading-tight text-white'>
                     {event.isTeamEvent && (
                       <p>
                         Team event
                         {event.teamSize ? ` · up to ${event.teamSize} members` : ''}
                       </p>
                     )}
-                    {event.bookingClosed && <p className='text-[#f0a3a3]'>Booking closed</p>}
                   </div>
                 )}
+                </div>
+                
 
                 {event.extraInfo && (
                   <div className='mt-6'>
                     <h3 className='text-sm font-bold uppercase text-white'>Details :</h3>
-                    <p className='mt-2 whitespace-pre-line text-sm leading-[1.6] text-[#8d8d8d]'>
+                    <p className='mt-2 whitespace-pre-line text-lg leading-[1.6] text-[#8d8d8d]'>
                       {event.extraInfo}
                     </p>
                   </div>
                 )}
-
-                {(event.venueFull || event.time) && (
-                  <div className='mt-5 space-y-1 text-xs uppercase leading-tight text-white'>
-                    {event.time && <p>{event.time}</p>}
-                    {event.venueFull && <p className='text-[#8d8d8d]'>{event.venueFull}</p>}
-                  </div>
-                )}
+                
+                </div>
               </div>
             </div>
           </div>

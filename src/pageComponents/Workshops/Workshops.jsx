@@ -28,7 +28,7 @@ const workshopsStyles = `
 
 @font-face {
   font-family: 'Workshops Fragment Serif';
-  src: url('https://cdn-next-main.tathva.org/fonts/PPFragment-SerifExtraBold.otf') format('opentype');
+  src: url('https://cdn-next-main.tathva.org/fonts/PPFragment-SerifExtraBold.woff2') format('woff2');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
