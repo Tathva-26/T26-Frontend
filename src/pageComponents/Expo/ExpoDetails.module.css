@@ -18,3 +18,18 @@
 
 .paragraph { --reveal: clamp(0, calc(var(--detail-text) * 1.7 - var(--paragraph-order) * .12), 1); opacity: var(--reveal); clip-path: inset(0 0 calc((1 - var(--reveal)) * 100%) 0); transform: translateY(calc((1 - var(--reveal)) * 8px)); }
 @media (prefers-reduced-motion: reduce) { .paragraph { clip-path: none; transform: none; opacity: var(--detail-text); } }
+/* Interface Expo reading panel; the ghost paragraph reserves final text height. */
+.dialog { padding-top: max(88px, env(safe-area-inset-top)); color: #f0edf3; }
+.dialog::backdrop { background: rgb(12 7 15 / calc(var(--detail-dark) * .97)); }
+.atmosphere { background: linear-gradient(transparent, #0c070f 140px), repeating-linear-gradient(0deg, transparent 0 25px, #8e369133 26px 27px), repeating-linear-gradient(90deg, transparent 0 54px, #8e369133 55px 56px); height: 180px; opacity: var(--detail-dark); transform: perspective(240px) rotateX(45deg); transform-origin: top; }
+.content { max-width: 680px; font-size: clamp(15px, 1.2vw, 18px); line-height: 1.65; }
+.content h2 { white-space: pre-line; color: #fff; font: 700 clamp(30px, 4vw, 46px)/1.08 Arial, sans-serif; margin: 0 0 28px; }
+.typingLayout { display: grid; }
+.typingLayout > p { grid-area: 1 / 1; margin: 0; white-space: normal; overflow-wrap: break-word; }
+.reserved { visibility: hidden; }
+.typed { display: block; }
+.showFull { display: block; margin: 0 0 18px auto; padding: 10px 14px; min-height: 44px; border: 1px solid #bc8bca55; border-radius: 4px; background: #24132a; color: #f0edf3; font: inherit; font-size: 13px; cursor: pointer; }
+.showFull:disabled { opacity: .55; cursor: default; }
+.showFull:focus-visible { outline: 2px solid #91dcff; outline-offset: 3px; }
+.screenReader { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 767px) { .content { margin-top: 8px; } .content h2 { margin-bottom: 24px; } }
