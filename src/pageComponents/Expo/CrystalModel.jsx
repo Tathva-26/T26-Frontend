@@ -1,39 +1,37 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useLoader, useThree } from '@react-three/fiber'
 import {
   AdditiveBlending,
-  Box3,
   CanvasTexture,
   BufferGeometry,
-  Color,
   Float32BufferAttribute,
-  Group,
   MathUtils,
   Raycaster,
+  RepeatWrapping,
   ShaderChunk,
   SRGBColorSpace,
+  TextureLoader,
   Vector2,
   Vector3,
 } from 'three'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
 import { createCrystalVeins } from './crystalGeometry.mjs'
 import { journeyScreenPoint } from './expoJourney.mjs'
 import { detailMotion } from './expoDetailMotion.mjs'
 import { useExpoDetails } from './ExpoDetails'
 import { springStep, fractureSector, animationDelta, pulseStrength } from './crystalInteraction.mjs'
+import CrystalShards from './CrystalShards'
+import CrystalNetwork from './CrystalNetwork'
 
 const geometryLoader = new DRACOLoader()
-  .setDecoderPath('https://cdn-next-main.tathva.org/images/expo/decoders/draco/')
+  .setDecoderPath('/images/expo/decoders/draco/')
   .setWorkerLimit(1)
 const surfaceLoader = new KTX2Loader()
-  .setTranscoderPath('https://cdn-next-main.tathva.org/images/expo/decoders/basis/')
+  .setTranscoderPath('/images/expo/decoders/basis/')
   .setWorkerLimit(1)
-// Reuse the Draco worker pool for any Draco-compressed GLB payloads.
-const modelLoader = new GLTFLoader().setDRACOLoader(geometryLoader)
 let decodersReleased = false
 
 function releaseCrystalDecoders() {
@@ -41,10 +39,21 @@ function releaseCrystalDecoders() {
   decodersReleased = true
   geometryLoader.dispose()
   surfaceLoader.dispose()
-  // modelLoader shares geometryLoader; nothing extra to release here.
 }
 
 function prepareGlass(shader) {
+  // Own this varying: Three's vWorldPosition exists only with transmission.
+  // Reflection-only shards still need positions for the blue/pink edge lighting.
+  shader.vertexShader = 'varying vec3 vExpoWorldPosition;\n' + shader.vertexShader
+  shader.fragmentShader = 'varying vec3 vExpoWorldPosition;\n' + shader.fragmentShader
+  shader.vertexShader = shader.vertexShader.replace('#include <project_vertex>', `
+    vec4 expoPosition = vec4(transformed, 1.);
+    #ifdef USE_INSTANCING
+      expoPosition = instanceMatrix * expoPosition;
+    #endif
+    vExpoWorldPosition = (modelMatrix * expoPosition).xyz;
+    #include <project_vertex>
+  `)
   // Three clears the transmission buffer to half-alpha white on a transparent
   // canvas. Replace only those empty samples with navy, avoiding a chalk-white
   // border while keeping the DOM background transparent outside the crystal.
@@ -56,9 +65,11 @@ function prepareGlass(shader) {
     '#include <transmission_pars_fragment>',
     transmission,
   )
+  // GLSL pow(negative, 2.) is undefined even with an integer exponent.
+  // Multiply signed offsets instead: Apple GPUs can otherwise output black.
   shader.fragmentShader = shader.fragmentShader.replace(
     'vec3 outgoingLight = totalDiffuse + totalSpecular + totalEmissiveRadiance;',
-    'float edge = pow(1. - abs(dot(normal, normalize(vViewPosition))), 1.3); vec3 edgeTint = mix(vec3(.65,.82,1.),vec3(1.,.35,.85),smoothstep(.2,1.5,vWorldPosition.x-vWorldPosition.y*.3)); float pink = exp(-8.*pow(vWorldPosition.x-.75,2.)-2.*pow(vWorldPosition.y+.6,2.)); vec3 rimGlow = (vec3(.012,.035,.075)+vec3(.45,.045,.32)*pink)*edge; vec3 outgoingLight = totalDiffuse + totalSpecular * mix(.24,1.25,edge) * edgeTint + totalEmissiveRadiance + rimGlow;',
+    'float edge = pow(clamp(1. - abs(dot(normal, normalize(vViewPosition))), 0., 1.), 1.3); vec3 edgeTint = mix(vec3(.65,.82,1.),vec3(.86,.55,.91),smoothstep(.2,1.5,vExpoWorldPosition.x-vExpoWorldPosition.y*.3)); vec2 pinkOffset = vExpoWorldPosition.xy - vec2(.75,-.6); float pink = exp(-dot(pinkOffset*pinkOffset,vec2(8.,2.))); vec3 rimGlow = (vec3(.012,.035,.075)+vec3(.28,.07,.25)*pink)*edge; vec3 outgoingLight = totalDiffuse + totalSpecular * mix(.24,1.25,edge) * edgeTint + totalEmissiveRadiance + rimGlow;',
   )
 }
 
@@ -119,12 +130,17 @@ function createEnergy() {
   return texture
 }
 
-export default function CrystalModel({ target, compact = false, onReady, onMood, journey, onProject }) {
+export default function CrystalModel({ target, compact = false, textureCompact = false, reduced = false, onReady, onMood, journey, onProject }) {
+  // Keep the chosen asset set for this scene's lifetime. Performance changes
+  // adjust buffers/effects without suspending the model for another download.
+  const [assetCompact] = useState(textureCompact)
   const details = useExpoDetails()
   const detailGroup = useRef()
   const idleClock = useRef(0)
+  const idleWeight = useRef(1)
   const interactionClock = useRef(0)
   const readiness = useRef({ available: false, at: -10 })
+  const shardResonance = useRef(0)
   const savedPose = useRef(null)
   const group = useRef()
   const travel = useRef()
@@ -138,6 +154,21 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const motes = useRef()
   const mist = useRef()
   const energyMaterial = useRef()
+  const frost = useRef({ point: { value: new Vector2(0, .2) }, amount: { value: 0 } })
+  const prepareShell = useMemo(() => shader => {
+    prepareGlass(shader)
+    shader.uniforms.expoFrostPoint = frost.current.point
+    shader.uniforms.expoFrostAmount = frost.current.amount
+    shader.vertexShader = 'varying vec2 vExpoSurface;\n' + shader.vertexShader
+    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvExpoSurface=position.xy;')
+    shader.fragmentShader = 'varying vec2 vExpoSurface; uniform vec2 expoFrostPoint; uniform float expoFrostAmount;\n' + shader.fragmentShader
+    shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', `
+      #include <roughnessmap_fragment>
+      vec2 frostDelta=vExpoSurface-expoFrostPoint;
+      float frostClear=exp(-dot(frostDelta,frostDelta)*8.)*expoFrostAmount;
+      roughnessFactor=max(.012,roughnessFactor*(1.-frostClear*.55));
+    `)
+  }, [frost])
   const life = useRef({ hover: 0, hitStrength: 0, lastRay: -1, lastHit: -10, activation: 0, charge: 0, sectors: 0, pulseAt: -10, awakeUntil: -10, awake: false, vx: 0, vy: 0 })
   const intersections = useRef([])
   const projectedAnchors = useMemo(() => [[-.76, .55, .3], [.76, .35, .3], [.7, -.55, .3], [-.4, -1.05, .3]].map(([x, y, z]) => ({ source: new Vector3(x, y, z), x: 0, y: 0 })), [])
@@ -147,50 +178,35 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const anchor = useMemo(() => new Vector3(), [])
   const started = useRef(false)
   const gl = useThree((state) => state.gl)
-  // 3D robot model replaces the old flat SVG plane. The GLB is cached by
-  // useLoader; we only clone the scene graph so multiple mounts stay isolated.
-  const robotGltf = useLoader(modelLoader, 'https://cdn-next-main.tathva.org/images/expo/WhiteRobot-compressed.glb')
-  const source = useLoader(geometryLoader, 'https://cdn-next-main.tathva.org/images/expo/crystal/shell.drc')
+  const dom = useRef(null)
+  const projectedAt = useRef(-1)
+  const frameResults = useRef({ motion: {}, springX: {}, springY: {}, point: {} })
+  useEffect(() => {
+    dom.current = { root: gl.domElement.closest('[data-expo-detail-state]'), control: gl.domElement.closest('[data-crystal-control]') }
+  }, [gl])
+  const robotSource = useLoader(TextureLoader, '/images/expo/robot-head.svg')
+  const noiseSource = useLoader(TextureLoader, '/images/expo/crystal/cloud-noise.png')
+  const causticNoise = useMemo(() => {
+    const texture = noiseSource.clone()
+    texture.wrapS = texture.wrapT = RepeatWrapping
+    texture.needsUpdate = true
+    return texture
+  }, [noiseSource])
+  const source = useLoader(geometryLoader, '/images/expo/crystal/shell.drc')
   const [normal, roughness] = useLoader(
     surfaceLoader,
     [
-      'https://cdn-next-main.tathva.org/images/expo/crystal/shell-normal.ktx2',
-      'https://cdn-next-main.tathva.org/images/expo/crystal/shell-roughness.ktx2',
+      assetCompact ? '/images/expo/crystal/shell-normal-mobile.ktx2' : '/images/expo/crystal/shell-normal.ktx2',
+      assetCompact ? '/images/expo/crystal/shell-roughness-mobile.ktx2' : '/images/expo/crystal/shell-roughness.ktx2',
     ],
     (loader) => loader.detectSupport(gl),
   )
-  const robotScene = useMemo(() => {
-    const scene = robotGltf.scene.clone(true)
-    // Wrap so we can center + scale without overwriting the GLB's local
-    // transforms. The wrapper also gives the primitive a stable pivot.
-    const wrapper = new Group()
-    wrapper.add(scene)
-    const box = new Box3().setFromObject(wrapper)
-    const size = box.getSize(new Vector3())
-    const center = box.getCenter(new Vector3())
-    // Center the model on the wrapper origin, then frame it at the same
-    // ~1.7-unit height the old flat robot plane occupied.
-    scene.position.sub(center)
-    const maxDim = Math.max(size.x, size.y, size.z) || 1
-    const targetSize = 1.7
-    wrapper.scale.setScalar(targetSize / maxDim)
-    // Preserve the original holographic-blue vibe: tint emissive, disable tone
-    // mapping so bright values survive into any bloom pass, and tag each mesh
-    // with renderOrder=10 to draw on top of the crystal shell like the old plane.
-    const tint = new Color(0.27, 0.57, 1.0)
-    wrapper.traverse((child) => {
-      if (child.isMesh && child.material) {
-        child.material = child.material.clone()
-        if ('emissive' in child.material) {
-          child.material.emissive = tint
-          child.material.emissiveIntensity = 0.7
-        }
-        child.material.toneMapped = false
-        child.renderOrder = 10
-      }
-    })
-    return wrapper
-  }, [robotGltf])
+  const robot = useMemo(() => {
+    const texture = robotSource.clone()
+    texture.colorSpace = SRGBColorSpace
+    texture.needsUpdate = true
+    return texture
+  }, [robotSource])
   const geometry = useMemo(() => {
     const copy = source.clone()
     copy.computeBoundingBox()
@@ -203,7 +219,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const veins = useMemo(() => createCrystalVeins(), [])
   const glow = useMemo(() => createGlow(), [])
   const energy = useMemo(() => createEnergy(), [])
-  const energyUniforms = useMemo(() => ({ map: { value: energy }, brightness: { value: 1 } }), [energy])
+  const energyUniforms = useMemo(() => ({ map: { value: energy }, brightness: { value: 1 }, noise: { value: causticNoise }, time: { value: 0 } }), [energy, causticNoise])
   const veinUniforms = useMemo(() => ({ time: { value: 0 }, hover: { value: 0 }, pulse: { value: 0 }, pointer: { value: new Vector3() } }), [])
   const mistUniforms = useMemo(() => ({ time: { value: 0 }, opacity: { value: 0 } }), [])
   const dust = useMemo(() => {
@@ -227,16 +243,11 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
       veins.dispose()
       glow.dispose()
       energy.dispose()
-      // Only dispose cloned materials; geometries stay owned by useLoader's cache.
-      robotScene.traverse((child) => {
-        if (child.isMesh && child.material) {
-          if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose?.())
-          else child.material.dispose?.()
-        }
-      })
+      causticNoise.dispose()
+      robot.dispose()
       dust.dispose()
     },
-    [geometry, veins, glow, energy, robotScene, dust],
+    [geometry, veins, glow, energy, causticNoise, robot, dust],
   )
   useFrame(({ camera, size }, delta) => {
     const dt = animationDelta(delta)
@@ -247,20 +258,26 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const pose = journey?.current
     const detail = details?.progress.current
     const detailAmount = detail?.value ?? 0
-    const motion = detailMotion(detailAmount, detail?.reduced)
+    const motion = detailMotion(detailAmount, detail?.reduced, frameResults.current.motion)
     const influence = (pose ? pose.interaction : 1) * motion.interaction
     const surge = motion.pulse
     detailGroup.current.scale.setScalar(1)
     detailGroup.current.rotation.set(motion.pitch, 0, motion.roll)
     const inDetails = detail && detail.state !== 'closed'
-    if (!inDetails) idleClock.current += dt
+    if (!inDetails && !reduced) idleClock.current += dt
     const time = interactionClock.current
+    const visualTime = reduced ? 0 : time
+    if ((target.current.shardResonance ?? 0) !== shardResonance.current) {
+      shardResonance.current = target.current.shardResonance ?? 0
+      life.current.pulseAt = time
+    }
     const available = !inDetails && (pose?.progress ?? 1) >= 1 && !(pose?.exit > 0)
     if (available && !readiness.current.available) readiness.current.at = time
     readiness.current.available = available
     const readyAge = time - readiness.current.at
-    const readyPulse = available && readyAge < 1.2 ? Math.sin(Math.PI * Math.max(0, readyAge) / 1.2) ** 2 : 0
-    const detailRoot = gl.domElement.closest('[data-expo-detail-state]')
+    const readyPulse = !reduced && available && readyAge < 1.2 ? Math.sin(Math.PI * Math.max(0, readyAge) / 1.2) ** 2 : 0
+    const detailRoot = dom.current?.root
+    // eslint-disable-next-line react-hooks/immutability -- Cached DOM node, updated outside React in the R3F frame loop.
     if (detailRoot && detailRoot.dataset.expoReady !== String(available)) detailRoot.dataset.expoReady = String(available)
     const idleTime = idleClock.current
     if (inDetails && !savedPose.current) {
@@ -317,7 +334,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const awake = time < life.current.awakeUntil && influence > .8
     if (awake !== life.current.awake) { life.current.awake = awake; onMood?.(awake) }
     const age = Math.max(0, time - life.current.pulseAt)
-    const pulse = pulseStrength(time, life.current.pulseAt) * influence
+    const pulse = reduced ? 0 : pulseStrength(time, life.current.pulseAt) * influence
     const bits = life.current.sectors
     const traceLevel = ((bits & 1) + ((bits >> 1) & 1) + ((bits >> 2) & 1) + ((bits >> 3) & 1)) * .32
     const chargeLevel = Math.max(life.current.charge, traceLevel)
@@ -325,28 +342,42 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     const hover = life.current.hover
     const press = available && target.current.pressed && life.current.hitStrength ? .45 : 0
     const interactive = available && life.current.hitStrength > 0
-    const control = gl.domElement.closest('[data-crystal-control]')
-    if (control) control.style.cursor = interactive ? 'pointer' : 'auto'
+    const control = dom.current?.control
+    const cursor = interactive ? 'pointer' : available && target.current.shardHover ? 'grab' : 'auto'
+    if (control && control.style.cursor !== cursor) control.style.cursor = cursor
     cursorLight.current.position.set(lightPoint.x, lightPoint.y, 1.2)
     cursorLight.current.intensity = hover * 1.6
     glass.current.envMapIntensity = 2.2 + hover * .25
     glass.current.roughness = .045 - hover * .012
+    // Horizontal touch drags already supply slot coordinates; no extra raycast.
+    if (target.current.touch && target.current.dragging) frost.current.point.value.set((target.current.localX ?? 0) * .95, (target.current.localY ?? 0) * 1.5)
+    else if (life.current.hitStrength) frost.current.point.value.set(lightPoint.x, lightPoint.y)
+    frost.current.amount.value = MathUtils.damp(frost.current.amount.value, !reduced && influence > .01 && (target.current.dragging || life.current.hitStrength) ? .85 : 0, 6, dt)
     body.scale.setScalar(1 + hover * .025 + pulse * .012)
     // Warm the hidden canvas once so GPU upload/readiness can finish before entry.
     // After that first render, offscreen/transparent journey poses stay hidden.
     travel.current.visible = !started.current || !pose || pose.opacity > .005
-    const breath = Math.sin(time * 1.15) * .065 + Math.sin(time * .47) * .025
+    const breath = Math.sin(visualTime * 1.15) * .065 + Math.sin(visualTime * .47) * .025
     glowMaterial.current.opacity = .8 + (breath + hover * .12 + chargeLevel * .15 + (awake ? .25 : 0)) * influence + breath * detailAmount * .18 + Math.sin((pose?.exit ?? 0) * Math.PI) * .2
     // Press feedback lives on the inner shell and its fractures, never a screen-space halo.
     energyMaterial.current.uniforms.brightness.value = 1.6 + (breath + hover * .18 + chargeLevel * .25) * influence + pulse * 1.2 + readyPulse * .65 + press + surge * 1.6 + breath * detailAmount * .18
-    fractures.current.uniforms.time.value = time
+    energyMaterial.current.uniforms.time.value = visualTime
+    fractures.current.uniforms.time.value = visualTime
     fractures.current.uniforms.hover.value = hover
     fractures.current.uniforms.pulse.value = pulse + readyPulse * .25 + press * .4 + surge * .65
     fractures.current.uniforms.pointer.value.copy(lightPoint)
-    const sx = springStep(body.rotation.x, life.current.vx, target.current.tiltX * influence * (1 + hover * .55), dt)
-    const sy = springStep(body.rotation.y, life.current.vy, target.current.tiltY * influence * (1 + hover * .55), dt)
-    body.rotation.x = sx.position; life.current.vx = sx.velocity
-    body.rotation.y = sy.position; life.current.vy = sy.velocity
+    const touchInput = target.current.touch
+    if (touchInput) {
+      // Follow the finger without spring overshoot or ray-hit-dependent gain.
+      body.rotation.x = MathUtils.damp(body.rotation.x, target.current.tiltX * influence, 28, dt)
+      body.rotation.y = MathUtils.damp(body.rotation.y, target.current.tiltY * influence, 28, dt)
+      life.current.vx = life.current.vy = 0
+    } else {
+      const sx = springStep(body.rotation.x, life.current.vx, target.current.tiltX * influence * (1 + hover * .55), dt, frameResults.current.springX)
+      const sy = springStep(body.rotation.y, life.current.vy, target.current.tiltY * influence * (1 + hover * .55), dt, frameResults.current.springY)
+      body.rotation.x = sx.position; life.current.vx = sx.velocity
+      body.rotation.y = sy.position; life.current.vy = sy.velocity
+    }
     if (inDetails && savedPose.current) {
       body.rotation.x = savedPose.current.x * motion.interaction
       body.rotation.y = savedPose.current.y * motion.interaction
@@ -354,15 +385,15 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
     }
     travel.current.rotation.set(pose?.pitch ?? 0, pose?.yaw ?? 0, pose?.roll ?? 0)
     if (pose?.layout) {
-      const point = journeyScreenPoint(pose, pose.layout)
+      const point = journeyScreenPoint(pose, pose.layout, frameResults.current.point)
       const halfHeight = Math.tan(camera.fov * Math.PI / 360) * (8 - pose.depth)
       const halfWidth = halfHeight * size.width / size.height
       travel.current.position.set((point.x / size.width * 2 - 1) * halfWidth, (1 - point.y / size.height * 2) * halfHeight, pose.depth)
       // Match the old slot's 3.8-unit framing, while using one viewport camera.
       const baseScale = Math.tan(camera.fov * Math.PI / 360) * 16 * pose.layout.slotHeight / size.height / 3.8
       travel.current.scale.setScalar(baseScale * pose.scale)
-      camera.position.x = MathUtils.damp(camera.position.x, target.current.tiltY * .4 * influence, 3.2, dt)
-      camera.position.y = MathUtils.damp(camera.position.y, -target.current.tiltX * .3 * influence, 3.2, dt)
+      camera.position.x = MathUtils.damp(camera.position.x, touchInput ? 0 : target.current.tiltY * .4 * influence, 3.2, dt)
+      camera.position.y = MathUtils.damp(camera.position.y, touchInput ? 0 : -target.current.tiltX * .3 * influence, 3.2, dt)
       if (inDetails && savedPose.current) {
         camera.position.x = savedPose.current.cameraX * motion.interaction
         camera.position.y = savedPose.current.cameraY * motion.interaction
@@ -378,20 +409,31 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
       detailGroup.current.getWorldPosition(anchor).project(camera)
       details.setCenter(anchor.x * .5 + .5, anchor.y * .5 + .5)
     }
-    idle.current.position.y = (Math.sin(idleTime * .85) * .035 + Math.sin(idleTime * .31) * .012) * influence
-    idle.current.rotation.set(Math.sin(idleTime * .48) * .055 * influence, (Math.sin(idleTime * .24) * .18 + Math.sin(idleTime * .53) * .035) * influence, Math.sin(idleTime * .39) * .045 * influence)
+    idleWeight.current = MathUtils.damp(idleWeight.current, target.current.dragging ? 0 : 1, 18, dt)
+    const idleInfluence = influence * idleWeight.current
+    idle.current.position.y = (Math.sin(idleTime * .85) * .035 + Math.sin(idleTime * .31) * .012) * idleInfluence
+    idle.current.rotation.set(Math.sin(idleTime * .48) * .055 * idleInfluence, (Math.sin(idleTime * .24) * .18 + Math.sin(idleTime * .53) * .035) * idleInfluence, Math.sin(idleTime * .39) * .045 * idleInfluence)
     robotMotion.current.rotation.set(
-      MathUtils.damp(robotMotion.current.rotation.x, (.035 * Math.sin(time * .43) - body.rotation.x * .35 + lightPoint.y * hover * .055 + Math.sin(age * 9) * pulse * .09) * influence, 2.8, dt),
-      .12 + MathUtils.damp(robotMotion.current.rotation.y - .12, (awake ? -.12 : .065 * Math.sin(time * .35) - body.rotation.y * .30 + lightPoint.x * hover * .10) * influence, 2.8, dt),
-      .085 + Math.sin(time * .42) * .035 * influence, 'ZYX')
-    robotMotion.current.position.y = Math.sin(time * .67 + .8) * .025 * influence
-    motes.current.rotation.z = Math.sin(time * .12) * .12
-    motes.current.position.y = Math.sin(time * .23) * .10
-    motes.current.material.opacity = .18 * influence
-    mist.current.position.x = Math.sin(time * .16) * .22
-    mist.current.material.uniforms.time.value = time
-    mist.current.material.uniforms.opacity.value = .10 * influence * (1 - hover * .45)
-    if (onProject && influence > .01) {
+      MathUtils.damp(robotMotion.current.rotation.x, (.035 * Math.sin(visualTime * .43) - body.rotation.x * .35 + lightPoint.y * hover * .055 + Math.sin(age * 9) * pulse * .09) * influence, 2.8, dt),
+      .12 + MathUtils.damp(robotMotion.current.rotation.y - .12, (awake ? -.12 : .065 * Math.sin(visualTime * .35) - body.rotation.y * .30 + lightPoint.x * hover * .10) * influence, 2.8, dt),
+      .085 + Math.sin(visualTime * .42) * .035 * influence, 'ZYX')
+    robotMotion.current.position.y = Math.sin(visualTime * .67 + .8) * .025 * influence
+    const dustOpacity = .18 * influence
+    motes.current.visible = travel.current.visible && dustOpacity > .001
+    if (motes.current.visible) {
+      motes.current.rotation.z = Math.sin(visualTime * .12) * .12
+      motes.current.position.y = Math.sin(visualTime * .23) * .10
+      motes.current.material.opacity = dustOpacity
+    }
+    const mistOpacity = .10 * influence * (1 - hover * .45)
+    mist.current.visible = travel.current.visible && mistOpacity > .001
+    if (mist.current.visible) {
+      mist.current.position.x = Math.sin(visualTime * .16) * .14
+      mist.current.material.uniforms.time.value = visualTime
+      mist.current.material.uniforms.opacity.value = mistOpacity
+    }
+    if (onProject && influence > .01 && time - projectedAt.current >= (compact ? 1 / 20 : 1 / 30)) {
+      projectedAt.current = time
       travel.current.updateWorldMatrix(true, true)
       projectedAnchors.forEach((point) => {
         anchor.copy(point.source).applyMatrix4(body.matrixWorld).project(camera)
@@ -404,7 +446,7 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
   const firstFrame = () => {
     if (started.current) return
     started.current = true
-    // onAfterRender fires only after the mesh/texture has reached the renderer.
+    // Readiness belongs to the glass shell, not the independent inner glow.
     onReady()
   }
 
@@ -413,22 +455,23 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
       <group ref={detailGroup}>
       <group ref={idle}>
       <group ref={group}>
+      <CrystalShards journey={journey} compact={compact} reduced={reduced} prepareGlass={prepareGlass} target={target} />
+      <CrystalNetwork target={target} reduced={reduced} compact={compact} />
       <pointLight ref={cursorLight} color='#75dfff' intensity={0} distance={4} decay={2} />
       <points ref={motes} geometry={dust}>
         <pointsMaterial color='#acdfff' map={glow} size={.055} transparent opacity={.18} depthWrite={false} blending={AdditiveBlending} />
       </points>
-      <mesh ref={mist} position={[0, -.4, -.9]} scale={[4.5, 2.2, 1]}>
+      <mesh ref={mist} position={[0, -.95, -.9]} scale={[3.8, 1.5, 1]}>
         <planeGeometry />
         <shaderMaterial transparent depthWrite={false} blending={AdditiveBlending} uniforms={mistUniforms}
-          vertexShader={'varying vec2 vUv; void main(){vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }'}
-          fragmentShader={'uniform float time,opacity; varying vec2 vUv; float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);} float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);} void main(){vec2 p=vUv*vec2(5.,2.)+vec2(time*.06,-time*.015);float n=noise(p)*.65+noise(p*2.1)*.35; float feather=smoothstep(0.,.18,vUv.x)*smoothstep(0.,.18,1.-vUv.x)*smoothstep(0.,.22,vUv.y)*smoothstep(0.,.22,1.-vUv.y);float band=exp(-pow((vUv.y-.5-sin(vUv.x*6.+time*.12)*.12)*4.,2.));gl_FragColor=vec4(.20,.43,.65,opacity*feather*band*smoothstep(.24,.72,n));\n#include <colorspace_fragment>\n}'} />
+          vertexShader={'varying vec2 vUv; varying float vMistDepth; void main(){vUv=uv; vec4 view=modelViewMatrix*vec4(position,1.); vMistDepth=-view.z; gl_Position=projectionMatrix*view; }'}
+          fragmentShader={'uniform float time,opacity; varying vec2 vUv; varying float vMistDepth; float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);} float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);} void main(){vec2 p=vUv*vec2(5.,2.)+vec2(time*.06,-time*.015);float n=noise(p)*.65+noise(p*2.1)*.35; float feather=smoothstep(0.,.18,vUv.x)*smoothstep(0.,.18,1.-vUv.x)*smoothstep(0.,.22,vUv.y)*smoothstep(0.,.22,1.-vUv.y);float bandOffset=(vUv.y-.5-sin(vUv.x*6.+time*.12)*.12)*4.; float band=exp(-bandOffset*bandOffset);gl_FragColor=vec4(.20,.43,.65,opacity*feather*band*smoothstep(.24,.72,n)*smoothstep(2.,5.,vMistDepth)*(1.-smoothstep(11.,18.,vMistDepth)));\n#include <colorspace_fragment>\n}'} />
       </mesh>
       <group>
         <mesh
           geometry={geometry}
           scale={[0.96, 0.97, 0.48]}
           position={[0, 0, -0.3]}
-          onAfterRender={firstFrame}
         >
           <shaderMaterial
             ref={energyMaterial}
@@ -439,11 +482,11 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
               'varying vec2 vEnergyUv; void main(){vEnergyUv=position.xy/vec2(2.18,3.4)+.5;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}'
             }
             fragmentShader={
-              'uniform sampler2D map; uniform float brightness; varying vec2 vEnergyUv; void main(){vec4 tex=texture2D(map,vEnergyUv); if(tex.a<0.04) discard; gl_FragColor=vec4(tex.rgb*brightness,tex.a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'
+              'uniform sampler2D map,noise; uniform float brightness,time; varying vec2 vEnergyUv; void main(){vec4 tex=texture2D(map,vEnergyUv); if(tex.a<0.04) discard; float a=texture2D(noise,vEnergyUv*1.7+vec2(time*.025,-time*.018)).r; float b=texture2D(noise,vEnergyUv*2.1+vec2(-time*.021,time*.013)).r; float ridge=1.-smoothstep(.015,.095,abs(a-b)); float edge=smoothstep(.15,.5,length(vEnergyUv-vec2(.5,.55))); vec3 caustic=mix(vec3(.06,.30,.55),vec3(.32,.06,.36),vEnergyUv.x)*ridge*edge*.32; gl_FragColor=vec4(tex.rgb*brightness+caustic,tex.a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'
             }
           />
         </mesh>
-        <mesh ref={shell} geometry={geometry}>
+        <mesh ref={shell} geometry={geometry} onAfterRender={firstFrame}>
           <meshPhysicalMaterial
             ref={glass}
             color='#b9d0f4'
@@ -458,14 +501,12 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
             reflectivity={0.3}
             clearcoat={0}
             envMapIntensity={2.2}
-            onBeforeCompile={prepareGlass}
+            onBeforeCompile={prepareShell}
           />
         </mesh>
         {/* Preserve the artwork's fixed alignment with the shell geometry. */}
         <group ref={robotMotion} rotation={[0, 0.12, 0.085, 'ZYX']}>
-          {/* Backdrop glow halo — kept from the original so the 3D robot
-              still reads as a luminous figure inside the crystal. */}
-          <mesh position={[0, 0.15, 0.157]} scale={[2, 2.3, 1]}>
+          <mesh position={[0, 0.15, 0.65]} scale={[2, 2.3, 1]}>
             <planeGeometry />
             <meshBasicMaterial
               ref={glowMaterial}
@@ -476,12 +517,18 @@ export default function CrystalModel({ target, compact = false, onReady, onMood,
               depthWrite={false}
             />
           </mesh>
-          {/* 3D robot model replaces the old flat SVG plane. The wrapper is
-              already centered and scaled to ~1.7 units in robotScene. */}
-          <primitive
-            object={robotScene}
-            position={[0, 0.18, 0.167]}
-          />
+          <mesh position={[0, 0.18, 0.64]} scale={[1.7, 1.7, 1]} renderOrder={10}>
+            <planeGeometry />
+            <meshBasicMaterial
+              map={robot}
+              color={[0.27, 0.57, 1.5]}
+              alphaTest={0.1}
+              transparent
+              depthTest={false}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
         </group>
         <group>
           <lineSegments geometry={veins}>

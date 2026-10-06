@@ -31,7 +31,10 @@ const SPARK_SIZE = '4rem'
 
 // The portal is drawn by this video; it sits over a hole cut in the scene (the real Frame shows
 // through the hole) and fades out as the portal grows. PORTAL_IMG_FADE_END = portal progress (0..1) at which it is fully gone.
-const PORTAL_VIDEO = 'portalloop.mp4' // small, low-res, muted, seamless loop
+// All assets must come from the CDN — never the webserver.
+// Optimized door loop (540p/20fps, ~250KB vs 1.1MB 1080p/30fps original).
+// Source: public/images/hero/portalloop-small.mp4, uploaded to CDN images/hero/.
+const PORTAL_VIDEO = 'portalloop-small.mp4'
 const PORTAL_IMG_FADE_END = 0.85
 
 // Decorative PNG frame around the portal. It sits inside the portal div, so it zooms with it.
@@ -1259,7 +1262,7 @@ export const Hero = ({
                   loop
                   muted
                   playsInline
-                  preload='auto'
+                  preload='metadata'
                   aria-hidden='true'
                   disablePictureInPicture
                   disableRemotePlayback
@@ -1299,7 +1302,7 @@ export const Hero = ({
                 loop
                 muted
                 playsInline
-                preload='auto'
+                preload='metadata'
                 disablePictureInPicture
                 style={{
                   position: 'absolute',

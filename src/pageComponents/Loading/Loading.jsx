@@ -199,7 +199,7 @@ export default function Preloader({ onComplete }) {
 
       const isReady = isImage
         ? el.complete && el.naturalWidth > 0
-        : el.readyState >= 3 
+        : el.readyState >= 3
 
       if (isReady) return
 
@@ -263,9 +263,8 @@ export default function Preloader({ onComplete }) {
       const radius = EASE_OUT_CUBIC(t) * maxRadius
 
       if (overlay) {
-        const mask = `radial-gradient(circle at 50% 50%, transparent 0px, transparent ${radius}px, black ${
-          radius + 2
-        }px, black 100%)`
+        const mask = `radial-gradient(circle at 50% 50%, transparent 0px, transparent ${radius}px, black ${radius + 2
+          }px, black 100%)`
         overlay.style.maskImage = mask
         overlay.style.webkitMaskImage = mask
       }
@@ -338,9 +337,8 @@ export default function Preloader({ onComplete }) {
       <div
         ref={overlayRef}
         data-preloader=''
-        className={`fixed inset-0 z-[10050] flex items-center justify-center bg-[#030303] overflow-hidden ${
-          revealing ? 'pointer-events-none' : ''
-        }`}
+        className={`fixed inset-0 z-[10050] flex items-center justify-center bg-[#030303] overflow-hidden ${revealing ? 'pointer-events-none' : ''
+          }`}
       >
         {/* STARFIELD CANVAS */}
         <canvas
@@ -447,21 +445,20 @@ export default function Preloader({ onComplete }) {
                   className='font-mono tracking-[3.5px]'
                 >
                   <textPath href='#textPathOuter'>
-                    GRAPHIC DESIGN &nbsp;&nbsp;•&nbsp;&nbsp; PERFORMANCE
-                    OPTIMIZATION &nbsp;&nbsp;•&nbsp;&nbsp; A/B TESTING
-                    &nbsp;&nbsp;•&nbsp;&nbsp; CMS INTEGRATION
-                    &nbsp;&nbsp;•&nbsp;&nbsp; APP DESIGN
-                    &nbsp;&nbsp;•&nbsp;&nbsp; ANIMATION
-                    &nbsp;&nbsp;•&nbsp;&nbsp; PRODUCT STRATEGY
-                    &nbsp;&nbsp;•&nbsp;&nbsp; USABILITY TESTING
-                    &nbsp;&nbsp;•&nbsp;&nbsp; UX &nbsp;&nbsp;•&nbsp;&nbsp;
-                    PROTOTYPING &nbsp;&nbsp;•&nbsp;&nbsp; VISUAL DESIGN
-                    &nbsp;&nbsp;•&nbsp;&nbsp; INFORMATION ARCHITECTURE
-                    &nbsp;&nbsp;•&nbsp;&nbsp; FRONT-END
-                    &nbsp;&nbsp;•&nbsp;&nbsp; BACK-END &nbsp;&nbsp;•&nbsp;&nbsp;
-                    BRAND IDENTITY &nbsp;&nbsp;•&nbsp;&nbsp; CROSS-BROWSER
-                    &nbsp;&nbsp;•&nbsp;&nbsp; UI &nbsp;&nbsp;•&nbsp;&nbsp;
-                    INTERACTIVE EXPERIENCE &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
+                    TATHVA 26 &nbsp;&nbsp;•&nbsp;&nbsp;
                   </textPath>
                 </text>
               </svg>

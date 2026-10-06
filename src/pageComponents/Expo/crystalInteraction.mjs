@@ -8,14 +8,16 @@ export function pulseStrength(time, startedAt) {
 }
 
 // Substeps keep the soft return stable on both fast and slower render loops.
-export function springStep(position, velocity, target, delta) {
+// X and Y springs each own a result object so their samples remain independent.
+export function springStep(position, velocity, target, delta, result = {}) {
   const steps = Math.max(1, Math.ceil(Math.min(delta, .05) * 120))
   const dt = Math.min(delta, .05) / steps
   for (let i = 0; i < steps; i++) {
     velocity += ((target - position) * 110 - velocity * 14) * dt
     position += velocity * dt
   }
-  return { position, velocity }
+  result.position = position; result.velocity = velocity
+  return result
 }
 
 export function fractureSector(point, positions) {

@@ -12,3 +12,7 @@
 .text-type__cursor--hidden {
   display: none;
 }
+
+.text-type__cursor--batched { animation: expoCursorBlink 1s steps(2, start) infinite; }
+@keyframes expoCursorBlink { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .text-type__cursor--batched { animation: none; } }
