@@ -19,7 +19,7 @@ function DetailCopy({ active, reduced }) {
     <button className={styles.showFull} onClick={() => setFull(true)} disabled={full || reduced}>{full || reduced ? 'Full text shown' : 'Show full text'}</button>
     <div className={styles.typingLayout}>
       <p className={styles.reserved} aria-hidden='true'>{expoDetailContent.description}</p>
-      <TextType batched as='p' text={expoDetailContent.description} typingSpeed={5} loop={false} start={active} instant={full || reduced} showCursor cursorCharacter='|' className={styles.typed} aria-hidden='true' />
+      <TextType batched as='p' text={expoDetailContent.description} typingSpeed={2} loop={false} start={active} instant={full || reduced} showCursor cursorCharacter='|' className={styles.typed} aria-hidden='true' />
     </div>
     <p className={styles.screenReader}>{expoDetailContent.description}</p>
   </>
