@@ -168,6 +168,23 @@ export function bookingBlocker(event, user) {
 }
 
 /**
+ * Events that sell more than one ticket per booking, by OUR `Event.id`, mapped
+ * to the most one booking may take. Every other event books exactly one.
+ *
+ * The cap must not exceed the TIQR ticket's `maximum_booking`, which the
+ * backend sets to 10 for every non-team event; above it TIQR rejects the
+ * booking.
+ */
+const BULK_EVENTS = {
+  105: 10, // All Day Student Pass: school groups book together
+}
+
+/** Most tickets one booking may take for this event; 1 when it is not bulk. */
+export function maxQuantity(event) {
+  return BULK_EVENTS[event?.id] ?? 1
+}
+
+/**
  * The request body. `eventId` is OUR `Event.id`, never `tiqrEventId` — the id
  * spaces overlap, so the wrong one does not error, it books the wrong thing
  * or 404s.
