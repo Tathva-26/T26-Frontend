@@ -5,6 +5,7 @@ import Crystal3D from './Crystal3D'
 import styles from './Expo.module.css'
 import { expoJourney } from './expoJourney.mjs'
 import { measureExpoLabels, expoLeaderPaths } from './expoLeaders.mjs'
+import FallbackShards from './FallbackShards'
 import { ExpoDetailsProvider, useExpoDetails } from './ExpoDetails'
 
 export default function Expo(props) {
@@ -20,7 +21,10 @@ function ExpoContent({ sharedCrystal = false }) {
   const leaders = useRef([])
   const project = useCallback((points) => {
     if (!layout.current) return
-    expoLeaderPaths(points, layout.current).forEach((path, index) => leaders.current[index]?.setAttribute('d', path))
+    expoLeaderPaths(points, layout.current).forEach((path, index) => {
+      const node = leaders.current[index]
+      if (node && node.getAttribute('d') !== path) node.setAttribute('d', path)
+    })
   }, [])
   useLayoutEffect(() => {
     if (sharedCrystal) return
@@ -55,6 +59,8 @@ function ExpoContent({ sharedCrystal = false }) {
         <h1 id='expo-title' className={styles.title} data-expo-title>
           <span className={styles.desktopTitle}>EXPO</span>
         </h1>
+        <FallbackShards />
+
         <p className={styles.intro} data-expo-intro>
           Tathva’26 Expo is all about technology,
           the trending, the innovations, the age-old,
@@ -66,7 +72,7 @@ function ExpoContent({ sharedCrystal = false }) {
         <div className={styles.crystalSlot} data-expo-slot>
         <button className={styles.fallbackActivate} aria-label='Explore the Tathva crystal' aria-haspopup='dialog' onClick={event => details.open(event.currentTarget)} />
         </div>
-        {!sharedCrystal && <div className={styles.standaloneCrystal}><Crystal3D journey={journey} onProject={project} preload /></div>}
+        {!sharedCrystal && <div className={styles.standaloneCrystal}><Crystal3D journey={journey} onProject={points => { if (layout.current?.width >= 768) project(points) }} preload /></div>}
         <p className={styles.description} data-expo-description>
           National Institute of
           Technology, Calicut.

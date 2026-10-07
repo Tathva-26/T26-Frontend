@@ -6,7 +6,6 @@ export default async function CompetitionDetailPage({ params }) {
   return (
     <EventDetailPage
       id={id}
-      eventType='competitions'
       label='Competition'
       heading='COMPETITIONS'
       backHref='/competitions'

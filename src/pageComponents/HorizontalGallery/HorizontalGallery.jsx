@@ -275,12 +275,10 @@ export default function HorizontalGallery({ coordinatedEntrance = false }) {
         const pin = Math.max(scrollAmount - vh * 2, 0)
         const range = pin + vh * 2
 
-        // Where the Expo bridge lets go of the page (it records that on its
-        // own element). This definition went missing from main in a merge
-        // while the two lines that call it stayed, which threw as soon as the
-        // gallery mounted and took the whole home page down with it.
+        // Read the live trigger: data attributes are published in onRefresh,
+        // after dependent triggers have measured, and can lag by one refresh.
         const openingScroll = () => {
-          const release = Number(document.querySelector('[data-expo-end]')?.dataset.expoEnd)
+          const release = ScrollTrigger.getById('techconclave-expo')?.end
           // Child layout effects can run before the bridge has registered its
           // pin. The scheduled global refresh will replace this initial value.
           return Number.isFinite(release) ? release : (scroller.scrollTop || 0) + container.getBoundingClientRect().top
@@ -311,7 +309,7 @@ export default function HorizontalGallery({ coordinatedEntrance = false }) {
           },
         })
         /* Horizontal movement: one linear tween over the entire range */
-        tl.to(track, { x: -scrollAmount, duration: range, ease: 'none' }, 0)
+        tl.fromTo(track, { x: 0 }, { x: -scrollAmount, duration: range, ease: 'none' }, 0)
 
         /* Entrance opacity */
         tl.fromTo(

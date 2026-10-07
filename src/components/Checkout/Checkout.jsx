@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { BOOKING_ACTION, bookingBlocker } from '@/lib/booking'
+import { BOOKING_ACTION, bookingBlocker, maxQuantity } from '@/lib/booking'
 import { feeBreakdown } from '@/lib/fees'
 import { formatPrice } from '@/lib/format'
 import { useUser } from '@/context/UserContext'
@@ -24,6 +24,8 @@ export default function Checkout({ event }) {
   const { user, signIn } = useUser()
   const { book, submitting, failure, reset } = useCheckout()
   const [passcode, setPasscode] = useState('')
+  const maxTickets = maxQuantity(event)
+  const [quantity, setQuantity] = useState(1)
 
   /*
    * Latched, not derived from the current failure.
@@ -37,11 +39,11 @@ export default function Checkout({ event }) {
   const [passcodeDemanded, setPasscodeDemanded] = useState(false)
 
   const blocker = bookingBlocker(event, user)
-  const fees = feeBreakdown(event?.priceInPaise)
+  const fees = feeBreakdown(event?.priceInPaise, quantity)
   const needsPasscode = Boolean(event?.passcodeRequired) || passcodeDemanded
 
   const submit = async () => {
-    const verdict = await book({ eventId: event.id, quantity: 1, passcode })
+    const verdict = await book({ eventId: event.id, quantity, passcode })
     if (verdict?.needsPasscode) setPasscodeDemanded(true)
   }
 
@@ -76,9 +78,43 @@ export default function Checkout({ event }) {
 
   return (
     <div className="mt-4 space-y-2">
+      {!blocker.blocked && maxTickets > 1 && (
+        <div className="flex items-center justify-between">
+          <span className="text-[9px] uppercase tracking-wide text-[#8d8d8d]">
+            Tickets (up to {maxTickets})
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className={STEPPER}
+              onClick={() => setQuantity((n) => Math.max(1, n - 1))}
+              disabled={quantity <= 1 || submitting}
+              aria-label="One ticket fewer"
+            >
+              −
+            </button>
+            <span className="w-5 text-center text-sm font-semibold tabular-nums text-white" aria-live="polite">
+              {quantity}
+            </span>
+            <button
+              type="button"
+              className={STEPPER}
+              onClick={() => setQuantity((n) => Math.min(maxTickets, n + 1))}
+              disabled={quantity >= maxTickets || submitting}
+              aria-label="One ticket more"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      )}
+
       {fees && fees.total > 0 && (
         <dl className="space-y-0.5 text-[9px] leading-tight text-[#8d8d8d]">
-          <Row label="Ticket" value={formatPrice(fees.base)} />
+          <Row
+            label={fees.quantity > 1 ? `Tickets × ${fees.quantity}` : 'Ticket'}
+            value={formatPrice(fees.base)}
+          />
           <Row label="Platform fee (2.5%)" value={formatPrice(fees.platformFee)} />
           <Row label="GST on fee (18%)" value={formatPrice(fees.gst)} />
           <Row label="Total" value={formatPrice(fees.total)} emphasis />
@@ -126,6 +162,9 @@ export default function Checkout({ event }) {
 
 const BUTTON =
   'w-full rounded-[7px] bg-[rgba(78,40,74,0.72)] py-1.5 text-lg font-bold tracking-[0.16em] text-white transition-colors hover:bg-[rgba(104,52,96,0.9)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-70'
+
+const STEPPER =
+  'flex h-6 w-6 items-center justify-center rounded-[5px] border border-white/15 bg-black/30 p-0 text-sm leading-none text-white transition-colors hover:border-white/40 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40'
 
 function Row({ label, value, emphasis = false }) {
   return (

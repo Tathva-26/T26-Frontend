@@ -3,8 +3,13 @@
 import { createElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import './TextType.css'
+import BatchedTextType from './BatchedTextType'
 
-export default function TextType({
+export default function TextType({ batched = false, ...props }) {
+  return batched ? <BatchedTextType {...props} /> : <LegacyTextType {...props} />
+}
+
+function LegacyTextType({
   text,
   as: Component = 'div',
   typingSpeed = 50,
