@@ -5,20 +5,17 @@ import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-// Drives Lenis smooth scrolling on `.main-scroll` — the app's own scroll
-// container (everything scrolls inside this div, not the window) — and keeps
-// it in lockstep with GSAP's ticker so every existing ScrollTrigger (Wheels,
-// Robowars, Footer, Artist, ...), which all already point `scroller` at
-// `.main-scroll`, keeps working unchanged: Lenis animates the wrapper's real
-// `scrollTop` via native `scrollTo()`, it doesn't fake scroll with transforms.
+// Uses the app's `.main-scroll` container when present, and falls back to
+// Lenis's normal window scroller on standalone routes.
 export default function SmoothScroll() {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const wrapper = document.querySelector(".main-scroll");
-    if (!wrapper) return;
-
-    const lenis = new Lenis({ wrapper, content: wrapper });
+    const lenis = wrapper
+      ? new Lenis({ wrapper, content: wrapper })
+      : new Lenis();
     // Exposed so components that toggle a clipped section's height (e.g. the Hero/Frame
     // pinned experience unlocking into normal scroll) can force Lenis to recompute its
     // cached scroll limit — its own ResizeObserver only fires on `wrapper`'s own box size,
