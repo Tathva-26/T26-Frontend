@@ -33,6 +33,7 @@ import {
   cartCount,
   cartFees,
   clampCheckInDay,
+  couponsOnSale,
   festDate,
   foodName,
   foodQuantity,
@@ -193,8 +194,12 @@ function Stepper({ value, min = 0, max, onChange, label }) {
 /**
  * One cart and its Pay button. Rooms and food each get one, because each is
  * a separate payment on a separate TIQR event.
+ *
+ * `submitting` is this cart on its way to payment; `busy` is either of them.
+ * Both buttons are off while one is, because the page is about to leave for
+ * the gateway and a second order placed in that moment is a second charge.
  */
-function CartPanel({ title, lines, emptyText, payLabel, isSignedIn, submitting, error, onCheckout }) {
+function CartPanel({ title, lines, emptyText, payLabel, isSignedIn, submitting, busy, error, onCheckout }) {
   const fees = cartFees(lines)
   const count = cartCount(lines)
 
@@ -251,7 +256,7 @@ function CartPanel({ title, lines, emptyText, payLabel, isSignedIn, submitting, 
           <button
             type='button'
             onClick={onCheckout}
-            disabled={submitting}
+            disabled={busy}
             className='mt-4 w-full rounded-xl border border-[rgba(var(--violet),0.5)] bg-[rgba(var(--violet),0.22)] px-4 py-3 text-sm font-semibold uppercase tracking-wider transition-colors hover:bg-[rgba(var(--violet),0.34)] disabled:cursor-not-allowed disabled:opacity-40'
           >
             {submitting
@@ -314,6 +319,8 @@ export default function Accommodation() {
   )
 
   const tier = tiers.find((row) => row.tier === tierId) ?? null
+
+  const foodOnSale = useMemo(() => couponsOnSale(food), [food])
 
   const chargeStatus = searchParams.get('status')
   const returning = chargeStatus !== null
@@ -408,6 +415,9 @@ export default function Accommodation() {
   }
 
   async function checkout(cart) {
+    // One order at a time, whichever cart it is for.
+    if (submitting) return
+
     if (!isSignedIn) {
       signIn()
       return
@@ -618,13 +628,19 @@ export default function Accommodation() {
                   Food coupons
                 </h2>
                 <p className='mt-1 text-sm text-white/50'>
-                  Breakfast + Lunch, {formatPrice(food[0]?.price ?? 0)} per day.
-                  Buy any mix of days, with or without a room — food is paid
-                  for separately.
+                  {foodOnSale.length > 0 ? (
+                    <>
+                      Breakfast + Lunch, {formatPrice(foodOnSale[0].price)} per
+                      day. Buy any mix of days, with or without a room — food is
+                      paid for separately.
+                    </>
+                  ) : (
+                    'Food coupons are not on sale right now.'
+                  )}
                 </p>
 
                 <div className='mt-4 grid gap-3 sm:grid-cols-2'>
-                  {food.map((coupon) => {
+                  {foodOnSale.map((coupon) => {
                     const quantity = foodQuantity(foodLines, coupon)
                     const label = foodName(coupon.day, coupon.diet)
                     return (
@@ -667,6 +683,7 @@ export default function Accommodation() {
                 payLabel='Pay for room'
                 isSignedIn={isSignedIn}
                 submitting={submitting === 'room'}
+                busy={submitting !== null}
                 error={checkoutErrors.room}
                 onCheckout={() => checkout('room')}
               />
@@ -677,6 +694,7 @@ export default function Accommodation() {
                 payLabel='Pay for food'
                 isSignedIn={isSignedIn}
                 submitting={submitting === 'food'}
+                busy={submitting !== null}
                 error={checkoutErrors.food}
                 onCheckout={() => checkout('food')}
               />

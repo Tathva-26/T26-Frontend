@@ -189,6 +189,15 @@ export function buildStayLine({ tier, unit, price, nights, checkInDay, gender, q
   }
 }
 
+/**
+ * The coupons that can actually be bought. One marked `onSale: false` is
+ * refused at checkout, which fails the whole food order, so it is not offered.
+ * (Only an explicit `false` hides a coupon: a row without the flag is sold.)
+ */
+export function couponsOnSale(food) {
+  return food.filter((coupon) => coupon.onSale !== false)
+}
+
 export function foodLineId(day, diet) {
   return `food-${day}-${diet}`
 }
