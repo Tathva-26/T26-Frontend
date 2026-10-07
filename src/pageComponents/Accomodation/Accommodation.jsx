@@ -78,12 +78,12 @@ const accommodationStyles = `
  */
 // The gateway's own words for a payment that did not go through. Easebuzz
 // (behind TIQR) posts these as `status`; src/proxy.js carries it over.
-const NOT_CHARGED = ['USERCANCELLED', 'FAILURE', 'FAILED', 'DROPPED', 'BOUNCED']
+const NOT_CHARGED = new Set(['USERCANCELLED', 'FAILURE', 'FAILED', 'DROPPED', 'BOUNCED'])
 
 function returnOutcome(chargeStatus) {
   const status = String(chargeStatus ?? '').toUpperCase()
   if (status === 'SUCCESS') return 'charged'
-  if (NOT_CHARGED.includes(status)) return 'cancelled'
+  if (NOT_CHARGED.has(status)) return 'cancelled'
   // TIQR's own `CHARGED` (and the mock) go through the shared rule.
   return paymentOutcome({ booking: null, chargeStatus, attemptsLeft: 0 })
 }
@@ -131,6 +131,13 @@ function PaymentReturn({ chargeStatus, onDismiss }) {
   )
 }
 
+function tierCardLook(tier, selected) {
+  if (tier.soldOut) return 'cursor-not-allowed border-white/10 bg-white/[0.02] opacity-50'
+  return selected
+    ? 'border-[rgba(var(--violet),0.8)] bg-[rgba(var(--violet),0.14)]'
+    : 'border-white/12 bg-white/[0.04] hover:bg-white/[0.08]'
+}
+
 function TierCard({ tier, selected, onSelect }) {
   return (
     <button
@@ -138,13 +145,7 @@ function TierCard({ tier, selected, onSelect }) {
       disabled={tier.soldOut}
       onClick={() => onSelect(tier)}
       aria-pressed={selected}
-      className={`w-full rounded-2xl border p-5 text-left transition-colors ${
-        tier.soldOut
-          ? 'cursor-not-allowed border-white/10 bg-white/[0.02] opacity-50'
-          : selected
-            ? 'border-[rgba(var(--violet),0.8)] bg-[rgba(var(--violet),0.14)]'
-            : 'border-white/12 bg-white/[0.04] hover:bg-white/[0.08]'
-      }`}
+      className={`w-full rounded-2xl border p-5 text-left transition-colors ${tierCardLook(tier, selected)}`}
     >
       <div className='flex items-start justify-between gap-3'>
         <div className='min-w-0'>
@@ -259,11 +260,7 @@ function CartPanel({ title, lines, emptyText, payLabel, isSignedIn, submitting, 
             disabled={busy}
             className='mt-4 w-full rounded-xl border border-[rgba(var(--violet),0.5)] bg-[rgba(var(--violet),0.22)] px-4 py-3 text-sm font-semibold uppercase tracking-wider transition-colors hover:bg-[rgba(var(--violet),0.34)] disabled:cursor-not-allowed disabled:opacity-40'
           >
-            {submitting
-              ? 'Opening payment…'
-              : isSignedIn
-                ? payLabel
-                : 'Sign in to book'}
+            {payButtonText({ submitting, isSignedIn, payLabel })}
           </button>
         </>
       )}
@@ -274,6 +271,233 @@ function CartPanel({ title, lines, emptyText, payLabel, isSignedIn, submitting, 
         </p>
       ) : null}
     </section>
+  )
+}
+
+function payButtonText({ submitting, isSignedIn, payLabel }) {
+  if (submitting) return 'Opening payment…'
+  return isSignedIn ? payLabel : 'Sign in to book'
+}
+
+const SECTION_TITLE = 'text-xs font-semibold uppercase tracking-[0.18em] text-white/45'
+
+/** The border and fill of an option button (gender, nights, check-in day). */
+const optionLook = (selected) =>
+  selected
+    ? 'border-[rgba(var(--violet),0.8)] bg-[rgba(var(--violet),0.18)]'
+    : 'border-white/15 hover:bg-white/10'
+
+/** Gender gates everything: stock is counted per gender. */
+function GenderPicker({ gender, onChoose }) {
+  return (
+    <section>
+      <h2 className={SECTION_TITLE}>Booking for</h2>
+      <div className='mt-3 flex gap-2'>
+        {GENDERS.map((option) => (
+          <button
+            key={option.id}
+            type='button'
+            onClick={() => onChoose(option.id)}
+            aria-pressed={gender === option.id}
+            className={`rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${optionLook(gender === option.id)}`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/** The stay: how many nights, from which day, in which kind of room, and how many of them. */
+function RoomPicker({
+  gender,
+  nights,
+  checkInDay,
+  festNights,
+  tiers,
+  tier,
+  roomCount,
+  onNights,
+  onCheckInDay,
+  onTier,
+  onRoomCount,
+}) {
+  if (!gender) {
+    return (
+      <section className='opacity-40'>
+        <h2 className={SECTION_TITLE}>Room</h2>
+        <p className='mt-3 text-sm text-white/50'>
+          Pick who this is for — availability differs by gender.
+        </p>
+      </section>
+    )
+  }
+
+  return (
+    <section>
+      <h2 className={SECTION_TITLE}>Room</h2>
+
+      <div className='mt-3 flex flex-wrap items-center gap-2'>
+        <span className='text-sm text-white/55'>Nights</span>
+        {STAY_NIGHTS.map((option) => (
+          <button
+            key={option}
+            type='button'
+            onClick={() => onNights(option)}
+            aria-pressed={nights === option}
+            className={`h-8 w-9 rounded-lg border text-sm transition-colors ${optionLook(nights === option)}`}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+
+      {/* Length alone does not say which nights are held — a 2-night stay is
+          either Day 1–2 or Day 2–3. */}
+      <div className='mt-3 flex flex-wrap items-center gap-2'>
+        <span className='text-sm text-white/55'>Check in</span>
+        {validCheckInDays(nights, festNights).map((day) => (
+          <button
+            key={day}
+            type='button'
+            onClick={() => onCheckInDay(day)}
+            aria-pressed={checkInDay === day}
+            className={`h-8 rounded-lg border px-3 text-sm transition-colors ${optionLook(checkInDay === day)}`}
+          >
+            {festDate(day)}
+          </button>
+        ))}
+        <span className='text-xs text-white/40'>
+          {stayDayLabel(checkInDay, nights)}
+        </span>
+      </div>
+
+      <div className='mt-4 space-y-3'>
+        {tiers.map((row) => (
+          <TierCard
+            key={row.tier}
+            tier={row}
+            selected={tier?.tier === row.tier}
+            onSelect={onTier}
+          />
+        ))}
+      </div>
+
+      {tier && !tier.soldOut && (
+        <div className='mt-4 flex items-center gap-3 text-sm'>
+          <span className='text-white/55'>
+            How many {unitLabel(tier.unit, 2)}?
+          </span>
+          <Stepper
+            label={unitLabel(tier.unit, 2)}
+            value={roomCount}
+            min={1}
+            max={tier.bookable}
+            onChange={onRoomCount}
+          />
+        </div>
+      )}
+    </section>
+  )
+}
+
+/** The food coupons on sale, each with its own count. */
+function FoodCoupons({ coupons, lines, onQuantity }) {
+  return (
+    <section>
+      <h2 className={SECTION_TITLE}>Food coupons</h2>
+      <p className='mt-1 text-sm text-white/50'>
+        {coupons.length > 0 ? (
+          <>
+            Breakfast + Lunch, {formatPrice(coupons[0].price)} per day. Buy any
+            mix of days, with or without a room — food is paid for separately.
+          </>
+        ) : (
+          'Food coupons are not on sale right now.'
+        )}
+      </p>
+
+      <div className='mt-4 grid gap-3 sm:grid-cols-2'>
+        {coupons.map((coupon) => {
+          const quantity = foodQuantity(lines, coupon)
+          const label = foodName(coupon.day, coupon.diet)
+          return (
+            <div
+              key={`${coupon.day}-${coupon.diet}`}
+              className={`flex items-center justify-between gap-3 rounded-xl border p-4 ${
+                quantity > 0
+                  ? 'border-[rgba(var(--violet),0.6)] bg-[rgba(var(--violet),0.1)]'
+                  : 'border-white/12 bg-white/[0.04]'
+              }`}
+            >
+              <div className='min-w-0'>
+                <p className='truncate text-sm font-semibold'>{label}</p>
+                <p className='mt-0.5 text-xs text-white/50'>
+                  {formatPrice(coupon.price)}
+                </p>
+              </div>
+              <Stepper
+                label={label}
+                value={quantity}
+                onChange={(next) => onQuantity(coupon, next)}
+              />
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+/**
+ * Which of the page's states to show. A payment return outranks everything:
+ * the buyer has to be told what became of their money whatever else is true.
+ */
+function pageView({ returning, backendDisabled, loading, error, bookingsOpen }) {
+  if (returning) return 'returning'
+  if (backendDisabled) return 'soon'
+  if (loading) return 'loading'
+  if (error) return 'error'
+  return bookingsOpen ? 'open' : 'paused'
+}
+
+/** Why there is nothing to book just now: not open yet, loading, failed, or paused. */
+function Unavailable({ view, error, onRetry }) {
+  if (view === 'soon') {
+    return <p className='mt-10 text-2xl text-white/70'>COMING SOON</p>
+  }
+
+  if (view === 'loading') {
+    return <p className='mt-10 text-sm text-white/50'>Loading rooms…</p>
+  }
+
+  if (view === 'error') {
+    return (
+      <div className='mt-10'>
+        <p className='text-sm text-red-300'>{error}</p>
+        <button
+          type='button'
+          onClick={onRetry}
+          className='mt-3 rounded-lg border border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-wider hover:bg-white/10'
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
+
+  /* Paused from the admin panel. The backend refuses bookings too, so this is
+     the honest state, not just a hidden button. */
+  return (
+    <div className='mt-10'>
+      <p className='font-[var(--font-bebas)] text-4xl tracking-wide text-white/85 sm:text-5xl'>
+        BOOKINGS PAUSED
+      </p>
+      <p className='mt-2 text-sm text-white/55'>
+        Room and food bookings are paused for now. Please check back later.
+      </p>
+    </div>
   )
 }
 
@@ -359,19 +583,19 @@ export default function Accommodation() {
     setLines((current) => withStayLine(current, null))
   }
 
-  /* A longer stay can push the start day past the end of the fest, and can
-     also shrink what is bookable, so both are re-derived rather than kept. */
-  function chooseNights(next) {
-    const day = clampCheckInDay(checkInDay, next, festNights)
-    setNights(next)
-    setCheckInDay(day)
+  /* The stay changed, in length or in its first night. Either can shrink what
+     is bookable, so the chosen room is priced and stocked again for the new
+     stay, and dropped along with its cart line if it can no longer be had. */
+  function changeStay(nextNights, nextDay) {
+    setNights(nextNights)
+    setCheckInDay(nextDay)
 
     const updated = tiersFor({
       rooms,
       availability,
       gender,
-      nights: next,
-      checkInDay: day,
+      nights: nextNights,
+      checkInDay: nextDay,
     }).find((row) => row.tier === tierId)
 
     if (!updated || updated.soldOut) {
@@ -380,38 +604,41 @@ export default function Accommodation() {
       return
     }
 
-    const capped = Math.min(roomCount, updated.bookable)
-    setRoomCount(capped || 1)
-    syncStay({ tier: updated, nights: next, checkInDay: day, quantity: capped || 1 })
+    const capped = Math.min(roomCount, updated.bookable) || 1
+    setRoomCount(capped)
+    syncStay({ tier: updated, nights: nextNights, checkInDay: nextDay, quantity: capped })
   }
 
-  function chooseCheckInDay(day) {
-    setCheckInDay(day)
+  /* A longer stay can push the start day past the end of the fest, so the day
+     is re-derived rather than kept. */
+  const chooseNights = (next) =>
+    changeStay(next, clampCheckInDay(checkInDay, next, festNights))
 
-    const updated = tiersFor({
-      rooms,
-      availability,
-      gender,
-      nights,
-      checkInDay: day,
-    }).find((row) => row.tier === tierId)
-
-    if (!updated || updated.soldOut) {
-      setTierId(null)
-      setLines((current) => withStayLine(current, null))
-      return
-    }
-
-    const capped = Math.min(roomCount, updated.bookable)
-    setRoomCount(capped || 1)
-    syncStay({ tier: updated, checkInDay: day, quantity: capped || 1 })
-  }
+  const chooseCheckInDay = (day) => changeStay(nights, day)
 
   function selectTier(next) {
     const capped = Math.min(roomCount, next.bookable) || 1
     setTierId(next.tier)
     setRoomCount(capped)
     syncStay({ tier: next, quantity: capped })
+  }
+
+  function chooseRoomCount(next) {
+    setRoomCount(next)
+    syncStay({ quantity: next })
+  }
+
+  const setCouponQuantity = (coupon, next) =>
+    setFoodLines((current) => withFoodQuantity(current, coupon, next))
+
+  /* The order has left for the gateway, so the cart it came from is spent. A
+     real round trip is a full page navigation and drops this state anyway;
+     clearing here covers a client-side route into the return URL, where it
+     would otherwise survive and invite a second payment. */
+  function dismissReturn() {
+    setLines([])
+    setFoodLines([])
+    router.replace('/accommodation')
   }
 
   async function checkout(cart) {
@@ -448,6 +675,63 @@ export default function Accommodation() {
     }
   }
 
+  const view = pageView({ returning, backendDisabled, loading, error, bookingsOpen })
+
+  let content
+  if (view === 'returning') {
+    content = <PaymentReturn chargeStatus={chargeStatus} onDismiss={dismissReturn} />
+  } else if (view === 'open') {
+    content = (
+      <div className='mt-10 grid gap-10 lg:grid-cols-[1fr_20rem] lg:items-start'>
+        <div className='space-y-10'>
+          <GenderPicker gender={gender} onChoose={chooseGender} />
+          <RoomPicker
+            gender={gender}
+            nights={nights}
+            checkInDay={checkInDay}
+            festNights={festNights}
+            tiers={tiers}
+            tier={tier}
+            roomCount={roomCount}
+            onNights={chooseNights}
+            onCheckInDay={chooseCheckInDay}
+            onTier={selectTier}
+            onRoomCount={chooseRoomCount}
+          />
+          <FoodCoupons coupons={foodOnSale} lines={foodLines} onQuantity={setCouponQuantity} />
+        </div>
+
+        {/* Two carts, because rooms and food are two payments. */}
+        <aside className='space-y-4 lg:sticky lg:top-28'>
+          <CartPanel
+            title='Room'
+            lines={lines}
+            emptyText='No room picked yet.'
+            payLabel='Pay for room'
+            isSignedIn={isSignedIn}
+            submitting={submitting === 'room'}
+            busy={submitting !== null}
+            error={checkoutErrors.room}
+            onCheckout={() => checkout('room')}
+          />
+          <CartPanel
+            title='Food coupons'
+            lines={foodLines}
+            emptyText='No coupons added yet.'
+            payLabel='Pay for food'
+            isSignedIn={isSignedIn}
+            submitting={submitting === 'food'}
+            busy={submitting !== null}
+            error={checkoutErrors.food}
+            onCheckout={() => checkout('food')}
+          />
+        </aside>
+      </div>
+    )
+  } else {
+    content = <Unavailable view={view} error={error} onRetry={reload} />
+  }
+
   return (
     <main className='accommodation-page'>
       {!inNavbarScope && <Navbar />}
@@ -470,237 +754,7 @@ export default function Accommodation() {
         {/* Keyed so a payment return re-reads the latest statuses. */}
         {isSignedIn && !backendDisabled && <MyBookings key={chargeStatus ?? 'page'} />}
 
-        {returning ? (
-          <PaymentReturn
-            chargeStatus={chargeStatus}
-            onDismiss={() => {
-              /* The order has left for the gateway, so the cart it came from
-                 is spent. A real round trip is a full page navigation and
-                 drops this state anyway; clearing here covers a client-side
-                 route into the return URL, where it would otherwise survive
-                 and invite a second payment. */
-              setLines([])
-              setFoodLines([])
-              router.replace('/accommodation')
-            }}
-          />
-        ) : backendDisabled ? (
-          <p className='mt-10 text-2xl text-white/70'>COMING SOON</p>
-        ) : loading ? (
-          <p className='mt-10 text-sm text-white/50'>Loading rooms…</p>
-        ) : error ? (
-          <div className='mt-10'>
-            <p className='text-sm text-red-300'>{error}</p>
-            <button
-              type='button'
-              onClick={reload}
-              className='mt-3 rounded-lg border border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-wider hover:bg-white/10'
-            >
-              Retry
-            </button>
-          </div>
-        ) : !bookingsOpen ? (
-          /* Paused from the admin panel. The backend refuses bookings too,
-             so this is the honest state, not just a hidden button. */
-          <div className='mt-10'>
-            <p className='font-[var(--font-bebas)] text-4xl tracking-wide text-white/85 sm:text-5xl'>
-              BOOKINGS PAUSED
-            </p>
-            <p className='mt-2 text-sm text-white/55'>
-              Room and food bookings are paused for now. Please check back later.
-            </p>
-          </div>
-        ) : (
-          <div className='mt-10 grid gap-10 lg:grid-cols-[1fr_20rem] lg:items-start'>
-            <div className='space-y-10'>
-              {/* Gender gates everything: stock is counted per gender. */}
-              <section>
-                <h2 className='text-xs font-semibold uppercase tracking-[0.18em] text-white/45'>
-                  Booking for
-                </h2>
-                <div className='mt-3 flex gap-2'>
-                  {GENDERS.map((option) => (
-                    <button
-                      key={option.id}
-                      type='button'
-                      onClick={() => chooseGender(option.id)}
-                      aria-pressed={gender === option.id}
-                      className={`rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
-                        gender === option.id
-                          ? 'border-[rgba(var(--violet),0.8)] bg-[rgba(var(--violet),0.18)]'
-                          : 'border-white/15 hover:bg-white/10'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              <section className={gender ? '' : 'opacity-40'}>
-                <h2 className='text-xs font-semibold uppercase tracking-[0.18em] text-white/45'>
-                  Room
-                </h2>
-
-                {!gender ? (
-                  <p className='mt-3 text-sm text-white/50'>
-                    Pick who this is for — availability differs by gender.
-                  </p>
-                ) : (
-                  <>
-                    <div className='mt-3 flex flex-wrap items-center gap-2'>
-                      <span className='text-sm text-white/55'>Nights</span>
-                      {STAY_NIGHTS.map((option) => (
-                        <button
-                          key={option}
-                          type='button'
-                          onClick={() => chooseNights(option)}
-                          aria-pressed={nights === option}
-                          className={`h-8 w-9 rounded-lg border text-sm transition-colors ${
-                            nights === option
-                              ? 'border-[rgba(var(--violet),0.8)] bg-[rgba(var(--violet),0.18)]'
-                              : 'border-white/15 hover:bg-white/10'
-                          }`}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Length alone does not say which nights are held — a
-                        2-night stay is either Day 1–2 or Day 2–3. */}
-                    <div className='mt-3 flex flex-wrap items-center gap-2'>
-                      <span className='text-sm text-white/55'>Check in</span>
-                      {validCheckInDays(nights, festNights).map((day) => (
-                        <button
-                          key={day}
-                          type='button'
-                          onClick={() => chooseCheckInDay(day)}
-                          aria-pressed={checkInDay === day}
-                          className={`h-8 rounded-lg border px-3 text-sm transition-colors ${
-                            checkInDay === day
-                              ? 'border-[rgba(var(--violet),0.8)] bg-[rgba(var(--violet),0.18)]'
-                              : 'border-white/15 hover:bg-white/10'
-                          }`}
-                        >
-                          {festDate(day)}
-                        </button>
-                      ))}
-                      <span className='text-xs text-white/40'>
-                        {stayDayLabel(checkInDay, nights)}
-                      </span>
-                    </div>
-
-                    <div className='mt-4 space-y-3'>
-                      {tiers.map((row) => (
-                        <TierCard
-                          key={row.tier}
-                          tier={row}
-                          selected={tierId === row.tier}
-                          onSelect={selectTier}
-                        />
-                      ))}
-                    </div>
-
-                    {tier && !tier.soldOut && (
-                      <div className='mt-4 flex items-center gap-3 text-sm'>
-                        <span className='text-white/55'>
-                          How many {unitLabel(tier.unit, 2)}?
-                        </span>
-                        <Stepper
-                          label={unitLabel(tier.unit, 2)}
-                          value={roomCount}
-                          min={1}
-                          max={tier.bookable}
-                          onChange={(next) => {
-                            setRoomCount(next)
-                            syncStay({ quantity: next })
-                          }}
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-              </section>
-
-              <section>
-                <h2 className='text-xs font-semibold uppercase tracking-[0.18em] text-white/45'>
-                  Food coupons
-                </h2>
-                <p className='mt-1 text-sm text-white/50'>
-                  {foodOnSale.length > 0 ? (
-                    <>
-                      Breakfast + Lunch, {formatPrice(foodOnSale[0].price)} per
-                      day. Buy any mix of days, with or without a room — food is
-                      paid for separately.
-                    </>
-                  ) : (
-                    'Food coupons are not on sale right now.'
-                  )}
-                </p>
-
-                <div className='mt-4 grid gap-3 sm:grid-cols-2'>
-                  {foodOnSale.map((coupon) => {
-                    const quantity = foodQuantity(foodLines, coupon)
-                    const label = foodName(coupon.day, coupon.diet)
-                    return (
-                      <div
-                        key={`${coupon.day}-${coupon.diet}`}
-                        className={`flex items-center justify-between gap-3 rounded-xl border p-4 ${
-                          quantity > 0
-                            ? 'border-[rgba(var(--violet),0.6)] bg-[rgba(var(--violet),0.1)]'
-                            : 'border-white/12 bg-white/[0.04]'
-                        }`}
-                      >
-                        <div className='min-w-0'>
-                          <p className='truncate text-sm font-semibold'>{label}</p>
-                          <p className='mt-0.5 text-xs text-white/50'>
-                            {formatPrice(coupon.price)}
-                          </p>
-                        </div>
-                        <Stepper
-                          label={label}
-                          value={quantity}
-                          onChange={(next) =>
-                            setFoodLines((current) =>
-                              withFoodQuantity(current, coupon, next),
-                            )
-                          }
-                        />
-                      </div>
-                    )
-                  })}
-                </div>
-              </section>
-            </div>
-
-            {/* Two carts, because rooms and food are two payments. */}
-            <aside className='space-y-4 lg:sticky lg:top-28'>
-              <CartPanel
-                title='Room'
-                lines={lines}
-                emptyText='No room picked yet.'
-                payLabel='Pay for room'
-                isSignedIn={isSignedIn}
-                submitting={submitting === 'room'}
-                busy={submitting !== null}
-                error={checkoutErrors.room}
-                onCheckout={() => checkout('room')}
-              />
-              <CartPanel
-                title='Food coupons'
-                lines={foodLines}
-                emptyText='No coupons added yet.'
-                payLabel='Pay for food'
-                isSignedIn={isSignedIn}
-                submitting={submitting === 'food'}
-                busy={submitting !== null}
-                error={checkoutErrors.food}
-                onCheckout={() => checkout('food')}
-              />
-            </aside>
-          </div>
-        )}
+        {content}
       </div>
     </main>
   )

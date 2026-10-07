@@ -84,7 +84,7 @@ export function validCheckInDays(nights, festNights = 3) {
 export function clampCheckInDay(day, nights, festNights = 3) {
   const allowed = validCheckInDays(nights, festNights)
   if (allowed.length === 0) return 1
-  return allowed.includes(day) ? day : allowed[allowed.length - 1]
+  return allowed.includes(day) ? day : allowed.at(-1)
 }
 
 /** "9 Oct 11 AM – 11 Oct 10 AM": check-in on the first night, out the morning after the last. */
@@ -111,7 +111,7 @@ export function priceFor(rooms, { tier, gender, nights }) {
     (item) =>
       item.tier === tier && item.gender === gender && item.nights === nights,
   )
-  return row && row.onSale ? row.price : null
+  return row?.onSale ? row.price : null
 }
 
 /**
