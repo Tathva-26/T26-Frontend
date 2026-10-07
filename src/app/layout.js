@@ -1,6 +1,7 @@
 import './globals.css'
 import { UserProvider } from '@/context/UserContext'
 import ReferralCapture from '@/components/ReferralCapture'
+import ScrollDownCue from '@/components/ScrollDownCue'
 
 export const metadata = {
   metadataBase: new URL('https://tathva.org'),
@@ -79,6 +80,7 @@ from anywhere routes to the single handler inside. */}
         <UserProvider>
           <ReferralCapture />
           {children}
+          <ScrollDownCue />
         </UserProvider>
       </body>
     </html>
