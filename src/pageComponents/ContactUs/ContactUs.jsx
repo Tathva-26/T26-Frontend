@@ -7,12 +7,19 @@ import styles from './ContactUs.module.css'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 import { BACKEND_ENABLED, PATHS, api, apiErrorMessage, apiFieldErrors } from '@/lib/api'
-import { CONTACT_FIELDS, normalisePhone, validateContact } from '@/lib/validation'
+import { CONTACT_FIELDS, isValidEmail, normalisePhone, validateContact } from '@/lib/validation'
+import { useUser } from '@/context/UserContext'
 
 export default function ContactUs() {
+  const { user } = useUser()
   const [fieldErrors, setFieldErrors] = useState({})
   const [status, setStatus] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+
+  // The backend requires an email with every query. A signed-in visitor's
+  // account email is sent for them, so the field is only shown to someone we
+  // don't have one for; hidden from everyone, nobody could submit the form.
+  const accountEmail = isValidEmail(user?.email) ? user.email.trim() : ''
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -23,6 +30,7 @@ export default function ContactUs() {
     const values = Object.fromEntries(
       CONTACT_FIELDS.map((field) => [field, String(data.get(field) ?? '').trim()]),
     )
+    if (accountEmail) values.email = accountEmail
 
     const errors = validateContact(values)
     if (Object.keys(errors).length > 0) {
@@ -163,7 +171,7 @@ export default function ContactUs() {
               </div>
             </div>
 
-            <div className={styles.fieldRow} style={{ display: 'none' }}>
+            <div className={styles.fieldRow} style={accountEmail ? { display: 'none' } : undefined}>
               <label className={styles.emailLabel} htmlFor='contact-email'>
                 Email:
               </label>
