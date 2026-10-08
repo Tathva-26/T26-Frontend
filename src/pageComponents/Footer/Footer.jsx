@@ -22,6 +22,9 @@ const varela = Varela({
   variable: '--font-varela',
 })
 
+// Where "MAIL US" writes to.
+const CONTACT_EMAIL = 'techteamtathva@gmail.com'
+
 const linkColumns = [
   {
     heading: 'EXPLORE',
@@ -100,7 +103,7 @@ export default function Footer() {
       <style>{`
         @font-face {
           font-family: 'Akira Expanded';
-          src: url('https://cdn-next-main.tathva.org/fonts/AkiraExpanded.woff2') format('woff2');
+          src: url('/fonts/AkiraExpanded.woff2') format('woff2');
           font-weight: 800;
           font-style: normal;
           font-display: swap;
@@ -244,12 +247,12 @@ export default function Footer() {
                 REACH OUT AND WE&apos;LL GET BACK TO YOU.
               </p>
 
-              <Link
-                href='/contact'
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
                 className='mt-4 inline-block rounded-[7px] bg-[rgba(0,116,122,0.75)] px-5 py-2.5 text-xs font-bold tracking-[0.1em] text-white transition-colors hover:bg-[rgba(0,145,151,0.9)] sm:mt-5'
               >
                 MAIL US
-              </Link>
+              </a>
             </div>
 
             {/* NAVIGATION COLUMNS */}

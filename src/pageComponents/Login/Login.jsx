@@ -113,7 +113,7 @@ function GoogleIcon() {
 }
 
 const css = `
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500&display=swap');
+/* Bebas Neue + Oswald served from globals.css @font-face (R2 CDN) */
 
 .main-scroll:has(.tv-page[data-signup-visible="true"]) .nb,
 .main-scroll:has(.tv-page[data-signup-visible="true"]) .nb-mobile{
