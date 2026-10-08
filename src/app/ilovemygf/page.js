@@ -1,59 +1,209 @@
-import fs from "fs";
-import path from "path";
-import Credits from "@/pageComponents/Credits";
-import { teams as defaultTeams, PLACEHOLDER } from "@/lib/creditsData";
+"use client";
 
-export const dynamic = "force-dynamic";
+import React from "react";
+import { creditsData } from "@/data/creditsData";
 
 /**
- * Checks public/images/credits for each member's photo:
- * - Checks for {first_name_in_lowercase}.{jpg|jpeg|png|webp|avif|svg}
- * - If found, uses that image path
- * - If NOT found, automatically puts the placeholder (/images/credits/placeholder.png)
+ * PersonImage Component
  */
-function getResolvedTeams() {
-  const creditsDir = path.join(process.cwd(), "public/images/credits");
-  const extensions = [".jpg", ".jpeg", ".png", ".webp", ".avif", ".svg"];
-
-  return defaultTeams.map((team) => ({
-    ...team,
-    members: team.members.map((member) => {
-      // 1. If explicit custom image is specified and actually exists on disk
-      if (member.image && member.image !== PLACEHOLDER) {
-        const basename = path.basename(member.image);
-        if (fs.existsSync(path.join(creditsDir, basename))) {
-          return { ...member, image: `/images/credits/${basename}` };
-        }
-      }
-
-      // 2. Check for {firstname}.{any extension}
-      const firstName = member.name.trim().split(" ")[0].toLowerCase();
-      for (const ext of extensions) {
-        const candidate = `${firstName}${ext}`;
-        if (fs.existsSync(path.join(creditsDir, candidate))) {
-          return { ...member, image: `/images/credits/${candidate}` };
-        }
-      }
-
-      // 3. Check for sanitized full name (e.g. arjundas.jpg)
-      const cleanFullName = member.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-      for (const ext of extensions) {
-        const candidate = `${cleanFullName}${ext}`;
-        if (fs.existsSync(path.join(creditsDir, candidate))) {
-          return { ...member, image: `/images/credits/${candidate}` };
-        }
-      }
-
-      // 4. If image does not exist, put the placeholder directly
-      return {
-        ...member,
-        image: PLACEHOLDER,
-      };
-    }),
-  }));
+function PersonImage({ src, alt = "Team Member" }) {
+  return (
+    <div className="relative aspect-square w-full h-full bg-white flex items-center justify-center overflow-hidden select-none">
+      {src ? (
+        <img src={src} alt={alt} className="w-full h-full object-cover" />
+      ) : (
+        <div className="w-full h-full bg-[#d0d0d0] rounded-full overflow-hidden flex items-center justify-center">
+          <svg className="w-full h-full text-[#9c9c9c]" viewBox="0 0 100 100" fill="currentColor">
+            <circle cx="50" cy="36" r="21" />
+            <path d="M10 96 c0 -22 18 -40 40 -40 c22 0 40 18 40 40 Z" />
+          </svg>
+        </div>
+      )}
+    </div>
+  );
 }
 
+/**
+ * Social Icons (LinkedIn & GitHub)
+ */
+function LinkedInIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+    </svg>
+  );
+}
+
+function GitHubIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Sunburst Torn Member Card
+ */
+function MemberCard({ name = "NAME SURNAME", image = null, linkedin = "https://linkedin.com", github = "https://github.com" }) {
+  return (
+    <div className="relative group w-full aspect-[276/499] max-h-[76vh] flex items-center justify-center transition-transform duration-300 hover:-translate-y-2 select-none">
+      {/* Torn Sunburst Card Base */}
+      <img
+        src="/images/lead-card.png"
+        alt={name}
+        className="w-full h-full object-contain pointer-events-none"
+      />
+
+      {/* Person Photo Inside Frame */}
+      <div className="absolute top-[22.5%] left-[15.5%] w-[71%] h-[39%] z-10 overflow-hidden bg-white flex items-center justify-center">
+  {/* Your image/content goes here */}
+        <PersonImage src={image} alt={name} />
+      </div>
+
+      {/* Name Text */}
+      <div className="absolute top-[66.1%] inset-x-0 z-20 flex justify-center px-4 pointer-events-none">
+        <span className="text-white font-extrabold text-[12px] sm:text-[14px] md:text-[15px] lg:text-[16px] xl:text-[18px] tracking-[1.5px] uppercase text-center leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+          {name}
+        </span>
+      </div>
+
+      {/* Social Links */}
+      <div className="absolute top-[73.1%] inset-x-0 z-30 flex items-center justify-center gap-3 sm:gap-4 pointer-events-auto">
+        <a
+          href={linkedin || "https://linkedin.com"}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${name}'s LinkedIn Profile`}
+          className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded text-white hover:text-[#0077b5] transition-all duration-200 transform hover:scale-125 focus:outline-none"
+        >
+          <LinkedInIcon className="w-full h-full" />
+          <span className="sr-only">LinkedIn</span>
+        </a>
+        <a
+          href={github || "https://github.com"}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${name}'s GitHub Profile`}
+          className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-white hover:text-[#e6edf3] transition-all duration-200 transform hover:scale-125 focus:outline-none"
+        >
+          <GitHubIcon className="w-full h-full" />
+          <span className="sr-only">GitHub</span>
+        </a>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Single Team Section (LEAD, FRONTEND, BACKEND, UI/UX)
+ */
+function Section({ title, members, titleClass = "" }) {
+  return (
+    <div className="relative min-h-screen w-full bg-[#010208] overflow-hidden flex flex-col font-sans select-none">
+      {/* Space Background */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#010308] via-[#020610] to-[#051230]" />
+        <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full bg-[#071840]/25 blur-[180px]" />
+        <div className="absolute top-[10%] left-[18%] w-[220px] h-[1.5px] bg-gradient-to-r from-transparent via-[#5eaee8]/80 to-transparent rotate-[135deg] opacity-70 blur-[0.5px]" />
+        <div className="absolute top-[9.2%] left-[16.5%] w-[4px] h-[4px] rounded-full bg-white/80 blur-[1px]" />
+
+        {/* Stars */}
+        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          {[...Array(200)].map((_, i) => (
+            <circle
+              key={`dim-${i}`}
+              cx={`${((i * 31 + 7) % 100)}%`}
+              cy={`${((i * 47 + 11) % 100)}%`}
+              r={0.3 + (i % 3) * 0.15}
+              fill="white"
+              opacity={0.12 + (i % 5) * 0.06}
+            />
+          ))}
+          {[...Array(80)].map((_, i) => (
+            <circle
+              key={`mid-${i}`}
+              cx={`${((i * 43 + 19) % 100)}%`}
+              cy={`${((i * 61 + 23) % 100)}%`}
+              r={0.5 + (i % 4) * 0.25}
+              fill="white"
+              opacity={0.3 + (i % 6) * 0.08}
+            />
+          ))}
+          {[...Array(20)].map((_, i) => (
+            <circle
+              key={`bright-${i}`}
+              cx={`${((i * 67 + 31) % 100)}%`}
+              cy={`${((i * 83 + 13) % 100)}%`}
+              r={1.2 + (i % 3) * 0.5}
+              fill="white"
+              opacity={0.85}
+            />
+          ))}
+        </svg>
+
+        {/* Nebula clouds */}
+        <div className="absolute bottom-0 inset-x-0 h-[38%] bg-gradient-to-t from-[#081e4a]/80 via-[#061640]/40 to-transparent" />
+        <div className="absolute bottom-[1%] left-[-6%] w-[50%] h-[240px] rounded-full bg-[#0e2350]/40 blur-[90px]" />
+        <div className="absolute bottom-[-1%] right-[-6%] w-[50%] h-[260px] rounded-full bg-[#122a58]/45 blur-[100px]" />
+        <div className="absolute bottom-[-4%] left-[22%] w-[56%] h-[180px] rounded-full bg-[#152e60]/35 blur-[80px]" />
+      </div>
+
+      {/* Main Section Header + Cards */}
+      <main className="relative z-10 w-full min-h-screen flex flex-col items-center justify-start sm:justify-center px-3 sm:px-5 md:px-8 lg:px-10 pt-20 pb-10 sm:py-6 max-w-[1920px] mx-auto">
+        <div className="w-full flex justify-center pb-0 pointer-events-none select-none">
+          <h1
+            className={`font-black uppercase text-white leading-[1.1] sm:leading-[0.85] tracking-[0.04em] drop-shadow-[0_0_40px_rgba(255,255,255,0.2)] ${
+              titleClass || "text-[18vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:5px_white]"
+            }`}
+            style={{ fontFamily: "Impact, 'Arial Black', sans-serif" }}
+          >
+            {title}
+          </h1>
+        </div>
+
+        <div className="relative z-10 w-full flex flex-wrap items-start justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-5 -mt-2 sm:-mt-3 md:-mt-6 lg:-mt-10 py-2 scrollbar-none">
+          {members.map((member, index) => (
+            <div
+              key={index}
+              className="w-[42%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] max-w-[300px]"
+            >
+              <MemberCard
+                name={member.name}
+                image={member.image}
+                linkedin={member.linkedin}
+                github={member.github}
+              />
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+/**
+ * /ilovemygf Page Component
+ */
 export default function Ilovemygf() {
-  const teams = getResolvedTeams();
-  return <Credits teams={teams} />;
+  return (
+    <div className="h-[100dvh] w-full overflow-y-auto overflow-x-hidden">
+      <Section title="LEAD" members={creditsData.leads} />
+      <Section
+        title="FRONTEND"
+        members={creditsData.frontend}
+        titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]"
+      />
+      <Section
+        title="BACKEND"
+        members={creditsData.backend}
+        titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]"
+      />
+      <Section title="UI/UX" members={creditsData.uiux} />
+    </div>
+  );
 }
