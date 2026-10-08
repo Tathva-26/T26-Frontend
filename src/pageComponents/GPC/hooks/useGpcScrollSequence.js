@@ -1,3 +1,4 @@
+import { useCallback, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -83,10 +84,17 @@ function holeClip(width, height, { x, y, w, h }) {
  *
  * `sequence` is a ref holding the values the console's screen canvas reads
  * every frame: { power, outro, film, picture }.
+ *
+ * `blocked` is a ref that is true while the game is open. The game has its own
+ * lock on the page, so for as long as that is set the sequence neither hands
+ * scrolling back nor reads a key press as a scroll. Returns a function to call
+ * once the game has closed.
  */
-// (`sequence` is taken under a ...Ref name so the React lint rules see it for what it is: a ref,
-// which the scroll sequence is meant to write to.)
-export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: sequenceRef }) {
+// (`sequence` and `blocked` are taken under ...Ref names so the React lint rules see them for
+// what they are: refs, the first of which the scroll sequence is meant to write to.)
+export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: sequenceRef, blocked: blockedRef }) {
+  const controlsRef = useRef(null);
+
   useGSAP(
     () => {
       const track = trackRef.current;
@@ -218,6 +226,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       let phase = lite ? "done" : "idle"; // idle -> landing -> playing -> done -> exiting -> idle
       // State of the hold / gate / brake / exit helpers further down. Declared up here because
       // the landing trigger can call into them as soon as it is created.
+      let held = false;
       let gated = false;
       let gateTimer = 0;
       let touching = false;
@@ -315,13 +324,27 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       // stopped; a touch fling is native momentum it has no say over, so on touch screens the
       // scroller itself is also frozen (programmatic scrolling still works).
       function hold() {
+        held = true;
         window.__lenis?.stop();
         if (touchScreen) scroller.style.overflowY = "hidden";
       }
       function release() {
+        held = false;
         if (touchScreen) scroller.style.overflowY = "";
-        window.__lenis?.start();
+        // While the game is open the page is its to hand back, not ours: see resume().
+        if (!blockedRef?.current) window.__lenis?.start();
       }
+      // The game has closed, and its lock has let go: put scrolling back the way this sequence
+      // wants it. The game's lock can't be left to do that. One opened while the page was held
+      // here (the console can be clicked before the entry has quite finished) found scrolling
+      // already stopped, so it doesn't start it again; and one that did stop it starts it again
+      // whether or not the page has come to be held here in the meantime (a resize does that).
+      function resume() {
+        if (lite) return;
+        if (held) window.__lenis?.stop();
+        else window.__lenis?.start();
+      }
+      controlsRef.current = { resume };
 
       // Gate: a hold that lasts until the current gesture has died down (see GESTURE_GAP_MS), so
       // the tail of one scroll can't be read as the start of the next.
@@ -444,7 +467,11 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
 
       // At rest: on GPC's resting spot with nothing else (the game, a modal) holding the page.
       const atRest = () =>
-        phase === "done" && !gated && !window.__lenis?.isStopped && scroller.scrollTop <= landing.end + 1;
+        phase === "done" &&
+        !gated &&
+        !blockedRef?.current &&
+        !window.__lenis?.isStopped &&
+        scroller.scrollTop <= landing.end + 1;
 
       function pullUp(amount, event) {
         // Kept from Lenis and the browser, so the page doesn't start sliding before it exits.
@@ -684,31 +711,21 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
       // The push in toward the Wheels footage. (Not on phones: see `lite`.)
       if (!lite) {
         tl.fromTo(film, { opacity: 0 }, { opacity: 1, duration: span(SEQUENCE.film) }, at(SEQUENCE.film));
-       //--------------------------ch1----------------------------------
-        // tl.fromTo(
-        //   hero,
-        //   { x: 0, y: 0, scale: 1 },
-        //   { ...pushedIn, duration: span(dive), ease: "power2.in", immediateRender: false },
-        //   at(dive)
-        // );
-        if (!lite) {
-  tl.fromTo(film, { opacity: 0 }, { opacity: 1, duration: span(SEQUENCE.film) }, at(SEQUENCE.film));
 
-  // Constant zoom rate: scale grows geometrically (1 -> pushedIn.scale), and x/y follow the
-  // same progress so the screen still lands exactly on Wheels' picture.
-  const dolly = { t: 0 };
-  const applyDolly = () => {
-    const s = Math.pow(pushedIn.scale, dolly.t);
-    const u = (s - 1) / (pushedIn.scale - 1); // 0 -> 1, same shape as the scale
-    gsap.set(hero, { scale: s, x: pushedIn.x * u, y: pushedIn.y * u });
-  };
-  tl.fromTo(
-    dolly,
-    { t: 0 },
-    { t: 1, duration: span(dive), ease: "none", immediateRender: false, onUpdate: applyDolly },
-    at(dive)
-  );
-}
+        // Constant zoom rate: scale grows geometrically (1 -> pushedIn.scale), and x/y follow the
+        // same progress so the screen still lands exactly on Wheels' picture.
+        const dolly = { t: 0 };
+        const applyDolly = () => {
+          const s = Math.pow(pushedIn.scale, dolly.t);
+          const u = (s - 1) / (pushedIn.scale - 1); // 0 -> 1, same shape as the scale
+          gsap.set(hero, { scale: s, x: pushedIn.x * u, y: pushedIn.y * u });
+        };
+        tl.fromTo(
+          dolly,
+          { t: 0 },
+          { t: 1, duration: span(dive), ease: "none", immediateRender: false, onUpdate: applyDolly },
+          at(dive)
+        );
       }
 
       // The handoff: Wheels is full-screen underneath, so the hero fades away.
@@ -737,6 +754,7 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
         window.removeEventListener("keydown", onKeyDown);
         offLenisScroll?.();
         stopLite?.();
+        controlsRef.current = null;
         if (!lite) release();
         Object.assign(live, { power: 1, outro: 0, film: 0, picture: null });
         hero.style.clipPath = "";
@@ -747,6 +765,8 @@ export function useGpcScrollSequence({ trackRef, stageRef, layout, sequence: seq
     },
     { scope: stageRef, dependencies: [layout], revertOnUpdate: true }
   );
+
+  return useCallback(() => controlsRef.current?.resume(), []);
 }
 
 // One set of preloaded frames is enough however often the sequence is rebuilt.

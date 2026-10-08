@@ -34,21 +34,38 @@ export default function GpcHero() {
   // frame. These defaults are the finished hero: screen on, showing the game.
   const sequenceRef = useRef({ power: 1, outro: 0, film: 0, picture: null });
   const [gameOpen, setGameOpen] = useState(false);
+  // The same thing as a ref, for the scroll sequence: it has to know the game
+  // is open from inside its own listeners, without being rebuilt each time.
+  const gameOpenRef = useRef(false);
 
   const layout = useGpcLayout(heroRef);
   const touch = useTouchControls();
-  useGpcScrollSequence({ trackRef, stageRef, layout, sequence: sequenceRef });
+  const resumeScroll = useGpcScrollSequence({
+    trackRef,
+    stageRef,
+    layout,
+    sequence: sequenceRef,
+    blocked: gameOpenRef,
+  });
 
-  const openGame = useCallback(() => setGameOpen(true), []);
-  const closeGame = useCallback(() => setGameOpen(false), []);
+  const openGame = useCallback(() => {
+    gameOpenRef.current = true;
+    setGameOpen(true);
+  }, []);
+  const closeGame = useCallback(() => {
+    gameOpenRef.current = false;
+    setGameOpen(false);
+  }, []);
 
-  // Hand keyboard focus back to the console once it is visible again.
+  // Once the game has closed: let the page scroll again, and hand keyboard
+  // focus back to the console now that it is visible.
   useEffect(() => {
     if (wasOpenRef.current && !gameOpen) {
+      resumeScroll();
       consoleRef.current?.querySelector("button")?.focus({ preventScroll: true });
     }
     wasOpenRef.current = gameOpen;
-  }, [gameOpen]);
+  }, [gameOpen, resumeScroll]);
 
   const hero = {
     consoleRef,

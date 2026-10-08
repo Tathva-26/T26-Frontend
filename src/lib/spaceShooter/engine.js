@@ -108,6 +108,8 @@ export function createSpaceShooter(canvas, { onStats, onHit, spritePaths } = {})
     setJoystick: (x, y) => input.setJoystick(x, y),
     setFiring: (isDown) => input.setVirtualFire(isDown),
     destroy() {
+      // Leaving in the middle of a round still counts its score.
+      endRound();
       cancelAnimationFrame(frameId);
       input.dispose();
     },
