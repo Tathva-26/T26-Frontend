@@ -1,7 +1,5 @@
 'use client'
 
-import Image from 'next/image'
-import Link from 'next/link'
 import { useState } from 'react'
 import styles from './ContactUs.module.css'
 import Navbar from '@/pageComponents/Navbar/Navbar'
@@ -114,27 +112,28 @@ export default function ContactUs() {
 
   return (
     <div className={styles.page}>
-      {/* <Link className={styles.brand} href="/" aria-label="Tathva home">
-        <Image src="https://cdn-next-main.tathva.org/images/contact-us/tathva-logo.png" alt="Tathva" fill priority sizes="55px" />
-      </Link> */}
-
       <main className={styles.main}>
         <div className='hidden lg:block'>
           <Navbar />
         </div>
         <TathvaMenu />
+        <p className={styles.kicker}>Reach out — we&apos;ll get back to you</p>
         <h1 className={styles.title}>CONTACT US</h1>
+        <p className={styles.subtitle}>
+          Questions about events, passes, or anything Tathva? Drop a line and the team will respond.
+        </p>
 
         <section className={styles.panel} aria-label='Contact form'>
           <form className={styles.form} onSubmit={handleSubmit} onInput={handleInput} noValidate>
             <div className={styles.fieldRow}>
               <label className={styles.topicLabel} htmlFor='contact-topic'>
-                Topic:
+                Topic
               </label>
               <input
                 className={styles.control}
                 id='contact-topic'
                 name='topic'
+                placeholder='What is this about?'
                 {...fieldProps('topic')}
               />
               {fieldError('topic')}
@@ -143,20 +142,21 @@ export default function ContactUs() {
             <div className={styles.pairedFields}>
               <div className={styles.fieldRow}>
                 <label className={styles.nameLabel} htmlFor='contact-name'>
-                  Name:
+                  Name
                 </label>
                 <input
                   className={styles.control}
                   id='contact-name'
                   name='name'
                   autoComplete='name'
+                  placeholder='Your name'
                   {...fieldProps('name')}
                 />
                 {fieldError('name')}
               </div>
               <div className={styles.fieldRow}>
                 <label className={styles.phoneLabel} htmlFor='contact-phone'>
-                  Phone No:
+                  Phone
                 </label>
                 <input
                   className={styles.control}
@@ -165,6 +165,7 @@ export default function ContactUs() {
                   type='tel'
                   autoComplete='tel'
                   inputMode='tel'
+                  placeholder='10-digit mobile number'
                   {...fieldProps('phone')}
                 />
                 {fieldError('phone')}
@@ -173,7 +174,7 @@ export default function ContactUs() {
 
             <div className={styles.fieldRow} style={accountEmail ? { display: 'none' } : undefined}>
               <label className={styles.emailLabel} htmlFor='contact-email'>
-                Email:
+                Email
               </label>
               <input
                 className={styles.control}
@@ -181,6 +182,7 @@ export default function ContactUs() {
                 name='email'
                 type='email'
                 autoComplete='email'
+                placeholder='you@example.com'
                 {...fieldProps('email')}
               />
               {fieldError('email')}
@@ -188,12 +190,13 @@ export default function ContactUs() {
 
             <div className={`${styles.fieldRow} ${styles.queryRow}`}>
               <label className={styles.queryLabel} htmlFor='contact-query'>
-                Query:
+                Query
               </label>
               <textarea
                 className={`${styles.control} ${styles.queryControl}`}
                 id='contact-query'
                 name='query'
+                placeholder='Tell us how we can help…'
                 {...fieldProps('query')}
               />
               {fieldError('query')}
