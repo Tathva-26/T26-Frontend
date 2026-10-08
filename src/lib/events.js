@@ -159,3 +159,112 @@ export function normaliseEvents(events, options) {
     events.map((event) => normaliseEvent(event, options)).filter(Boolean),
   )
 }
+
+/**
+ * Stopgap competition categories by keyword matching on heading + description.
+ * 
+ * Fragile by design: a cleverly-named new event will land in "Others" (or the
+ * wrong bucket) until its keyword is added here. Verified against the 27 live
+ * competitions on 2026-10-08.
+ */
+const COMPETITION_CATEGORY_RULES = [
+  ['Passes', ['pass']],
+  [
+    'Robotics',
+    [
+      'robo',
+      'robot',
+      'tracercon',
+      'soccer',
+      'maze',
+      'autonomous',
+      'line-follow',
+    ],
+  ],
+  [
+    'Electronics',
+    [
+      'circuit',
+      'electronic',
+      'electrical',
+      'watt',
+      'pcb',
+      'arduino',
+      'embedded',
+      'bomb',
+      'solder',
+    ],
+  ],
+  [
+    'Code & Cyber',
+    [
+      'kod',
+      'debug',
+      'hack',
+      'cyber',
+      'ctf',
+      'capture the flag',
+      'coding',
+      'hackerrank',
+      'programmer',
+    ],
+  ],
+  [
+    'Design & Build',
+    [
+      'cad',
+      'civil',
+      'mechanic',
+      'mech',
+      'architect',
+      'craft',
+      'draft',
+      'construction',
+      'paper tower',
+      'paper pinnacle',
+      'infranox',
+    ],
+  ],
+  [
+    'Expo & Pitch',
+    [
+      // Word-boundary: a plain substring would match "expose" (as it did for
+      // THE ASTRAEA INCIDENT, a murder-mystery that landed here wrongly).
+      /\bexpo\b/,
+      'exhibit',
+      'pitch',
+      'startup',
+      'investor',
+      'innovex',
+      'dealx',
+      'protopitch',
+      'showcase',
+    ],
+  ],
+]
+
+export const COMPETITION_CATEGORY_ALL = 'All'
+export const COMPETITION_CATEGORY_OTHER = 'Others'
+
+/** Category chip order for the competitions page. */
+export const COMPETITION_CATEGORIES = [
+  ...COMPETITION_CATEGORY_RULES.map(([name]) => name),
+  COMPETITION_CATEGORY_OTHER,
+]
+
+/** Takes a normalised event (or a raw one — both carry heading/description). */
+export function competitionCategory(event) {
+  const text =
+    `${event?.fullTitle ?? event?.heading ?? ''} ${event?.description ?? ''}`.toLowerCase()
+
+  for (const [name, keywords] of COMPETITION_CATEGORY_RULES) {
+    if (
+      keywords.some((keyword) =>
+        keyword instanceof RegExp ? keyword.test(text) : text.includes(keyword),
+      )
+    ) {
+      return name
+    }
+  }
+  return COMPETITION_CATEGORY_OTHER
+}
