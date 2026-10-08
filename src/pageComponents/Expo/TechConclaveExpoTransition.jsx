@@ -14,6 +14,27 @@ import expoStyles from './Expo.module.css'
 import { measureExpoLabels, expoLeaderPaths } from './expoLeaders.mjs'
 import { expoTiming } from './expoLayout.mjs'
 
+/*
+  FIX: the overlay layers (plane, connector SVG, crystal wrapper and its
+  canvas) sit on top of the TechConclave poster inside the pinned element.
+  opacity: 0 does NOT stop hit-testing, so they were swallowing the pointer
+  events and the speaker cards never received onPointerEnter / onPointerUp.
+
+  Everything here is `none` by default. The crystal (and only the crystal)
+  becomes `auto` while data-expo-interactive="true", which render() sets once
+  the poster has already faded out. `!important` is needed because Crystal3D's
+  canvas may set its own pointer-events in CSS.
+*/
+const overlayCss = `
+[data-expo-plane],
+[data-expo-plane] [data-expo-connectors],
+[data-expo-plane] [data-expo-connectors] * { pointer-events: none !important; }
+[data-expo-crystal],
+[data-expo-crystal] * { pointer-events: none !important; }
+[data-expo-crystal][data-expo-interactive="true"],
+[data-expo-crystal][data-expo-interactive="true"] * { pointer-events: auto !important; }
+`
+
 const subscribeMotion = (callback) => {
   const query = window.matchMedia('(prefers-reduced-motion: reduce)')
   query.addEventListener('change', callback)
@@ -157,9 +178,13 @@ function ExpoTransitionContent() {
         gsap.set(crystal.current, { width: box.width, height: box.height })
         canvasWidth = box.width; canvasHeight = box.height
       }
+      // Interactivity is controlled by the data attribute (see overlayCss),
+      // so it also overrides any pointer-events the canvas sets for itself.
+      const interactive = entry > .72 && exit === 0
+      crystal.current.dataset.expoInteractive = String(interactive)
       gsap.set(crystal.current, {
         opacity: exit > 0 ? 1 : pose.opacity,
-        pointerEvents: entry > .72 && exit === 0 ? 'auto' : 'none',
+        pointerEvents: interactive ? 'auto' : 'none',
       })
       // Keep opacity in CSS so the ready state can hide the illustration when
       // the model loads, even if scrolling is paused at that moment.
@@ -244,6 +269,7 @@ function ExpoTransitionContent() {
       delete element.dataset.expoExit
       delete element.dataset.expoDuration
       delete element.dataset.expoExitStart
+      delete crystal.current?.dataset.expoInteractive
       explore.disabled = false
       activate.disabled = false
       delete element.dataset.expoCompact
@@ -254,15 +280,16 @@ function ExpoTransitionContent() {
 
   return (
     <>
+    <style>{overlayCss}</style>
     <div ref={pinSpace}>
     <div ref={root} className={`${styles.bridge} ${animated ? styles.animated : ''} ${animated && mobile ? styles.mobilePin : ''}`}>
       <div data-conclave><TechConclave /></div>
       <Expo sharedCrystal={animated} />
-      {animated && <div className={styles.plane} data-expo-plane>
-        <div ref={crystal} className={styles.crystal}>
+      {animated && <div className={styles.plane} data-expo-plane style={{ pointerEvents: 'none' }}>
+        <div ref={crystal} className={styles.crystal} data-expo-crystal data-expo-interactive='false' style={{ pointerEvents: 'none' }}>
           <Crystal3D journey={journey} onProject={mobile ? undefined : projectModel} transition />
         </div>
-        <svg className={styles.connectors} data-expo-connectors aria-hidden='true'>
+        <svg className={styles.connectors} data-expo-connectors aria-hidden='true' style={{ pointerEvents: 'none' }}>
           {[0, 1, 2].map((index) => <path key={index} ref={(node) => { paths.current[index] = node }} />)}
         </svg>
       </div>}
