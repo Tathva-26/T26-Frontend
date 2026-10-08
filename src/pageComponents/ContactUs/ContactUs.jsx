@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import styles from './ContactUs.module.css'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
@@ -14,10 +14,19 @@ export default function ContactUs() {
   const [status, setStatus] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
-  // The backend requires an email with every query. A signed-in visitor's
-  // account email is sent for them, so the field is only shown to someone we
-  // don't have one for; hidden from everyone, nobody could submit the form.
+  // The backend requires an email with every query. When signed in, the
+  // account email pre-fills the visible field — editable, never forced.
   const accountEmail = isValidEmail(user?.email) ? user.email.trim() : ''
+  const emailRef = useRef(null)
+  const emailEditedRef = useRef(false)
+
+  // Auth resolves after first paint, so fill the field when it arrives —
+  // unless the visitor already typed something themselves.
+  useEffect(() => {
+    if (accountEmail && emailRef.current && !emailEditedRef.current) {
+      emailRef.current.value = accountEmail
+    }
+  }, [accountEmail])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -28,7 +37,6 @@ export default function ContactUs() {
     const values = Object.fromEntries(
       CONTACT_FIELDS.map((field) => [field, String(data.get(field) ?? '').trim()]),
     )
-    if (accountEmail) values.email = accountEmail
 
     const errors = validateContact(values)
     if (Object.keys(errors).length > 0) {
@@ -67,6 +75,7 @@ export default function ContactUs() {
       }
 
       form.reset()
+      if (accountEmail && emailRef.current) emailRef.current.value = accountEmail
       setStatus({ kind: 'success', message: 'Thanks — your query has reached us.' })
     } catch (error) {
       // The form is deliberately left as it was, so nothing has to be retyped.
@@ -83,6 +92,7 @@ export default function ContactUs() {
   /** Clears a field's error as soon as it is edited, rather than on resubmit. */
   function handleInput(event) {
     const { name } = event.target
+    if (name === 'email') emailEditedRef.current = true
     setFieldErrors((previous) => {
       if (!name || !previous[name]) return previous
       const next = { ...previous }
@@ -172,17 +182,19 @@ export default function ContactUs() {
               </div>
             </div>
 
-            <div className={styles.fieldRow} style={accountEmail ? { display: 'none' } : undefined}>
+            <div className={styles.fieldRow}>
               <label className={styles.emailLabel} htmlFor='contact-email'>
                 Email
               </label>
               <input
+                ref={emailRef}
                 className={styles.control}
                 id='contact-email'
                 name='email'
                 type='email'
                 autoComplete='email'
                 placeholder='you@example.com'
+                defaultValue={accountEmail}
                 {...fieldProps('email')}
               />
               {fieldError('email')}
