@@ -48,7 +48,7 @@ export const EVENTS = [
       'Autonomous rover guidance, spatial sensor fusion and zero-gravity control systems.',
     extraInfo:
       'Build and test a simulated lunar rover trajectory from scratch. Bring a laptop with Python 3.11 installed.',
-    picture: 'https://cdn.tathva.org/events/deep-space-robotics.webp',
+    picture: '/images/dummy/poster.webp',
     teamSize: null,
     isTeamEvent: false,
     committee: 'Workshop Committee',
@@ -73,7 +73,7 @@ export const EVENTS = [
     venue: VENUES.arena,
     description: 'ROS2, kinematic simulation and computer vision for bipedal manipulation.',
     extraInfo: null,
-    picture: null, // exercises the placeholder path
+    picture: '/images/dummy/poster.webp',
     teamSize: 3,
     isTeamEvent: true,
     committee: 'Workshop committee ',
@@ -98,7 +98,7 @@ export const EVENTS = [
     venue: VENUES.seminar,
     description: 'Quantum superposition and entanglement, with circuits on Qiskit.',
     extraInfo: 'Linear algebra basics assumed.',
-    picture: 'https://cdn.tathva.org/events/quantum.webp',
+    picture: '/images/dummy/poster.webp',
     teamSize: null,
     isTeamEvent: false,
     committee: 'Workshop Committe',
@@ -123,7 +123,7 @@ export const EVENTS = [
     venue: VENUES.lab4,
     description: 'Live-fire threat simulation against a zero-trust reference network.',
     extraInfo: null,
-    picture: 'https://cdn.tathva.org/events/zero-trust.webp',
+    picture: '/images/dummy/poster.webp',
     teamSize: null,
     isTeamEvent: false,
     committee: '',
@@ -252,7 +252,7 @@ export const EVENTS = [
     venue: null,
     description: 'Proshow, events and conclave across all three days.',
     extraInfo: null,
-    
+
     picture: 'https://cdn.tathva.org/events/506476dc-25d4-4813-8c88-c7344395c099.webp',
     teamSize: null,
     isTeamEvent: false,
@@ -314,7 +314,7 @@ export const EVENTS = [
     createdAt: '2026-08-12T03:30:00.000Z',
     updatedAt: '2026-09-30T03:30:00.000Z',
   },
-   {
+  {
     id: 41,
     tiqrEventId: 931,
     ticketId: 811,

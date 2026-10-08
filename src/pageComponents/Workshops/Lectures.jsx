@@ -52,6 +52,33 @@ const CARD_LABEL = 'Lecture'
 const FALLBACK_IMAGE =
   'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
 
+// Card details layout (same as the workshops page).
+// Keep DETAILS_BG_CLEAR the same color as DETAILS_BG, just fully transparent,
+// otherwise the fade can look gray in the middle.
+const DETAILS_BG = 'rgb(0, 0, 0)'
+const DETAILS_BG_CLEAR = 'rgba(0, 0, 0, 0)'
+const DETAILS_FADE_HEIGHT = '1%' // fade covers only the bottom 1% of the poster
+const DETAILS_BG_IMAGE = '/images/reccaa/bg.png' // background for the strip + price row
+
+// Height of the text strip under the poster, in cqw (card widths).
+// Mobile cards are narrow, so the strip is taller there to fit the details.
+const DETAILS_TEXT_CQW = 22
+const DETAILS_TEXT_CQW_MOBILE = 34
+const PRICE_DENT_CQW = 14 // height of the price row / dent
+
+// Card is 3:4 poster (133.333cqw) + details strip + price row. The dent
+// notch starts where the price row begins.
+const getNotchPct = (stripCqw) =>
+  ((400 / 3 + stripCqw) / (400 / 3 + stripCqw + PRICE_DENT_CQW)) * 100
+
+// Outline path for the notched card, in the 135.239 x 135.639 viewBox.
+// Only the notch's y position changes with the strip height.
+const getOutlinePath = (notchPct) => {
+  const n = (notchPct / 100) * 135.639
+  const f = (v) => v.toFixed(3)
+  return `M0.510216 132.629V61.5188V3.01022C0.510216 1.6295 1.62951 0.510216 3.01022 0.510216H132.229C133.61 0.510216 134.729 1.6295 134.729 3.01022V${f(n - 2.5)}C134.729 ${f(n - 1.119)} 133.61 ${f(n)} 132.229 ${f(n)}H43.5146C42.7568 ${f(n)} 42.04 ${f(n + 0.344)} 41.5655 ${f(n + 0.935)}L33.2653 134.195C32.7907 134.785 32.0739 135.129 31.3162 135.129H3.01022C1.6295 135.129 0.510216 134.01 0.510216 132.629Z`
+}
+
 // Tunable hover-response constants — focal card (Step 3 movement unchanged)
 const MAX_TRANSLATE = 15
 const MAX_TILT = 3
@@ -947,8 +974,8 @@ export default function LecturesPage() {
     labelY = Math.min(
       Math.max(labelY, CALLOUT_VIEWPORT_MARGIN),
       window.innerHeight -
-        CALLOUT_LABEL_HEIGHT_ESTIMATE -
-        CALLOUT_VIEWPORT_MARGIN,
+      CALLOUT_LABEL_HEIGHT_ESTIMATE -
+      CALLOUT_VIEWPORT_MARGIN,
     )
 
     return { anchor, labelTarget: { x: labelX, y: labelY } }
@@ -964,9 +991,9 @@ export default function LecturesPage() {
     side === 'right'
       ? { x: labelX, y: labelY + CALLOUT_LABEL_ANCHOR_OFFSET_Y }
       : {
-          x: labelX + CALLOUT_LABEL_WIDTH,
-          y: labelY + CALLOUT_LABEL_ANCHOR_OFFSET_Y,
-        }
+        x: labelX + CALLOUT_LABEL_WIDTH,
+        y: labelY + CALLOUT_LABEL_ANCHOR_OFFSET_Y,
+      }
 
   const randomScrambleChar = () =>
     SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)]
@@ -1000,16 +1027,16 @@ export default function LecturesPage() {
     el.textContent = out
   }
 
-  const triggerDecodeAudioHook = () => {}
+  const triggerDecodeAudioHook = () => { }
 
   const formatDate = (dateString) =>
     dateString
       ? new Date(dateString).toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-          timeZone: 'Asia/Kolkata',
-        })
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'Asia/Kolkata',
+      })
       : 'TBA'
 
   const getVenueName = (venue) =>
@@ -1864,6 +1891,13 @@ export default function LecturesPage() {
       : events
   }, [events, searchQuery])
 
+  // Mobile = the 2-column layout (under 768px)
+  const isMobile = columnCount === 2
+  const stripCqw = isMobile ? DETAILS_TEXT_CQW_MOBILE : DETAILS_TEXT_CQW
+  const notchPct = getNotchPct(stripCqw)
+  const cardClipPath = `polygon(0 0, 100% 0, 100% ${notchPct.toFixed(2)}%, 32.18% ${notchPct.toFixed(2)}%, 24.6% 100%, 0 100%)`
+  const outlinePath = getOutlinePath(notchPct)
+
   return (
     <div className='lectures-page min-h-screen bg-[#06070d] text-slate-100 font-sans relative overflow-x-clip selection:bg-indigo-600 selection:text-white pb-24'>
       <div className='hidden lg:block'>
@@ -2024,7 +2058,7 @@ export default function LecturesPage() {
                         {column.map((lecture, rowIndex) => (
                           <div
                             key={lecture.id}
-                            className='relative cursor-pointer'
+                            className='group relative cursor-pointer'
                             ref={(el) => {
                               if (el) slotRefs.current[lecture.id] = el
                               else delete slotRefs.current[lecture.id]
@@ -2057,6 +2091,8 @@ export default function LecturesPage() {
                               )
                             }
                           >
+                            {/* Static hit area to prevent hover flicker during 3D tilt */}
+                            <div className='absolute inset-0 z-50' />
                             <div
                               ref={(el) => {
                                 if (el) floatRefs.current[lecture.id] = el
@@ -2072,13 +2108,14 @@ export default function LecturesPage() {
                                   if (el) cardRefs.current[lecture.id] = el
                                   else delete cardRefs.current[lecture.id]
                                 }}
-                                className='group relative w-full overflow-hidden rounded-md bg-[#0d101c]'
+                                className='relative w-full overflow-hidden bg-[#06070d]'
                                 style={{
                                   transformStyle: 'preserve-3d',
                                   transformOrigin: 'center center',
                                   boxShadow: REST_SHADOW,
                                   backgroundColor: REST_EDGE_BG,
                                   containerType: 'inline-size',
+                                  clipPath: cardClipPath,
                                   willChange:
                                     'transform, box-shadow, background-color',
                                 }}
@@ -2126,22 +2163,32 @@ export default function LecturesPage() {
                                     className='lecture-pulse-overlay pointer-events-none absolute inset-0 z-10'
                                   />
 
-                                  {/* POSTER ARTWORK — plain contained image,
-                                      no mask/cutout/border shaping */}
+                                  {/* POSTER ARTWORK — clean image, no text on it */}
                                   <div
                                     ref={(el) => {
                                       if (el) artRefs.current[lecture.id] = el
                                       else delete artRefs.current[lecture.id]
                                     }}
-                                    className='relative aspect-[2/3] w-full overflow-hidden bg-slate-900'
+                                    className='relative aspect-[3/4] w-full overflow-hidden'
+                                    style={{ background: DETAILS_BG }}
                                   >
                                     <Image
                                       src={lecture.image}
                                       alt={lecture.fullTitle}
                                       fill
                                       sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                                      className='object-contain object-center transition-transform duration-500 ease-out group-hover:scale-105'
+                                      className='object-cover object-center'
                                     />
+
+                                    {/* Fade only over the last 1% of the poster */}
+                                    <div
+                                      className='pointer-events-none absolute inset-x-0 bottom-0 z-[5]'
+                                      style={{
+                                        height: DETAILS_FADE_HEIGHT,
+                                        background: `linear-gradient(to top, ${DETAILS_BG} 0%, ${DETAILS_BG_CLEAR} 100%)`,
+                                      }}
+                                    />
+
                                     {lecture.bookingClosed && (
                                       <div className='pointer-events-none absolute inset-0 z-20 flex items-center justify-center'>
                                         <span className='rounded-full border border-white/35 bg-black/75 px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-lg'>
@@ -2151,22 +2198,84 @@ export default function LecturesPage() {
                                     )}
                                   </div>
 
-                                  {/* STATIC INFO — title, date/venue, price */}
-                                  <div className='flex flex-col gap-1 px-3 py-2.5'>
-                                    <p className='m-0 truncate text-[0.95rem] font-semibold text-white'>
-                                      {lecture.fullTitle || lecture.title}
-                                    </p>
-                                    <p className='m-0 text-xs text-white/60'>
-                                      {lecture.dateMonth} {lecture.dateDay}
-                                      {lecture.time ? ` · ${lecture.time}` : ''}
-                                      {getVenueName(lecture.venue)
-                                        ? ` · ${getVenueName(lecture.venue)}`
-                                        : ''}
-                                    </p>
-                                    <p className='m-0 text-sm font-medium text-white'>
-                                      {lecture.fee}
-                                    </p>
+                                  {/* DETAILS STRIP — background panel directly below the
+                                       image, above the price/dent row. On mobile the title
+                                       is dropped and the strip is taller so the details fit. */}
+                                  <div
+                                    className='relative -mt-px text-white'
+                                    style={{
+                                      backgroundImage: `url(${DETAILS_BG_IMAGE})`,
+                                      backgroundColor: DETAILS_BG,
+                                      backgroundSize: 'cover',
+                                      backgroundPosition: 'center',
+                                    }}
+                                  >
+                                    <div
+                                      className='relative flex flex-col justify-center text-white'
+                                      style={{
+                                        height: `${stripCqw}cqw`,
+                                        textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+                                        padding: isMobile ? '0 3cqw' : '0 0.875rem',
+                                      }}
+                                    >
+                                      {!isMobile && (
+                                        <p className='m-0 line-clamp-2 text-[0.98rem] font-bold uppercase leading-tight tracking-[0.02em] text-white'>
+                                          {lecture.fullTitle || lecture.title}
+                                        </p>
+                                      )}
+                                      <p
+                                        className={
+                                          isMobile
+                                            ? 'm-0 line-clamp-4 text-[7.5cqw] leading-[1.3] text-white/80'
+                                            : 'm-0 mt-1 truncate text-xs text-white/70'
+                                        }
+                                      >
+                                        {lecture.dateMonth} {lecture.dateDay}
+                                        {lecture.time ? ` · ${lecture.time}` : ''}
+                                        {getVenueName(lecture.venue)
+                                          ? ` · ${getVenueName(lecture.venue)}`
+                                          : ''}
+                                      </p>
+                                    </div>
+
+                                    {/* PRICE — sits in the dent/notch area at the bottom.
+                                       The visible tab is only ~25cqw wide, so on mobile the
+                                       price is sized in cqw and kept on one line. */}
+                                    <div
+                                      className='relative flex items-center text-white'
+                                      style={{
+                                        height: `${PRICE_DENT_CQW}cqw`,
+                                        textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+                                        padding: isMobile ? '0 0 0 3cqw' : '0 0 0 0.875rem',
+                                      }}
+                                    >
+                                      <span
+                                        className={
+                                          isMobile
+                                            ? 'whitespace-nowrap text-[6.5cqw] font-bold leading-none tracking-normal text-white'
+                                            : 'text-lg font-bold tracking-wide text-white'
+                                        }
+                                      >
+                                        {lecture.fee}
+                                      </span>
+                                    </div>
                                   </div>
+
+                                  {/* Shaped Card Border SVG Outline (notch follows the strip height) */}
+                                  <svg
+                                    className='pointer-events-none absolute inset-0 z-30 h-full w-full'
+                                    viewBox='0 0 135.239 135.639'
+                                    preserveAspectRatio='none'
+                                    aria-hidden='true'
+                                  >
+                                    <path
+                                      d={outlinePath}
+                                      fill='none'
+                                      stroke='rgba(255,255,255,0.28)'
+                                      strokeWidth='1'
+                                      vectorEffect='non-scaling-stroke'
+                                    />
+                                  </svg>
                                 </div>
                               </div>
                             </div>
