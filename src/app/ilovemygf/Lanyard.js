@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import './Lanyard.css';
 
+// Matched to your 2D aspect ratio of 276/499 exactly
 const CARD_SIZES = {
   portrait: [1.6, 2.89], 
   landscape: [2.89, 1.6]
@@ -174,34 +175,27 @@ const buildWeaveTexture = () => {
 
 const paintStrap = (canvas, image, color) => {
   const across = 256;
-  
   if (image) {
-    // 1. Calculate the logo size (scale = 0.6 means it takes up 60% of the strap width)
     const scale = 0.6; 
     const drawW = across * scale;
     const drawH = (image.height / image.width) * drawW;
-    
-    // 2. Make the canvas slightly taller than the logo to give it padding
     const along = drawH + across; 
     
     canvas.width = across;
     canvas.height = along;
     const ctx = canvas.getContext('2d');
     
-    // 3. Fill the entire strap canvas with the pure background color
     ctx.fillStyle = toCss(color);
     ctx.fillRect(0, 0, across, along);
     
-    // 4. Draw the logo once, positioned near the bottom of the canvas
     const dx = (across - drawW) / 2;
-    const dy = along - drawH - (across * 0.65); // Adds a small gap right above the metal clip
+    const dy = along - drawH - (across * 0.65); 
     
     ctx.drawImage(image, dx, dy, drawW, drawH);
     ctx.restore();
     return along / across;
   }
   
-  // Fallback if no logo is provided (draws standard dark stripes)
   const along = across * 2;
   canvas.width = across;
   canvas.height = along;
@@ -282,8 +276,8 @@ const Lanyard = ({
   avatarImage,    
   name = '',      
   message = '',   
-  linkedin = '',  // <-- NEW: Accept social links
-  github = '',    // <-- NEW: Accept social links
+  linkedin = '',  
+  github = '',    
   imageFit = 'cover',
   cardColor = '#010208',
   orientation = 'portrait',
@@ -308,8 +302,6 @@ const Lanyard = ({
   const containerRef = useRef(null);
   const settingsRef = useRef(null);
   const applyRef = useRef(null);
-  
-  // Store the UV boundaries so Raycaster knows where the buttons are
   const interactiveBounds = useRef({ li: null, gh: null });
 
   settingsRef.current = {
@@ -347,10 +339,15 @@ const Lanyard = ({
     const foilUniforms = { foilStrength: { value: 0 }, foilAspect: { value: 1.4 }, foilKey: { value: new THREE.Vector3() }, foilFill: { value: new THREE.Vector3() }, foilTop: { value: new THREE.Vector3() } };
     const injectFoil = shader => { Object.assign(shader.uniforms, foilUniforms); shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>\n${FOIL_VERTEX_HEAD}`).replace('#include <project_vertex>', `#include <project_vertex>\n${FOIL_VERTEX_BODY}`); shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${FOIL_FRAGMENT_HEAD}`).replace('#include <opaque_fragment>', `${FOIL_FRAGMENT_BODY}\n#include <opaque_fragment>`); };
 
-    const frontMaterial = new THREE.MeshPhysicalMaterial({ map: frontTexture, normalMap: grain, normalScale: new THREE.Vector2(0.06, 0.06) });
-    const backMaterial = new THREE.MeshPhysicalMaterial({ map: backTexture, normalMap: grain, normalScale: new THREE.Vector2(0.06, 0.06) });
+    // --- FIX 1: ENABLE TRANSPARENCY ON FRONT & BACK FACES ---
+    // 'alphaTest: 0.5' tells Three.js to throw away invisible pixels from your PNGs, giving sharp torn edges!
+    const frontMaterial = new THREE.MeshPhysicalMaterial({ map: frontTexture, normalMap: grain, normalScale: new THREE.Vector2(0.06, 0.06), transparent: true, alphaTest: 0.5 });
+    const backMaterial = new THREE.MeshPhysicalMaterial({ map: backTexture, normalMap: grain, normalScale: new THREE.Vector2(0.06, 0.06), transparent: true, alphaTest: 0.5 });
     frontMaterial.onBeforeCompile = injectFoil; backMaterial.onBeforeCompile = injectFoil;
-    const edgeMaterial = new THREE.MeshPhysicalMaterial(); const metalMaterial = new THREE.MeshStandardMaterial({ metalness: 1 });
+    
+    // --- FIX 2: HIDE THE RECTANGULAR INNER "PLASTIC" EDGE ---
+    const edgeMaterial = new THREE.MeshPhysicalMaterial({ transparent: true, opacity: 0, depthWrite: false }); 
+    const metalMaterial = new THREE.MeshStandardMaterial({ metalness: 1 });
     const bandMaterial = new THREE.MeshPhysicalMaterial({ map: strapTexture, normalMap: weave, normalScale: new THREE.Vector2(0.7, 0.7), roughness: 0.68, sheen: 1, sheenRoughness: 0.42, sheenColor: new THREE.Color(0.32, 0.32, 0.34), side: THREE.DoubleSide });
 
     const cardGroup = new THREE.Group();
@@ -380,7 +377,9 @@ const Lanyard = ({
 
       // --- FRONT CANVAS ---
       const fCtx = frontCanvas.getContext('2d');
-      fCtx.clearRect(0, 0, width, height);
+      fCtx.clearRect(0, 0, width, height); // Background stays perfectly transparent by default!
+      
+      // If we don't have a transparent frame image, fall back to solid card color
       if (images.frame) fCtx.drawImage(images.frame, 0, 0, width, height);
       else { fCtx.fillStyle = toCss(parseColor(s.cardColor, [0, 0, 0])); fCtx.fillRect(0, 0, width, height); }
 
@@ -400,48 +399,44 @@ const Lanyard = ({
       }
 
       // --- DRAW INTERACTIVE ICONS ON FRONT ---
-      const iconSize = 72;
-      const gap = 36;
-      const iconY = height * 0.73;
-      
-      const liX = (width / 2) - iconSize - (gap / 2);
-      const ghX = (width / 2) + (gap / 2);
+      const iconSize = 72; const gap = 36; const iconY = height * 0.73;
+      const liX = (width / 2) - iconSize - (gap / 2); const ghX = (width / 2) + (gap / 2);
       
       if (s.linkedin) {
-        fCtx.save(); fCtx.translate(liX, iconY); fCtx.scale(iconSize/24, iconSize/24);
-        fCtx.fillStyle = 'white';
+        fCtx.save(); fCtx.translate(liX, iconY); fCtx.scale(iconSize/24, iconSize/24); fCtx.fillStyle = 'white';
         fCtx.fill(new Path2D("M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"));
         fCtx.restore();
       }
       
       if (s.github) {
-        fCtx.save(); fCtx.translate(ghX, iconY); fCtx.scale(iconSize/24, iconSize/24);
-        fCtx.fillStyle = 'white';
+        fCtx.save(); fCtx.translate(ghX, iconY); fCtx.scale(iconSize/24, iconSize/24); fCtx.fillStyle = 'white';
         fCtx.fill(new Path2D("M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"));
         fCtx.restore();
       }
       
-      // Store hitboxes mapped to WebGL UV space (0 to 1, origin is BOTTOM left)
-      interactiveBounds.current.li = s.linkedin ? {
-        uMin: liX / width, uMax: (liX + iconSize) / width,
-        vMin: 1.0 - (iconY + iconSize) / height, vMax: 1.0 - iconY / height
-      } : null;
-      interactiveBounds.current.gh = s.github ? {
-        uMin: ghX / width, uMax: (ghX + iconSize) / width,
-        vMin: 1.0 - (iconY + iconSize) / height, vMax: 1.0 - iconY / height
-      } : null;
-
+      interactiveBounds.current.li = s.linkedin ? { uMin: liX / width, uMax: (liX + iconSize) / width, vMin: 1.0 - (iconY + iconSize) / height, vMax: 1.0 - iconY / height } : null;
+      interactiveBounds.current.gh = s.github ? { uMin: ghX / width, uMax: (ghX + iconSize) / width, vMin: 1.0 - (iconY + iconSize) / height, vMax: 1.0 - iconY / height } : null;
 
       // --- BACK CANVAS ---
       const bCtx = backCanvas.getContext('2d');
-      bCtx.clearRect(0, 0, width, height);
+      bCtx.clearRect(0, 0, width, height); // Clear to fully transparent
+      
+      bCtx.save();
+      bCtx.translate(width, 0); 
+      bCtx.scale(-1, 1);
       
       const backBg = images.backFrame || images.frame;
       if (backBg) bCtx.drawImage(backBg, 0, 0, width, height);
       else { bCtx.fillStyle = toCss(parseColor(s.cardColor, [0, 0, 0])); bCtx.fillRect(0, 0, width, height); }
 
+      // --- FIX 3: PREVENT THE BLACK TEXT OVERLAY FROM PAINTING OVER TORN EDGES ---
+      // This tells the canvas to ONLY draw the dark background over areas where your backBg image is solid.
+      bCtx.globalCompositeOperation = 'source-atop';
+
       if (s.message) {
-        bCtx.fillStyle = 'rgba(0,0,0,0.5)'; bCtx.fillRect(0, 0, width, height);
+        bCtx.fillStyle = 'rgba(0,0,0,0.5)';
+        bCtx.fillRect(0, 0, width, height); // Draws the darkening tint only over the actual card shape
+        
         bCtx.fillStyle = 'rgba(255,255,255,1)'; bCtx.textAlign = 'center'; bCtx.textBaseline = 'middle'; bCtx.font = '600 48px sans-serif'; bCtx.shadowColor = 'rgba(0,0,0,0.8)'; bCtx.shadowBlur = 8;
         const maxW = width * 0.75; const words = s.message.split(' '); let line = ''; let y = height * 0.40; 
         for (let n = 0; n < words.length; n++) {
@@ -450,6 +445,8 @@ const Lanyard = ({
         }
         bCtx.fillText(line, width / 2, y);
       }
+      
+      bCtx.restore(); 
 
       frontTexture.needsUpdate = true; backTexture.needsUpdate = true; start();
     };
@@ -547,7 +544,6 @@ const Lanyard = ({
       const hit = pickCard();
       let cursorStyle = hit ? 'grab' : '';
       
-      // Check if hovering over interactive social icons on front mesh
       if (hit && hit.object === frontMesh && hit.uv && interactiveBounds.current) {
         const u = hit.uv.x; const v = hit.uv.y;
         const b = interactiveBounds.current;
@@ -560,7 +556,6 @@ const Lanyard = ({
     const onPointerUp = event => { 
       if (!sim.grab) return; sim.grab = null; 
       
-      // Determine if it was a quick click rather than a drag
       if (press && event.type === 'pointerup' && performance.now() - press.time < 300) { 
         toPointer(event);
         const hit = pickCard();
@@ -578,7 +573,7 @@ const Lanyard = ({
            }
         }
         
-        if (!clickedLink) flip(press.point); // Only flip if they didn't click a link
+        if (!clickedLink) flip(press.point);
       } 
       
       press = null; canvas.releasePointerCapture?.(event.pointerId); setCursor(hovering && event.pointerType !== 'touch' ? 'grab' : ''); start(); 
