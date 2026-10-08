@@ -127,11 +127,11 @@ function DesktopFrame({ className, scale = 'desktop', containerRef }) {
             className='object-fill'
           />
         </div>
-        <div className='absolute inset-0 flex flex-col items-center justify-center overflow-hidden rounded-[6px] bg-black/95 px-3 py-2'>
+        <div className='absolute inset-0 flex flex-col items-center justify-start overflow-hidden rounded-[6px] bg-black/95 px-3 pt-2.5 pb-1'>
           <span className='robowars-motion robowars-sponsor-text font-alata text-[0.65cqw] uppercase tracking-[0.25em] text-white/75 mb-1.5 select-none'>
             In Association With
           </span>
-          <div className='relative w-[90%] aspect-[1200/360] max-h-[62%] flex items-center justify-center'>
+          <div className='relative w-[88%] aspect-[1200/360] max-h-[60%] flex items-center justify-center'>
             {/* White BOT LEAGUE Text - appears first */}
             <div className='robowars-motion robowars-sponsor-text absolute inset-0 w-full h-full will-change-transform'>
               <Image
@@ -209,11 +209,11 @@ function DesktopFrame({ className, scale = 'desktop', containerRef }) {
         className='robowars-motion robowars-date pointer-events-none absolute flex items-center justify-between text-white will-change-transform'
         style={frameStyle({ x: 496, y: 408, width: 422, height: 30 })}
       >
-        <span className='h-[2px] w-[32%] bg-white' />
-        <span className='font-alata whitespace-nowrap text-[1.85cqw] leading-[1.25]'>
-          OCT 9,10
+        <span className='h-px w-[32%] bg-white/70' />
+        <span className='font-alata whitespace-nowrap text-[1.85cqw] tracking-[0.2em] uppercase leading-[1.25] text-white/90'>
+          OCT 9–10
         </span>
-        <span className='h-[2px] w-[32%] bg-white' />
+        <span className='h-px w-[32%] bg-white/70' />
       </div>
 
       <div
