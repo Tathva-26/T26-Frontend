@@ -42,10 +42,6 @@ const instrumentSerif = Instrument_Serif({
 })
 
 const NAV_LINKS = [
-  { label: 'Workshops', href: '/workshops' },
-  { label: 'Lectures', href: '/lectures' },
-  { label: 'Passes', href: '/passes' },
-  { label: 'Accommodation', href: '/accommodation' },
 ]
 
 const SCROLL_RANGE = 140 // px of scroll over which the bar fully compacts
@@ -429,6 +425,10 @@ export default function Navbar() {
             <MenuIcon />
           </button>
 
+          <Link href='/reccaa' className='nb__reccaa' aria-label='RECCAA Club'>
+            <img src='/images/hero/reccaa_logo.png' alt='' />
+          </Link>
+
           <ul className='nb__links'>
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
@@ -574,6 +574,21 @@ export default function Navbar() {
 
         .nb__desktop-menu:hover {
           opacity: 1;
+        }
+
+        .nb__reccaa {
+          display: inline-flex;
+          align-items: center;
+          height: 38px;
+          width: auto;
+          flex-shrink: 0;
+        }
+
+        .nb__reccaa img {
+          display: block;
+          height: 100%;
+          width: auto;
+          object-fit: contain;
         }
 
         .nb__desktop-menu svg {

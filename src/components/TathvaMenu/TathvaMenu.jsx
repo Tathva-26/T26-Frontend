@@ -559,6 +559,18 @@ function TathvaMenuOverlay() {
             />
           </svg>
         </button>
+        <Link
+          href="/reccaa"
+          aria-label="RECCAA Club"
+          className="pointer-events-auto inline-flex items-center"
+        >
+          <img
+            src="/images/hero/reccaa_logo.png"
+            alt=""
+            draggable={false}
+            className="h-9 w-auto object-contain"
+          />
+        </Link>
       </header>
 
       {/* =================================================

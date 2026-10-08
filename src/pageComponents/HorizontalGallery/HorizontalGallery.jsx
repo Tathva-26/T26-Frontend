@@ -30,14 +30,14 @@ const GALLERY_GROUPS = [
       {
         id: 1,
         itemClass: 'w-[calc(var(--vh,1vh)*27)] aspect-[0.81/1]',
-        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p3.webp',
+        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p3.webp?v=2',
         alt: 'Lando in casual clothes',
         extraClass: '-translate-y-16 md:-translate-y-24',
       },
       {
         id: 2,
         itemClass: 'w-[calc(var(--vh,1vh)*29.3)] aspect-square',
-        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p2.webp',
+        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p2.webp?v=2',
         alt: 'Lando in tux',
         extraClass: 'translate-y-16 md:translate-y-24',
       },
@@ -51,7 +51,7 @@ const GALLERY_GROUPS = [
    
     quotePosition: 'top',
     itemClass: 'w-[calc(var(--vh,1vh)*65.48)] aspect-[1.1/1]',
-    src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p1.webp',
+    src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p1.webp?v=2',
     alt: 'Lando lifting trophy',
   },
 
@@ -63,7 +63,7 @@ const GALLERY_GROUPS = [
         id: 4,
         itemClass:
           'w-[calc(var(--vh,1vh)*31.75)] h-[calc(var(--vh,1vh)*28.75)]',
-        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p4.webp',
+        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p4.webp?v=2',
         alt: 'Lando playing golf',
         extraClass: '-translate-y-20 md:-translate-y-28',
       },
@@ -71,7 +71,7 @@ const GALLERY_GROUPS = [
         id: 5,
         itemClass:
           'h-[calc(var(--vh,1vh)*20.96)] w-[calc(var(--vh,1vh)*21.98)]',
-        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p5.webp',
+        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p5.webp?v=2',
         alt: 'Lando in helmet',
         extraClass: 'translate-y-12 md:translate-y-20',
       },
@@ -86,7 +86,7 @@ const GALLERY_GROUPS = [
         id: 6,
         itemClass:
           'w-[calc(var(--vh,1vh)*21.38)] h-[calc(var(--vh,1vh)*26.48)]',
-        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p8.webp',
+        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p8.webp?v=2',
         alt: 'Lando gala',
         extraClass: '-translate-y-16 md:-translate-y-24',
       },
@@ -94,7 +94,7 @@ const GALLERY_GROUPS = [
         id: 7,
         itemClass:
           'w-[calc(var(--vh,1vh)*20.74)] h-[calc(var(--vh,1vh)*20.74)]',
-        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p7.webp',
+        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p7.webp?v=2',
         alt: 'Lando battersea',
         extraClass: 'translate-y-16 md:translate-y-24',
       },
@@ -108,7 +108,7 @@ const GALLERY_GROUPS = [
     
     quotePosition: 'bottom',
     itemClass: 'w-[calc(var(--vh,1vh)*60.95)] h-[calc(var(--vh,1vh)*60.95)]',
-    src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p6.webp',
+    src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p6.webp?v=2',
     alt: 'Lando taking photo',
   },
 
@@ -120,14 +120,14 @@ const GALLERY_GROUPS = [
         id: 9,
         itemClass:
           'h-[calc(var(--vh,1vh)*24.91)] w-[calc(var(--vh,1vh)*27.42)]',
-        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p9.webp',
+        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p9.webp?v=2',
         alt: 'Lando austria',
         extraClass: '-translate-y-20 md:-translate-y-28',
       },
       {
         id: 10,
         itemClass: 'w-[calc(var(--vh,1vh)*31.69)] h-[calc(var(--vh,1vh)*30.9)]',
-        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p10.webp',
+        src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p10.webp?v=2',
         alt: 'Lando US',
         extraClass: 'translate-y-12 md:translate-y-20',
       },
