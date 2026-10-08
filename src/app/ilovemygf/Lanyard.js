@@ -304,15 +304,16 @@ const Lanyard = ({
   const applyRef = useRef(null);
   const interactiveBounds = useRef({ li: null, gh: null });
 
-  settingsRef.current = {
-    frameImage, backFrameImage, avatarImage, name, message, linkedin, github, 
-    imageFit: imageFit === 'contain' ? 'contain' : 'cover', cardColor,
-    orientation: orientation === 'landscape' ? 'landscape' : 'portrait', finish,
-    cornerRadius, size, anchor, strapLength, strapImage, strapColor, strapWidth,
-    metal, gravity, damping, elasticity, breeze, interactive, intro
-  };
-
-  useEffect(() => { applyRef.current?.(); });
+  useEffect(() => {
+    settingsRef.current = {
+      frameImage, backFrameImage, avatarImage, name, message, linkedin, github, 
+      imageFit: imageFit === 'contain' ? 'contain' : 'cover', cardColor,
+      orientation: orientation === 'landscape' ? 'landscape' : 'portrait', finish,
+      cornerRadius, size, anchor, strapLength, strapImage, strapColor, strapWidth,
+      metal, gravity, damping, elasticity, breeze, interactive, intro
+    };
+    applyRef.current?.();
+  });
 
   useEffect(() => {
     const container = containerRef.current; if (!container) return undefined;
