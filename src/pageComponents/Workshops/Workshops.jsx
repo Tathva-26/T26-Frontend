@@ -2284,8 +2284,8 @@ export default function WorkshopsPage() {
                                       className='object-contain object-center transition-transform duration-500 ease-out group-hover:scale-105'
                                     />
                                     {workshop.bookingClosed && (
-                                      <div className='pointer-events-none absolute inset-0 z-20 flex items-center justify-center'>
-                                        <span className='rounded-full border border-white/35 bg-black/75 px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-lg'>
+                                      <div className='pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-2'>
+                                        <span className='whitespace-nowrap rounded-full border border-white/35 bg-black/75 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white shadow-lg sm:px-4 sm:py-2 sm:text-sm sm:tracking-[0.18em] text-center leading-none'>
                                           Booking closed
                                         </span>
                                       </div>
