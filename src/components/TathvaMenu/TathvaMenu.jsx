@@ -23,7 +23,8 @@ const leftMenu = [
   { label: 'HOME', href: '/' },
   { label: 'ACCOMMODATION', href: '/accommodation' },
   { label: 'LECTURES', href: '/lectures' },
-  { label: 'CONTACT', href: '/contact' },
+  { label: 'MAP', href: 'https://map.tathva.org' },
+  // { label: 'CONTACT', href: '/contact' },
   // { label: 'PROSHOW', href: '/proshow' },
 ]
 
