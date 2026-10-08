@@ -127,8 +127,8 @@ function DesktopFrame({ className, scale = 'desktop', containerRef }) {
             className='object-fill'
           />
         </div>
-        <div className='absolute inset-0 flex flex-col items-center justify-start overflow-hidden rounded-[6px] bg-black/95 px-3 pt-2.5 pb-1'>
-          <span className='robowars-motion robowars-sponsor-text font-alata text-[0.65cqw] uppercase tracking-[0.25em] text-white/75 mb-1.5 select-none'>
+        <div className='absolute inset-0 flex flex-col items-center justify-center overflow-hidden rounded-[6px] bg-black/95 px-3 py-1.5'>
+          <span className='robowars-motion robowars-sponsor-text font-alata text-[0.65cqw] uppercase tracking-[0.25em] text-white/75 mb-1 select-none'>
             In Association With
           </span>
           <div className='relative w-[88%] aspect-[1200/360] max-h-[60%] flex items-center justify-center'>
