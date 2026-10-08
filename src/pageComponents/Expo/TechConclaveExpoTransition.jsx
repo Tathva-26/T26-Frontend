@@ -256,7 +256,7 @@ function ExpoTransitionContent() {
     <>
     <div ref={pinSpace}>
     <div ref={root} className={`${styles.bridge} ${animated ? styles.animated : ''} ${animated && mobile ? styles.mobilePin : ''}`}>
-      <div data-conclave><TechConclave /></div>
+      <div data-conclave data-section-name='TECH CONCLAVE'><TechConclave /></div>
       <Expo sharedCrystal={animated} />
       {animated && <div className={styles.plane} data-expo-plane>
         <div ref={crystal} className={styles.crystal}>
