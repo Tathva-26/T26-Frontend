@@ -2,9 +2,10 @@
 
 import React from "react";
 import { creditsData } from "@/data/creditsData";
+import Lanyard from "./Lanyard"; // Make sure this path is correct
 
 /**
- * PersonImage Component
+- PersonImage Component
  */
 function PersonImage({ src, alt = "Team Member" }) {
   return (
@@ -23,9 +24,6 @@ function PersonImage({ src, alt = "Team Member" }) {
   );
 }
 
-/**
- * Social Icons (LinkedIn & GitHub)
- */
 function LinkedInIcon({ className = "w-5 h-5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -37,62 +35,61 @@ function LinkedInIcon({ className = "w-5 h-5" }) {
 function GitHubIcon({ className = "w-5 h-5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-      />
+      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
     </svg>
   );
 }
 
 /**
- * Sunburst Torn Member Card
+- Sunburst Torn Member Card (Updated with 3D Support)
  */
-function MemberCard({ name = "NAME SURNAME", image = null, linkedin = "https://linkedin.com", github = "https://github.com" }) {
+function MemberCard({ 
+  name = "NAME SURNAME", 
+  image = null, 
+  backImage = null,
+  message = "", 
+  linkedin = "https://linkedin.com", 
+  github = "https://github.com", 
+  use3D = false 
+}) {
   return (
     <div className="relative group w-full aspect-[276/499] max-h-[76vh] flex items-center justify-center transition-transform duration-300 hover:-translate-y-2 select-none">
-      {/* Torn Sunburst Card Base */}
-      <img
-        src="/images/lead-card.png"
-        alt={name}
-        className="w-full h-full object-contain pointer-events-none"
-      />
+      
+      {use3D ? (
+        <div className="absolute inset-[-40%] z-10 pointer-events-auto cursor-grab active:cursor-grabbing">
+          <Lanyard 
+            frameImage="/images/lead-card.png"  
+            backFrameImage={backImage}
+            avatarImage={image}                 
+            name={name}                         
+            message={message}                   
+            orientation="portrait"
+            finish="glossy"
+          />
+        </div>
+      ) : (
+        /* --- 2D STATIC CARD --- */
+        <>
+          <img src="/images/lead-card.png" alt={name} className="w-full h-full object-contain pointer-events-none" />
+          <div className="absolute top-[23%] left-[15%] w-[70%] h-[38%] z-10 overflow-hidden bg-white flex items-center justify-center">
+            <PersonImage src={image} alt={name} />
+          </div>
+          {/* Static Name */}
+          <div className="absolute top-[66.1%] inset-x-0 z-20 flex justify-center px-4 pointer-events-none">
+            <span className="text-white font-extrabold text-[12px] sm:text-[14px] md:text-[15px] lg:text-[16px] xl:text-[18px] tracking-[1.5px] uppercase text-center leading-tight drop-shadow-[0_4px_6px_rgba(0,0,0,0.95)]">
+              {name}
+            </span>
+          </div>
+        </>
+      )}
 
-      {/* Person Photo Inside Frame */}
-      <div className="absolute top-[22.5%] left-[15.5%] w-[71%] h-[39%] z-10 overflow-hidden bg-white flex items-center justify-center">
-  {/* Your image/content goes here */}
-        <PersonImage src={image} alt={name} />
-      </div>
-
-      {/* Name Text */}
-      <div className="absolute top-[66.1%] inset-x-0 z-20 flex justify-center px-4 pointer-events-none">
-        <span className="text-white font-extrabold text-[12px] sm:text-[14px] md:text-[15px] lg:text-[16px] xl:text-[18px] tracking-[1.5px] uppercase text-center leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-          {name}
-        </span>
-      </div>
-
-      {/* Social Links */}
-      <div className="absolute top-[73.1%] inset-x-0 z-30 flex items-center justify-center gap-3 sm:gap-4 pointer-events-auto">
-        <a
-          href={linkedin || "https://linkedin.com"}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`${name}'s LinkedIn Profile`}
-          className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded text-white hover:text-[#0077b5] transition-all duration-200 transform hover:scale-125 focus:outline-none"
-        >
+      {/* Social Links (Always hoverable on top) */}
+      <div className={`absolute ${use3D ? 'bottom-[2%]' : 'top-[73.1%]'} inset-x-0 z-30 flex items-center justify-center gap-3 sm:gap-4 pointer-events-auto`}>
+        <a href={linkedin} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded text-white hover:text-[#0077b5] transition-all duration-200 transform hover:scale-125">
           <LinkedInIcon className="w-full h-full" />
-          <span className="sr-only">LinkedIn</span>
         </a>
-        <a
-          href={github || "https://github.com"}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`${name}'s GitHub Profile`}
-          className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-white hover:text-[#e6edf3] transition-all duration-200 transform hover:scale-125 focus:outline-none"
-        >
+        <a href={github} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-white hover:text-[#e6edf3] transition-all duration-200 transform hover:scale-125">
           <GitHubIcon className="w-full h-full" />
-          <span className="sr-only">GitHub</span>
         </a>
       </div>
     </div>
@@ -100,57 +97,20 @@ function MemberCard({ name = "NAME SURNAME", image = null, linkedin = "https://l
 }
 
 /**
- * Single Team Section (LEAD, FRONTEND, BACKEND, UI/UX)
+- Single Team Section
  */
-function Section({ title, members, titleClass = "" }) {
+function Section({ title, members, titleClass = "", use3D = false }) {
   return (
     <div className="relative min-h-screen w-full bg-[#010208] overflow-hidden flex flex-col font-sans select-none">
-      {/* Space Background */}
+      {/* Space Background Layer */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#010308] via-[#020610] to-[#051230]" />
-        <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full bg-[#071840]/25 blur-[180px]" />
-        <div className="absolute top-[10%] left-[18%] w-[220px] h-[1.5px] bg-gradient-to-r from-transparent via-[#5eaee8]/80 to-transparent rotate-[135deg] opacity-70 blur-[0.5px]" />
-        <div className="absolute top-[9.2%] left-[16.5%] w-[4px] h-[4px] rounded-full bg-white/80 blur-[1px]" />
-
-        {/* Stars */}
-        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          {[...Array(200)].map((_, i) => (
-            <circle
-              key={`dim-${i}`}
-              cx={`${((i * 31 + 7) % 100)}%`}
-              cy={`${((i * 47 + 11) % 100)}%`}
-              r={0.3 + (i % 3) * 0.15}
-              fill="white"
-              opacity={0.12 + (i % 5) * 0.06}
-            />
-          ))}
-          {[...Array(80)].map((_, i) => (
-            <circle
-              key={`mid-${i}`}
-              cx={`${((i * 43 + 19) % 100)}%`}
-              cy={`${((i * 61 + 23) % 100)}%`}
-              r={0.5 + (i % 4) * 0.25}
-              fill="white"
-              opacity={0.3 + (i % 6) * 0.08}
-            />
-          ))}
-          {[...Array(20)].map((_, i) => (
-            <circle
-              key={`bright-${i}`}
-              cx={`${((i * 67 + 31) % 100)}%`}
-              cy={`${((i * 83 + 13) % 100)}%`}
-              r={1.2 + (i % 3) * 0.5}
-              fill="white"
-              opacity={0.85}
-            />
+         <div className="absolute inset-0 bg-gradient-to-b from-[#010308] via-[#020610] to-[#051230]" />
+         {/* Stars SVG */}
+         <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          {[...Array(100)].map((_, i) => (
+            <circle key={`dim-${i}`} cx={`${((i * 31 + 7) % 100)}%`} cy={`${((i * 47 + 11) % 100)}%`} r={0.3} fill="white" opacity={0.3} />
           ))}
         </svg>
-
-        {/* Nebula clouds */}
-        <div className="absolute bottom-0 inset-x-0 h-[38%] bg-gradient-to-t from-[#081e4a]/80 via-[#061640]/40 to-transparent" />
-        <div className="absolute bottom-[1%] left-[-6%] w-[50%] h-[240px] rounded-full bg-[#0e2350]/40 blur-[90px]" />
-        <div className="absolute bottom-[-1%] right-[-6%] w-[50%] h-[260px] rounded-full bg-[#122a58]/45 blur-[100px]" />
-        <div className="absolute bottom-[-4%] left-[22%] w-[56%] h-[180px] rounded-full bg-[#152e60]/35 blur-[80px]" />
       </div>
 
       {/* Main Section Header + Cards */}
@@ -168,15 +128,15 @@ function Section({ title, members, titleClass = "" }) {
 
         <div className="relative z-10 w-full flex flex-wrap items-start justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-5 -mt-2 sm:-mt-3 md:-mt-6 lg:-mt-10 py-2 scrollbar-none">
           {members.map((member, index) => (
-            <div
-              key={index}
-              className="w-[42%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] max-w-[300px]"
-            >
+            <div key={index} className="w-[42%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] max-w-[300px]">
               <MemberCard
                 name={member.name}
                 image={member.image}
+                backImage={member.backImage}
+                message={member.message} 
                 linkedin={member.linkedin}
                 github={member.github}
+                use3D={use3D} 
               />
             </div>
           ))}
@@ -187,23 +147,29 @@ function Section({ title, members, titleClass = "" }) {
 }
 
 /**
- * /ilovemygf Page Component
+- Main Page Component
  */
 export default function Ilovemygf() {
   return (
     <div className="h-[100dvh] w-full overflow-y-auto overflow-x-hidden">
-      <Section title="LEAD" members={creditsData.leads} />
+      {/* All sections now use the 3D Lanyard */}
+      <Section title="LEAD" members={creditsData.leads} use3D={true} />
+      
       <Section
         title="FRONTEND"
         members={creditsData.frontend}
+        use3D={true} 
         titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]"
       />
+      
       <Section
         title="BACKEND"
         members={creditsData.backend}
+        use3D={true}
         titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]"
       />
-      <Section title="UI/UX" members={creditsData.uiux} />
+      
+      <Section title="UI/UX" members={creditsData.uiux} use3D={true} />
     </div>
   );
 }
