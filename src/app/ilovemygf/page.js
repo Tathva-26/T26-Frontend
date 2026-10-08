@@ -43,6 +43,9 @@ function GitHubIcon({ className = "w-5 h-5" }) {
 /**
 - Sunburst Torn Member Card (Updated with 3D Support)
  */
+/**
+- Sunburst Torn Member Card (Updated with 3D Interactive Icons & Custom Strap)
+ */
 function MemberCard({ 
   name = "NAME SURNAME", 
   image = null, 
@@ -63,6 +66,9 @@ function MemberCard({
             avatarImage={image}                 
             name={name}                         
             message={message}                   
+            linkedin={linkedin}                 // <-- Passed to Lanyard for 3D clicks
+            github={github}                     // <-- Passed to Lanyard for 3D clicks
+            strapImage="/images/band.png"       // <-- PUT YOUR RIBBON LOGO PATH HERE
             orientation="portrait"
             finish="glossy"
           />
@@ -80,96 +86,148 @@ function MemberCard({
               {name}
             </span>
           </div>
+
+          {/* Floating Social Links (Only show when NOT using 3D) */}
+          <div className="absolute top-[73.1%] inset-x-0 z-30 flex items-center justify-center gap-3 sm:gap-4 pointer-events-auto">
+            <a href={linkedin} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded text-white hover:text-[#0077b5] transition-all duration-200 transform hover:scale-125">
+              <LinkedInIcon className="w-full h-full" />
+            </a>
+            <a href={github} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-white hover:text-[#e6edf3] transition-all duration-200 transform hover:scale-125">
+              <GitHubIcon className="w-full h-full" />
+            </a>
+          </div>
         </>
       )}
-
-      {/* Social Links (Always hoverable on top) */}
-      <div className={`absolute ${use3D ? 'bottom-[2%]' : 'top-[73.1%]'} inset-x-0 z-30 flex items-center justify-center gap-3 sm:gap-4 pointer-events-auto`}>
-        <a href={linkedin} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded text-white hover:text-[#0077b5] transition-all duration-200 transform hover:scale-125">
-          <LinkedInIcon className="w-full h-full" />
-        </a>
-        <a href={github} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-white hover:text-[#e6edf3] transition-all duration-200 transform hover:scale-125">
-          <GitHubIcon className="w-full h-full" />
-        </a>
-      </div>
     </div>
   );
 }
 
 /**
-- Single Team Section
+ * Seamless Cosmic Space Background
+ * Rendered once as a fixed viewport canvas so all sections flow over it continuously.
+ */
+function SpaceBackground() {
+  return (
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      {/* Base: near-black cosmic gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#010308] via-[#020610] to-[#051230]" />
+
+      {/* Subtle depth radial glow */}
+      <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[1100px] h-[750px] rounded-full bg-[#071840]/30 blur-[200px]" />
+
+      {/* Dynamic Shooting Star Streak */}
+      <div className="absolute top-[8%] left-[16%] w-[240px] h-[1.5px] bg-gradient-to-r from-transparent via-[#5eaee8]/90 to-transparent rotate-[135deg] opacity-75 blur-[0.5px]" />
+      <div className="absolute top-[7.2%] left-[14.5%] w-[4px] h-[4px] rounded-full bg-white/90 blur-[1px]" />
+
+      {/* Multilayer Procedural Starfield */}
+      <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        {/* Distant dim stars */}
+        {[...Array(220)].map((_, i) => {
+          const x = ((i * 31 + 7) % 100) + "%";
+          const y = ((i * 47 + 11) % 100) + "%";
+          const r = 0.3 + (i % 3) * 0.15;
+          const opacity = 0.12 + ((i % 5) * 0.06);
+          return (
+            <circle key={`dim-${i}`} cx={x} cy={y} r={r} fill="white" opacity={opacity} />
+          );
+        })}
+        {/* Mid-brightness stars */}
+        {[...Array(90)].map((_, i) => {
+          const x = ((i * 43 + 19) % 100) + "%";
+          const y = ((i * 61 + 23) % 100) + "%";
+          const r = 0.5 + (i % 4) * 0.25;
+          const opacity = 0.3 + ((i % 6) * 0.08);
+          return (
+            <circle key={`mid-${i}`} cx={x} cy={y} r={r} fill="white" opacity={opacity} />
+          );
+        })}
+        {/* Bright accent stars */}
+        {[...Array(25)].map((_, i) => {
+          const x = ((i * 67 + 31) % 100) + "%";
+          const y = ((i * 83 + 13) % 100) + "%";
+          const r = 1.2 + (i % 3) * 0.5;
+          return (
+            <circle key={`bright-${i}`} cx={x} cy={y} r={r} fill="white" opacity={0.85} />
+          );
+        })}
+      </svg>
+
+      {/* Nebula mist clouds */}
+      <div className="absolute bottom-0 inset-x-0 h-[35%] bg-gradient-to-t from-[#081e4a]/70 via-[#061640]/30 to-transparent" />
+      <div className="absolute bottom-[2%] left-[-5%] w-[55%] h-[280px] rounded-full bg-[#0e2350]/35 blur-[100px]" />
+      <div className="absolute bottom-[-2%] right-[-5%] w-[55%] h-[300px] rounded-full bg-[#122a58]/40 blur-[110px]" />
+      <div className="absolute bottom-[-5%] left-[20%] w-[60%] h-[220px] rounded-full bg-[#152e60]/30 blur-[90px]" />
+    </div>
+  );
+}
+
+/**
+ * Single Team Section
  */
 function Section({ title, members, titleClass = "", use3D = false }) {
   return (
-    <div className="relative min-h-screen w-full bg-[#010208] overflow-hidden flex flex-col font-sans select-none">
-      {/* Space Background Layer */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-         <div className="absolute inset-0 bg-gradient-to-b from-[#010308] via-[#020610] to-[#051230]" />
-         {/* Stars SVG */}
-         <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          {[...Array(100)].map((_, i) => (
-            <circle key={`dim-${i}`} cx={`${((i * 31 + 7) % 100)}%`} cy={`${((i * 47 + 11) % 100)}%`} r={0.3} fill="white" opacity={0.3} />
-          ))}
-        </svg>
+    <section className="relative w-full min-h-screen flex flex-col items-center justify-start sm:justify-center px-3 sm:px-5 md:px-8 lg:px-10 pt-20 pb-16 sm:py-12 max-w-[1920px] mx-auto font-sans select-none">
+      {/* Title */}
+      <div className="w-full flex justify-center pb-0 pointer-events-none select-none">
+        <h1
+          className={`font-black uppercase text-white leading-[1.1] sm:leading-[0.85] tracking-[0.04em] drop-shadow-[0_0_40px_rgba(255,255,255,0.2)] ${
+            titleClass || "text-[18vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:5px_white]"
+          }`}
+          style={{ fontFamily: "Impact, 'Arial Black', sans-serif" }}
+        >
+          {title}
+        </h1>
       </div>
 
-      {/* Main Section Header + Cards */}
-      <main className="relative z-10 w-full min-h-screen flex flex-col items-center justify-start sm:justify-center px-3 sm:px-5 md:px-8 lg:px-10 pt-20 pb-10 sm:py-6 max-w-[1920px] mx-auto">
-        <div className="w-full flex justify-center pb-0 pointer-events-none select-none">
-          <h1
-            className={`font-black uppercase text-white leading-[1.1] sm:leading-[0.85] tracking-[0.04em] drop-shadow-[0_0_40px_rgba(255,255,255,0.2)] ${
-              titleClass || "text-[18vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:5px_white]"
-            }`}
-            style={{ fontFamily: "Impact, 'Arial Black', sans-serif" }}
-          >
-            {title}
-          </h1>
-        </div>
-
-        <div className="relative z-10 w-full flex flex-wrap items-start justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-5 -mt-2 sm:-mt-3 md:-mt-6 lg:-mt-10 py-2 scrollbar-none">
-          {members.map((member, index) => (
-            <div key={index} className="w-[42%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] max-w-[300px]">
-              <MemberCard
-                name={member.name}
-                image={member.image}
-                backImage={member.backImage}
-                message={member.message} 
-                linkedin={member.linkedin}
-                github={member.github}
-                use3D={use3D} 
-              />
-            </div>
-          ))}
-        </div>
-      </main>
-    </div>
+      {/* Cards Grid */}
+      <div className="relative z-10 w-full flex flex-wrap items-start justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-5 -mt-2 sm:-mt-3 md:-mt-6 lg:-mt-10 py-2 scrollbar-none">
+        {members.map((member, index) => (
+          <div key={index} className="w-[42%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] max-w-[300px]">
+            <MemberCard
+              name={member.name}
+              image={member.image}
+              backImage={member.backImage}
+              message={member.message} 
+              linkedin={member.linkedin}
+              github={member.github}
+              use3D={use3D} 
+            />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
 /**
-- Main Page Component
+ * Main Page Component
  */
 export default function Ilovemygf() {
   return (
-    <div className="h-[100dvh] w-full overflow-y-auto overflow-x-hidden">
-      {/* All sections now use the 3D Lanyard */}
-      <Section title="LEAD" members={creditsData.leads} use3D={true} />
-      
-      <Section
-        title="FRONTEND"
-        members={creditsData.frontend}
-        use3D={true} 
-        titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]"
-      />
-      
-      <Section
-        title="BACKEND"
-        members={creditsData.backend}
-        use3D={true}
-        titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]"
-      />
-      
-      <Section title="UI/UX" members={creditsData.uiux} use3D={true} />
+    <div className="relative min-h-screen w-full bg-[#010208] text-white overflow-x-hidden">
+      {/* Persistent Full-Page Seamless Background */}
+      <SpaceBackground />
+
+      {/* Scrollable Content Container */}
+      <div className="relative z-10 w-full flex flex-col">
+        <Section title="LEAD" members={creditsData.leads} use3D={true} />
+        
+        <Section
+          title="FRONTEND"
+          members={creditsData.frontend}
+          use3D={true} 
+          titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]"
+        />
+        
+        <Section
+          title="BACKEND"
+          members={creditsData.backend}
+          use3D={true} 
+          titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]"
+        />
+        
+        <Section title="UI/UX" members={creditsData.uiux} use3D={true} />
+      </div>
     </div>
   );
 }
