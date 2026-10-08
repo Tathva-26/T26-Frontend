@@ -28,11 +28,11 @@ if (typeof window !== 'undefined') {
 }
 
 const competitionsStyles = `
-@import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
+/* Jaro + Jost served from globals.css @font-face (R2 CDN) */
 
 @font-face {
   font-family: 'Competitions Fragment Serif';
-  src: url('https://cdn-next-main.tathva.org/fonts/PPFragment-SerifExtraBold.woff2') format('woff2');
+  src: url('/fonts/PPFragment-SerifExtraBold.woff2') format('woff2');
   font-weight: 800;
   font-style: normal;
   font-display: swap;

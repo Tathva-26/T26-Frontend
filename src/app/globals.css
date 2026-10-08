@@ -1,27 +1,13 @@
-@import url("https://fonts.googleapis.com/css?family=Orbitron:900|Squada+One:400|Alatsi:400");
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Jockey+One&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
+
+/* Google Fonts are loaded via next/font in siteFonts.js (build-time fetch,
+   served same-origin from Vercel). Their --font-* variables live on <html>.
+   VCR OSD Mono is not on Google Fonts — bundled in public/fonts instead. */
 
 @font-face {
   font-family: 'VCR OSD Mono';
-  src: url('https://cdn-next-main.tathva.org/fonts/VCR_OSD_MONO.ttf') format('truetype');
+  src: url('/fonts/VCR_OSD_MONO.woff2') format('woff2');
   font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Bebas Neue';
-  src: url('https://cdn-next-main.tathva.org/fonts/BebasNeue-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Space Grotesk';
-  src: url('https://cdn-next-main.tathva.org/fonts/SpaceGrotesk-Variable.ttf') format('truetype');
-  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
@@ -29,10 +15,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --font-bebas: 'Bebas Neue', sans-serif;
-  --font-space: 'Space Grotesk', sans-serif;
   --font-vcr: 'VCR OSD Mono', monospace;
-  --font-jockey: 'Jockey One', sans-serif;
 }
 
 .font-jockey {

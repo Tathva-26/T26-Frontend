@@ -100,7 +100,7 @@ export default function Footer() {
       <style>{`
         @font-face {
           font-family: 'Akira Expanded';
-          src: url('https://cdn-next-main.tathva.org/fonts/AkiraExpanded.woff2') format('woff2');
+          src: url('/fonts/AkiraExpanded.woff2') format('woff2');
           font-weight: 800;
           font-style: normal;
           font-display: swap;
