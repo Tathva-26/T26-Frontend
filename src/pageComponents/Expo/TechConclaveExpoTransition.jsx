@@ -157,10 +157,12 @@ function ExpoTransitionContent() {
         gsap.set(crystal.current, { width: box.width, height: box.height })
         canvasWidth = box.width; canvasHeight = box.height
       }
+      const interactive = entry > .72 && exit === 0
       gsap.set(crystal.current, {
         opacity: exit > 0 ? 1 : pose.opacity,
-        pointerEvents: entry > .72 && exit === 0 ? 'auto' : 'none',
+        pointerEvents: interactive ? 'auto' : 'none',
       })
+      crystal.current.dataset.expoInteractive = String(interactive)
       // Keep opacity in CSS so the ready state can hide the illustration when
       // the model loads, even if scrolling is paused at that moment.
       // ConclaveVeil owns the cloud field; the poster only needs a compositor
