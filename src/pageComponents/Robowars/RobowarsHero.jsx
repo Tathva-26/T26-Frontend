@@ -127,7 +127,43 @@ function DesktopFrame({ className, scale = 'desktop', containerRef }) {
             className='object-fill'
           />
         </div>
-        <div className='absolute inset-0 rounded-[6px] bg-black' />
+        <div className='absolute inset-0 flex flex-col items-center justify-center overflow-hidden rounded-[6px] bg-black/95 px-3 py-2'>
+          <span className='robowars-motion robowars-sponsor-text font-alata text-[0.65cqw] uppercase tracking-[0.25em] text-white/75 mb-1.5 select-none'>
+            In Association With
+          </span>
+          <div className='relative w-[90%] aspect-[1200/360] max-h-[62%] flex items-center justify-center'>
+            {/* White BOT LEAGUE Text - appears first */}
+            <div className='robowars-motion robowars-sponsor-text absolute inset-0 w-full h-full will-change-transform'>
+              <Image
+                src='/images/Robowars/bot-league-text.png'
+                alt='Bot League'
+                fill
+                sizes='320px'
+                className='object-contain drop-shadow-[0_0_16px_rgba(255,255,255,0.35)]'
+              />
+            </div>
+            {/* Blue bar - slides in from left */}
+            <div className='robowars-motion robowars-sponsor-blue absolute inset-0 w-full h-full will-change-transform'>
+              <Image
+                src='/images/Robowars/bot-league-blue.png'
+                alt=''
+                fill
+                sizes='320px'
+                className='object-contain drop-shadow-[0_0_10px_rgba(0,102,255,0.7)]'
+              />
+            </div>
+            {/* Red bar - slides in from right */}
+            <div className='robowars-motion robowars-sponsor-red absolute inset-0 w-full h-full will-change-transform'>
+              <Image
+                src='/images/Robowars/bot-league-red.png'
+                alt=''
+                fill
+                sizes='320px'
+                className='object-contain drop-shadow-[0_0_10px_rgba(255,30,30,0.7)]'
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <Art
@@ -242,6 +278,54 @@ function MobileFrame({ containerRef }) {
         priority
         className='robowars-motion robowars-robot robowars-right-robot pointer-events-none'
       />
+
+      <div
+        className='pointer-events-none absolute left-1/2 flex -translate-x-1/2 flex-col items-center justify-center'
+        style={frameStyle({
+          x: 96,
+          y: 326,
+          width: 220,
+          height: 56,
+          frameWidth: MOBILE_FRAME_WIDTH,
+          frameHeight: MOBILE_FRAME_HEIGHT,
+        })}
+      >
+        <span className='robowars-motion robowars-sponsor-text font-alata text-[2.2cqw] uppercase tracking-[0.2em] text-white/75 mb-1 select-none'>
+          In Association With
+        </span>
+        <div className='relative w-[160px] aspect-[1200/360] h-[30px] flex items-center justify-center'>
+          {/* White BOT LEAGUE Text - appears first */}
+          <div className='robowars-motion robowars-sponsor-text absolute inset-0 w-full h-full will-change-transform'>
+            <Image
+              src='/images/Robowars/bot-league-text.png'
+              alt='Bot League'
+              fill
+              sizes='160px'
+              className='object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]'
+            />
+          </div>
+          {/* Blue bar - slides in from left */}
+          <div className='robowars-motion robowars-sponsor-blue absolute inset-0 w-full h-full will-change-transform'>
+            <Image
+              src='/images/Robowars/bot-league-blue.png'
+              alt=''
+              fill
+              sizes='160px'
+              className='object-contain drop-shadow-[0_0_8px_rgba(0,102,255,0.7)]'
+            />
+          </div>
+          {/* Red bar - slides in from right */}
+          <div className='robowars-motion robowars-sponsor-red absolute inset-0 w-full h-full will-change-transform'>
+            <Image
+              src='/images/Robowars/bot-league-red.png'
+              alt=''
+              fill
+              sizes='160px'
+              className='object-contain drop-shadow-[0_0_8px_rgba(255,30,30,0.7)]'
+            />
+          </div>
+        </div>
+      </div>
 
       <div
         className='pointer-events-none absolute text-center uppercase text-white'
@@ -370,6 +454,18 @@ export default function RobowarsHero({ leadInVh = 0 }) {
           gsap.set(root.querySelectorAll('.robowars-right-robot'), {
             opacity: 0.3,
             transform: `translate3d(${robotDistance}%, 0, 0) scale(0.96)`,
+          })
+          gsap.set(root.querySelectorAll('.robowars-sponsor-text'), {
+            opacity: 0,
+            transform: 'scale(0.92) translate3d(0, -4px, 0)',
+          })
+          gsap.set(root.querySelectorAll('.robowars-sponsor-blue'), {
+            opacity: 0,
+            transform: 'translate3d(-60%, 0, 0)',
+          })
+          gsap.set(root.querySelectorAll('.robowars-sponsor-red'), {
+            opacity: 0,
+            transform: 'translate3d(60%, 0, 0)',
           })
           gsap.set(root.querySelectorAll('.robowars-title-left'), {
             opacity: 0,
@@ -533,6 +629,26 @@ export default function RobowarsHero({ leadInVh = 0 }) {
           })
 
           timeline
+            .to(
+              root.querySelectorAll('.robowars-sponsor-text'),
+              {
+                opacity: 1,
+                transform: 'translate3d(0, 0, 0) scale(1)',
+                duration: 0.2,
+              },
+              BEAT_ROBOTS,
+            )
+            .to(
+              root.querySelectorAll(
+                '.robowars-sponsor-blue, .robowars-sponsor-red',
+              ),
+              {
+                opacity: 1,
+                transform: 'translate3d(0, 0, 0) scale(1)',
+                duration: 0.22,
+              },
+              BEAT_ROBOTS + 0.08,
+            )
             .to(
               root.querySelectorAll(
                 '.robowars-left-robot, .robowars-right-robot',
