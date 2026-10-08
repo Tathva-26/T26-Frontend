@@ -17,17 +17,22 @@ import { useRouter } from 'next/navigation'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 import { useEvents } from '@/hooks/useEvents'
+import {
+  COMPETITION_CATEGORIES,
+  COMPETITION_CATEGORY_ALL,
+  competitionCategory,
+} from '@/lib/events'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(TextPlugin)
 }
 
 const competitionsStyles = `
-@import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
+/* Jaro + Jost served from globals.css @font-face (R2 CDN) */
 
 @font-face {
   font-family: 'Competitions Fragment Serif';
-  src: url('https://cdn-next-main.tathva.org/fonts/PPFragment-SerifExtraBold.woff2') format('woff2');
+  src: url('/fonts/PPFragment-SerifExtraBold.woff2') format('woff2');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -200,6 +205,9 @@ const IDLE_RESTORE_DURATION = 0.85
 export default function CompetitionsPage() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
+  // Keyword-derived category filter — stopgap until the backend ships a real
+  // category field (see competitionCategory in lib/events.js).
+  const [activeCategory, setActiveCategory] = useState(COMPETITION_CATEGORY_ALL)
 
   const { events, loading, error, reload } = useEvents(EVENT_TYPE, {
     label: CARD_LABEL,
@@ -1757,7 +1765,7 @@ export default function CompetitionsPage() {
     hardResetFocusOverlay()
     remeasureAndStagger()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery])
+  }, [searchQuery, activeCategory])
 
   useEffect(() => {
     const handleResize = () => {
@@ -1867,14 +1875,27 @@ export default function CompetitionsPage() {
   // Filtered competitions
   // Searching a precomputed haystack rather than individual fields: the old
   // UI searched `item.instructor`, which the API has no field for.
+  // Only categories that actually have events become chips, in the canonical
+  // order from lib/events.js — so "Others" never renders an empty chip row.
+  const availableCategories = useMemo(() => {
+    const present = new Set(events.map((item) => competitionCategory(item)))
+    return COMPETITION_CATEGORIES.filter((category) => present.has(category))
+  }, [events])
+
   const filteredCompetitions = useMemo(() => {
     // MOCK TEST CARDS — remove `.concat(MOCK_TEST_CARDS)` when testing is done
     const sourceEvents = events.concat(MOCK_TEST_CARDS)
     const query = searchQuery.trim().toLowerCase()
-    return query
-      ? sourceEvents.filter((item) => item.searchText.includes(query))
-      : sourceEvents
-  }, [events, searchQuery])
+    return events.filter((item) => {
+      if (
+        activeCategory !== COMPETITION_CATEGORY_ALL &&
+        competitionCategory(item) !== activeCategory
+      ) {
+        return false
+      }
+      return query ? item.searchText.includes(query) : true
+    })
+  }, [events, searchQuery, activeCategory])
 
   return (
     <div className='competitions-page min-h-screen bg-[#06070d] text-slate-100 font-sans relative overflow-x-clip selection:bg-indigo-600 selection:text-white pb-24'>
@@ -1961,6 +1982,33 @@ export default function CompetitionsPage() {
 
         {/* WORKSHOP CARDS GRID */}
         <section className='relative w-full'>
+          {/* Category filter chips. Keyword-derived stopgap — see
+              competitionCategory in lib/events.js. Hidden until there is more
+              than one category to pick from. */}
+          {!loading && !error && availableCategories.length > 1 && (
+            <div className='mb-6 flex flex-wrap gap-2'>
+              {[COMPETITION_CATEGORY_ALL, ...availableCategories].map(
+                (category) => {
+                  const isActive = category === activeCategory
+                  return (
+                    <button
+                      key={category}
+                      type='button'
+                      onClick={() => setActiveCategory(category)}
+                      aria-pressed={isActive}
+                      className={`cursor-pointer rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition-colors ${
+                        isActive
+                          ? 'border-indigo-400 bg-indigo-600/30 text-white'
+                          : 'border-white/15 bg-white/5 text-slate-300 hover:border-white/30 hover:text-white'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  )
+                },
+              )}
+            </div>
+          )}
           {loading ? (
             <div className='py-20 text-center text-slate-400'>
               <p className='text-lg'>Loading competitions…</p>
@@ -1978,15 +2026,18 @@ export default function CompetitionsPage() {
           ) : filteredCompetitions.length === 0 ? (
             <div className='py-20 text-center text-slate-400'>
               <p className='text-lg'>
-                {searchQuery.trim()
-                  ? 'No competitions found matching your search.'
+                {searchQuery.trim() ||
+                activeCategory !== COMPETITION_CATEGORY_ALL
+                  ? 'No competitions found matching your filters.'
                   : 'No competitions have been announced yet.'}
               </p>
 
-              {searchQuery.trim() && (
+              {(searchQuery.trim() ||
+                activeCategory !== COMPETITION_CATEGORY_ALL) && (
                 <button
                   onClick={() => {
                     setSearchQuery('')
+                    setActiveCategory(COMPETITION_CATEGORY_ALL)
                   }}
                   className='mt-3 text-sm text-indigo-400 hover:underline cursor-pointer'
                 >
@@ -2164,8 +2215,8 @@ export default function CompetitionsPage() {
                                       className='object-contain object-center transition-transform duration-500 ease-out group-hover:scale-105'
                                     />
                                     {competition.bookingClosed && (
-                                      <div className='pointer-events-none absolute inset-0 z-20 flex items-center justify-center'>
-                                        <span className='rounded-full border border-white/35 bg-black/75 px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-lg'>
+                                      <div className='pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-2'>
+                                        <span className='whitespace-nowrap rounded-full border border-white/35 bg-black/75 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white shadow-lg sm:px-4 sm:py-2 sm:text-sm sm:tracking-[0.18em] text-center leading-none'>
                                           Booking closed
                                         </span>
                                       </div>

@@ -1,18 +1,32 @@
 'use client'
 
-import Image from 'next/image'
-import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import styles from './ContactUs.module.css'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 import { BACKEND_ENABLED, PATHS, api, apiErrorMessage, apiFieldErrors } from '@/lib/api'
-import { CONTACT_FIELDS, normalisePhone, validateContact } from '@/lib/validation'
+import { CONTACT_FIELDS, isValidEmail, normalisePhone, validateContact } from '@/lib/validation'
+import { useUser } from '@/context/UserContext'
 
 export default function ContactUs() {
+  const { user } = useUser()
   const [fieldErrors, setFieldErrors] = useState({})
   const [status, setStatus] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+
+  // The backend requires an email with every query. When signed in, the
+  // account email pre-fills the visible field — editable, never forced.
+  const accountEmail = isValidEmail(user?.email) ? user.email.trim() : ''
+  const emailRef = useRef(null)
+  const emailEditedRef = useRef(false)
+
+  // Auth resolves after first paint, so fill the field when it arrives —
+  // unless the visitor already typed something themselves.
+  useEffect(() => {
+    if (accountEmail && emailRef.current && !emailEditedRef.current) {
+      emailRef.current.value = accountEmail
+    }
+  }, [accountEmail])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -61,6 +75,7 @@ export default function ContactUs() {
       }
 
       form.reset()
+      if (accountEmail && emailRef.current) emailRef.current.value = accountEmail
       setStatus({ kind: 'success', message: 'Thanks — your query has reached us.' })
     } catch (error) {
       // The form is deliberately left as it was, so nothing has to be retyped.
@@ -77,6 +92,7 @@ export default function ContactUs() {
   /** Clears a field's error as soon as it is edited, rather than on resubmit. */
   function handleInput(event) {
     const { name } = event.target
+    if (name === 'email') emailEditedRef.current = true
     setFieldErrors((previous) => {
       if (!name || !previous[name]) return previous
       const next = { ...previous }
@@ -106,27 +122,28 @@ export default function ContactUs() {
 
   return (
     <div className={styles.page}>
-      {/* <Link className={styles.brand} href="/" aria-label="Tathva home">
-        <Image src="https://cdn-next-main.tathva.org/images/contact-us/tathva-logo.png" alt="Tathva" fill priority sizes="55px" />
-      </Link> */}
-
       <main className={styles.main}>
         <div className='hidden lg:block'>
           <Navbar />
         </div>
         <TathvaMenu />
+        <p className={styles.kicker}>Reach out — we&apos;ll get back to you</p>
         <h1 className={styles.title}>CONTACT US</h1>
+        <p className={styles.subtitle}>
+          Questions about events, passes, or anything Tathva? Drop a line and the team will respond.
+        </p>
 
         <section className={styles.panel} aria-label='Contact form'>
           <form className={styles.form} onSubmit={handleSubmit} onInput={handleInput} noValidate>
             <div className={styles.fieldRow}>
               <label className={styles.topicLabel} htmlFor='contact-topic'>
-                Topic:
+                Topic
               </label>
               <input
                 className={styles.control}
                 id='contact-topic'
                 name='topic'
+                placeholder='What is this about?'
                 {...fieldProps('topic')}
               />
               {fieldError('topic')}
@@ -135,20 +152,21 @@ export default function ContactUs() {
             <div className={styles.pairedFields}>
               <div className={styles.fieldRow}>
                 <label className={styles.nameLabel} htmlFor='contact-name'>
-                  Name:
+                  Name
                 </label>
                 <input
                   className={styles.control}
                   id='contact-name'
                   name='name'
                   autoComplete='name'
+                  placeholder='Your name'
                   {...fieldProps('name')}
                 />
                 {fieldError('name')}
               </div>
               <div className={styles.fieldRow}>
                 <label className={styles.phoneLabel} htmlFor='contact-phone'>
-                  Phone No:
+                  Phone
                 </label>
                 <input
                   className={styles.control}
@@ -157,22 +175,26 @@ export default function ContactUs() {
                   type='tel'
                   autoComplete='tel'
                   inputMode='tel'
+                  placeholder='10-digit mobile number'
                   {...fieldProps('phone')}
                 />
                 {fieldError('phone')}
               </div>
             </div>
 
-            <div className={styles.fieldRow} style={{ display: 'none' }}>
+            <div className={styles.fieldRow}>
               <label className={styles.emailLabel} htmlFor='contact-email'>
-                Email:
+                Email
               </label>
               <input
+                ref={emailRef}
                 className={styles.control}
                 id='contact-email'
                 name='email'
                 type='email'
                 autoComplete='email'
+                placeholder='you@example.com'
+                defaultValue={accountEmail}
                 {...fieldProps('email')}
               />
               {fieldError('email')}
@@ -180,12 +202,13 @@ export default function ContactUs() {
 
             <div className={`${styles.fieldRow} ${styles.queryRow}`}>
               <label className={styles.queryLabel} htmlFor='contact-query'>
-                Query:
+                Query
               </label>
               <textarea
                 className={`${styles.control} ${styles.queryControl}`}
                 id='contact-query'
                 name='query'
+                placeholder='Tell us how we can help…'
                 {...fieldProps('query')}
               />
               {fieldError('query')}

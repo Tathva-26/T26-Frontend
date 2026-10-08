@@ -23,11 +23,11 @@ if (typeof window !== 'undefined') {
 }
 
 const lecturesStyles = `
-@import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
+/* Jaro + Jost served from globals.css @font-face (R2 CDN) */
 
 @font-face {
   font-family: 'Lectures Fragment Serif';
-  src: url('https://cdn-next-main.tathva.org/fonts/PPFragment-SerifExtraBold.woff2') format('woff2');
+  src: url('/fonts/PPFragment-SerifExtraBold.woff2') format('woff2');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -2157,8 +2157,8 @@ export default function LecturesPage() {
                                       className='object-contain object-center transition-transform duration-500 ease-out group-hover:scale-105'
                                     />
                                     {lecture.bookingClosed && (
-                                      <div className='pointer-events-none absolute inset-0 z-20 flex items-center justify-center'>
-                                        <span className='rounded-full border border-white/35 bg-black/75 px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-lg'>
+                                      <div className='pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-2'>
+                                        <span className='whitespace-nowrap rounded-full border border-white/35 bg-black/75 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white shadow-lg sm:px-4 sm:py-2 sm:text-sm sm:tracking-[0.18em] text-center leading-none'>
                                           Booking closed
                                         </span>
                                       </div>
