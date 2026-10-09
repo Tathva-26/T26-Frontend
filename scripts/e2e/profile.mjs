@@ -74,7 +74,7 @@ check('refresh disabled during the debounce', refreshBtn.disabled, true)
 
 /* ---- the editor ---- */
 const openEditor = `(() => {
-  document.querySelector('[aria-label="Edit profile"]').click();
+  document.querySelector('[aria-label="Change profile photo"]').click();
   return true;
 })()`
 const setField = (key, value) => `(() => {

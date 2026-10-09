@@ -127,7 +127,43 @@ function DesktopFrame({ className, scale = 'desktop', containerRef }) {
             className='object-fill'
           />
         </div>
-        <div className='absolute inset-0 rounded-[6px] bg-black' />
+        <div className='absolute inset-0 flex flex-col items-center justify-center overflow-hidden rounded-[6px] bg-black/95 px-3 py-1.5'>
+          <span className='robowars-motion robowars-sponsor-text font-alata text-[0.65cqw] uppercase tracking-[0.25em] text-white/75 mb-1 select-none'>
+            In Association With
+          </span>
+          <div className='relative w-[88%] aspect-[1200/360] max-h-[60%] flex items-center justify-center'>
+            {/* White BOT LEAGUE Text - appears first */}
+            <div className='robowars-motion robowars-sponsor-text absolute inset-0 w-full h-full will-change-transform'>
+              <Image
+                src='/images/Robowars/bot-league-text.png'
+                alt='Bot League'
+                fill
+                sizes='320px'
+                className='object-contain drop-shadow-[0_0_16px_rgba(255,255,255,0.35)]'
+              />
+            </div>
+            {/* Blue bar - slides in from left */}
+            <div className='robowars-motion robowars-sponsor-blue absolute inset-0 w-full h-full will-change-transform'>
+              <Image
+                src='/images/Robowars/bot-league-blue.png'
+                alt=''
+                fill
+                sizes='320px'
+                className='object-contain drop-shadow-[0_0_10px_rgba(0,102,255,0.7)]'
+              />
+            </div>
+            {/* Red bar - slides in from right */}
+            <div className='robowars-motion robowars-sponsor-red absolute inset-0 w-full h-full will-change-transform'>
+              <Image
+                src='/images/Robowars/bot-league-red.png'
+                alt=''
+                fill
+                sizes='320px'
+                className='object-contain drop-shadow-[0_0_10px_rgba(255,30,30,0.7)]'
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <Art
@@ -173,11 +209,11 @@ function DesktopFrame({ className, scale = 'desktop', containerRef }) {
         className='robowars-motion robowars-date pointer-events-none absolute flex items-center justify-between text-white will-change-transform'
         style={frameStyle({ x: 496, y: 408, width: 422, height: 30 })}
       >
-        <span className='h-[2px] w-[32%] bg-white' />
-        <span className='font-alata whitespace-nowrap text-[1.85cqw] leading-[1.25]'>
-          OCT 9,10
+        <span className='h-px w-[32%] bg-white/70' />
+        <span className='font-alata whitespace-nowrap text-[1.85cqw] tracking-[0.2em] uppercase leading-[1.25] text-white/90'>
+          OCT 9–10
         </span>
-        <span className='h-[2px] w-[32%] bg-white' />
+        <span className='h-px w-[32%] bg-white/70' />
       </div>
 
       <div
@@ -243,6 +279,55 @@ function MobileFrame({ containerRef }) {
         className='robowars-motion robowars-robot robowars-right-robot pointer-events-none'
       />
 
+      {/* Sponsor Lockup - Centered directly above ROBO WARS */}
+      <div
+        className='pointer-events-none absolute flex flex-col items-center justify-center text-center'
+        style={frameStyle({
+          x: 0,
+          y: 318,
+          width: MOBILE_FRAME_WIDTH,
+          height: 60,
+          frameWidth: MOBILE_FRAME_WIDTH,
+          frameHeight: MOBILE_FRAME_HEIGHT,
+        })}
+      >
+        <span className='robowars-motion robowars-sponsor-text font-alata text-[2.2cqw] uppercase tracking-[0.25em] text-white/75 mb-1.5 select-none'>
+          In Association With
+        </span>
+        <div className='relative w-[150px] aspect-[1200/360] max-h-[30px] flex items-center justify-center'>
+          {/* White BOT LEAGUE Text - appears first */}
+          <div className='robowars-motion robowars-sponsor-text absolute inset-0 w-full h-full will-change-transform'>
+            <Image
+              src='/images/Robowars/bot-league-text.png'
+              alt='Bot League'
+              fill
+              sizes='150px'
+              className='object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.35)]'
+            />
+          </div>
+          {/* Blue bar - slides in from left */}
+          <div className='robowars-motion robowars-sponsor-blue absolute inset-0 w-full h-full will-change-transform'>
+            <Image
+              src='/images/Robowars/bot-league-blue.png'
+              alt=''
+              fill
+              sizes='150px'
+              className='object-contain drop-shadow-[0_0_8px_rgba(0,102,255,0.7)]'
+            />
+          </div>
+          {/* Red bar - slides in from right */}
+          <div className='robowars-motion robowars-sponsor-red absolute inset-0 w-full h-full will-change-transform'>
+            <Image
+              src='/images/Robowars/bot-league-red.png'
+              alt=''
+              fill
+              sizes='150px'
+              className='object-contain drop-shadow-[0_0_8px_rgba(255,30,30,0.7)]'
+            />
+          </div>
+        </div>
+      </div>
+
       <div
         className='pointer-events-none absolute text-center uppercase text-white'
         style={frameStyle({
@@ -273,11 +358,11 @@ function MobileFrame({ containerRef }) {
           frameHeight: MOBILE_FRAME_HEIGHT,
         })}
       >
-        <span className='h-px w-[31%] bg-white' />
-        <span className='font-alata whitespace-nowrap text-[2.45cqw] leading-none'>
-          OCT 9,10
+        <span className='h-px w-[31%] bg-white/70' />
+        <span className='font-alata whitespace-nowrap text-[2.45cqw] tracking-[0.18em] uppercase leading-none text-white/90'>
+          OCT 9–10
         </span>
-        <span className='h-px w-[31%] bg-white' />
+        <span className='h-px w-[31%] bg-white/70' />
       </div>
 
       <div
@@ -371,6 +456,18 @@ export default function RobowarsHero({ leadInVh = 0 }) {
             opacity: 0.3,
             transform: `translate3d(${robotDistance}%, 0, 0) scale(0.96)`,
           })
+          gsap.set(root.querySelectorAll('.robowars-sponsor-text'), {
+            opacity: 0,
+            transform: 'scale(0.88) translate3d(0, -8px, 0)',
+          })
+          gsap.set(root.querySelectorAll('.robowars-sponsor-blue'), {
+            opacity: 0,
+            transform: 'translate3d(-50px, 0, 0)',
+          })
+          gsap.set(root.querySelectorAll('.robowars-sponsor-red'), {
+            opacity: 0,
+            transform: 'translate3d(50px, 0, 0)',
+          })
           gsap.set(root.querySelectorAll('.robowars-title-left'), {
             opacity: 0,
             transform: `translate3d(-${titleDistance}%, 0, 0) scale(0.97)`,
@@ -440,9 +537,9 @@ export default function RobowarsHero({ leadInVh = 0 }) {
         // reveal beat starts. Named so the snap stops below can't drift out
         // of sync with the tweens that actually define them.
         const BEAT_ROBOTS = 0
-        const BEAT_TITLE = 0.14
-        const BEAT_DATE = 0.3
-        const BEAT_DETAILS = 0.42
+        const BEAT_TITLE = 0.22
+        const BEAT_DATE = 0.38
+        const BEAT_DETAILS = 0.5
 
         // A gesture whose peak speed (px/s) exceeded this counts as "hard"
         // for snapping purposes. Below it, scroll behaves exactly as before
@@ -464,7 +561,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
 
         const buildTimeline = (root) => {
           const timeline = gsap.timeline({
-            defaults: { ease: 'power1.out' },
+            defaults: { ease: 'power2.out' },
             scrollTrigger: {
               scroller: document.querySelector('.main-scroll') || window,
               trigger: timelineRef.current,
@@ -534,13 +631,33 @@ export default function RobowarsHero({ leadInVh = 0 }) {
 
           timeline
             .to(
+              root.querySelectorAll('.robowars-sponsor-text'),
+              {
+                opacity: 1,
+                transform: 'translate3d(0, 0, 0) scale(1)',
+                duration: 0.32,
+              },
+              BEAT_ROBOTS,
+            )
+            .to(
+              root.querySelectorAll(
+                '.robowars-sponsor-blue, .robowars-sponsor-red',
+              ),
+              {
+                opacity: 1,
+                transform: 'translate3d(0, 0, 0) scale(1)',
+                duration: 0.36,
+              },
+              BEAT_ROBOTS + 0.12,
+            )
+            .to(
               root.querySelectorAll(
                 '.robowars-left-robot, .robowars-right-robot',
               ),
               {
                 opacity: 1,
                 transform: 'translate3d(0, 0, 0) scale(1)',
-                duration: 0.25,
+                duration: 0.3,
               },
               BEAT_ROBOTS,
             )
@@ -551,7 +668,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
               {
                 opacity: 1,
                 transform: 'translate3d(0, 0, 0) scale(1)',
-                duration: 0.2,
+                duration: 0.24,
               },
               BEAT_TITLE,
             )
@@ -560,7 +677,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
               {
                 opacity: 1,
                 transform: 'translate3d(0, 0, 0) scale(1)',
-                duration: 0.18,
+                duration: 0.2,
               },
               BEAT_DATE,
             )
@@ -569,7 +686,7 @@ export default function RobowarsHero({ leadInVh = 0 }) {
               {
                 opacity: 1,
                 transform: 'translate3d(0, 0, 0) scale(1)',
-                duration: 0.18,
+                duration: 0.2,
               },
               BEAT_DETAILS,
             )

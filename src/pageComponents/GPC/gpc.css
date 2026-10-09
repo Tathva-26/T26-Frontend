@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'Akira Expanded';
-  src: url('https://cdn-next-main.tathva.org/fonts/AkiraExpanded.woff2') format('woff2');
+  src: url('/fonts/AkiraExpanded.woff2') format('woff2');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -75,8 +75,9 @@
 /*
  * The site nav is fixed over the top of every section on the home page; the
  * standalone /gpc route has none.
- *   --gpc-solid-nav: the opaque mobile header. The hero is padded by this
- *                    much, so nothing is laid out underneath it.
+ *   --gpc-solid-nav: the mobile header (TathvaMenu: 64px tall, shown below
+ *                    1024px). The hero is padded by this much, so nothing is
+ *                    laid out underneath it.
  *   --gpc-float-nav: the see-through desktop navbar. Only the stacked layout
  *                    keeps its content clear of it.
  */
@@ -88,10 +89,10 @@
 }
 
 .main-scroll .gpc-section {
-  --gpc-solid-nav: 56px;
+  --gpc-solid-nav: 64px;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .main-scroll .gpc-section {
     --gpc-solid-nav: 0px;
     --gpc-float-nav: 88px;

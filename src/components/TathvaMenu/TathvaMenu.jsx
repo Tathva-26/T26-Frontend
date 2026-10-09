@@ -23,7 +23,8 @@ const leftMenu = [
   { label: 'HOME', href: '/' },
   { label: 'ACCOMMODATION', href: '/accommodation' },
   { label: 'LECTURES', href: '/lectures' },
-  { label: 'CONTACT', href: '/contact' },
+  { label: 'MAP', href: 'https://map.tathva.org' },
+  // { label: 'CONTACT', href: '/contact' },
   // { label: 'PROSHOW', href: '/proshow' },
 ]
 
@@ -490,6 +491,14 @@ function TathvaMenuOverlay() {
           href="/"
           aria-label="Tathva home"
           className="pointer-events-auto inline-flex items-center"
+          onClick={(event) => {
+            if (pathname === '/') {
+              event.preventDefault()
+              const scroller = document.querySelector('.main-scroll')
+              if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' })
+              else window.scrollTo({ top: 0, behavior: 'smooth' })
+            }
+          }}
         >
           <img
             src="https://cdn-next-main.tathva.org/images/hero/tathvalogo.png"
@@ -559,6 +568,18 @@ function TathvaMenuOverlay() {
             />
           </svg>
         </button>
+        <Link
+          href="/reccaa"
+          aria-label="RECCAA Club"
+          className="pointer-events-auto inline-flex items-center"
+        >
+          <img
+            src="/images/hero/reccaa_logo.png"
+            alt=""
+            draggable={false}
+            className="h-9 w-auto object-contain"
+          />
+        </Link>
       </header>
 
       {/* =================================================

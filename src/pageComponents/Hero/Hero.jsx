@@ -1114,7 +1114,7 @@ export const Hero = ({
                 className={styles.island}
                 alt=''
                 aria-hidden='true'
-                src={`${assetBase}islandv2.webp`}
+                src={`${assetBase}islandv2.webp?v=2`}
               />
               {/* Back copy of the trail: shows only AFTER the curve (cometFlight.js sizes
                   the clip rect to the island's leftmost point, where the comet passes

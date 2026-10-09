@@ -439,7 +439,17 @@ export default function HeroFrameController({ children }) {
     }
 
     mainScroll.addEventListener('wheel', handleWheel, { passive: false })
-    return () => mainScroll.removeEventListener('wheel', handleWheel)
+    mainScroll.addEventListener('touchstart', handleTouchStart, {
+      passive: true,
+    })
+    mainScroll.addEventListener('touchmove', handleTouchMove, {
+      passive: false,
+    })
+    return () => {
+      mainScroll.removeEventListener('wheel', handleWheel)
+      mainScroll.removeEventListener('touchstart', handleTouchStart)
+      mainScroll.removeEventListener('touchmove', handleTouchMove)
+    }
   }, [unlocked])
 
   // Hero is visually empty (portal fully open, matching Frame) once it's not the front panel,

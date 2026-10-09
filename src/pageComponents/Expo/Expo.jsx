@@ -54,7 +54,7 @@ function ExpoContent({ sharedCrystal = false }) {
   }, [sharedCrystal, project])
 
   return (
-    <section className={styles.page} data-expo-page>
+    <section className={styles.page} data-expo-page data-section-name='EXPO'>
       <section ref={stage} className={styles.stage} aria-labelledby='expo-title'>
         <h1 id='expo-title' className={styles.title} data-expo-title>
           <span className={styles.desktopTitle}>EXPO</span>

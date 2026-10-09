@@ -250,14 +250,14 @@ function useIntroAnimation(ref) {
 const SPEAKERS = [
   {
     name: 'Joseph Annamkutty Jose',
-    role: '9 Oct · 3-4PM · Aryabhatta Hall',
-    bio: 'Join us for an engaging talk show with Joseph Annamkutty Jose, renowned speaker, author, and motivator. The session will feature an interactive segment, giving the audience an opportunity to connect and engage with him.',
+    role: '9 October — Beyond the Noise · Entry: 2:30 PM · Show: 3:00–4:30 PM · Aryabhatta Hall',
+    bio: 'Join us for an engaging talk show with Joseph Annamkutty Jose, renowned storyteller and writer. The session will feature an interactive segment, giving the audience an opportunity to connect and engage with him.',
     side: 'left',
   },
   {
-    name:' Mahadevan A R',
-    role: '10 Oct · 3-4PM · Aryabhatta Hall',
-    bio: 'Get ready for an evening of laughter with Mahadevan A.R. and his Malayalam stand-up comedy show.',
+    name: 'Mahadevan A.R.',
+    role: '10 October — Laugh Out Loud (LOL!!) · Entry: 2:30 PM · Show: 3:00–4:00 PM · Aryabhatta Hall',
+    bio: 'Get ready for an evening of laughter with Mahadevan A.R. and his Malayalam stand-up comedy show. Stay tuned for more updates and surprises from TechConclave \'26!',
     side: 'right',
   },
 ]
@@ -1341,8 +1341,7 @@ export function TechConclaveSection({ children, className = '' }) {
 }
 
 const css = `
-@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500&display=swap");
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@800&display=swap');
+/* Bebas Neue, Space Grotesk, Syne served from globals.css @font-face (R2 CDN) */
 
 html, body { margin: 0; padding: 0; }
 
@@ -1956,7 +1955,7 @@ z-index: 100;
 .tc-card-light {
   position: absolute;
   inset: 0;
-  z-index: 9; /* above the photo (.tc-card-img is 10) */
+  z-index: 11; /* above the photo (.tc-card-img is 10) */
   border-radius: inherit;
   pointer-events: none;
   opacity: 0;
@@ -1967,7 +1966,7 @@ z-index: 100;
     transparent 70%
   );
 }
-.tc-card:is(.tc-active, :focus-visible) {
+.tc-card:is(.tc-active, :focus-visible) .tc-card-light {
   opacity: 1;
 }
 

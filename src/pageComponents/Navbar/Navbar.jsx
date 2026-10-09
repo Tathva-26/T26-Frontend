@@ -42,10 +42,6 @@ const instrumentSerif = Instrument_Serif({
 })
 
 const NAV_LINKS = [
-  { label: 'Workshops', href: '/workshops' },
-  { label: 'Lectures', href: '/lectures' },
-  { label: 'Passes', href: '/passes' },
-  { label: 'Accommodation', href: '/accommodation' },
 ]
 
 const SCROLL_RANGE = 140 // px of scroll over which the bar fully compacts
@@ -401,6 +397,19 @@ export default function Navbar() {
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
+  // Already on `/`: don't re-navigate (no remount/reload) — just go to top.
+  const handleHomeClick = useCallback(
+    (event) => {
+      if (pathname === '/') {
+        event.preventDefault()
+        const scroller = document.querySelector('.main-scroll')
+        if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' })
+        else window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    },
+    [pathname],
+  )
+
   return (
     <>
       <nav
@@ -411,7 +420,7 @@ export default function Navbar() {
         <div className='nb__glow' aria-hidden='true' />
 
         <div className='nb__left'>
-          <Link href='/' className='nb__mark' aria-label='Home'>
+          <Link href='/' className='nb__mark' aria-label='Home' onClick={handleHomeClick}>
             <img src='https://cdn-next-main.tathva.org/images/hero/tathvalogo.png' alt='Tathva' />
           </Link>
 
@@ -428,6 +437,10 @@ export default function Navbar() {
           >
             <MenuIcon />
           </button>
+
+          <Link href='/reccaa' className='nb__reccaa' aria-label='RECCAA Club'>
+            <img src='/images/hero/reccaa_logo.png' alt='' />
+          </Link>
 
           <ul className='nb__links'>
             {NAV_LINKS.map((link) => (
@@ -574,6 +587,21 @@ export default function Navbar() {
 
         .nb__desktop-menu:hover {
           opacity: 1;
+        }
+
+        .nb__reccaa {
+          display: inline-flex;
+          align-items: center;
+          height: 38px;
+          width: auto;
+          flex-shrink: 0;
+        }
+
+        .nb__reccaa img {
+          display: block;
+          height: 100%;
+          width: auto;
+          object-fit: contain;
         }
 
         .nb__desktop-menu svg {

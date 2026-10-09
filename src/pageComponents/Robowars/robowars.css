@@ -1,26 +1,13 @@
 @font-face {
   font-family: 'Calm Serif';
-  src: url('https://cdn-next-main.tathva.org/fonts/calm-serif-demo.woff2') format('woff2');
+  src: url('/fonts/calm-serif-demo.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
-@font-face {
-  font-family: 'Alata';
-  src: url('https://cdn-next-main.tathva.org/fonts/alata-regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Bowlby One SC';
-  src: url('https://cdn-next-main.tathva.org/fonts/BowlbyOneSC-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+/* Alata + Bowlby One SC are provided globally via next/font (siteFonts.js).
+   Only Calm Serif still loads from the CDN (pre-existing, untouched). */
 
 .font-alata {
   font-family: var(--font-alata-local), 'Alata', sans-serif;
@@ -34,7 +21,10 @@
   font-family: var(--font-bowlby-one-sc-local), 'Bowlby One SC', sans-serif;
 }
 
-.robowars-robot {
+.robowars-robot,
+.robowars-sponsor-text,
+.robowars-sponsor-blue,
+.robowars-sponsor-red {
   will-change: transform, opacity;
   transform: translateZ(0);
 }
