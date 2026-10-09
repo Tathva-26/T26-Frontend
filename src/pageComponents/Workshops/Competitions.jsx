@@ -56,6 +56,38 @@ const CARD_LABEL = 'Competition'
 // nullable and next/image requires a src.
 const FALLBACK_IMAGE = 'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
 
+// === MOCK TEST CARDS START — remove this whole block (and its use below) when testing is done ===
+const MOCK_TEST_CARDS = Array.from({ length: 8 }, (_, i) => ({
+  id: `mock-test-competition-${i + 1}`,
+  tiqrEventId: null,
+  ticketId: null,
+  status: 'OPEN',
+  bookable: false,
+  bookingClosed: false,
+  passcodeRequired: false,
+  title: CARD_LABEL,
+  fullTitle: `Mock Test Competition ${i + 1}`,
+  type: EVENT_TYPE,
+  category: 'Test',
+  description: 'Mock card added for layout/animation testing.',
+  extraInfo: null,
+  datetime: null,
+  dateDay: '00',
+  dateMonth: 'TBA',
+  dateFull: 'TBA',
+  time: null,
+  duration: null,
+  venue: 'Test Venue',
+  venueFull: 'Test Venue',
+  fee: 'TBA',
+  priceInPaise: null,
+  image: FALLBACK_IMAGE,
+  isTeamEvent: false,
+  teamSize: null,
+  searchText: `mock test competition ${i + 1}`,
+}))
+// === MOCK TEST CARDS END ===
+
 // Tunable hover-response constants — focal card (Step 3 movement unchanged)
 const MAX_TRANSLATE = 15
 const MAX_TILT = 3
@@ -1814,53 +1846,32 @@ export default function CompetitionsPage() {
   }, [])
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (!gridRef.current) return
+    const grid = gridRef.current
+    if (!grid) return
 
-      const gridRect = gridRef.current.getBoundingClientRect()
-      const firstColumn = gridRef.current.firstElementChild
-      const firstCard = firstColumn?.firstElementChild
-      const secondCard = firstColumn?.children[1]
-
-      if (!firstCard) return
-
-      const firstCardRect = firstCard.getBoundingClientRect()
-      const rowGap = secondCard
-        ? secondCard.getBoundingClientRect().top - firstCardRect.bottom
-        : 18
-      const rowPitch = firstCardRect.height + rowGap
-      const rowsInViewport = Math.max(
-        1,
-        Math.floor((window.innerHeight + rowGap) / rowPitch),
-      )
-
-      const gridTop = window.scrollY + gridRect.top
-
-      // Start when the grid enters the viewport
-      const start = gridTop - window.innerHeight
-
-      // Finish when the measured rows that fill the viewport have entered it.
-      const end =
-        gridTop + rowsInViewport * rowPitch - rowGap - window.innerHeight
-
-      const progress = (window.scrollY - start) / (end - start)
-
-      setScrollProgress(Math.min(Math.max(progress, 0), 1))
+    // Phones animate as soon as the page mounts. Desktop waits until the card
+    // grid enters view, then stays aligned permanently instead of scrubbing
+    // back and forth with scroll position.
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      setScrollProgress(1)
+      return
     }
 
-    window.addEventListener('scroll', handleScroll, {
-      passive: true,
-    })
-
-    window.addEventListener('resize', handleScroll)
-
-    handleScroll()
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('resize', handleScroll)
+    // An IntersectionObserver reports the grid's current state the instant
+    // it starts observing — including "already visible" when the grid sits
+    // high enough to be on screen on load, which aligned the cards before
+    // the user ever scrolled. Checking only inside a real 'scroll' handler
+    // means nothing is evaluated until the user actually scrolls.
+    const checkAlignment = () => {
+      const rect = grid.getBoundingClientRect()
+      if (rect.top > window.innerHeight) return
+      setScrollProgress(1)
+      window.removeEventListener('scroll', checkAlignment)
     }
-  }, [])
+
+    window.addEventListener('scroll', checkAlignment, { passive: true })
+    return () => window.removeEventListener('scroll', checkAlignment)
+  }, [loading])
   // Filtered competitions
   // Searching a precomputed haystack rather than individual fields: the old
   // UI searched `item.instructor`, which the API has no field for.
@@ -1872,6 +1883,8 @@ export default function CompetitionsPage() {
   }, [events])
 
   const filteredCompetitions = useMemo(() => {
+    // MOCK TEST CARDS — remove `.concat(MOCK_TEST_CARDS)` when testing is done
+    const sourceEvents = events.concat(MOCK_TEST_CARDS)
     const query = searchQuery.trim().toLowerCase()
     return events.filter((item) => {
       if (
@@ -2072,6 +2085,7 @@ export default function CompetitionsPage() {
                         className='flex flex-col gap-[18px]'
                         style={{
                           transform: `translateY(${offset}px)`,
+                          transition: 'transform 1.1s cubic-bezier(0.22, 1, 0.36, 1)',
                         }}
                       >
                         {column.map((competition, rowIndex) => (
