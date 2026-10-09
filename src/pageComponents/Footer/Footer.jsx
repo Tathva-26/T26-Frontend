@@ -45,6 +45,7 @@ const linkColumns = [
       // { label: 'PROSHOW', href: '/proshow' },
       { label: 'ACCOMMODATION', href: '/accommodation' },
       { label: 'PROFILE', href: '/profile' },
+      { label: 'TERMS & CONDITIONS', href: '/terms' },
     ],
   },
 ]
