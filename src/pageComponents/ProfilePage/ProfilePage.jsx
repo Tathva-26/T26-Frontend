@@ -284,7 +284,8 @@ export default function ProfilePage() {
           <button
             type='button'
             className={styles.avatarEditButton}
-            aria-label='Edit profile'
+            aria-label='Change profile photo'
+            data-tooltip='Change photo'
             onClick={openEditor}
           >
             <svg

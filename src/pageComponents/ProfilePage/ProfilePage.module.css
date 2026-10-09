@@ -119,6 +119,13 @@
   }
 }
 
+/* Mobile header (TathvaMenu) is fixed h-16, so clear it plus breathing room. */
+@media (max-width: 1023.5px) {
+  .contentWrap {
+    margin-top: calc(4rem + 1.5rem);
+  }
+}
+
 .signOutRow {
   display: flex;
   justify-content: center;
@@ -183,6 +190,35 @@
 .avatarEditButton:focus-visible {
   outline: 2px solid var(--violet-soft);
   outline-offset: 2px;
+}
+
+/* Visible hover/focus tooltip — native `title` needs a long pause and is
+   easy to miss on a 2rem chip, so this shows immediately above the button. */
+.avatarEditButton::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 50%;
+  transform: translateX(50%) translateY(2px);
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #1c1428;
+  color: rgba(240, 232, 255, 0.95);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.avatarEditButton:hover::after,
+.avatarEditButton:focus-visible::after {
+  opacity: 1;
+  transform: translateX(50%) translateY(0);
 }
 
 .avatarEditIcon {
@@ -815,6 +851,12 @@
   margin: 4rem auto;
   text-align: center;
   color: rgba(255, 255, 255, 0.78);
+}
+
+@media (max-width: 1023.5px) {
+  .signInPrompt {
+    margin-top: calc(4rem + 1.5rem);
+  }
 }
 
 .signInButton {
