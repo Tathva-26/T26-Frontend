@@ -56,38 +56,6 @@ const CARD_LABEL = 'Competition'
 // nullable and next/image requires a src.
 const FALLBACK_IMAGE = 'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
 
-// === MOCK TEST CARDS START — remove this whole block (and its use below) when testing is done ===
-const MOCK_TEST_CARDS = Array.from({ length: 8 }, (_, i) => ({
-  id: `mock-test-competition-${i + 1}`,
-  tiqrEventId: null,
-  ticketId: null,
-  status: 'OPEN',
-  bookable: false,
-  bookingClosed: false,
-  passcodeRequired: false,
-  title: CARD_LABEL,
-  fullTitle: `Mock Test Competition ${i + 1}`,
-  type: EVENT_TYPE,
-  category: 'Test',
-  description: 'Mock card added for layout/animation testing.',
-  extraInfo: null,
-  datetime: null,
-  dateDay: '00',
-  dateMonth: 'TBA',
-  dateFull: 'TBA',
-  time: null,
-  duration: null,
-  venue: 'Test Venue',
-  venueFull: 'Test Venue',
-  fee: 'TBA',
-  priceInPaise: null,
-  image: FALLBACK_IMAGE,
-  isTeamEvent: false,
-  teamSize: null,
-  searchText: `mock test competition ${i + 1}`,
-}))
-// === MOCK TEST CARDS END ===
-
 // Tunable hover-response constants — focal card (Step 3 movement unchanged)
 const MAX_TRANSLATE = 15
 const MAX_TILT = 3
@@ -1883,8 +1851,6 @@ export default function CompetitionsPage() {
   }, [events])
 
   const filteredCompetitions = useMemo(() => {
-    // MOCK TEST CARDS — remove `.concat(MOCK_TEST_CARDS)` when testing is done
-    const sourceEvents = events.concat(MOCK_TEST_CARDS)
     const query = searchQuery.trim().toLowerCase()
     return events.filter((item) => {
       if (

@@ -53,38 +53,6 @@ const CARD_LABEL = 'Workshop'
 const FALLBACK_IMAGE =
   'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
 
-// === MOCK TEST CARDS START — remove this whole block (and its use below) when testing is done ===
-const MOCK_TEST_CARDS = Array.from({ length: 8 }, (_, i) => ({
-  id: `mock-test-workshop-${i + 1}`,
-  tiqrEventId: null,
-  ticketId: null,
-  status: 'OPEN',
-  bookable: false,
-  bookingClosed: false,
-  passcodeRequired: false,
-  title: CARD_LABEL,
-  fullTitle: `Mock Test Workshop ${i + 1}`,
-  type: EVENT_TYPE,
-  category: 'Test',
-  description: 'Mock card added for layout/animation testing.',
-  extraInfo: null,
-  datetime: null,
-  dateDay: '00',
-  dateMonth: 'TBA',
-  dateFull: 'TBA',
-  time: null,
-  duration: null,
-  venue: 'Test Venue',
-  venueFull: 'Test Venue',
-  fee: 'TBA',
-  priceInPaise: null,
-  image: FALLBACK_IMAGE,
-  isTeamEvent: false,
-  teamSize: null,
-  searchText: `mock test workshop ${i + 1}`,
-}))
-// === MOCK TEST CARDS END ===
-
 // Tunable hover-response constants — focal card (Step 3 movement unchanged)
 const MAX_TRANSLATE = 15
 const MAX_TILT = 3
@@ -1871,12 +1839,10 @@ export default function WorkshopsPage() {
   // Searching a precomputed haystack rather than individual fields: the old
   // UI searched `item.instructor`, which the API has no field for.
   const filteredWorkshops = useMemo(() => {
-    // MOCK TEST CARDS — remove `.concat(MOCK_TEST_CARDS)` when testing is done
-    const sourceEvents = events.concat(MOCK_TEST_CARDS)
     const query = searchQuery.trim().toLowerCase()
     return query
-      ? sourceEvents.filter((item) => item.searchText.includes(query))
-      : sourceEvents
+      ? events.filter((item) => item.searchText.includes(query))
+      : events
   }, [events, searchQuery])
 
   return (
