@@ -98,6 +98,19 @@ const TOUCH_HOLD_INSET = 0.06
 // tick back a pixel as it dies; either would send the page back the way it
 // came.)
 const TOUCH_INTENT_PX = 24
+// Wheel / trackpad: the wheel has to be quiet this long before whatever comes
+// next counts as a new gesture rather than the tail of the one before it.
+const WHEEL_GESTURE_GAP_MS = 180
+// Trackpads keep firing a dying-away tail of wheel events for a second or
+// more after a swipe. A delta at least this much stronger than the one before
+// it (ratio, plus px) is a new swipe made on top of that tail.
+const WHEEL_SURGE_RATIO = 1.4
+const WHEEL_SURGE_PX = 4
+// ...and never anything weaker than this, so the jitter at the very end of a
+// tail (a few px either way) can't pass for one.
+const WHEEL_SURGE_MIN_PX = 12
+// Wheel / trackpad: the glide from one artist to the next.
+const WHEEL_GLIDE_S = 0.85
 const timelineTotal = (count) => HOLD + Math.max(0, count - 1) * STEP
 // Scroll spent on one timeline unit. 100dvh per unit = a full screen of wheel
 // for each transition, half a screen for each hold.
@@ -148,6 +161,7 @@ function useScrubCrossfade(
     const scroller = section.closest('.main-scroll')
     const touchScreen = window.matchMedia('(pointer: coarse)').matches
     let stopTouchStops = null
+    let stopWheelStops = null
 
     const context = gsap.context(() => {
       const bgs = (bgRefs?.current || []).filter(Boolean)
@@ -606,6 +620,126 @@ function useScrubCrossfade(
         }
       }
 
+      // Wheel / trackpad: one artist per gesture, started off the wheel event
+      // itself. Left to the snap above, a tick first crept the page a few px
+      // on Lenis' smoothing, waited for that to come to rest, and only then
+      // glided on: most of a second of nothing before the artist changed. And
+      // the last artist's hold was a stretch of dead wheel before GPC took
+      // over. Here the glide starts at once, and from the last artist goes
+      // straight on to GPC (whose own landing takes it from there). The rest
+      // of the gesture is swallowed so a trackpad's long tail can't skip on.
+      if (!touchScreen && snap && scroller && tl.scrollTrigger) {
+        const st = tl.scrollTrigger
+        const timeAt = (scroll) =>
+          ((scroll - st.start) / (st.end - st.start)) * total
+        const stopAt = (index) =>
+          st.start + (st.end - st.start) * artistStops[index]
+        const gpcRest = (lenis) => {
+          const track = document.querySelector('.gpc-track')
+          if (!track) return null
+          return (
+            lenis.scroll +
+            track.getBoundingClientRect().top -
+            scroller.getBoundingClientRect().top
+          )
+        }
+        const showing = () =>
+          typeof section.checkVisibility !== 'function' ||
+          section.checkVisibility({
+            visibilityProperty: true,
+            checkVisibilityCSS: true,
+          })
+        let lastWheel = 0
+        let lastStrength = 0
+        let swallowing = false // the rest of this gesture is spent
+        const swallow = (event) => {
+          if (event.cancelable) event.preventDefault()
+          event.stopImmediatePropagation()
+        }
+        const onWheel = (event) => {
+          if (event.ctrlKey) return
+          const lenis = window.__lenis
+          if (!lenis) return
+          const now = performance.now()
+          // A new gesture: the wheel was quiet for a moment, or (trackpads)
+          // a swipe landed on top of the last one's momentum. That tail only
+          // ever dies away, so a delta jumping up out of it is a new push.
+          // Without this, a second swipe made before the first one's tail
+          // had quite died out was swallowed as part of it, and the page
+          // only seemed to answer some of the time.
+          const strength = Math.abs(event.deltaY)
+          const surged =
+            strength >= WHEEL_SURGE_MIN_PX &&
+            strength > lastStrength * WHEEL_SURGE_RATIO + WHEEL_SURGE_PX
+          const fresh = now - lastWheel > WHEEL_GESTURE_GAP_MS || surged
+          lastWheel = now
+          lastStrength = strength
+          if (!fresh && swallowing) {
+            swallow(event)
+            return
+          }
+          swallowing = false
+          // Someone's glide (ours, W1's, GPC's) or hold: Lenis drops the
+          // wheel itself, and whatever is left of this gesture once it is
+          // over must not count as a new one.
+          if (lenis.isLocked || lenis.isStopped) {
+            swallowing = true
+            return
+          }
+          if (Math.abs(event.deltaY) < 2 || !showing()) return
+          const scroll = lenis.scroll
+          if (scroll < st.start - 1 || scroll > st.end + 1) return
+          const time = timeAt(scroll)
+          const EPS = 0.02
+          let index = null
+          let target = null
+          if (event.deltaY > 0) {
+            // The next artist whose hold is still ahead; past the last, GPC.
+            index = artistStops.findIndex((_, i) => i * STEP > time + EPS)
+            if (index === -1) {
+              index = null
+              target = gpcRest(lenis)
+            }
+          } else {
+            // The previous artist whose hold is behind; above the first, back
+            // up to the top of the page (W1 on the home page) when that is
+            // close by, or else left to scroll on up as usual.
+            for (let i = count - 1; i >= 0; i--) {
+              if (i * STEP + HOLD < time - EPS) {
+                index = i
+                break
+              }
+            }
+            if (index === null) {
+              if (st.start > scroller.clientHeight * 2) return
+              target = 0
+            }
+          }
+          if (index !== null) target = stopAt(index)
+          if (target === null || Math.abs(target - scroll) < 2) return
+          swallowing = true
+          swallow(event)
+          pendingArtistIndex = null
+          if (index !== null) snappingWithLenis = true
+          lenis.scrollTo(target, {
+            duration: WHEEL_GLIDE_S,
+            lock: true,
+            easing: (progress) => 1 - Math.pow(1 - progress, 3),
+            onComplete: () => {
+              if (index === null) return
+              settledArtistIndex.current = index
+              snappingWithLenis = false
+              restingScroll = st.scroll()
+            },
+          })
+        }
+        // Capture, so this runs before Lenis' own listener on the same element.
+        const listen = { capture: true, passive: false }
+        scroller.addEventListener('wheel', onWheel, listen)
+        stopWheelStops = () =>
+          scroller.removeEventListener('wheel', onWheel, listen)
+      }
+
       // Where to scroll to show artist `idx` whole: the end of its hold, as a
       // fraction of this trigger's own scroll range.
       scrollForIndex.current = (idx) => {
@@ -618,6 +752,7 @@ function useScrubCrossfade(
 
     return () => {
       stopTouchStops?.()
+      stopWheelStops?.()
       context.revert()
       scrollForIndex.current = null
       section.classList.remove('is-offscreen')
