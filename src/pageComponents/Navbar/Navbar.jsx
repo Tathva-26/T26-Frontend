@@ -397,6 +397,19 @@ export default function Navbar() {
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
+  // Already on `/`: don't re-navigate (no remount/reload) — just go to top.
+  const handleHomeClick = useCallback(
+    (event) => {
+      if (pathname === '/') {
+        event.preventDefault()
+        const scroller = document.querySelector('.main-scroll')
+        if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' })
+        else window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    },
+    [pathname],
+  )
+
   return (
     <>
       <nav
@@ -407,7 +420,7 @@ export default function Navbar() {
         <div className='nb__glow' aria-hidden='true' />
 
         <div className='nb__left'>
-          <Link href='/' className='nb__mark' aria-label='Home'>
+          <Link href='/' className='nb__mark' aria-label='Home' onClick={handleHomeClick}>
             <img src='https://cdn-next-main.tathva.org/images/hero/tathvalogo.png' alt='Tathva' />
           </Link>
 
