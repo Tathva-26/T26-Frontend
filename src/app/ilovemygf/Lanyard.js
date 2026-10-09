@@ -340,11 +340,11 @@ const Lanyard = ({
     const foilUniforms = { foilStrength: { value: 0 }, foilAspect: { value: 1.4 }, foilKey: { value: new THREE.Vector3() }, foilFill: { value: new THREE.Vector3() }, foilTop: { value: new THREE.Vector3() } };
     const injectFoil = shader => { Object.assign(shader.uniforms, foilUniforms); shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>\n${FOIL_VERTEX_HEAD}`).replace('#include <project_vertex>', `#include <project_vertex>\n${FOIL_VERTEX_BODY}`); shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${FOIL_FRAGMENT_HEAD}`).replace('#include <opaque_fragment>', `${FOIL_FRAGMENT_BODY}\n#include <opaque_fragment>`); };
 
-    const frontMaterial = new THREE.MeshPhysicalMaterial({ map: frontTexture, normalMap: grain, normalScale: new THREE.Vector2(0.06, 0.06), transparent: true, alphaTest: 0.5 });
-    const backMaterial = new THREE.MeshPhysicalMaterial({ map: backTexture, normalMap: grain, normalScale: new THREE.Vector2(0.06, 0.06), transparent: true, alphaTest: 0.5 });
+    const frontMaterial = new THREE.MeshPhysicalMaterial({ map: frontTexture, normalMap: grain, normalScale: new THREE.Vector2(0.06, 0.06), alphaTest: 0.5 });
+    const backMaterial = new THREE.MeshPhysicalMaterial({ map: backTexture, normalMap: grain, normalScale: new THREE.Vector2(0.06, 0.06), alphaTest: 0.5 });
     frontMaterial.onBeforeCompile = injectFoil; backMaterial.onBeforeCompile = injectFoil;
     
-    const edgeMaterial = new THREE.MeshPhysicalMaterial({ transparent: true, opacity: 0, depthWrite: false }); 
+    const edgeMaterial = new THREE.MeshPhysicalMaterial({ visible: false });
     const metalMaterial = new THREE.MeshStandardMaterial({ metalness: 1 });
     const bandMaterial = new THREE.MeshPhysicalMaterial({ map: strapTexture, normalMap: weave, normalScale: new THREE.Vector2(0.7, 0.7), roughness: 0.68, sheen: 1, sheenRoughness: 0.42, sheenColor: new THREE.Color(0.32, 0.32, 0.34), side: THREE.DoubleSide });
 

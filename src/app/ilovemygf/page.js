@@ -164,6 +164,9 @@ function SpaceBackground() {
 /**
  * Single Team Section
  */
+/**
+- Single Team Section
+ */
 function Section({ title, members, titleClass = "", use3D = false }) {
   return (
     <section className="relative w-full min-h-screen flex flex-col items-center justify-start sm:justify-center px-3 sm:px-5 md:px-8 lg:px-10 pt-20 pb-16 sm:py-12 max-w-[1920px] mx-auto font-sans select-none">
@@ -180,9 +183,15 @@ function Section({ title, members, titleClass = "", use3D = false }) {
       </div>
 
       {/* Cards Grid */}
-      <div className="relative z-10 w-full flex flex-wrap items-start justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-5 -mt-2 sm:-mt-3 md:-mt-6 lg:-mt-10 py-2 scrollbar-none">
+      <div className="relative w-full flex flex-wrap items-start justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-5 -mt-2 sm:-mt-3 md:-mt-6 lg:-mt-10 py-2 scrollbar-none">
         {members.map((member, index) => (
-          <div key={index} className="w-[42%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] max-w-[300px]">
+          <div 
+            key={index} 
+            // 1. ADDED 'relative' AND 'hover:z-50'
+            className="w-[42%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] max-w-[300px] relative hover:z-50 transition-all duration-300"
+            // 2. THIS REVERSES THE Z-INDEX SO TOP CARDS STAY IN FRONT OF BOTTOM STRAPS
+            style={{ zIndex: members.length - index }} 
+          >
             <MemberCard
               name={member.name}
               image={member.image}
@@ -198,6 +207,7 @@ function Section({ title, members, titleClass = "", use3D = false }) {
     </section>
   );
 }
+
 
 /**
  * Main Page Component
