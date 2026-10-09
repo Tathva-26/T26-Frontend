@@ -103,7 +103,7 @@ export default function TathvaPasses() {
           className='mt-2 text-[10px] font-bold tracking-[0.22em] text-white sm:text-xs md:text-sm lg:text-base'
           style={{ fontFamily: "'Akira Expanded', 'Orbitron', sans-serif" }}
         >
-          GET THE PASS ENJOY EVERY MOMENT
+          GET YOUR PASS — ENJOY EVERY MOMENT
         </p>
 
         {/* -------------------------------------------------------------
@@ -111,7 +111,7 @@ export default function TathvaPasses() {
             Mobile: Vertical rotation (Top/Center/Bottom/Far) with middle largest
             Desktop: Horizontal rotation (Left/Center/Right + Far at bottom middle)
         ------------------------------------------------------------- */}
-        <div className='relative mt-32 sm:mt-16 md:mt-20 lg:mt-24 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
+        <div className='relative mt-8 sm:mt-16 md:mt-20 lg:mt-24 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
           {/* Left Arrow Button (Previous) */}
           <button
             type='button'
