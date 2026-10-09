@@ -25,8 +25,8 @@ export default function Home() {
         {/* Top/Hero fallback anchor */}
         <div data-section-name='TATHVA-26' className='w-full' />
 
-        {/* <ProfilePage /> */}
-        {/* <ProshowCarousel /> */}
+        { /*<ProfilePage />*/ }
+        { <ProshowCarousel /> }
 
         <div data-section-name='ARTISTS' className='w-full'>
           <ArtistPage />
