@@ -131,9 +131,16 @@ export default function TopoBackground({
     // slowly, and a phone needs the time for scrolling.
     const everyOther = window.matchMedia?.("(pointer: coarse)").matches;
     let skip = false;
+    // The field drifts slowly (see `speed`), so redrawing it at full display
+    // refresh rate (60-144Hz) buys nothing visually — cap it the same way a
+    // slow ambient effect elsewhere in the app already does.
+    const FRAME_INTERVAL_MS = 1000 / 30;
+    let lastDrawTime = 0;
     const loop = (now) => {
       raf = requestAnimationFrame(loop);
       if (everyOther && (skip = !skip)) return;
+      if (now - lastDrawTime < FRAME_INTERVAL_MS) return;
+      lastDrawTime = now;
       draw(now);
     };
 

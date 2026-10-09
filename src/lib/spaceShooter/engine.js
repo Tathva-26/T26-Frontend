@@ -35,6 +35,10 @@ export function createSpaceShooter(canvas, { onStats, onHit, spritePaths } = {})
   let lastTime = 0;
   let paused = false;
   let lastStats = "";
+  // Paused (or backgrounded) frames don't change anything world.step would
+  // have touched, so only the first one needs to actually redraw — every
+  // one after that would paint the exact same pixels.
+  let idleFrameDrawn = false;
 
   const world = createWorld({
     onEvent(name) {
@@ -75,8 +79,14 @@ export function createSpaceShooter(canvas, { onStats, onHit, spritePaths } = {})
     const dt = Math.min((time - lastTime) / 1000, RULES.maxDelta);
     lastTime = time;
 
-    if (!paused && !document.hidden) {
+    const active = !paused && !document.hidden;
+    if (active) {
       world.step(dt, { x: input.getAxis("x"), y: input.getAxis("y"), fire: input.isDown("Space") });
+      idleFrameDrawn = false;
+    } else if (idleFrameDrawn) {
+      // Already painted the settled frame once; nothing on screen can have
+      // changed since, so skip the redundant clear+redraw entirely.
+      return;
     }
 
     font ||= getComputedStyle(canvas).fontFamily || "monospace";
@@ -85,6 +95,8 @@ export function createSpaceShooter(canvas, { onStats, onHit, spritePaths } = {})
     ctx.clearRect(0, 0, field.width, field.height);
     renderer.draw(ctx, state, { font, calm });
     emitStats();
+
+    if (!active) idleFrameDrawn = true;
   }
 
   function resize(width) {

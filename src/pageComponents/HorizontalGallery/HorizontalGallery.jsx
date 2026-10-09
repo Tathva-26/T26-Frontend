@@ -48,7 +48,6 @@ const GALLERY_GROUPS = [
   {
     type: 'featured',
     id: 3,
-   
     quotePosition: 'top',
     itemClass: 'w-[calc(var(--vh,1vh)*65.48)] aspect-[1.1/1]',
     src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p1.webp?v=2',
@@ -105,7 +104,6 @@ const GALLERY_GROUPS = [
   {
     type: 'featured',
     id: 8,
-    
     quotePosition: 'bottom',
     itemClass: 'w-[calc(var(--vh,1vh)*60.95)] h-[calc(var(--vh,1vh)*60.95)]',
     src: 'https://cdn-next-main.tathva.org/images/HorizontalGallery/p6.webp?v=2',
@@ -294,8 +292,16 @@ export default function HorizontalGallery({ coordinatedEntrance = false }) {
             trigger: container,
             // Use the bridge's exact release coordinate rather than deriving
             // a second entrance from overlapping sticky/pinned geometry.
-            start: () => coordinatedEntrance && Number.isFinite(openingScroll()) ? openingScroll() : 'top bottom',
-            end: coordinatedEntrance ? () => openingScroll() + container.offsetHeight - window.innerHeight : 'bottom top',
+            // openingScroll() is the hand-off point where the section's top
+            // lands exactly at the viewport top (equivalent to 'top top') —
+            // one viewport-height further along than the entrance's natural
+            // 'top bottom'. Shifting start back by `vh` and spanning the full
+            // `range` (not just `pin`) restores the entrance/exit phases so
+            // the cards are already moving before the section is fully in
+            // view, and keep moving until it's fully scrolled past (right as
+            // the Footer comes into view) instead of stalling early.
+            start: () => coordinatedEntrance && Number.isFinite(openingScroll()) ? openingScroll() - vh : 'top bottom',
+            end: coordinatedEntrance ? () => openingScroll() - vh + range : 'bottom top',
             // Lenis already smooths the scroll position, so `true` tracks it
             // directly instead of adding a second layer of lag.
             scrub: true,
@@ -515,32 +521,6 @@ export default function HorizontalGallery({ coordinatedEntrance = false }) {
                     md:py-0
                   '
                 >
-                  {/* TOP QUOTE */}
-                  {group.quotePosition === 'top' && (
-                    <p
-                      className='
-                        font-serif
-                        italic
-                        font-light
-                        text-neutral-200
-                        text-center
-                        leading-relaxed
-
-                        text-base
-                        px-8
-                        mb-5
-
-                        md:text-xl
-                        lg:text-3xl
-                        md:max-w-lg
-                        md:px-0
-                        md:mb-6
-                      '
-                    >
-                     
-                    </p>
-                  )}
-
                   {/* IMAGE */}
                   <div className={`${IMG_BASE} ${group.itemClass}`}>
                     <img
@@ -560,30 +540,6 @@ export default function HorizontalGallery({ coordinatedEntrance = false }) {
                     />
                   </div>
 
-                  {/* BOTTOM QUOTE */}
-                  {group.quotePosition === 'bottom' && (
-                    <p
-                      className='
-                        font-serif
-                        italic
-                        font-light
-                        text-neutral-200
-                        text-center
-                        leading-relaxed
-
-                        text-base
-                        px-8
-                        mt-5
-
-                        md:text-xl
-                        lg:text-3xl
-                        md:max-w-lg
-                        md:px-0
-                        md:mt-6
-                      '
-                    >
-                    </p>
-                  )}
                 </div>
               ) : (
                 /* PAIR */
@@ -663,7 +619,6 @@ export default function HorizontalGallery({ coordinatedEntrance = false }) {
         <div className='relative z-10 flex flex-col w-full px-[5vw] pt-16 pb-16 space-y-16 md:hidden'>
           {GALLERY_GROUPS.map((group, gIdx) => {
             if (group.type === 'featured') {
-              const isTopQuote = group.quotePosition === 'top'
               const config = MOBILE_CONFIG[group.id] || {
                 align: 'justify-center',
                 width: 'w-[86vw]',
@@ -675,13 +630,6 @@ export default function HorizontalGallery({ coordinatedEntrance = false }) {
                   key={`m-g-${gIdx}`}
                   className='flex flex-col items-center justify-center w-full py-8 space-y-8'
                 >
-                  {/* TOP QUOTE */}
-                  {isTopQuote && group.quote && (
-                    <p className='font-serif italic font-light text-neutral-200 text-center leading-relaxed text-base px-4 max-w-xs sm:max-w-sm'>
-                      &ldquo;{group.quote}&rdquo;
-                    </p>
-                  )}
-
                   {/* FEATURED CENTERED IMAGE (03 or 08) */}
                   <div className={`flex w-full ${config.align}`}>
                     <div
@@ -696,12 +644,6 @@ export default function HorizontalGallery({ coordinatedEntrance = false }) {
                     </div>
                   </div>
 
-                  {/* BOTTOM QUOTE */}
-                  {!isTopQuote && group.quote && (
-                    <p className='font-serif italic font-light text-neutral-200 text-center leading-relaxed text-base px-4 max-w-xs sm:max-w-sm'>
-                      &ldquo;{group.quote}&rdquo;
-                    </p>
-                  )}
                 </div>
               )
             }

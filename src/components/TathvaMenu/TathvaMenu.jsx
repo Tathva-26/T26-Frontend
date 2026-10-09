@@ -2,18 +2,13 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
-import { Jockey_One, Michroma } from 'next/font/google'
+import { Jockey_One } from 'next/font/google'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useNavbarScope } from '@/pageComponents/Navbar/NavbarContext'
+import MenuLabel from './MenuLabel'
 
 const jockeyOne = Jockey_One({
-  weight: '400',
-  subsets: ['latin'],
-  display: 'swap',
-})
-
-const michroma = Michroma({
   weight: '400',
   subsets: ['latin'],
   display: 'swap',
@@ -265,11 +260,22 @@ function TathvaMenuOverlay() {
       const line = viewTop + viewHeight * 0.2
 
       let current = null
+      let bestOpacity = -1
       let bestTop = -Infinity
       sections.forEach((sec) => {
         const r = sec.getBoundingClientRect()
         if (r.height === 0) return
-        if (r.top <= line && r.bottom > line && r.top >= bestTop) {
+        if (!(r.top <= line && r.bottom > line)) return
+        // Pinned/overlapping sections (e.g. the Expo page crossfading over the
+        // Tech Conclave poster) can share the same viewport slot mid-transition.
+        // Rank by how visible each one actually is first, falling back to
+        // position only to break ties between equally-visible sections —
+        // otherwise a barely-faded-in sibling can out-rank the section still
+        // fully on screen just because of its DOM position.
+        const opacity = parseFloat(window.getComputedStyle(sec).opacity) || 0
+        if (opacity <= 0) return
+        if (opacity > bestOpacity || (opacity === bestOpacity && r.top >= bestTop)) {
+          bestOpacity = opacity
           bestTop = r.top
           current = sec
         }
@@ -998,11 +1004,7 @@ function TathvaMenuOverlay() {
         />
 
         {/* Current page or scrolled section name */}
-        <span
-          className={`${michroma.className} pointer-events-none absolute inset-0 flex select-none items-center justify-center text-[9px] leading-none tracking-[3px] text-white -translate-y-[5px] transition-all duration-200`}
-        >
-          {activeSectionName}
-        </span>
+        <MenuLabel text={activeSectionName} />
 
         {/* Downward indicator chevron (only reappears once closing completes) */}
         <span
