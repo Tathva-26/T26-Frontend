@@ -1,12 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { creditsData } from "@/data/creditsData";
 import Lanyard from "./Lanyard"; // Make sure this path is correct
 
-/**
-- PersonImage Component
- */
 function PersonImage({ src, alt = "Team Member" }) {
   return (
     <div className="relative aspect-square w-full h-full bg-white flex items-center justify-center overflow-hidden select-none">
@@ -40,12 +37,6 @@ function GitHubIcon({ className = "w-5 h-5" }) {
   );
 }
 
-/**
-- Sunburst Torn Member Card (Updated with 3D Support)
- */
-/**
-- Sunburst Torn Member Card (Updated with 3D Interactive Icons & Custom Strap)
- */
 function MemberCard({ 
   name = "NAME SURNAME", 
   image = null, 
@@ -55,104 +46,90 @@ function MemberCard({
   github = "https://github.com", 
   use3D = false 
 }) {
+  const [isHoveringViewport, setIsHoveringViewport] = useState(false);
+  const cardRef = useRef(null);
+
+  useEffect(() => {
+    if (!use3D) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsHoveringViewport(entry.isIntersecting),
+      { rootMargin: "600px" } 
+    );
+    if (cardRef.current) observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, [use3D]);
+
   return (
-    <div className="relative group w-full aspect-[276/499] max-h-[76vh] flex items-center justify-center transition-transform duration-300 hover:-translate-y-2 select-none">
+    <div ref={cardRef} className="relative group w-full aspect-[276/499] max-h-[76vh] flex items-center justify-center transition-transform duration-300 hover:-translate-y-2 select-none">
       
-      {use3D ? (
-        <div className="absolute inset-[-40%] z-10 pointer-events-auto cursor-grab active:cursor-grabbing">
+      {/* --- ALWAYS RENDER 2D STATIC CARD AS PLACEHOLDER --- */}
+      <div 
+        className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${
+          use3D && isHoveringViewport ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}
+      >
+        <img src="/images/lead-card.webp" alt={name} className="w-full h-full object-contain pointer-events-none" />
+        <div className="absolute top-[23%] left-[15%] w-[70%] h-[38%] z-10 overflow-hidden bg-white flex items-center justify-center">
+          <PersonImage src={image} alt={name} />
+        </div>
+        <div className="absolute top-[66.1%] inset-x-0 z-20 flex justify-center px-4 pointer-events-none">
+          <span className="text-white font-extrabold text-[12px] sm:text-[14px] md:text-[15px] lg:text-[16px] xl:text-[18px] tracking-[1.5px] uppercase text-center leading-tight drop-shadow-[0_4px_6px_rgba(0,0,0,0.95)]">
+            {name}
+          </span>
+        </div>
+        <div className="absolute top-[73.1%] inset-x-0 z-30 flex items-center justify-center gap-3 sm:gap-4 pointer-events-auto">
+          <a href={linkedin} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded text-white hover:text-[#0077b5] transition-all duration-200 transform hover:scale-125">
+            <LinkedInIcon className="w-full h-full" />
+          </a>
+          <a href={github} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-white hover:text-[#e6edf3] transition-all duration-200 transform hover:scale-125">
+            <GitHubIcon className="w-full h-full" />
+          </a>
+        </div>
+      </div>
+
+      {/* --- MOUNT 3D LANYARD OVER TOP IF APPLICABLE --- */}
+      {use3D && isHoveringViewport && (
+        <div 
+          className="absolute inset-[-40%] z-10 pointer-events-auto cursor-grab active:cursor-grabbing"
+          style={{ animation: 'fadeIn 0.8s ease-in' }} 
+        >
           <Lanyard 
             frameImage="/images/lead-card.webp"  
-            backFrameImage={backImage}
+            backFrameImage="/images/background.webp"
             avatarImage={image}                 
             name={name}                         
             message={message}                   
-            linkedin={linkedin}                 // <-- Passed to Lanyard for 3D clicks
-            github={github}                     // <-- Passed to Lanyard for 3D clicks
-            strapImage="/images/band.webp"       // <-- PUT YOUR RIBBON LOGO PATH HERE
+            linkedin={linkedin}                 
+            github={github}                     
+            strapImage="/images/band.webp"       
             orientation="portrait"
             finish="glossy"
+            intro={false}
           />
         </div>
-      ) : (
-        /* --- 2D STATIC CARD --- */
-        <>
-          <img src="/images/lead-card.webp" alt={name} className="w-full h-full object-contain pointer-events-none" />
-          <div className="absolute top-[23%] left-[15%] w-[70%] h-[38%] z-10 overflow-hidden bg-white flex items-center justify-center">
-            <PersonImage src={image} alt={name} />
-          </div>
-          {/* Static Name */}
-          <div className="absolute top-[66.1%] inset-x-0 z-20 flex justify-center px-4 pointer-events-none">
-            <span className="text-white font-extrabold text-[12px] sm:text-[14px] md:text-[15px] lg:text-[16px] xl:text-[18px] tracking-[1.5px] uppercase text-center leading-tight drop-shadow-[0_4px_6px_rgba(0,0,0,0.95)]">
-              {name}
-            </span>
-          </div>
-
-          {/* Floating Social Links (Only show when NOT using 3D) */}
-          <div className="absolute top-[73.1%] inset-x-0 z-30 flex items-center justify-center gap-3 sm:gap-4 pointer-events-auto">
-            <a href={linkedin} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded text-white hover:text-[#0077b5] transition-all duration-200 transform hover:scale-125">
-              <LinkedInIcon className="w-full h-full" />
-            </a>
-            <a href={github} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-white hover:text-[#e6edf3] transition-all duration-200 transform hover:scale-125">
-              <GitHubIcon className="w-full h-full" />
-            </a>
-          </div>
-        </>
       )}
     </div>
   );
 }
 
-/**
- * Seamless Cosmic Space Background
- * Rendered once as a fixed viewport canvas so all sections flow over it continuously.
- */
 function SpaceBackground() {
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      {/* Base: near-black cosmic gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#010308] via-[#020610] to-[#051230]" />
-
-      {/* Subtle depth radial glow */}
       <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[1100px] h-[750px] rounded-full bg-[#071840]/30 blur-[200px]" />
-
-      {/* Dynamic Shooting Star Streak */}
       <div className="absolute top-[8%] left-[16%] w-[240px] h-[1.5px] bg-gradient-to-r from-transparent via-[#5eaee8]/90 to-transparent rotate-[135deg] opacity-75 blur-[0.5px]" />
       <div className="absolute top-[7.2%] left-[14.5%] w-[4px] h-[4px] rounded-full bg-white/90 blur-[1px]" />
-
-      {/* Multilayer Procedural Starfield */}
       <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        {/* Distant dim stars */}
-        {[...Array(220)].map((_, i) => {
-          const x = ((i * 31 + 7) % 100) + "%";
-          const y = ((i * 47 + 11) % 100) + "%";
-          const r = 0.3 + (i % 3) * 0.15;
-          const opacity = 0.12 + ((i % 5) * 0.06);
-          return (
-            <circle key={`dim-${i}`} cx={x} cy={y} r={r} fill="white" opacity={opacity} />
-          );
-        })}
-        {/* Mid-brightness stars */}
-        {[...Array(90)].map((_, i) => {
-          const x = ((i * 43 + 19) % 100) + "%";
-          const y = ((i * 61 + 23) % 100) + "%";
-          const r = 0.5 + (i % 4) * 0.25;
-          const opacity = 0.3 + ((i % 6) * 0.08);
-          return (
-            <circle key={`mid-${i}`} cx={x} cy={y} r={r} fill="white" opacity={opacity} />
-          );
-        })}
-        {/* Bright accent stars */}
-        {[...Array(25)].map((_, i) => {
-          const x = ((i * 67 + 31) % 100) + "%";
-          const y = ((i * 83 + 13) % 100) + "%";
-          const r = 1.2 + (i % 3) * 0.5;
-          return (
-            <circle key={`bright-${i}`} cx={x} cy={y} r={r} fill="white" opacity={0.85} />
-          );
-        })}
+        {[...Array(220)].map((_, i) => (
+            <circle key={`dim-${i}`} cx={`${((i * 31 + 7) % 100)}%`} cy={`${((i * 47 + 11) % 100)}%`} r={0.3 + (i % 3) * 0.15} fill="white" opacity={0.12 + ((i % 5) * 0.06)} />
+        ))}
+        {[...Array(90)].map((_, i) => (
+            <circle key={`mid-${i}`} cx={`${((i * 43 + 19) % 100)}%`} cy={`${((i * 61 + 23) % 100)}%`} r={0.5 + (i % 4) * 0.25} fill="white" opacity={0.3 + ((i % 6) * 0.08)} />
+        ))}
+        {[...Array(25)].map((_, i) => (
+            <circle key={`bright-${i}`} cx={`${((i * 67 + 31) % 100)}%`} cy={`${((i * 83 + 13) % 100)}%`} r={1.2 + (i % 3) * 0.5} fill="white" opacity={0.85} />
+        ))}
       </svg>
-
-      {/* Nebula mist clouds */}
       <div className="absolute bottom-0 inset-x-0 h-[35%] bg-gradient-to-t from-[#081e4a]/70 via-[#061640]/30 to-transparent" />
       <div className="absolute bottom-[2%] left-[-5%] w-[55%] h-[280px] rounded-full bg-[#0e2350]/35 blur-[100px]" />
       <div className="absolute bottom-[-2%] right-[-5%] w-[55%] h-[300px] rounded-full bg-[#122a58]/40 blur-[110px]" />
@@ -161,16 +138,9 @@ function SpaceBackground() {
   );
 }
 
-/**
- * Single Team Section
- */
-/**
-- Single Team Section
- */
 function Section({ title, members, titleClass = "", use3D = false }) {
   return (
     <section className="relative w-full min-h-screen flex flex-col items-center justify-start sm:justify-center px-3 sm:px-5 md:px-8 lg:px-10 pt-20 pb-16 sm:py-12 max-w-[1920px] mx-auto font-sans select-none">
-      {/* Title */}
       <div className="w-full flex justify-center pb-0 pointer-events-none select-none">
         <h1
           className={`font-black uppercase text-white leading-[1.1] sm:leading-[0.85] tracking-[0.04em] drop-shadow-[0_0_40px_rgba(255,255,255,0.2)] ${
@@ -182,20 +152,16 @@ function Section({ title, members, titleClass = "", use3D = false }) {
         </h1>
       </div>
 
-      {/* Cards Grid */}
       <div className="relative w-full flex flex-wrap items-start justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-5 -mt-2 sm:-mt-3 md:-mt-6 lg:-mt-10 py-2 scrollbar-none">
         {members.map((member, index) => (
           <div 
             key={index} 
-            // 1. ADDED 'relative' AND 'hover:z-50'
             className="w-[42%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] max-w-[300px] relative hover:z-50 transition-all duration-300"
-            // 2. THIS REVERSES THE Z-INDEX SO TOP CARDS STAY IN FRONT OF BOTTOM STRAPS
             style={{ zIndex: members.length - index }} 
           >
             <MemberCard
               name={member.name}
               image={member.image}
-              backImage={member.backImage}
               message={member.message} 
               linkedin={member.linkedin}
               github={member.github}
@@ -208,35 +174,32 @@ function Section({ title, members, titleClass = "", use3D = false }) {
   );
 }
 
-
-/**
- * Main Page Component
- */
 export default function Ilovemygf() {
+  const [enable3D, setEnable3D] = useState(false); // Default to false
+
+  useEffect(() => {
+    // Only enable 3D if the screen is wider than 768px (tablets/desktops)
+    const checkScreen = () => {
+      setEnable3D(window.innerWidth >= 768);
+    };
+    
+    // Check immediately on load
+    checkScreen();
+    
+    // Re-check if they resize their window
+    window.addEventListener("resize", checkScreen);
+    return () => window.removeEventListener("resize", checkScreen);
+  }, []);
+
   return (
     <div className="relative min-h-screen w-full bg-[#010208] text-white overflow-x-hidden">
-      {/* Persistent Full-Page Seamless Background */}
       <SpaceBackground />
-
-      {/* Scrollable Content Container */}
       <div className="relative z-10 w-full flex flex-col">
-        <Section title="LEAD" members={creditsData.leads} use3D={true} />
-        
-        <Section
-          title="FRONTEND"
-          members={creditsData.frontend}
-          use3D={true} 
-          titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]"
-        />
-        
-        <Section
-          title="BACKEND"
-          members={creditsData.backend}
-          use3D={true} 
-          titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]"
-        />
-        
-        <Section title="UI/UX" members={creditsData.uiux} use3D={true} />
+        {/* Pass the dynamically calculated enable3D state down */}
+        <Section title="LEAD" members={creditsData.leads} use3D={enable3D} />
+        <Section title="FRONTEND" members={creditsData.frontend} use3D={enable3D} titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]" />
+        <Section title="BACKEND" members={creditsData.backend} use3D={enable3D} titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]" />
+        <Section title="UI/UX" members={creditsData.uiux} use3D={enable3D} />
       </div>
     </div>
   );

@@ -4,11 +4,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import './Lanyard.css';
 
-// Matched to your 2D aspect ratio of 276/499 exactly
-const CARD_SIZES = {
-  portrait: [1.6, 2.89], 
-  landscape: [2.89, 1.6]
-};
+const CARD_SIZES = { portrait: [1.6, 2.89], landscape: [2.89, 1.6] };
 const ANCHORS = { left: 0.27, center: 0.5, right: 0.73 };
 const THICKNESS = 0.018;
 const BEVEL = 0.007;
@@ -319,7 +315,8 @@ const Lanyard = ({
     const container = containerRef.current; if (!container) return undefined;
 
     let renderer;
-    try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' }); } catch { return undefined; }
+    // OPTIMIZATION 1: Disable heavy antialiasing and set powerPreference to default to prevent crashing on multi-card renders
+    try { renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: 'default' }); } catch { return undefined; }
     renderer.setClearColor(0x000000, 0); renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1;
     const canvas = renderer.domElement; canvas.className = 'lanyard-canvas'; canvas.setAttribute('aria-hidden', 'true'); container.appendChild(canvas);
 
@@ -577,7 +574,9 @@ const Lanyard = ({
 
     canvas.addEventListener('pointerdown', onPointerDown); canvas.addEventListener('pointermove', onPointerMove); canvas.addEventListener('pointerup', onPointerUp); canvas.addEventListener('pointercancel', onPointerUp); canvas.addEventListener('lostpointercapture', onPointerUp); canvas.addEventListener('touchstart', onTouchStart, { passive: false });
 
-    const resize = () => { view.width = Math.max(1, container.clientWidth); view.height = Math.max(1, container.clientHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(view.width, view.height, false); apply(); render(); };
+    // OPTIMIZATION 2: Lower the pixel ratio to handle multiple instances without bottlenecking GPU fill rate.
+    const resize = () => { view.width = Math.max(1, container.clientWidth); view.height = Math.max(1, container.clientHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25)); renderer.setSize(view.width, view.height, false); apply(); render(); };
+    
     const resizeObserver = new ResizeObserver(resize); resizeObserver.observe(container);
     const intersectionObserver = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; if (visible) start(); }); intersectionObserver.observe(container);
     const onVisibility = () => { if (!document.hidden) start(); }; document.addEventListener('visibilitychange', onVisibility);
