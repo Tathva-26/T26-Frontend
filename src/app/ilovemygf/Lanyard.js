@@ -340,13 +340,10 @@ const Lanyard = ({
     const foilUniforms = { foilStrength: { value: 0 }, foilAspect: { value: 1.4 }, foilKey: { value: new THREE.Vector3() }, foilFill: { value: new THREE.Vector3() }, foilTop: { value: new THREE.Vector3() } };
     const injectFoil = shader => { Object.assign(shader.uniforms, foilUniforms); shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>\n${FOIL_VERTEX_HEAD}`).replace('#include <project_vertex>', `#include <project_vertex>\n${FOIL_VERTEX_BODY}`); shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${FOIL_FRAGMENT_HEAD}`).replace('#include <opaque_fragment>', `${FOIL_FRAGMENT_BODY}\n#include <opaque_fragment>`); };
 
-    // --- FIX 1: ENABLE TRANSPARENCY ON FRONT & BACK FACES ---
-    // 'alphaTest: 0.5' tells Three.js to throw away invisible pixels from your PNGs, giving sharp torn edges!
     const frontMaterial = new THREE.MeshPhysicalMaterial({ map: frontTexture, normalMap: grain, normalScale: new THREE.Vector2(0.06, 0.06), transparent: true, alphaTest: 0.5 });
     const backMaterial = new THREE.MeshPhysicalMaterial({ map: backTexture, normalMap: grain, normalScale: new THREE.Vector2(0.06, 0.06), transparent: true, alphaTest: 0.5 });
     frontMaterial.onBeforeCompile = injectFoil; backMaterial.onBeforeCompile = injectFoil;
     
-    // --- FIX 2: HIDE THE RECTANGULAR INNER "PLASTIC" EDGE ---
     const edgeMaterial = new THREE.MeshPhysicalMaterial({ transparent: true, opacity: 0, depthWrite: false }); 
     const metalMaterial = new THREE.MeshStandardMaterial({ metalness: 1 });
     const bandMaterial = new THREE.MeshPhysicalMaterial({ map: strapTexture, normalMap: weave, normalScale: new THREE.Vector2(0.7, 0.7), roughness: 0.68, sheen: 1, sheenRoughness: 0.42, sheenColor: new THREE.Color(0.32, 0.32, 0.34), side: THREE.DoubleSide });
@@ -378,9 +375,8 @@ const Lanyard = ({
 
       // --- FRONT CANVAS ---
       const fCtx = frontCanvas.getContext('2d');
-      fCtx.clearRect(0, 0, width, height); // Background stays perfectly transparent by default!
+      fCtx.clearRect(0, 0, width, height);
       
-      // If we don't have a transparent frame image, fall back to solid card color
       if (images.frame) fCtx.drawImage(images.frame, 0, 0, width, height);
       else { fCtx.fillStyle = toCss(parseColor(s.cardColor, [0, 0, 0])); fCtx.fillRect(0, 0, width, height); }
 
@@ -420,23 +416,20 @@ const Lanyard = ({
 
       // --- BACK CANVAS ---
       const bCtx = backCanvas.getContext('2d');
-      bCtx.clearRect(0, 0, width, height); // Clear to fully transparent
+      bCtx.clearRect(0, 0, width, height); 
       
       bCtx.save();
-      bCtx.translate(width, 0); 
-      bCtx.scale(-1, 1);
+      // NO MIRRORING FLIP HERE ANYMORE!
       
       const backBg = images.backFrame || images.frame;
       if (backBg) bCtx.drawImage(backBg, 0, 0, width, height);
       else { bCtx.fillStyle = toCss(parseColor(s.cardColor, [0, 0, 0])); bCtx.fillRect(0, 0, width, height); }
 
-      // --- FIX 3: PREVENT THE BLACK TEXT OVERLAY FROM PAINTING OVER TORN EDGES ---
-      // This tells the canvas to ONLY draw the dark background over areas where your backBg image is solid.
       bCtx.globalCompositeOperation = 'source-atop';
 
       if (s.message) {
         bCtx.fillStyle = 'rgba(0,0,0,0.5)';
-        bCtx.fillRect(0, 0, width, height); // Draws the darkening tint only over the actual card shape
+        bCtx.fillRect(0, 0, width, height); 
         
         bCtx.fillStyle = 'rgba(255,255,255,1)'; bCtx.textAlign = 'center'; bCtx.textBaseline = 'middle'; bCtx.font = '600 48px sans-serif'; bCtx.shadowColor = 'rgba(0,0,0,0.8)'; bCtx.shadowBlur = 8;
         const maxW = width * 0.75; const words = s.message.split(' '); let line = ''; let y = height * 0.40; 

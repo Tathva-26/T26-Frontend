@@ -61,14 +61,14 @@ function MemberCard({
       {use3D ? (
         <div className="absolute inset-[-40%] z-10 pointer-events-auto cursor-grab active:cursor-grabbing">
           <Lanyard 
-            frameImage="/images/lead-card.png"  
+            frameImage="/images/lead-card.webp"  
             backFrameImage={backImage}
             avatarImage={image}                 
             name={name}                         
             message={message}                   
             linkedin={linkedin}                 // <-- Passed to Lanyard for 3D clicks
             github={github}                     // <-- Passed to Lanyard for 3D clicks
-            strapImage="/images/band.png"       // <-- PUT YOUR RIBBON LOGO PATH HERE
+            strapImage="/images/band.webp"       // <-- PUT YOUR RIBBON LOGO PATH HERE
             orientation="portrait"
             finish="glossy"
           />
@@ -76,7 +76,7 @@ function MemberCard({
       ) : (
         /* --- 2D STATIC CARD --- */
         <>
-          <img src="/images/lead-card.png" alt={name} className="w-full h-full object-contain pointer-events-none" />
+          <img src="/images/lead-card.webp" alt={name} className="w-full h-full object-contain pointer-events-none" />
           <div className="absolute top-[23%] left-[15%] w-[70%] h-[38%] z-10 overflow-hidden bg-white flex items-center justify-center">
             <PersonImage src={image} alt={name} />
           </div>
