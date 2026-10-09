@@ -92,7 +92,7 @@ export default function TathvaPasses() {
       {/* -------------------------------------------------------------
           HERO TITLE & SUBTITLE (AKIRA EXPANDED FONT)
       ------------------------------------------------------------- */}
-      <div className='relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 pt-24 sm:pt-24 md:pt-20 pb-10 sm:pb-14 text-center'>
+      <div className='relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 pt-28 sm:pt-28 md:pt-28 lg:pt-32 pb-10 sm:pb-14 text-center'>
         <h1
           className='text-4xl font-black tracking-[0.12em] text-white sm:text-5xl md:text-6xl lg:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]'
           style={{ fontFamily: "'Akira Expanded', 'Orbitron', sans-serif" }}
