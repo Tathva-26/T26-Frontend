@@ -2,6 +2,7 @@ import './globals.css'
 import { UserProvider } from '@/context/UserContext'
 import ReferralCapture from '@/components/ReferralCapture'
 import ScrollDownCue from '@/components/ScrollDownCue'
+import { siteFontVariables } from './siteFonts'
 
 export const metadata = {
   metadataBase: new URL('https://tathva.org'),
@@ -73,7 +74,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang='en' className='h-full antialiased'>
+    <html lang='en' className={`h-full antialiased ${siteFontVariables}`}>
       <body className='min-h-full flex flex-col'>
         {/* One session for the whole app: every page reads it, and every 401
 from anywhere routes to the single handler inside. */}

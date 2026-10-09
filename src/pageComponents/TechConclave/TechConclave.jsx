@@ -1341,8 +1341,7 @@ export function TechConclaveSection({ children, className = '' }) {
 }
 
 const css = `
-@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500&display=swap");
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@800&display=swap');
+/* Bebas Neue, Space Grotesk, Syne served from globals.css @font-face (R2 CDN) */
 
 html, body { margin: 0; padding: 0; }
 

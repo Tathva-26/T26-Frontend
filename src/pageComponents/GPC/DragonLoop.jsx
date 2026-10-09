@@ -56,10 +56,19 @@ function startDragon(canvas, { frames, fps = 60 }) {
       image.src = src;
     });
 
-  Promise.all(frames.map(loadImage)).then((images) => {
+  Promise.all(frames.map(loadImage)).then((loaded) => {
     if (!active) return;
     const context = canvas.getContext("2d");
-    if (!context || !images[0]?.naturalWidth) return;
+    // A frame that failed to load can't be drawn (drawImage throws on it, which would stop the
+    // loop for good), so its place is taken by the frame before it and the loop keeps its length.
+    const arrived = (image) => image.naturalWidth > 0;
+    let standIn = loaded.find(arrived);
+    if (!context || !standIn) return;
+    const images = [];
+    for (const image of loaded) {
+      if (arrived(image)) standIn = image;
+      images.push(standIn);
+    }
 
     let frameIndex = 0;
     let lastTime = 0;

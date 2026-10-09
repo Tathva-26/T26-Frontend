@@ -6,6 +6,11 @@ const range = (count) => Array.from({ length: count }, (_, index) => index);
 const pick = (list) => list[Math.floor(randomBetween(0, list.length))];
 const near = (a, b, distance) => Math.hypot(a.x - b.x, a.y - b.y) < distance;
 
+// An enemy that enters sideways loses that speed at this rate (1/s), so one
+// starting at `vx` travels vx / ENTRY_DRAG across before it straightens out.
+const ENTRY_DRAG = 0.9;
+const SWEEP = { speed: 260, inset: 60 }; // px/s at least, and how far inside the edge it must end up
+
 // The shapes a wave arrives in. Each returns where its enemies start, above
 // (or beside) a screen of the given size: { x, y } plus, optionally, a
 // sideways speed that dies away (`vx`) or a side-to-side weave (`sway`, `phase`).
@@ -33,12 +38,15 @@ const FORMATIONS = [
       sway: 46,
       phase: index * 0.7,
     })),
-  // Two groups sweeping in from the sides.
+  // Two groups sweeping in from the sides. The ones at the back start further
+  // out, so they come in faster: enough to carry every one of them on screen.
   (count, { width }) =>
     range(count).map((index) => {
       const from = index % 2 ? 1 : -1;
       const rank = Math.floor(index / 2);
-      return { x: width / 2 + from * (width / 2 + 40 + rank * 46), y: -20 - rank * 54, vx: -from * 260 };
+      const outside = 40 + rank * 46;
+      const speed = Math.max(SWEEP.speed, (outside + SWEEP.inset) * ENTRY_DRAG);
+      return { x: width / 2 + from * (width / 2 + outside), y: -20 - rank * 54, vx: -from * speed };
     }),
   // Stragglers, anywhere.
   (count, { width }) => range(count).map((index) => ({ x: randomBetween(40, width - 40), y: -40 - index * 70 })),
@@ -360,7 +368,7 @@ export function createWorld({ field: firstField = GAME, pace: fixedPace, firstWa
   }
 
   function drift(foe, dt) {
-    foe.vx *= Math.exp(-dt * 0.9); // a sideways entrance straightens out
+    foe.vx *= Math.exp(-dt * ENTRY_DRAG); // a sideways entrance straightens out
     foe.baseX += foe.vx * dt;
     foe.y += foe.vy * dt;
     foe.x = foe.baseX + Math.sin(foe.age * 2.2 + foe.phase) * foe.sway;

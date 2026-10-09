@@ -48,7 +48,7 @@ export const EVENTS = [
       'Autonomous rover guidance, spatial sensor fusion and zero-gravity control systems.',
     extraInfo:
       'Build and test a simulated lunar rover trajectory from scratch. Bring a laptop with Python 3.11 installed.',
-    picture: 'https://cdn.tathva.org/events/deep-space-robotics.webp',
+    picture: 'https://cdn.tathva.org/events/7f82be53-8b15-4f72-b677-20a025c53291.webp',
     teamSize: null,
     isTeamEvent: false,
     committee: 'Workshop Committee',
@@ -73,7 +73,7 @@ export const EVENTS = [
     venue: VENUES.arena,
     description: 'ROS2, kinematic simulation and computer vision for bipedal manipulation.',
     extraInfo: null,
-    picture: null, // exercises the placeholder path
+    picture: '/images/dummy/poster.webp',
     teamSize: 3,
     isTeamEvent: true,
     committee: 'Workshop committee ',
@@ -98,7 +98,7 @@ export const EVENTS = [
     venue: VENUES.seminar,
     description: 'Quantum superposition and entanglement, with circuits on Qiskit.',
     extraInfo: 'Linear algebra basics assumed.',
-    picture: 'https://cdn.tathva.org/events/quantum.webp',
+    picture: 'https://cdn.tathva.org/events/e3f9f298-698f-4018-8a25-32e9b7451c35.webp',
     teamSize: null,
     isTeamEvent: false,
     committee: 'Workshop Committe',
@@ -123,7 +123,7 @@ export const EVENTS = [
     venue: VENUES.lab4,
     description: 'Live-fire threat simulation against a zero-trust reference network.',
     extraInfo: null,
-    picture: 'https://cdn.tathva.org/events/zero-trust.webp',
+    picture: 'https://cdn.tathva.org/events/167bca16-7404-4c2d-a4bc-d2efe22d5fd5.webp',
     teamSize: null,
     isTeamEvent: false,
     committee: '',
@@ -148,7 +148,7 @@ export const EVENTS = [
     venue: VENUES.arena,
     description: 'Combat robotics, 15kg class, single elimination.',
     extraInfo: 'Teams of up to 5. Robot inspection closes an hour before the first bout.',
-    picture: 'https://cdn.tathva.org/events/robowars.webp',
+    picture: 'https://cdn.tathva.org/events/87943b01-971d-4bd1-bc64-22c8e0f94d74.webp',
     teamSize: 5,
     isTeamEvent: true,
     committee: 'Program Committee',
@@ -198,7 +198,7 @@ export const EVENTS = [
     venue: VENUES.audi,
     description: 'A conversation on instrumentation, failure and the long game.',
     extraInfo: null,
-    picture: 'https://cdn.tathva.org/events/edge-of-physics.webp',
+    picture: 'https://cdn.tathva.org/events/eeb2d018-0f45-471c-bb54-eef04173facd.webp',
     teamSize: null,
     isTeamEvent: false,
     committee: null,
@@ -252,7 +252,7 @@ export const EVENTS = [
     venue: null,
     description: 'Proshow, events and conclave across all three days.',
     extraInfo: null,
-    
+
     picture: 'https://cdn.tathva.org/events/506476dc-25d4-4813-8c88-c7344395c099.webp',
     teamSize: null,
     isTeamEvent: false,
@@ -314,7 +314,7 @@ export const EVENTS = [
     createdAt: '2026-08-12T03:30:00.000Z',
     updatedAt: '2026-09-30T03:30:00.000Z',
   },
-   {
+  {
     id: 41,
     tiqrEventId: 931,
     ticketId: 811,

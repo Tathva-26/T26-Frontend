@@ -17,17 +17,22 @@ import { useRouter } from 'next/navigation'
 import Navbar from '@/pageComponents/Navbar/Navbar'
 import TathvaMenu from '@/components/TathvaMenu/TathvaMenu'
 import { useEvents } from '@/hooks/useEvents'
+import {
+  COMPETITION_CATEGORIES,
+  COMPETITION_CATEGORY_ALL,
+  competitionCategory,
+} from '@/lib/events'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(TextPlugin)
 }
 
 const competitionsStyles = `
-@import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
+/* Jaro + Jost served from globals.css @font-face (R2 CDN) */
 
 @font-face {
   font-family: 'Competitions Fragment Serif';
-  src: url('https://cdn-next-main.tathva.org/fonts/PPFragment-SerifExtraBold.woff2') format('woff2');
+  src: url('/fonts/PPFragment-SerifExtraBold.woff2') format('woff2');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -49,7 +54,35 @@ const CARD_LABEL = 'Competition'
 
 // `picture` is non-null on every event in production today, but the field is
 // nullable and next/image requires a src.
-const FALLBACK_IMAGE = 'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
+const FALLBACK_IMAGE =
+  'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
+
+// Card details layout (same as the workshops page).
+// Keep DETAILS_BG_CLEAR the same color as DETAILS_BG, just fully transparent,
+// otherwise the fade can look gray in the middle.
+const DETAILS_BG = 'rgb(0, 0, 0)'
+const DETAILS_BG_CLEAR = 'rgba(0, 0, 0, 0)'
+const DETAILS_FADE_HEIGHT = '1%' // fade covers only the bottom 1% of the poster
+const DETAILS_BG_IMAGE = '/images/reccaa/bg.png' // background for the strip + price row
+
+// Height of the text strip under the poster, in cqw (card widths).
+// Mobile cards are narrow, so the strip is taller there to fit the details.
+const DETAILS_TEXT_CQW = 22
+const DETAILS_TEXT_CQW_MOBILE = 34
+const PRICE_DENT_CQW = 14 // height of the price row / dent
+
+// Card is 3:4 poster (133.333cqw) + details strip + price row. The dent
+// notch starts where the price row begins.
+const getNotchPct = (stripCqw) =>
+  ((400 / 3 + stripCqw) / (400 / 3 + stripCqw + PRICE_DENT_CQW)) * 100
+
+// Outline path for the notched card, in the 135.239 x 135.639 viewBox.
+// Only the notch's y position changes with the strip height.
+const getOutlinePath = (notchPct) => {
+  const n = (notchPct / 100) * 135.639
+  const f = (v) => v.toFixed(3)
+  return `M0.510216 132.629V61.5188V3.01022C0.510216 1.6295 1.62951 0.510216 3.01022 0.510216H132.229C133.61 0.510216 134.729 1.6295 134.729 3.01022V${f(n - 2.5)}C134.729 ${f(n - 1.119)} 133.61 ${f(n)} 132.229 ${f(n)}H43.5146C42.7568 ${f(n)} 42.04 ${f(n + 0.344)} 41.5655 ${f(n + 0.935)}L33.2653 134.195C32.7907 134.785 32.0739 135.129 31.3162 135.129H3.01022C1.6295 135.129 0.510216 134.01 0.510216 132.629Z`
+}
 
 // Tunable hover-response constants — focal card (Step 3 movement unchanged)
 const MAX_TRANSLATE = 15
@@ -168,6 +201,9 @@ const IDLE_RESTORE_DURATION = 0.85
 export default function CompetitionsPage() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
+  // Keyword-derived category filter — stopgap until the backend ships a real
+  // category field (see competitionCategory in lib/events.js).
+  const [activeCategory, setActiveCategory] = useState(COMPETITION_CATEGORY_ALL)
 
   const { events, loading, error, reload } = useEvents(EVENT_TYPE, {
     label: CARD_LABEL,
@@ -946,8 +982,8 @@ export default function CompetitionsPage() {
     labelY = Math.min(
       Math.max(labelY, CALLOUT_VIEWPORT_MARGIN),
       window.innerHeight -
-        CALLOUT_LABEL_HEIGHT_ESTIMATE -
-        CALLOUT_VIEWPORT_MARGIN,
+      CALLOUT_LABEL_HEIGHT_ESTIMATE -
+      CALLOUT_VIEWPORT_MARGIN,
     )
 
     return { anchor, labelTarget: { x: labelX, y: labelY } }
@@ -963,9 +999,9 @@ export default function CompetitionsPage() {
     side === 'right'
       ? { x: labelX, y: labelY + CALLOUT_LABEL_ANCHOR_OFFSET_Y }
       : {
-          x: labelX + CALLOUT_LABEL_WIDTH,
-          y: labelY + CALLOUT_LABEL_ANCHOR_OFFSET_Y,
-        }
+        x: labelX + CALLOUT_LABEL_WIDTH,
+        y: labelY + CALLOUT_LABEL_ANCHOR_OFFSET_Y,
+      }
 
   const randomScrambleChar = () =>
     SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)]
@@ -999,16 +1035,16 @@ export default function CompetitionsPage() {
     el.textContent = out
   }
 
-  const triggerDecodeAudioHook = () => {}
+  const triggerDecodeAudioHook = () => { }
 
   const formatDate = (dateString) =>
     dateString
       ? new Date(dateString).toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-          timeZone: 'Asia/Kolkata',
-        })
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'Asia/Kolkata',
+      })
       : 'TBA'
 
   const getVenueName = (venue) =>
@@ -1088,9 +1124,7 @@ export default function CompetitionsPage() {
     ).toUpperCase()
     const venueName = getVenueName(competition.venue)
     const metaText = `${competition.dateMonth} ${competition.dateDay}${competition.time ? ` · ${competition.time}` : ''}${venueName ? ` · ${venueName}` : ''}`
-    const descText = String(
-      competition.description ?? 'No description available',
-    )
+    const descText = String(competition.description ?? 'No description available')
     const priceText = `${competition.fee != null ? competition.fee : 'N/A'}`
 
     calloutDecodeRef.current = {
@@ -1673,7 +1707,9 @@ export default function CompetitionsPage() {
     stopTicker()
 
     if (pageRef.current) {
-      gsap.set(pageRef.current, { clearProps: 'opacity,transform,transformOrigin' })
+      gsap.set(pageRef.current, {
+        clearProps: 'opacity,transform,transformOrigin',
+      })
     }
 
     Object.values(cardRefs.current).forEach((cardEl) => {
@@ -1725,7 +1761,7 @@ export default function CompetitionsPage() {
     hardResetFocusOverlay()
     remeasureAndStagger()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery])
+  }, [searchQuery, activeCategory])
 
   useEffect(() => {
     const handleResize = () => {
@@ -1806,60 +1842,55 @@ export default function CompetitionsPage() {
   }, [])
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (!gridRef.current) return
+    const grid = gridRef.current
+    if (!grid) return
 
-      const gridRect = gridRef.current.getBoundingClientRect()
-      const firstColumn = gridRef.current.firstElementChild
-      const firstCard = firstColumn?.firstElementChild
-      const secondCard = firstColumn?.children[1]
-
-      if (!firstCard) return
-
-      const firstCardRect = firstCard.getBoundingClientRect()
-      const rowGap = secondCard
-        ? secondCard.getBoundingClientRect().top - firstCardRect.bottom
-        : 18
-      const rowPitch = firstCardRect.height + rowGap
-      const rowsInViewport = Math.max(
-        1,
-        Math.floor((window.innerHeight + rowGap) / rowPitch),
-      )
-
-      const gridTop = window.scrollY + gridRect.top
-
-      // Start when the grid enters the viewport
-      const start = gridTop - window.innerHeight
-
-      // Finish when the measured rows that fill the viewport have entered it.
-      const end =
-        gridTop + rowsInViewport * rowPitch - rowGap - window.innerHeight
-
-      const progress = (window.scrollY - start) / (end - start)
-
-      setScrollProgress(Math.min(Math.max(progress, 0), 1))
+    // Phones animate as soon as the page mounts. Desktop waits until the card
+    // grid enters view, then stays aligned permanently instead of scrubbing
+    // back and forth with scroll position.
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      setScrollProgress(1)
+      return
     }
 
-    window.addEventListener('scroll', handleScroll, {
-      passive: true,
-    })
-
-    window.addEventListener('resize', handleScroll)
-
-    handleScroll()
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('resize', handleScroll)
+    // An IntersectionObserver reports the grid's current state the instant
+    // it starts observing — including "already visible" when the grid sits
+    // high enough to be on screen on load, which aligned the cards before
+    // the user ever scrolled. Checking only inside a real 'scroll' handler
+    // means nothing is evaluated until the user actually scrolls.
+    const checkAlignment = () => {
+      const rect = grid.getBoundingClientRect()
+      if (rect.top > window.innerHeight) return
+      setScrollProgress(1)
+      window.removeEventListener('scroll', checkAlignment)
     }
-  }, [])
+
+    window.addEventListener('scroll', checkAlignment, { passive: true })
+    return () => window.removeEventListener('scroll', checkAlignment)
+  }, [loading])
   // Filtered competitions
   // Searching a precomputed haystack rather than individual fields: the old
   // UI searched `item.instructor`, which the API has no field for.
+  // Only categories that actually have events become chips, in the canonical
+  // order from lib/events.js — so "Others" never renders an empty chip row.
+  const availableCategories = useMemo(() => {
+    const present = new Set(events.map((item) => competitionCategory(item)))
+    return COMPETITION_CATEGORIES.filter((category) => present.has(category))
+  }, [events])
+
   const filteredCompetitions = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    return query ? events.filter((item) => item.searchText.includes(query)) : events
+    return query
+      ? events.filter((item) => item.searchText.includes(query))
+      : events
   }, [events, searchQuery])
+
+  // Mobile = the 2-column layout (under 768px)
+  const isMobile = columnCount === 2
+  const stripCqw = isMobile ? DETAILS_TEXT_CQW_MOBILE : DETAILS_TEXT_CQW
+  const notchPct = getNotchPct(stripCqw)
+  const cardClipPath = `polygon(0 0, 100% 0, 100% ${notchPct.toFixed(2)}%, 32.18% ${notchPct.toFixed(2)}%, 24.6% 100%, 0 100%)`
+  const outlinePath = getOutlinePath(notchPct)
 
   return (
     <div className='competitions-page min-h-screen bg-[#06070d] text-slate-100 font-sans relative overflow-x-clip selection:bg-indigo-600 selection:text-white pb-24'>
@@ -1877,10 +1908,7 @@ export default function CompetitionsPage() {
       </div>
 
       {/* MAIN CONTAINER */}
-      <main
-        ref={pageRef}
-        className='relative z-10 px-4 sm:px-6 lg:px-8 pt-4'
-      >
+      <main ref={pageRef} className='relative z-10 px-4 sm:px-6 lg:px-8 pt-4'>
         {/* Step 11 — global dark focus overlay. Lives inside <main> so the
             raised focal column (z 20) sits above it (z 15) while every other
             column sits below. Purely visual; never blocks pointer events. */}
@@ -1944,8 +1972,34 @@ export default function CompetitionsPage() {
           </div>
         </section>
 
-        {/* WORKSHOP CARDS GRID */}
+        {/* COMPETITION CARDS GRID */}
         <section className='relative w-full'>
+          {/* Category filter chips. Keyword-derived stopgap — see
+              competitionCategory in lib/events.js. Hidden until there is more
+              than one category to pick from. */}
+          {!loading && !error && availableCategories.length > 1 && (
+            <div className='mb-6 flex flex-wrap gap-2'>
+              {[COMPETITION_CATEGORY_ALL, ...availableCategories].map(
+                (category) => {
+                  const isActive = category === activeCategory
+                  return (
+                    <button
+                      key={category}
+                      type='button'
+                      onClick={() => setActiveCategory(category)}
+                      aria-pressed={isActive}
+                      className={`cursor-pointer rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition-colors ${isActive
+                          ? 'border-indigo-400 bg-indigo-600/30 text-white'
+                          : 'border-white/15 bg-white/5 text-slate-300 hover:border-white/30 hover:text-white'
+                        }`}
+                    >
+                      {category}
+                    </button>
+                  )
+                },
+              )}
+            </div>
+          )}
           {loading ? (
             <div className='py-20 text-center text-slate-400'>
               <p className='text-lg'>Loading competitions…</p>
@@ -1963,21 +2017,24 @@ export default function CompetitionsPage() {
           ) : filteredCompetitions.length === 0 ? (
             <div className='py-20 text-center text-slate-400'>
               <p className='text-lg'>
-                {searchQuery.trim()
-                  ? 'No competitions found matching your search.'
+                {searchQuery.trim() ||
+                  activeCategory !== COMPETITION_CATEGORY_ALL
+                  ? 'No competitions found matching your filters.'
                   : 'No competitions have been announced yet.'}
               </p>
 
-              {searchQuery.trim() && (
-                <button
-                  onClick={() => {
-                    setSearchQuery('')
-                  }}
-                  className='mt-3 text-sm text-indigo-400 hover:underline cursor-pointer'
-                >
-                  Clear filters
-                </button>
-              )}
+              {(searchQuery.trim() ||
+                activeCategory !== COMPETITION_CATEGORY_ALL) && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery('')
+                      setActiveCategory(COMPETITION_CATEGORY_ALL)
+                    }}
+                    className='mt-3 text-sm text-indigo-400 hover:underline cursor-pointer'
+                  >
+                    Clear filters
+                  </button>
+                )}
             </div>
           ) : (
             (() => {
@@ -2019,12 +2076,13 @@ export default function CompetitionsPage() {
                         className='flex flex-col gap-[18px]'
                         style={{
                           transform: `translateY(${offset}px)`,
+                          transition: 'transform 1.1s cubic-bezier(0.22, 1, 0.36, 1)',
                         }}
                       >
                         {column.map((competition, rowIndex) => (
                           <div
                             key={competition.id}
-                            className='relative cursor-pointer'
+                            className='group relative cursor-pointer'
                             ref={(el) => {
                               if (el) slotRefs.current[competition.id] = el
                               else delete slotRefs.current[competition.id]
@@ -2046,9 +2104,7 @@ export default function CompetitionsPage() {
                             onMouseEnter={(e) =>
                               handleCardEnter(competition.id, e, competition)
                             }
-                            onMouseMove={(e) =>
-                              handleCardMove(competition.id, e)
-                            }
+                            onMouseMove={(e) => handleCardMove(competition.id, e)}
                             onMouseLeave={() => handleCardLeave(competition.id)}
                             onClick={(e) =>
                               handleCardClick(
@@ -2059,6 +2115,8 @@ export default function CompetitionsPage() {
                               )
                             }
                           >
+                            {/* Static hit area to prevent hover flicker during 3D tilt */}
+                            <div className='absolute inset-0 z-50' />
                             <div
                               ref={(el) => {
                                 if (el) floatRefs.current[competition.id] = el
@@ -2074,13 +2132,14 @@ export default function CompetitionsPage() {
                                   if (el) cardRefs.current[competition.id] = el
                                   else delete cardRefs.current[competition.id]
                                 }}
-                                className='group relative w-full overflow-hidden rounded-md bg-[#0d101c]'
+                                className='relative w-full overflow-hidden bg-[#06070d]'
                                 style={{
                                   transformStyle: 'preserve-3d',
                                   transformOrigin: 'center center',
                                   boxShadow: REST_SHADOW,
                                   backgroundColor: REST_EDGE_BG,
                                   containerType: 'inline-size',
+                                  clipPath: cardClipPath,
                                   willChange:
                                     'transform, box-shadow, background-color',
                                 }}
@@ -2090,9 +2149,7 @@ export default function CompetitionsPage() {
                                     if (el)
                                       frontFaceRefs.current[competition.id] = el
                                     else
-                                      delete frontFaceRefs.current[
-                                        competition.id
-                                      ]
+                                      delete frontFaceRefs.current[competition.id]
                                   }}
                                   className='relative flex w-full flex-col'
                                   style={{
@@ -2120,9 +2177,8 @@ export default function CompetitionsPage() {
                                   <div
                                     ref={(el) => {
                                       if (el)
-                                        pulseOverlayRefs.current[
-                                          competition.id
-                                        ] = el
+                                        pulseOverlayRefs.current[competition.id] =
+                                          el
                                       else
                                         delete pulseOverlayRefs.current[
                                           competition.id
@@ -2131,47 +2187,119 @@ export default function CompetitionsPage() {
                                     className='competition-pulse-overlay pointer-events-none absolute inset-0 z-10'
                                   />
 
-                                  {/* POSTER ARTWORK — plain contained image,
-                                      no mask/cutout/border shaping */}
+                                  {/* POSTER ARTWORK — clean image, no text on it */}
                                   <div
                                     ref={(el) => {
                                       if (el) artRefs.current[competition.id] = el
                                       else delete artRefs.current[competition.id]
                                     }}
-                                    className='relative aspect-[2/3] w-full overflow-hidden bg-slate-900'
+                                    className='relative aspect-[3/4] w-full overflow-hidden'
+                                    style={{ background: DETAILS_BG }}
                                   >
                                     <Image
                                       src={competition.image}
                                       alt={competition.fullTitle}
                                       fill
                                       sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                                      className='object-contain object-center transition-transform duration-500 ease-out group-hover:scale-105'
+                                      className='object-cover object-center'
                                     />
+
+                                    {/* Fade only over the last 1% of the poster */}
+                                    <div
+                                      className='pointer-events-none absolute inset-x-0 bottom-0 z-[5]'
+                                      style={{
+                                        height: DETAILS_FADE_HEIGHT,
+                                        background: `linear-gradient(to top, ${DETAILS_BG} 0%, ${DETAILS_BG_CLEAR} 100%)`,
+                                      }}
+                                    />
+
                                     {competition.bookingClosed && (
-                                      <div className='pointer-events-none absolute inset-0 z-20 flex items-center justify-center'>
-                                        <span className='rounded-full border border-white/35 bg-black/75 px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-lg'>
+                                      <div className='pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-2'>
+                                        <span className='whitespace-nowrap rounded-full border border-white/35 bg-black/75 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white shadow-lg sm:px-4 sm:py-2 sm:text-sm sm:tracking-[0.18em] text-center leading-none'>
                                           Booking closed
                                         </span>
                                       </div>
                                     )}
                                   </div>
 
-                                  {/* STATIC INFO — title, date/venue, price */}
-                                  <div className='flex flex-col gap-1 px-3 py-2.5'>
-                                    <p className='m-0 truncate text-[0.95rem] font-semibold text-white'>
-                                      {competition.fullTitle || competition.title}
-                                    </p>
-                                    <p className='m-0 text-xs text-white/60'>
-                                      {competition.dateMonth} {competition.dateDay}
-                                      {competition.time ? ` · ${competition.time}` : ''}
-                                      {getVenueName(competition.venue)
-                                        ? ` · ${getVenueName(competition.venue)}`
-                                        : ''}
-                                    </p>
-                                    <p className='m-0 text-sm font-medium text-white'>
-                                      {competition.fee}
-                                    </p>
+                                  {/* DETAILS STRIP — background panel directly below the
+                                       image, above the price/dent row. On mobile the title
+                                       is dropped and the strip is taller so the details fit. */}
+                                  <div
+                                    className='relative -mt-px text-white'
+                                    style={{
+                                      backgroundImage: `url(${DETAILS_BG_IMAGE})`,
+                                      backgroundColor: DETAILS_BG,
+                                      backgroundSize: 'cover',
+                                      backgroundPosition: 'center',
+                                    }}
+                                  >
+                                    <div
+                                      className='relative flex flex-col justify-center text-white'
+                                      style={{
+                                        height: `${stripCqw}cqw`,
+                                        textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+                                        padding: isMobile ? '0 3cqw' : '0 0.875rem',
+                                      }}
+                                    >
+                                      {!isMobile && (
+                                        <p className='m-0 line-clamp-2 text-[0.98rem] font-bold uppercase leading-tight tracking-[0.02em] text-white'>
+                                          {competition.fullTitle || competition.title}
+                                        </p>
+                                      )}
+                                      <p
+                                        className={
+                                          isMobile
+                                            ? 'm-0 line-clamp-4 text-[7.5cqw] leading-[1.3] text-white/80'
+                                            : 'm-0 mt-1 truncate text-xs text-white/70'
+                                        }
+                                      >
+                                        {competition.dateMonth} {competition.dateDay}
+                                        {competition.time ? ` · ${competition.time}` : ''}
+                                        {getVenueName(competition.venue)
+                                          ? ` · ${getVenueName(competition.venue)}`
+                                          : ''}
+                                      </p>
+                                    </div>
+
+                                    {/* PRICE — sits in the dent/notch area at the bottom.
+                                       The visible tab is only ~25cqw wide, so on mobile the
+                                       price is sized in cqw and kept on one line. */}
+                                    <div
+                                      className='relative flex items-center text-white'
+                                      style={{
+                                        height: `${PRICE_DENT_CQW}cqw`,
+                                        textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+                                        padding: isMobile ? '0 0 0 3cqw' : '0 0 0 0.875rem',
+                                      }}
+                                    >
+                                      <span
+                                        className={
+                                          isMobile
+                                            ? 'whitespace-nowrap text-[6.5cqw] font-bold leading-none tracking-normal text-white'
+                                            : 'text-lg font-bold tracking-wide text-white'
+                                        }
+                                      >
+                                        {competition.fee}
+                                      </span>
+                                    </div>
                                   </div>
+
+                                  {/* Shaped Card Border SVG Outline (notch follows the strip height) */}
+                                  <svg
+                                    className='pointer-events-none absolute inset-0 z-30 h-full w-full'
+                                    viewBox='0 0 135.239 135.639'
+                                    preserveAspectRatio='none'
+                                    aria-hidden='true'
+                                  >
+                                    <path
+                                      d={outlinePath}
+                                      fill='none'
+                                      stroke='rgba(255,255,255,0.28)'
+                                      strokeWidth='1'
+                                      vectorEffect='non-scaling-stroke'
+                                    />
+                                  </svg>
                                 </div>
                               </div>
                             </div>
@@ -2361,21 +2489,25 @@ export default function CompetitionsPage() {
           -webkit-mask-repeat: no-repeat;
           mask-repeat: no-repeat;
           -webkit-mask-image: radial-gradient(
-            circle at calc(var(--focus-x, 0) * 1px) calc(var(--focus-y, 0) * 1px),
+            circle at calc(var(--focus-x, 0) * 1px)
+              calc(var(--focus-y, 0) * 1px),
             transparent 0px,
             transparent calc(var(--focus-hole, 0) * 1px),
             black calc(var(--focus-hole, 0) * 1px + ${FOCUS_MASK_EDGE}px),
             black calc(var(--focus-reveal, 0) * 1px),
-            transparent calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
+            transparent
+              calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
             transparent 100%
           );
           mask-image: radial-gradient(
-            circle at calc(var(--focus-x, 0) * 1px) calc(var(--focus-y, 0) * 1px),
+            circle at calc(var(--focus-x, 0) * 1px)
+              calc(var(--focus-y, 0) * 1px),
             transparent 0px,
             transparent calc(var(--focus-hole, 0) * 1px),
             black calc(var(--focus-hole, 0) * 1px + ${FOCUS_MASK_EDGE}px),
             black calc(var(--focus-reveal, 0) * 1px),
-            transparent calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
+            transparent
+              calc(var(--focus-reveal, 0) * 1px + ${FOCUS_MASK_EDGE}px),
             transparent 100%
           );
         }
@@ -2385,12 +2517,10 @@ export default function CompetitionsPage() {
           opacity: 0;
           border-radius: inherit;
           background: radial-gradient(
-            circle at
-              calc(var(--pulse-x, 50) * 1%)
+            circle at calc(var(--pulse-x, 50) * 1%)
               calc(var(--pulse-y, 50) * 1%),
             rgba(255, 255, 255, var(--pulse-alpha, 0)) 0%,
-            rgba(255, 255, 255, 0)
-              calc(var(--pulse-radius, 0) * 1%)
+            rgba(255, 255, 255, 0) calc(var(--pulse-radius, 0) * 1%)
           );
         }
 
@@ -2401,20 +2531,29 @@ export default function CompetitionsPage() {
         }
 
         .competition-activation-overlay::before {
-          content: "";
+          content: '';
           position: absolute;
           inset: 0;
           background: radial-gradient(
             circle at var(--activation-x, 50%) var(--activation-y, 50%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% - ${ACTIVATION_RING_BAND}%),
-            rgba(255, 255, 255, ${ACTIVATION_GLOW_ALPHA}) calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% + ${ACTIVATION_RING_BAND}%)
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% -
+                  ${ACTIVATION_RING_BAND}%
+              ),
+            rgba(255, 255, 255, ${ACTIVATION_GLOW_ALPHA})
+              calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% +
+                  ${ACTIVATION_RING_BAND}%
+              )
           );
           mix-blend-mode: screen;
         }
 
         .competition-activation-overlay::after {
-          content: "";
+          content: '';
           position: absolute;
           inset: 0;
           background-image:
@@ -2436,19 +2575,36 @@ export default function CompetitionsPage() {
           mix-blend-mode: overlay;
           -webkit-mask-image: radial-gradient(
             circle at var(--activation-x, 50%) var(--activation-y, 50%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% - ${ACTIVATION_GRID_BAND}%),
-            black calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% + ${ACTIVATION_GRID_BAND}%)
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% -
+                  ${ACTIVATION_GRID_BAND}%
+              ),
+            black
+              calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% +
+                  ${ACTIVATION_GRID_BAND}%
+              )
           );
           mask-image: radial-gradient(
             circle at var(--activation-x, 50%) var(--activation-y, 50%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% - ${ACTIVATION_GRID_BAND}%),
-            black calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
-            transparent calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% + ${ACTIVATION_GRID_BAND}%)
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% -
+                  ${ACTIVATION_GRID_BAND}%
+              ),
+            black
+              calc(var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}%),
+            transparent
+              calc(
+                var(--activation-progress, 0) * ${ACTIVATION_RING_SPREAD}% +
+                  ${ACTIVATION_GRID_BAND}%
+              )
           );
         }
       `}</style>
-
     </div>
   )
 }

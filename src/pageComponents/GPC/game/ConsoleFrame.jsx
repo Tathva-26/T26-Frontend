@@ -171,6 +171,11 @@ export default function ConsoleFrame({ active, stats, onStats, onExit, touchCont
       <button
         type="button"
         onClick={onExit}
+        // Enter and Space on the focused button press it; kept from the game,
+        // which would otherwise take them as "start" and "fire".
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") event.stopPropagation();
+        }}
         aria-label="Exit game"
         className="group/exit absolute flex items-start justify-end"
         style={{

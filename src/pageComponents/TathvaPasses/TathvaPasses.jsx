@@ -247,7 +247,10 @@ export default function TathvaPasses() {
                 {active.priceInPaise !== null && ` · ${active.fee}`}
               </p>
               <div className='[&_button]:py-3 [&_button]:text-2xl sm:[&_button]:text-3xl [&_dl]:text-sm'>
-                <Checkout event={active} />
+                {/* Keyed by pass: the ticket count, passcode and any error
+                    belong to the pass they were entered for, and must not
+                    carry over to the next one the carousel lands on. */}
+                <Checkout key={active.id} event={active} />
               </div>
             </>
           ) : (

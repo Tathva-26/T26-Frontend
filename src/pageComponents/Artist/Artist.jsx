@@ -1265,32 +1265,8 @@ export default function App() {
   return (
     <div className='artist-root'>
       <style jsx global>{`
-        @font-face {
-          font-family: 'VCR OSD Mono';
-          src: url('https://cdn-next-main.tathva.org/fonts/VCR_OSD_MONO.ttf')
-            format('truetype');
-          font-weight: 400;
-          font-style: normal;
-          font-display: swap;
-        }
-
-        @font-face {
-          font-family: 'Bebas Neue';
-          src: url('https://cdn-next-main.tathva.org/fonts/BebasNeue-Regular.ttf')
-            format('truetype');
-          font-weight: 400;
-          font-style: normal;
-          font-display: swap;
-        }
-
-        @font-face {
-          font-family: 'Space Grotesk';
-          src: url('https://cdn-next-main.tathva.org/fonts/SpaceGrotesk-Variable.ttf')
-            format('truetype');
-          font-weight: 100 900;
-          font-style: normal;
-          font-display: swap;
-        }
+        /* VCR / Bebas / Space Grotesk come from globals (next/font + public/fonts).
+           Figma-export fallbacks removed — those static.figma.com URLs are dead. */
 
         html,
         body,
@@ -1330,37 +1306,7 @@ export default function App() {
           }
         }
 
-        @font-face {
-          font-family: 'Bebas Neue:Regular';
-          src: url('https://static.figma.com/font/BebasNeue-Regular_1')
-            format('woff2');
-          font-style: normal;
-          font-weight: 400;
-        }
-
-        @font-face {
-          font-family: 'Hammersmith One:Regular';
-          src: url('https://static.figma.com/font/HammersmithOne-Regular_2')
-            format('woff2');
-          font-style: normal;
-          font-weight: 400;
-        }
-
-        @font-face {
-          font-family: 'La Belle Aurore:Regular';
-          src: url('https://static.figma.com/font/LaBelleAurore_1')
-            format('woff2');
-          font-style: normal;
-          font-weight: 400;
-        }
-
-        @font-face {
-          font-family: 'Mona Sans:Regular';
-          src: url('https://static.figma.com/font/MonaSans_wdth_wght__1')
-            format('woff2');
-          font-style: normal;
-          font-weight: 400;
-        }
+        /* La Belle Aurore is loaded globally via next/font (siteFonts.js). */
 
         .proshow-section {
           display: grid;
@@ -1765,7 +1711,7 @@ export default function App() {
         .artist-single-name {
           position: absolute;
           color: white;
-          font-family: 'La Belle Aurore:Regular', cursive;
+          font-family: 'La Belle Aurore', cursive;
           font-size: clamp(24px, 2.5vw, 42px);
           white-space: nowrap;
           pointer-events: auto;
@@ -1905,7 +1851,7 @@ export default function App() {
             border-radius: 7px;
             background: transparent;
             color: #fff;
-            font-family: 'Bebas Neue', 'Bebas Neue:Regular', sans-serif;
+            font-family: 'Bebas Neue', sans-serif;
             font-size: 20px;
             letter-spacing: 0.04em;
             writing-mode: vertical-rl;
@@ -1968,7 +1914,7 @@ export default function App() {
             top: 58px;
             margin: 16px 0 0;
             color: #fff;
-            font-family: 'Bebas Neue', 'Bebas Neue:Regular', sans-serif;
+            font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(20px, 7.5vw, 38px);
             line-height: 1;
             text-transform: uppercase;

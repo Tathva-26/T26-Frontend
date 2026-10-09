@@ -9,11 +9,11 @@ import { useEventDetails } from '@/hooks/useEventDetails'
 const FALLBACK_IMAGE = 'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
 
 const fontFaceStyles = `
-@import url('https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=Jost:wght@400;600&display=swap');
+/* Jaro + Jost served from globals.css @font-face (R2 CDN) */
 
 @font-face {
   font-family: 'Event Detail Fragment Serif';
-  src: url('https://cdn-next-main.tathva.org/fonts/PPFragment-SerifExtraBold.woff2') format('woff2');
+  src: url('/fonts/PPFragment-SerifExtraBold.woff2') format('woff2');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
