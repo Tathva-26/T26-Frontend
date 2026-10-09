@@ -120,6 +120,13 @@ function FuturisticCyberBackground() {
     }
 
     const render = () => {
+      // Nothing is visible while the tab is backgrounded — skip the O(n²)
+      // particle-link pass entirely instead of still paying for it.
+      if (document.hidden) {
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
+
       ctx.clearRect(0, 0, width, height);
 
       for (let i = 0; i < particles.length; i++) {

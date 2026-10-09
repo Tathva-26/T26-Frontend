@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { watchVisible } from "@/lib/watchVisible";
 
 /* ============================================================
  * Shared light state (was: lightstate.jsx)
@@ -48,8 +49,14 @@ export function DotsBackground({
     let level = new Float32Array(0); // current glow (0–1) per dot
     const pointer = { x: -9999, y: -9999, on: false };
     let raf = 0;
+    let visible = true; // narrowed by watchVisible once the canvas is in the DOM
 
     const start = () => {
+      // The pointer listener is on `window` so the dots react from anywhere
+      // in the container, but that also means any pointer movement anywhere
+      // on the page would otherwise restart this grid-sized redraw even
+      // while the canvas is scrolled far out of view.
+      if (!visible) return;
       if (!raf) raf = requestAnimationFrame(frame);
     };
 
@@ -148,11 +155,21 @@ export function DotsBackground({
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
+    const stopWatching = watchVisible(canvas, (isVisible) => {
+      visible = isVisible;
+      if (visible) start();
+      else {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    });
+
     resize();
 
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      stopWatching();
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerdown", move);
       document.documentElement.removeEventListener("pointerleave", leave);

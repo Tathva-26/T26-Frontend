@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
+import { watchVisible } from "@/lib/watchVisible";
 
 // Shared light state accessible by components on the page
 export const light = {
@@ -125,6 +126,18 @@ export function DotsBackground({ dotSpacing = 32, dotBaseRadius = 1.25, lightRad
       raf = requestAnimationFrame(loop);
     };
 
+    // The footer sits below every other section, so this would otherwise run
+    // its full grid computation on every pointer move anywhere on the page —
+    // even while scrolled far out of view. Only animate while actually visible.
+    const stopWatching = watchVisible(canvas, (visible) => {
+      if (visible) {
+        if (!raf) loop();
+      } else {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    });
+
     const onMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       mouse.x = e.clientX - rect.left;
@@ -144,10 +157,10 @@ export function DotsBackground({ dotSpacing = 32, dotBaseRadius = 1.25, lightRad
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
     resize();
-    loop();
 
     return () => {
       cancelAnimationFrame(raf);
+      stopWatching();
       ro.disconnect();
       window.removeEventListener("pointermove", onMove);
       document.documentElement.removeEventListener("pointerleave", onLeave);
@@ -224,6 +237,7 @@ export function GlowLetters({
 
     let w = 0, h = 0, dpr = 1;
     let raf = 0;
+    let visible = true; // gated below by watchVisible once the canvas is in the DOM
     let scale = 0;         // 0..1 circle growth progress
     let isActive = false;  // Whether spotlight is triggered & sustained
     let cancelled = false;
@@ -256,6 +270,10 @@ export function GlowLetters({
     };
 
     const start = () => {
+      // Below-the-fold: skip scheduling entirely while off-screen or the
+      // tab is backgrounded, rather than tracking pointer/hit-test work
+      // every frame for a canvas nobody can see.
+      if (!visible) return;
       if (!raf) raf = requestAnimationFrame(frame);
     };
 
@@ -622,6 +640,15 @@ export function GlowLetters({
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
+    const stopWatching = watchVisible(canvas, (isVisible) => {
+      visible = isVisible;
+      if (visible) start();
+      else {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    });
+
     if (imageSrc) {
       const im = new Image();
       im.onload = () => {
@@ -649,6 +676,7 @@ export function GlowLetters({
       light.R = 0;
       cancelAnimationFrame(raf);
       ro.disconnect();
+      stopWatching();
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerdown", onPointerMove);
       window.removeEventListener("pointerup", onPointerMove);
