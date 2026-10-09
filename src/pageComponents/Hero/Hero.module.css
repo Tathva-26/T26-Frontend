@@ -1152,6 +1152,12 @@
     justify-content: center;
   }
 
+  .identity,
+  .coords {
+    transform: translateX(-50%) scale(max(var(--design-scale, 1), 0.72));
+    transform-origin: top center;
+  }
+
   .scene {
     --mobile-canvas-w: 24.375rem;
     --mobile-canvas-h: 49.0625rem;

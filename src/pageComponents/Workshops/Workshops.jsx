@@ -51,7 +51,33 @@ const CARD_LABEL = 'Workshop'
 // `picture` is non-null on every event in production today, but the field is
 // nullable and next/image requires a src.
 const FALLBACK_IMAGE =
-  'https://cdn-next-main.tathva.org/images/workshops/workshop-astronaut.jpg'
+  "https://cdn.tathva.org/events/68e30506-d9f8-49ee-9a59-12b44289e1fe.webp"
+
+// Details-section background (black).
+// Keep DETAILS_BG_CLEAR the same color as DETAILS_BG, just fully transparent,
+// otherwise the fade can look gray in the middle.
+const DETAILS_BG = 'rgb(0, 0, 0)'
+const DETAILS_BG_CLEAR = 'rgba(0, 0, 0, 0)'
+const DETAILS_FADE_HEIGHT = '1%' // fade covers only the bottom 1% of the poster
+// Height of the black text strip under the poster, in cqw (card widths).
+// Mobile cards are narrow, so the strip is taller there to fit the details.
+const DETAILS_BG_IMAGE = '/images/workshops/bg.png' // background for the strip + price row
+const DETAILS_TEXT_CQW = 22
+const DETAILS_TEXT_CQW_MOBILE = 34
+const PRICE_DENT_CQW = 14 // height of the price row / dent
+
+// Card is 3:4 poster (133.333cqw) + details strip + price row. The dent
+// notch starts where the price row begins.
+const getNotchPct = (stripCqw) =>
+  ((400 / 3 + stripCqw) / (400 / 3 + stripCqw + PRICE_DENT_CQW)) * 100
+
+// Outline path for the notched card, in the 135.239 x 135.639 viewBox.
+// Only the notch's y position changes with the strip height.
+const getOutlinePath = (notchPct) => {
+  const n = (notchPct / 100) * 135.639
+  const f = (v) => v.toFixed(3)
+  return `M0.510216 132.629V61.5188V3.01022C0.510216 1.6295 1.62951 0.510216 3.01022 0.510216H132.229C133.61 0.510216 134.729 1.6295 134.729 3.01022V${f(n - 2.5)}C134.729 ${f(n - 1.119)} 133.61 ${f(n)} 132.229 ${f(n)}H43.5146C42.7568 ${f(n)} 42.04 ${f(n + 0.344)} 41.5655 ${f(n + 0.935)}L33.2653 134.195C32.7907 134.785 32.0739 135.129 31.3162 135.129H3.01022C1.6295 135.129 0.510216 134.01 0.510216 132.629Z`
+}
 
 // Tunable hover-response constants — focal card (Step 3 movement unchanged)
 const MAX_TRANSLATE = 15
@@ -116,7 +142,7 @@ const STAGGER_MIN_ROW_SIZE = 3
 
 // Step 8 — subtle focus field / surrounding quieting
 const QUIET_OPACITY = 0.9
-const QUIET_BRIGHTNESS = 0.94
+const QUIET_BRIGHTNESS = 0.5
 const COLUMN_MATE_BRIGHTNESS = 0.5 // cards sharing the focal card's column (see setSlotLevel)
 const FOCAL_OPACITY = 1
 const FOCAL_BRIGHTNESS = 1
@@ -124,15 +150,15 @@ const FOCUS_FIELD_DURATION = 0.6
 const FOCUS_FIELD_LEAVE_DURATION = 0.75
 
 // Step 9 — digital activation / pixelated entry response
-const ACTIVATION_DURATION = 0.7
-const ACTIVATION_FADE_DURATION = 0.1
+const ACTIVATION_DURATION = 0.9
+const ACTIVATION_FADE_DURATION = 0.01
 const ACTIVATION_EASE = 'power2.in'
 const ACTIVATION_RING_SPREAD = 145
-const ACTIVATION_RING_BAND = 20
+const ACTIVATION_RING_BAND = 50
 const ACTIVATION_GRID_BAND = 21
-const ACTIVATION_GLOW_ALPHA = 0.14
+const ACTIVATION_GLOW_ALPHA = 0.40
 const ACTIVATION_GRID_ALPHA = 0.6
-const ACTIVATION_GRID_CELL = 10
+const ACTIVATION_GRID_CELL = 20
 
 // Step 10 — continuous digital pulse
 const PULSE_CYCLE_MIN = 1.7
@@ -147,7 +173,7 @@ const PULSE_LEAVE_FADE = 0.5
 // from the hovered card). See the "── Step 11: global dark focus overlay ──"
 // block below for how it integrates with the existing hover lifecycle.
 const FOCUS_OVERLAY_Z = 15 // between resting card z-index (1) and focused card z-index (20)
-const FOCUS_OVERLAY_COLOR = 'rgba(4, 5, 9, 0.56)'
+const FOCUS_OVERLAY_COLOR = 'rgba(0, 0, 0, 0.56)'
 const FOCUS_PULSE_DURATION = 1.7 // slow, cinematic expansion from the hovered card
 const FOCUS_PULSE_EASE = 'power2.out'
 const FOCUS_CLEAR_DURATION = 1.6 // clearing pulse that reverses the dark state
@@ -949,8 +975,8 @@ export default function WorkshopsPage() {
     labelY = Math.min(
       Math.max(labelY, CALLOUT_VIEWPORT_MARGIN),
       window.innerHeight -
-        CALLOUT_LABEL_HEIGHT_ESTIMATE -
-        CALLOUT_VIEWPORT_MARGIN,
+      CALLOUT_LABEL_HEIGHT_ESTIMATE -
+      CALLOUT_VIEWPORT_MARGIN,
     )
 
     return { anchor, labelTarget: { x: labelX, y: labelY } }
@@ -966,9 +992,9 @@ export default function WorkshopsPage() {
     side === 'right'
       ? { x: labelX, y: labelY + CALLOUT_LABEL_ANCHOR_OFFSET_Y }
       : {
-          x: labelX + CALLOUT_LABEL_WIDTH,
-          y: labelY + CALLOUT_LABEL_ANCHOR_OFFSET_Y,
-        }
+        x: labelX + CALLOUT_LABEL_WIDTH,
+        y: labelY + CALLOUT_LABEL_ANCHOR_OFFSET_Y,
+      }
 
   const randomScrambleChar = () =>
     SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)]
@@ -1002,16 +1028,16 @@ export default function WorkshopsPage() {
     el.textContent = out
   }
 
-  const triggerDecodeAudioHook = () => {}
+  const triggerDecodeAudioHook = () => { }
 
   const formatDate = (dateString) =>
     dateString
       ? new Date(dateString).toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-          timeZone: 'Asia/Kolkata',
-        })
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'Asia/Kolkata',
+      })
       : 'TBA'
 
   const getVenueName = (venue) =>
@@ -1845,6 +1871,13 @@ export default function WorkshopsPage() {
       : events
   }, [events, searchQuery])
 
+  // Mobile = the 2-column layout (under 768px)
+  const isMobile = columnCount === 2
+  const stripCqw = isMobile ? DETAILS_TEXT_CQW_MOBILE : DETAILS_TEXT_CQW
+  const notchPct = getNotchPct(stripCqw)
+  const cardClipPath = `polygon(0 0, 100% 0, 100% ${notchPct.toFixed(2)}%, 32.18% ${notchPct.toFixed(2)}%, 24.6% 100%, 0 100%)`
+  const outlinePath = getOutlinePath(notchPct)
+
   return (
     <div className='workshops-page min-h-screen bg-[#06070d] text-slate-100 font-sans relative overflow-x-clip selection:bg-indigo-600 selection:text-white pb-24'>
       <Navbar />
@@ -1935,9 +1968,8 @@ export default function WorkshopsPage() {
       )}
 
       <div
-        className={`hidden fixed top-0 right-0 h-full w-48 sm:w-56 bg-[#090b16] border-l border-white/10 z-50 shadow-2xl transform transition-transform duration-300 ease-in-out ${
-          mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className={`hidden fixed top-0 right-0 h-full w-48 sm:w-56 bg-[#090b16] border-l border-white/10 z-50 shadow-2xl transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
       >
         <div className='flex items-center justify-end p-4'>
           <button
@@ -2193,13 +2225,14 @@ export default function WorkshopsPage() {
                                   if (el) cardRefs.current[workshop.id] = el
                                   else delete cardRefs.current[workshop.id]
                                 }}
-                                className='relative w-full overflow-hidden rounded-md bg-[#0d101c]'
+                                className='relative w-full overflow-hidden bg-[#06070d]'
                                 style={{
                                   transformStyle: 'preserve-3d',
                                   transformOrigin: 'center center',
                                   boxShadow: REST_SHADOW,
                                   backgroundColor: REST_EDGE_BG,
                                   containerType: 'inline-size',
+                                  clipPath: cardClipPath,
                                   willChange:
                                     'transform, box-shadow, background-color',
                                 }}
@@ -2247,22 +2280,32 @@ export default function WorkshopsPage() {
                                     className='workshop-pulse-overlay pointer-events-none absolute inset-0 z-10'
                                   />
 
-                                  {/* POSTER ARTWORK — plain contained image,
-                                      no mask/cutout/border shaping */}
+                                  {/* POSTER ARTWORK — clean image, no text on it */}
                                   <div
                                     ref={(el) => {
                                       if (el) artRefs.current[workshop.id] = el
                                       else delete artRefs.current[workshop.id]
                                     }}
-                                    className='relative aspect-[2/3] w-full overflow-hidden bg-[#08090e]'
+                                    className='relative aspect-[3/4] w-full overflow-hidden'
+                                    style={{ background: DETAILS_BG }}
                                   >
                                     <Image
                                       src={workshop.image}
                                       alt={workshop.fullTitle}
                                       fill
                                       sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                                      className='object-contain object-center transition-transform duration-500 ease-out group-hover:scale-105'
+                                      className='object-cover object-center'
                                     />
+
+                                    {/* Fade only over the last 1% of the poster */}
+                                    <div
+                                      className='pointer-events-none absolute inset-x-0 bottom-0 z-[5]'
+                                      style={{
+                                        height: DETAILS_FADE_HEIGHT,
+                                        background: `linear-gradient(to top, ${DETAILS_BG} 0%, ${DETAILS_BG_CLEAR} 100%)`,
+                                      }}
+                                    />
+
                                     {workshop.bookingClosed && (
                                       <div className='pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-2'>
                                         <span className='whitespace-nowrap rounded-full border border-white/35 bg-black/75 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white shadow-lg sm:px-4 sm:py-2 sm:text-sm sm:tracking-[0.18em] text-center leading-none'>
@@ -2272,24 +2315,84 @@ export default function WorkshopsPage() {
                                     )}
                                   </div>
 
-                                  {/* STATIC INFO — title, date/venue, price */}
-                                  <div className='flex flex-col gap-1 px-3 py-2.5'>
-                                    <p className='m-0 truncate text-[0.95rem] font-semibold text-white'>
-                                      {workshop.fullTitle || workshop.title}
-                                    </p>
-                                    <p className='m-0 text-xs text-white/60'>
-                                      {workshop.dateMonth} {workshop.dateDay}
-                                      {workshop.time
-                                        ? ` · ${workshop.time}`
-                                        : ''}
-                                      {getVenueName(workshop.venue)
-                                        ? ` · ${getVenueName(workshop.venue)}`
-                                        : ''}
-                                    </p>
-                                    <p className='m-0 text-sm font-medium text-white'>
-                                      {workshop.fee}
-                                    </p>
+                                  {/* DETAILS STRIP — black layer directly below the image,
+                                       above the price/dent row. On mobile the title is
+                                       dropped and the strip is taller so the details fit. */}
+                                  <div
+                                    className='relative -mt-px text-white'
+                                    style={{
+                                      backgroundImage: `url(${DETAILS_BG_IMAGE})`,
+                                      backgroundColor: DETAILS_BG,
+                                      backgroundSize: 'cover',
+                                      backgroundPosition: 'center',
+                                    }}
+                                  >
+                                    <div
+                                      className='relative flex flex-col justify-center text-white'
+                                      style={{
+                                        height: `${stripCqw}cqw`,
+                                        textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+                                        padding: isMobile ? '0 3cqw' : '0 0.875rem',
+                                      }}
+                                    >
+                                      {!isMobile && (
+                                        <p className='m-0 line-clamp-2 text-[0.98rem] font-bold uppercase leading-tight tracking-[0.02em] text-white'>
+                                          {workshop.fullTitle || workshop.title}
+                                        </p>
+                                      )}
+                                      <p
+                                        className={
+                                          isMobile
+                                            ? 'm-0 line-clamp-4 text-[7.5cqw] leading-[1.3] text-white/80'
+                                            : 'm-0 mt-1 truncate text-xs text-white/70'
+                                        }
+                                      >
+                                        {workshop.dateMonth} {workshop.dateDay}
+                                        {workshop.time ? ` · ${workshop.time}` : ''}
+                                        {getVenueName(workshop.venue)
+                                          ? ` · ${getVenueName(workshop.venue)}`
+                                          : ''}
+                                      </p>
+                                    </div>
+
+                                    {/* PRICE — sits in the dent/notch area at the bottom.
+                                       The visible tab is only ~25cqw wide, so on mobile the
+                                       price is sized in cqw and kept on one line. */}
+                                    <div
+                                      className='relative flex items-center text-white'
+                                      style={{
+                                        height: `${PRICE_DENT_CQW}cqw`,
+                                        textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+                                        padding: isMobile ? '0 0 0 3cqw' : '0 0 0 0.875rem',
+                                      }}
+                                    >
+                                      <span
+                                        className={
+                                          isMobile
+                                            ? 'whitespace-nowrap text-[6.5cqw] font-bold leading-none tracking-normal text-white'
+                                            : 'text-lg font-bold tracking-wide text-white'
+                                        }
+                                      >
+                                        {workshop.fee}
+                                      </span>
+                                    </div>
                                   </div>
+
+                                  {/* Shaped Card Border SVG Outline (notch follows the strip height) */}
+                                  <svg
+                                    className='pointer-events-none absolute inset-0 z-30 h-full w-full'
+                                    viewBox='0 0 135.239 135.639'
+                                    preserveAspectRatio='none'
+                                    aria-hidden='true'
+                                  >
+                                    <path
+                                      d={outlinePath}
+                                      fill='none'
+                                      stroke='rgba(255,255,255,0.28)'
+                                      strokeWidth='1'
+                                      vectorEffect='non-scaling-stroke'
+                                    />
+                                  </svg>
                                 </div>
                               </div>
                             </div>

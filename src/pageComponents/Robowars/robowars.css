@@ -21,7 +21,10 @@
   font-family: var(--font-bowlby-one-sc-local), 'Bowlby One SC', sans-serif;
 }
 
-.robowars-robot {
+.robowars-robot,
+.robowars-sponsor-text,
+.robowars-sponsor-blue,
+.robowars-sponsor-red {
   will-change: transform, opacity;
   transform: translateZ(0);
 }

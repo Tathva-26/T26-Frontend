@@ -497,6 +497,14 @@ function TathvaMenuOverlay() {
           href="/"
           aria-label="Tathva home"
           className="pointer-events-auto inline-flex items-center"
+          onClick={(event) => {
+            if (pathname === '/') {
+              event.preventDefault()
+              const scroller = document.querySelector('.main-scroll')
+              if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' })
+              else window.scrollTo({ top: 0, behavior: 'smooth' })
+            }
+          }}
         >
           <img
             src="https://cdn-next-main.tathva.org/images/hero/tathvalogo.png"

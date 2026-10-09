@@ -92,7 +92,7 @@ export default function TathvaPasses() {
       {/* -------------------------------------------------------------
           HERO TITLE & SUBTITLE (AKIRA EXPANDED FONT)
       ------------------------------------------------------------- */}
-      <div className='relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 pt-24 sm:pt-24 md:pt-20 pb-10 sm:pb-14 text-center'>
+      <div className='relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 pt-28 sm:pt-28 md:pt-28 lg:pt-32 pb-10 sm:pb-14 text-center'>
         <h1
           className='text-4xl font-black tracking-[0.12em] text-white sm:text-5xl md:text-6xl lg:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]'
           style={{ fontFamily: "'Akira Expanded', 'Orbitron', sans-serif" }}
@@ -103,7 +103,7 @@ export default function TathvaPasses() {
           className='mt-2 text-[10px] font-bold tracking-[0.22em] text-white sm:text-xs md:text-sm lg:text-base'
           style={{ fontFamily: "'Akira Expanded', 'Orbitron', sans-serif" }}
         >
-          GET THE PASS ENJOY EVERY MOMENT
+          GET YOUR PASS — ENJOY EVERY MOMENT
         </p>
 
         {/* -------------------------------------------------------------
@@ -111,7 +111,7 @@ export default function TathvaPasses() {
             Mobile: Vertical rotation (Top/Center/Bottom/Far) with middle largest
             Desktop: Horizontal rotation (Left/Center/Right + Far at bottom middle)
         ------------------------------------------------------------- */}
-        <div className='relative mt-32 sm:mt-16 md:mt-20 lg:mt-24 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
+        <div className='relative mt-8 sm:mt-16 md:mt-20 lg:mt-24 flex w-full max-w-[1700px] items-center justify-center px-2 sm:px-8 md:px-16'>
           {/* Left Arrow Button (Previous) */}
           <button
             type='button'

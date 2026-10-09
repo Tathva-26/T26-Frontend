@@ -213,7 +213,7 @@ const LAYOUT_MOBILE = {
 // the same pixel-anchoring code positions it. Coords is hidden in CSS.
 const CHROME_MOBILE = {
   identity: { top: 7.5, left: 24.23 },
-  coords: { top: 25.3125, left: 0 },
+  coords: { top: 27.3125, left: 0 },
   theme: { top: 6, left: 1 },
   exhibits: { top: 37.5, left: 22.9 },
   enter: { top: 46.2, left: 1.25, width: 7.5, height: 2.6 },
@@ -546,15 +546,24 @@ export const Hero = ({
         const set = (name, px) => host.style.setProperty(name, `${px}px`)
         if (mobileMode) {
           const navEl = document.querySelector('.nb')
-         const navH = navEl?.getBoundingClientRect().bottom || 68
+          const navH = navEl?.getBoundingClientRect().bottom || 68
           const PAD = 20
+          const menuButton = document.querySelector('.nb__menu')
+          const menuRect = menuButton?.getBoundingClientRect()
+          const chromeCenter =
+            menuRect && menuRect.width > 0
+              ? menuRect.left + menuRect.width / 2
+              : viewportWidth - PAD - 12.5
 
           set('--theme-left', PAD)
           set('--theme-top', navH + 16)
-          set('--identity-left', viewportWidth - PAD)
+          set('--identity-left', chromeCenter + 4)
           set('--identity-top', navH + 16)
-          set('--coords-left', viewportWidth - PAD)
-          set('--coords-top', navH + 120)
+          set('--coords-left', chromeCenter + 16)
+          set(
+            '--coords-top',
+            (identityRef.current?.getBoundingClientRect().bottom ?? navH + 16) + 12,
+          )
           set('--exhibits-left', viewportWidth - PAD)
           set('--exhibits-top', viewportHeight - 190)
           set('--enter-left', PAD)

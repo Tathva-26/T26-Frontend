@@ -73,7 +73,7 @@ export const EVENTS = [
     venue: VENUES.arena,
     description: 'ROS2, kinematic simulation and computer vision for bipedal manipulation.',
     extraInfo: null,
-    picture: null, // exercises the placeholder path
+    picture: '/images/dummy/poster.webp',
     teamSize: 3,
     isTeamEvent: true,
     committee: 'Workshop committee ',
@@ -252,7 +252,7 @@ export const EVENTS = [
     venue: null,
     description: 'Proshow, events and conclave across all three days.',
     extraInfo: null,
-    
+
     picture: 'https://cdn.tathva.org/events/506476dc-25d4-4813-8c88-c7344395c099.webp',
     teamSize: null,
     isTeamEvent: false,
@@ -314,7 +314,7 @@ export const EVENTS = [
     createdAt: '2026-08-12T03:30:00.000Z',
     updatedAt: '2026-09-30T03:30:00.000Z',
   },
-   {
+  {
     id: 41,
     tiqrEventId: 931,
     ticketId: 811,
