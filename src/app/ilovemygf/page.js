@@ -1,59 +1,206 @@
-import fs from "fs";
-import path from "path";
-import Credits from "@/pageComponents/Credits";
-import { teams as defaultTeams, PLACEHOLDER } from "@/lib/creditsData";
+"use client";
 
-export const dynamic = "force-dynamic";
+import React, { useState, useEffect, useRef } from "react";
+import { creditsData } from "@/data/creditsData";
+import Lanyard from "./Lanyard"; // Make sure this path is correct
 
-/**
- * Checks public/images/credits for each member's photo:
- * - Checks for {first_name_in_lowercase}.{jpg|jpeg|png|webp|avif|svg}
- * - If found, uses that image path
- * - If NOT found, automatically puts the placeholder (/images/credits/placeholder.png)
- */
-function getResolvedTeams() {
-  const creditsDir = path.join(process.cwd(), "public/images/credits");
-  const extensions = [".jpg", ".jpeg", ".png", ".webp", ".avif", ".svg"];
+function PersonImage({ src, alt = "Team Member" }) {
+  return (
+    <div className="relative aspect-square w-full h-full bg-white flex items-center justify-center overflow-hidden select-none">
+      {src ? (
+        <img src={src} alt={alt} className="w-full h-full object-cover" />
+      ) : (
+        <div className="w-full h-full bg-[#d0d0d0] rounded-full overflow-hidden flex items-center justify-center">
+          <svg className="w-full h-full text-[#9c9c9c]" viewBox="0 0 100 100" fill="currentColor">
+            <circle cx="50" cy="36" r="21" />
+            <path d="M10 96 c0 -22 18 -40 40 -40 c22 0 40 18 40 40 Z" />
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+}
 
-  return defaultTeams.map((team) => ({
-    ...team,
-    members: team.members.map((member) => {
-      // 1. If explicit custom image is specified and actually exists on disk
-      if (member.image && member.image !== PLACEHOLDER) {
-        const basename = path.basename(member.image);
-        if (fs.existsSync(path.join(creditsDir, basename))) {
-          return { ...member, image: `/images/credits/${basename}` };
-        }
-      }
+function LinkedInIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+    </svg>
+  );
+}
 
-      // 2. Check for {firstname}.{any extension}
-      const firstName = member.name.trim().split(" ")[0].toLowerCase();
-      for (const ext of extensions) {
-        const candidate = `${firstName}${ext}`;
-        if (fs.existsSync(path.join(creditsDir, candidate))) {
-          return { ...member, image: `/images/credits/${candidate}` };
-        }
-      }
+function GitHubIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+    </svg>
+  );
+}
 
-      // 3. Check for sanitized full name (e.g. arjundas.jpg)
-      const cleanFullName = member.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-      for (const ext of extensions) {
-        const candidate = `${cleanFullName}${ext}`;
-        if (fs.existsSync(path.join(creditsDir, candidate))) {
-          return { ...member, image: `/images/credits/${candidate}` };
-        }
-      }
+function MemberCard({ 
+  name = "NAME SURNAME", 
+  image = null, 
+  backImage = null,
+  message = "", 
+  linkedin = "https://linkedin.com", 
+  github = "https://github.com", 
+  use3D = false 
+}) {
+  const [isHoveringViewport, setIsHoveringViewport] = useState(false);
+  const cardRef = useRef(null);
 
-      // 4. If image does not exist, put the placeholder directly
-      return {
-        ...member,
-        image: PLACEHOLDER,
-      };
-    }),
-  }));
+  useEffect(() => {
+    if (!use3D) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsHoveringViewport(entry.isIntersecting),
+      { rootMargin: "600px" } 
+    );
+    if (cardRef.current) observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, [use3D]);
+
+  return (
+    <div ref={cardRef} className="relative group w-full aspect-[276/499] max-h-[76vh] flex items-center justify-center transition-transform duration-300 hover:-translate-y-2 select-none">
+      
+      {/* --- ALWAYS RENDER 2D STATIC CARD AS PLACEHOLDER --- */}
+      <div 
+        className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${
+          use3D && isHoveringViewport ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}
+      >
+        <img src="/images/lead-card.webp" alt={name} className="w-full h-full object-contain pointer-events-none" />
+        <div className="absolute top-[23%] left-[15%] w-[70%] h-[38%] z-10 overflow-hidden bg-white flex items-center justify-center">
+          <PersonImage src={image} alt={name} />
+        </div>
+        <div className="absolute top-[66.1%] inset-x-0 z-20 flex justify-center px-4 pointer-events-none">
+          <span className="text-white font-extrabold text-[12px] sm:text-[14px] md:text-[15px] lg:text-[16px] xl:text-[18px] tracking-[1.5px] uppercase text-center leading-tight drop-shadow-[0_4px_6px_rgba(0,0,0,0.95)]">
+            {name}
+          </span>
+        </div>
+        <div className="absolute top-[73.1%] inset-x-0 z-30 flex items-center justify-center gap-3 sm:gap-4 pointer-events-auto">
+          <a href={linkedin} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded text-white hover:text-[#0077b5] transition-all duration-200 transform hover:scale-125">
+            <LinkedInIcon className="w-full h-full" />
+          </a>
+          <a href={github} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-white hover:text-[#e6edf3] transition-all duration-200 transform hover:scale-125">
+            <GitHubIcon className="w-full h-full" />
+          </a>
+        </div>
+      </div>
+
+      {/* --- MOUNT 3D LANYARD OVER TOP IF APPLICABLE --- */}
+      {use3D && isHoveringViewport && (
+        <div 
+          className="absolute inset-[-40%] z-10 pointer-events-auto cursor-grab active:cursor-grabbing"
+          style={{ animation: 'fadeIn 0.8s ease-in' }} 
+        >
+          <Lanyard 
+            frameImage="/images/lead-card.webp"  
+            backFrameImage="/images/background.webp"
+            avatarImage={image}                 
+            name={name}                         
+            message={message}                   
+            linkedin={linkedin}                 
+            github={github}                     
+            strapImage="/images/band.webp"       
+            orientation="portrait"
+            finish="glossy"
+            intro={false}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SpaceBackground() {
+  return (
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-[#010308] via-[#020610] to-[#051230]" />
+      <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[1100px] h-[750px] rounded-full bg-[#071840]/30 blur-[200px]" />
+      <div className="absolute top-[8%] left-[16%] w-[240px] h-[1.5px] bg-gradient-to-r from-transparent via-[#5eaee8]/90 to-transparent rotate-[135deg] opacity-75 blur-[0.5px]" />
+      <div className="absolute top-[7.2%] left-[14.5%] w-[4px] h-[4px] rounded-full bg-white/90 blur-[1px]" />
+      <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        {[...Array(220)].map((_, i) => (
+            <circle key={`dim-${i}`} cx={`${((i * 31 + 7) % 100)}%`} cy={`${((i * 47 + 11) % 100)}%`} r={0.3 + (i % 3) * 0.15} fill="white" opacity={0.12 + ((i % 5) * 0.06)} />
+        ))}
+        {[...Array(90)].map((_, i) => (
+            <circle key={`mid-${i}`} cx={`${((i * 43 + 19) % 100)}%`} cy={`${((i * 61 + 23) % 100)}%`} r={0.5 + (i % 4) * 0.25} fill="white" opacity={0.3 + ((i % 6) * 0.08)} />
+        ))}
+        {[...Array(25)].map((_, i) => (
+            <circle key={`bright-${i}`} cx={`${((i * 67 + 31) % 100)}%`} cy={`${((i * 83 + 13) % 100)}%`} r={1.2 + (i % 3) * 0.5} fill="white" opacity={0.85} />
+        ))}
+      </svg>
+      <div className="absolute bottom-0 inset-x-0 h-[35%] bg-gradient-to-t from-[#081e4a]/70 via-[#061640]/30 to-transparent" />
+      <div className="absolute bottom-[2%] left-[-5%] w-[55%] h-[280px] rounded-full bg-[#0e2350]/35 blur-[100px]" />
+      <div className="absolute bottom-[-2%] right-[-5%] w-[55%] h-[300px] rounded-full bg-[#122a58]/40 blur-[110px]" />
+      <div className="absolute bottom-[-5%] left-[20%] w-[60%] h-[220px] rounded-full bg-[#152e60]/30 blur-[90px]" />
+    </div>
+  );
+}
+
+function Section({ title, members, titleClass = "", use3D = false }) {
+  return (
+    <section className="relative w-full min-h-screen flex flex-col items-center justify-start sm:justify-center px-3 sm:px-5 md:px-8 lg:px-10 pt-20 pb-16 sm:py-12 max-w-[1920px] mx-auto font-sans select-none">
+      <div className="w-full flex justify-center pb-0 pointer-events-none select-none">
+        <h1
+          className={`font-black uppercase text-white leading-[1.1] sm:leading-[0.85] tracking-[0.04em] drop-shadow-[0_0_40px_rgba(255,255,255,0.2)] ${
+            titleClass || "text-[18vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:5px_white]"
+          }`}
+          style={{ fontFamily: "Impact, 'Arial Black', sans-serif" }}
+        >
+          {title}
+        </h1>
+      </div>
+
+      <div className="relative w-full flex flex-wrap items-start justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-5 -mt-2 sm:-mt-3 md:-mt-6 lg:-mt-10 py-2 scrollbar-none">
+        {members.map((member, index) => (
+          <div 
+            key={index} 
+            className="w-[42%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] max-w-[300px] relative hover:z-50 transition-all duration-300"
+            style={{ zIndex: members.length - index }} 
+          >
+            <MemberCard
+              name={member.name}
+              image={member.image}
+              message={member.message} 
+              linkedin={member.linkedin}
+              github={member.github}
+              use3D={use3D} 
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export default function Ilovemygf() {
-  const teams = getResolvedTeams();
-  return <Credits teams={teams} />;
+  const [enable3D, setEnable3D] = useState(false); // Default to false
+
+  useEffect(() => {
+    // Only enable 3D if the screen is wider than 768px (tablets/desktops)
+    const checkScreen = () => {
+      setEnable3D(window.innerWidth >= 768);
+    };
+    
+    // Check immediately on load
+    checkScreen();
+    
+    // Re-check if they resize their window
+    window.addEventListener("resize", checkScreen);
+    return () => window.removeEventListener("resize", checkScreen);
+  }, []);
+
+  return (
+    <div className="relative min-h-screen w-full bg-[#010208] text-white overflow-x-hidden">
+      <SpaceBackground />
+      <div className="relative z-10 w-full flex flex-col">
+        {/* Pass the dynamically calculated enable3D state down */}
+        <Section title="LEAD" members={creditsData.leads} use3D={enable3D} />
+        <Section title="FRONTEND" members={creditsData.frontend} use3D={enable3D} titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]" />
+        <Section title="BACKEND" members={creditsData.backend} use3D={enable3D} titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]" />
+        <Section title="UI/UX" members={creditsData.uiux} use3D={enable3D} />
+      </div>
+    </div>
+  );
 }
