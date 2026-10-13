@@ -96,13 +96,6 @@ export const creditsData = {
       message: "Building the future, one line of code at a time! Thanks for checking out the team page.",
       linkedin: "https://linkedin.com/in/fahad-ali-habeeb-249a50296",
       github: "https://github.com/eko-071",
-    },
-    {
-      name: "Emir Ziyan",
-      image: "/images/credits/emir.webp",
-      message: "I fear no deadline. I simply ignore its existence.",
-      linkedin: "https://www.linkedin.com/in/emir-ziyan",
-      github: " https://github.com/ze206",
     }
   ],
 
