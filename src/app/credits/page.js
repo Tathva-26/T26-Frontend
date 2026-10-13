@@ -3,6 +3,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { creditsData } from "@/data/creditsData";
 import Lanyard from "./Lanyard"; // Make sure this path is correct
+import TathvaMenu from "@/components/TathvaMenu/TathvaMenu";
+import Navbar from "@/pageComponents/Navbar/Navbar";
+
+const formatLink = (url) => {
+  if (!url) return "#";
+  return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
+};
 
 function PersonImage({ src, alt = "Team Member" }) {
   return (
@@ -137,18 +144,31 @@ function MemberCard({
         <div className="absolute top-[20%] left-[14%] w-[72%] h-[43%] z-10 overflow-hidden bg-white flex items-center justify-center">
           <PersonImage src={image} alt={name} />
         </div>
-        <div className="absolute top-[66.1%] inset-x-0 z-20 flex justify-center px-4 pointer-events-none">
-          <span className="text-white font-extrabold text-[12px] sm:text-[14px] md:text-[15px] lg:text-[16px] xl:text-[18px] tracking-[1.5px] uppercase text-center leading-tight drop-shadow-[0_4px_6px_rgba(0,0,0,0.95)]">
+        {/* --- UNIFIED NAME + ICONS CONTAINER (PREVENTS OVERLAPPING ON MOBILE) --- */}
+        <div className="absolute top-[64%] bottom-[5%] inset-x-0 z-20 flex flex-col items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 pointer-events-none">
+          <span className="text-white font-extrabold text-[11px] sm:text-[13px] md:text-[15px] lg:text-[16px] xl:text-[18px] tracking-[0.8px] sm:tracking-[1.5px] uppercase text-center leading-tight drop-shadow-[0_4px_6px_rgba(0,0,0,0.95)] max-w-full">
             {name}
           </span>
-        </div>
-        <div className="absolute top-[73.1%] inset-x-0 z-30 flex items-center justify-center gap-3 sm:gap-4 pointer-events-auto">
-          <a href={linkedin} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded text-white hover:text-[#0077b5] transition-all duration-200 transform hover:scale-125">
-            <LinkedInIcon className="w-full h-full" />
-          </a>
-          <a href={github} target="_blank" rel="noopener noreferrer" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-white hover:text-[#e6edf3] transition-all duration-200 transform hover:scale-125">
-            <GitHubIcon className="w-full h-full" />
-          </a>
+          <div className="flex items-center justify-center gap-2.5 sm:gap-4 pointer-events-auto shrink-0 mt-0.5">
+            <a 
+              href={formatLink(linkedin)} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="w-[18px] h-[18px] sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded text-white hover:text-[#0077b5] transition-all duration-200 transform hover:scale-125"
+              aria-label="LinkedIn"
+            >
+              <LinkedInIcon className="w-full h-full" />
+            </a>
+            <a 
+              href={formatLink(github)} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="w-[18px] h-[18px] sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-white hover:text-[#e6edf3] transition-all duration-200 transform hover:scale-125"
+              aria-label="GitHub"
+            >
+              <GitHubIcon className="w-full h-full" />
+            </a>
+          </div>
         </div>
       </div>
 
@@ -269,6 +289,8 @@ export default function Ilovemygf() {
           100% { transform: translateY(0px); }
         }
       `}</style>
+      <Navbar />
+      <TathvaMenu />
       <SpaceBackground />
       <div className="relative z-10 w-full flex flex-col">
         {/* Pass the dynamically calculated enable3D state down */}
