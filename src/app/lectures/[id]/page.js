@@ -1,14 +1,7 @@
-import EventDetailPage from '@/pageComponents/EventDetail/EventDetailPage'
+import SeeYouNextYear from '@/components/SeeYouNextYear/SeeYouNextYear';
 
-export default async function LectureDetailPage({ params }) {
-  const { id } = await params
+export const metadata = { title: 'Lectures' };
 
-  return (
-    <EventDetailPage
-      id={id}
-      label='Lecture'
-      heading='LECTURES'
-      backHref='/lectures'
-    />
-  )
+export default function LectureDetailPage() {
+  return <SeeYouNextYear pageName="Lectures" />;
 }
