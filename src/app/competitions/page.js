@@ -1,5 +1,7 @@
-import Competition from "@/pageComponents/Workshops/Competitions";
+import SeeYouNextYear from '@/components/SeeYouNextYear/SeeYouNextYear';
 
-export default function CPage() {
-  return <Competition/>;
+export const metadata = { title: 'Competitions' };
+
+export default function CompetitionsPage() {
+  return <SeeYouNextYear pageName="Competitions" />;
 }

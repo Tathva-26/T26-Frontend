@@ -1,5 +1,7 @@
-import ContactUs from '../../pageComponents/ContactUs/ContactUs';
+import SeeYouNextYear from '@/components/SeeYouNextYear/SeeYouNextYear';
 
-export default function ContactUsRoutePage() {
-  return <ContactUs />;
+export const metadata = { title: 'Contact' };
+
+export default function ContactPage() {
+  return <SeeYouNextYear pageName="Contact" />;
 }

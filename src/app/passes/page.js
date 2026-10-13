@@ -1,10 +1,7 @@
-import TathvaPasses from '@/pageComponents/TathvaPasses/TathvaPasses'
+import SeeYouNextYear from '@/components/SeeYouNextYear/SeeYouNextYear';
 
-export const metadata = {
-  title: "Passes - Tathva '26",
-  description: "Day and full-festival passes for Tathva '26, NIT Calicut.",
-}
+export const metadata = { title: 'Passes' };
 
 export default function PassesPage() {
-  return <TathvaPasses />
+  return <SeeYouNextYear pageName="Passes" />;
 }

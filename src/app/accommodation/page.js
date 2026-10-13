@@ -1,10 +1,7 @@
-import { Suspense } from 'react'
-import Accommodation from '@/pageComponents/Accomodation/Accommodation'
+import SeeYouNextYear from '@/components/SeeYouNextYear/SeeYouNextYear';
 
-export default function Acc() {
-  return (
-    <Suspense>
-      <Accommodation />
-    </Suspense>
-  )
+export const metadata = { title: 'Accommodation' };
+
+export default function AccommodationPage() {
+  return <SeeYouNextYear pageName="Accommodation" />;
 }

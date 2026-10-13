@@ -1,5 +1,7 @@
-import Lecture from "@/pageComponents/Workshops/Lectures";
+import SeeYouNextYear from '@/components/SeeYouNextYear/SeeYouNextYear';
 
-export default function LPage() {
-  return <Lecture/>;
+export const metadata = { title: 'Lectures' };
+
+export default function LecturesPage() {
+  return <SeeYouNextYear pageName="Lectures" />;
 }

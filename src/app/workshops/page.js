@@ -1,5 +1,7 @@
-import Workshop from "@/pageComponents/Workshops/Workshops";
+import SeeYouNextYear from '@/components/SeeYouNextYear/SeeYouNextYear';
 
-export default function WPage() {
-  return <Workshop/>;
+export const metadata = { title: 'Workshops' };
+
+export default function WorkshopsPage() {
+  return <SeeYouNextYear pageName="Workshops" />;
 }
