@@ -25,8 +25,8 @@ export const creditsData = {
       name: "Arvind K N",
       image: "/images/credits/arvind.webp",
       message: "Forget the past, live in the present nurturing a beautiful future",
-      linkedin: "https://linkedin.com",
-      github: "https://github.com",
+      linkedin: "https://www.linkedin.com/in/arvind-k-n-a834a3341",
+      github: "https://www.github.com/Arvind-NITCG",
     },
   ],
 
@@ -35,8 +35,8 @@ export const creditsData = {
       name: "Aileen Rose Albin",
       message: "👩🏿‍🎤",
       image: "/images/credits/aileen.webp",
-      linkedin: "https://linkedin.com",
-      github: "https://github.com",
+      linkedin: "https://www.linkedin.com/in/aileen-rose-albin-9b76ab310",
+      github: "https://github.com/Aileen7Rose",
     },
     {
       name: "Prashant Raj",
@@ -47,15 +47,17 @@ export const creditsData = {
     },
     {
       name: "Abhinav Mathew",
-      image: null,
-      linkedin: "https://linkedin.com",
-      github: "https://github.com",
+      image: "/images/credits/abhinav.webp",
+      message:"I 💕 UI/UX",
+      linkedin: "https://www.linkedin.com/in/abhinav-mathew/",
+      github: "https://github.com/Mat-hew-24",
     },
     {
       name: "Irene R Susan",
-      image: null,
-      linkedin: "https://linkedin.com",
-      github: "https://github.com",
+      image: "/images/credits/irene.webp",
+      message:"Can u leave it blank 🙃",
+      linkedin: "https://www.linkedin.com/in/irene-r-susan-491573324",
+      github: "https://github.com/irene-r-susan/",
     }
   ],
 
@@ -69,7 +71,7 @@ export const creditsData = {
     },
     {
       name: "Dipanshu Tiwari",
-      message: "i love CP :)",
+      message: "People in this list are getting carried by claude",
       image: "/images/credits/dipanshu.webp",
       linkedin: "https://www.linkedin.com/in/dipanshu-tiwari115",
       github: "https://github.com/dipanshu-tiwari",
@@ -94,6 +96,13 @@ export const creditsData = {
       message: "Building the future, one line of code at a time! Thanks for checking out the team page.",
       linkedin: "https://linkedin.com/in/fahad-ali-habeeb-249a50296",
       github: "https://github.com/eko-071",
+    },
+    {
+      name: "Emir Ziyan",
+      image: "/images/credits/emir.webp",
+      message: "I fear no deadline. I simply ignore its existence.",
+      linkedin: "https://www.linkedin.com/in/emir-ziyan",
+      github: " https://github.com/ze206",
     }
   ],
 
@@ -102,7 +111,7 @@ export const creditsData = {
       name: "Nandakishor P",
       image:  "/images/credits/nandakishor.webp",
       message: "just follow your dreams",
-      linkedin: "linkedin.com/in/nandakishorthedreamer",
+      linkedin: "https://www.linkedin.com/in/nandakishorthedreamer/",
       github: "https://github.com/blastXbeat",
     },
     {
@@ -115,7 +124,7 @@ export const creditsData = {
     {
       name: "Kavitha Raghuram",
       image: "/images/credits/kavitha.webp",
-      message: "",
+      message: "leave it",
       linkedin: "https://www.linkedin.com/in/kavitharaghuram",
       github: "https://github.com/kavitharaghuram",
     },
@@ -130,7 +139,7 @@ export const creditsData = {
       name: "Anton Ouseph",
       message:"Bro really hovered over me💀",
       image: "/images/credits/anton.webp",
-      linkedin: "www.linkedin.com/in/anton-ouseph-a27159326",
+      linkedin: "https://www.linkedin.com/in/anton-ouseph-a27159326",
       github: "https://github.com/ao10spider",
     },
   ],
