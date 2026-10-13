@@ -47,6 +47,7 @@ function MemberCard({
   use3D = false 
 }) {
   const [isHoveringViewport, setIsHoveringViewport] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef(null);
 
   useEffect(() => {
@@ -60,8 +61,72 @@ function MemberCard({
   }, [use3D]);
 
   return (
-    <div ref={cardRef} className="relative group w-full aspect-[276/499] max-h-[76vh] flex items-center justify-center transition-transform duration-300 hover:-translate-y-2 select-none">
-      
+    <div
+      ref={cardRef}
+      className="relative group w-full aspect-[276/499] max-h-[76vh] flex items-center justify-center select-none"
+      style={{
+        animation: isHovered ? 'none' : 'memberCardFloat 3s ease-in-out infinite',
+        transform: isHovered ? 'translateY(-10px)' : undefined,
+        transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Speech bubble message — pops out above the card on hover */}
+      {message && !use3D && (
+        <div
+          aria-hidden={!isHovered}
+          style={{
+            position: 'absolute',
+            bottom: 'calc(100% + 14px)',
+            left: '50%',
+            transform: isHovered
+              ? 'translateX(-50%) translateY(0) scale(1)'
+              : 'translateX(-50%) translateY(12px) scale(0.9)',
+            opacity: isHovered ? 1 : 0,
+            pointerEvents: isHovered ? 'auto' : 'none',
+            transition: 'opacity 0.3s ease, transform 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+            zIndex: 9999,
+            minWidth: '160px',
+            maxWidth: '220px',
+          }}
+        >
+          {/* Bubble body */}
+          <div
+            style={{
+              background: 'rgba(255,255,255,0.96)',
+              color: '#111',
+              borderRadius: '14px',
+              padding: '10px 14px',
+              fontSize: '12px',
+              lineHeight: '1.5',
+              fontWeight: 500,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+              textAlign: 'center',
+              backdropFilter: 'blur(6px)',
+              border: '1px solid rgba(255,255,255,0.25)',
+            }}
+          >
+            {message}
+          </div>
+          {/* Tail pointing down */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '-9px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 0,
+              height: 0,
+              borderLeft: '9px solid transparent',
+              borderRight: '9px solid transparent',
+              borderTop: '10px solid rgba(255,255,255,0.96)',
+              filter: 'drop-shadow(0 3px 4px rgba(0,0,0,0.2))',
+            }}
+          />
+        </div>
+      )}
+
       {/* --- ALWAYS RENDER 2D STATIC CARD AS PLACEHOLDER --- */}
       <div 
         className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${
@@ -69,7 +134,7 @@ function MemberCard({
         }`}
       >
         <img src="/images/lead-card.webp" alt={name} className="w-full h-full object-contain pointer-events-none" />
-        <div className="absolute top-[23%] left-[15%] w-[70%] h-[38%] z-10 overflow-hidden bg-white flex items-center justify-center">
+        <div className="absolute top-[20%] left-[14%] w-[72%] h-[43%] z-10 overflow-hidden bg-white flex items-center justify-center">
           <PersonImage src={image} alt={name} />
         </div>
         <div className="absolute top-[66.1%] inset-x-0 z-20 flex justify-center px-4 pointer-events-none">
@@ -139,6 +204,8 @@ function SpaceBackground() {
 }
 
 function Section({ title, members, titleClass = "", use3D = false }) {
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+
   return (
     <section className="relative w-full min-h-screen flex flex-col items-center justify-start sm:justify-center px-3 sm:px-5 md:px-8 lg:px-10 pt-20 pb-16 sm:py-12 max-w-[1920px] mx-auto font-sans select-none">
       <div className="w-full flex justify-center pb-0 pointer-events-none select-none">
@@ -154,18 +221,20 @@ function Section({ title, members, titleClass = "", use3D = false }) {
 
       <div className="relative w-full flex flex-wrap items-start justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-5 -mt-2 sm:-mt-3 md:-mt-6 lg:-mt-10 py-2 scrollbar-none">
         {members.map((member, index) => (
-          <div 
-            key={index} 
-            className="w-[42%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] max-w-[300px] relative hover:z-50 transition-all duration-300"
-            style={{ zIndex: members.length - index }} 
+          <div
+            key={index}
+            className="w-[42%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] max-w-[300px] relative transition-all duration-300"
+            style={{ zIndex: hoveredIndex === index ? 9999 : members.length - index }}
+            onMouseEnter={() => setHoveredIndex(index)}
+            onMouseLeave={() => setHoveredIndex(null)}
           >
             <MemberCard
               name={member.name}
               image={member.image}
-              message={member.message} 
+              message={member.message}
               linkedin={member.linkedin}
               github={member.github}
-              use3D={use3D} 
+              use3D={use3D}
             />
           </div>
         ))}
@@ -177,29 +246,36 @@ function Section({ title, members, titleClass = "", use3D = false }) {
 export default function Ilovemygf() {
   const [enable3D, setEnable3D] = useState(false); // Default to false
 
-  useEffect(() => {
-    // Only enable 3D if the screen is wider than 768px (tablets/desktops)
-    const checkScreen = () => {
-      setEnable3D(window.innerWidth >= 768);
-    };
+  // useEffect(() => {
+  //   // Only enable 3D if the screen is wider than 768px (tablets/desktops)
+  //   const checkScreen = () => {
+  //     setEnable3D(window.innerWidth >= 768);
+  //   };
     
-    // Check immediately on load
-    checkScreen();
+  //   // Check immediately on load
+  //   checkScreen();
     
-    // Re-check if they resize their window
-    window.addEventListener("resize", checkScreen);
-    return () => window.removeEventListener("resize", checkScreen);
-  }, []);
+  //   // Re-check if they resize their window
+  //   window.addEventListener("resize", checkScreen);
+  //   return () => window.removeEventListener("resize", checkScreen);
+  // }, []);
 
   return (
     <div className="relative min-h-screen w-full bg-[#010208] text-white overflow-x-hidden">
+      <style>{`
+        @keyframes memberCardFloat {
+          0%   { transform: translateY(0px); }
+          50%  { transform: translateY(-8px); }
+          100% { transform: translateY(0px); }
+        }
+      `}</style>
       <SpaceBackground />
       <div className="relative z-10 w-full flex flex-col">
         {/* Pass the dynamically calculated enable3D state down */}
-        <Section title="LEAD" members={creditsData.leads} use3D={enable3D} />
-        <Section title="FRONTEND" members={creditsData.frontend} use3D={enable3D} titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]" />
-        <Section title="BACKEND" members={creditsData.backend} use3D={enable3D} titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]" />
-        <Section title="UI/UX" members={creditsData.uiux} use3D={enable3D} />
+        <Section title="HEAD" members={creditsData.leads} use3D={enable3D} />
+        <Section title="FRONTEND LEAD" members={creditsData.frontend} use3D={enable3D} titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]" />
+        <Section title="BACKEND LEAD" members={creditsData.backend} use3D={enable3D} titleClass="text-[13vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[9vw] [-webkit-text-stroke:3px_white] sm:[-webkit-text-stroke:5px_white] tracking-[0.02em] sm:tracking-[0.04em]" />
+        <Section title="UI/UX LEAD" members={creditsData.uiux} use3D={enable3D} />
       </div>
     </div>
   );
