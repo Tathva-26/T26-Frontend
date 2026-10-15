@@ -48,7 +48,7 @@ export const creditsData = {
     {
       name: "Abhinav Mathew",
       image: "/images/credits/abhinav.webp",
-      message:"I 💕 UI/UX",
+      message:"",
       linkedin: "https://www.linkedin.com/in/abhinav-mathew/",
       github: "https://github.com/Mat-hew-24",
     },
