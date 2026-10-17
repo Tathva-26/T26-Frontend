@@ -7,7 +7,8 @@ import Lead from '@/pageComponents/Team/Lead'
 import Frontend from '@/pageComponents/Team/Frontend'
 import Backend from '@/pageComponents/Team/Backend'
 import Uiux from '@/pageComponents/Team/UIUX'
-import TechConclaveExpoTransition from '@/pageComponents/Expo/TechConclaveExpoTransition'
+import TechConclave from '@/pageComponents/TechConclave/TechConclave'
+import HorizontalGallery from '@/pageComponents/HorizontalGallery/HorizontalGallery'
 import Footer from '@/pageComponents/Footer/Footer'
 import RobowarsPage from './robowars/page'
 import SmoothScroll from '@/components/SmoothScroll'
@@ -43,7 +44,10 @@ export default function Home() {
         <div data-section-name='ROBOWARS' className='w-full'>
           <RobowarsPage />
         </div>
-        <TechConclaveExpoTransition />
+        <div data-section-name='TECH CONCLAVE' className='w-full'>
+          <TechConclave />
+        </div>
+        <HorizontalGallery />
         <Footer />
       </HeroFrameController>
     </div>
