@@ -53,6 +53,13 @@ export const creditsData = {
       linkedin: 'https://www.linkedin.com/in/irene-r-susan-491573324',
       github: 'https://github.com/irene-r-susan/',
     },
+    {
+      name: 'Abhinav Mathew',
+      image: '/images/credits/abhinav.webp',
+      message: '😄',
+      linkedin: 'https://www.linkedin.com/in/abhinav-mathew/',
+      github: 'https://github.com/Mat-hew-24',
+    },
   ],
 
   backend: [
