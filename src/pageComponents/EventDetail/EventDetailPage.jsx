@@ -28,6 +28,36 @@ const fontFaceStyles = `
 }
 `
 
+function renderFormattedText(text) {
+  if (!text) return null
+  const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g
+  const parts = text.split(urlRegex)
+
+  return parts.map((part, index) => {
+    if (/^(https?:\/\/|www\.)/.test(part)) {
+      const match = part.match(/^(.*?)([.,;:)]?)$/)
+      const url = match ? match[1] : part
+      const trailing = match ? match[2] : ''
+      const href = url.startsWith('http') ? url : `https://${url}`
+
+      return (
+        <span key={index}>
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#8f9cff] underline hover:text-[#b4bdff] transition-colors break-all"
+          >
+            {url}
+          </a>
+          {trailing}
+        </span>
+      )
+    }
+    return part
+  })
+}
+
 /**
  * The full-page replacement for what used to be the Workshops/Competitions/
  * Lectures detail modal. Same content, same data source (`useEventDetails`),
@@ -73,23 +103,68 @@ export default function EventDetailPage({ id, label, heading, backHref }) {
             <p className='text-sm text-[#f0a3a3]'>{error}</p>
           </div>
         ) : event ? (
-          <div className='relative w-full rounded-[24px] border border-white/10 bg-[#0d0a17]/90 px-7 py-7 shadow-2xl backdrop-blur-sm sm:px-10 sm:py-9'>
+          <div className='relative w-full rounded-[24px] border border-white/10 bg-[#0d0a17]/90 px-7 py-7 shadow-2xl backdrop-blur-sm sm:px-10 sm:py-9 overflow-hidden'>
             <div className='grid gap-x-10 gap-y-8 sm:grid-cols-[440px_minmax(0,1fr)] sm:items-start lg:grid-rows-[auto_auto]'>
-              <div className='lg:contents'>
-                <div className='relative overflow-hidden rounded-[10px] border border-[#737373] bg-[#08090e] lg:col-start-1 lg:row-start-1'>
-                  {/* Plain <img>, not next/image `fill`: the box has no
-                      fixed aspect ratio of its own, so it takes the
-                      photo's natural dimensions exactly — full image,
-                      no crop, no letterboxed gaps either side. */}
-                  <img
-                    src={event.image}
-                    alt={event.fullTitle}
-                    className='block h-auto w-full'
-                  />
-                </div>
+              {/* Poster image (Col 1, Row 1) */}
+              <div className='order-1 sm:order-none sm:col-start-1 sm:row-start-1 relative overflow-hidden rounded-[10px] border border-[#737373] bg-[#08090e]'>
+                <img
+                  src={event.image}
+                  alt={event.fullTitle}
+                  className='block h-auto w-full'
+                />
+              </div>
 
-                <div className='mt-3 lg:col-start-1 lg:row-start-2 lg:self-start'>
-                  <div className='flex items-center justify-between px-1'>
+              {/* Title & Description (Col 2, Row 1) */}
+              <div className='order-2 sm:order-none sm:col-start-2 sm:row-start-1 pt-2 sm:pt-4 space-y-2 min-w-0'>
+                <div className="flex justify-between items-start gap-4">
+                  <h2 className='text-3xl md:text-5xl font-semibold text-[#e2e2e2]'>
+                    {event.fullTitle} 
+                  </h2>
+                  {event.bookingClosed && (
+                    <span className='shrink-0 rounded-xl bg-red-500 p-2 text-sm md:text-xl font-bold text-white text-center'>
+                      Closed
+                    </span>
+                  )}
+                </div>
+                {event.description && (
+                  <div className='flex items-center'>
+                    <p className='md:text-lg leading-[1.6] text-[#8d8d8d] break-words [overflow-wrap:anywhere]'>
+                      {renderFormattedText(event.description)}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Logistics & Details (Col 1, Row 2 - under poster on the left) */}
+              <div className='order-3 sm:order-none sm:col-start-1 sm:row-start-2 sm:self-start space-y-4 min-w-0'>
+                {(event.venueFull || event.time) && (
+                  <div className='space-y-1 text-xs uppercase leading-tight text-white'>
+                    {event.time && <div className='text-lg md:text-xl font-bold'>{event.time}</div>}
+                    {event.venueFull && <div className='text-[#8d8d8d]'>{event.venueFull}</div>}
+                  </div>
+                )}
+
+                {event.isTeamEvent && (
+                  <div>
+                    <div className='inline-block rounded-2xl bg-[#3B82C4] px-4 py-2 text-sm font-bold uppercase leading-tight text-white'>
+                      Team event{event.teamSize ? ` · up to ${event.teamSize} members` : ''}
+                    </div>
+                  </div>
+                )}
+
+                {event.extraInfo && (
+                  <div className='min-w-0'>
+                    <h3 className='text-sm font-bold uppercase text-white'>Details :</h3>
+                    <p className='mt-2 whitespace-pre-line text-base md:text-lg leading-[1.6] text-[#8d8d8d] break-words [overflow-wrap:anywhere]'>
+                      {renderFormattedText(event.extraInfo)}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Pricing & Register Section (Col 2, Row 2 - moved to the right side) */}
+              <div className='order-4 sm:order-none sm:col-start-2 sm:row-start-2 sm:self-start min-w-0'>
+                <div className='flex items-center justify-between px-1'>
                   <span className='flex items-baseline leading-none text-white'>
                     {event.priceInPaise > 0 ? (
                       <>
@@ -105,59 +180,10 @@ export default function EventDetailPage({ id, label, heading, backHref }) {
                   <span className='font-bold text-3xl leading-none text-white'>
                     {event.dateDay} {event.dateMonth}
                   </span>
-                  </div>
-
-                  <div className='mt-2 [&_button]:py-3 [&_button]:text-base [&_dl]:text-xs'>
-                    <Checkout event={event} />
-                  </div>
                 </div>
-              </div>
 
-              <div className='pt-2 lg:contents' style={{ containerType: 'inline-size' }}>
-
-                <div className='mt-7 space-y-2 lg:col-start-2 lg:row-start-1'>
-                  <div className="flex justify-between items-start">
-                  <h3 className='text-3xl md:text-5xl font-semibold text-[#e2e2e2]'>
-                    {event.fullTitle} 
-                  </h3>
-                  <h3> {event.bookingClosed && <p className='text-white bg-red-500 rounded-xl text-sm md:text-xl font-bold p-2 md:p-2 text-center'>Closed</p>}</h3>
-                  </div>
-                  <div className='flex items-center'>
-                    <p className='md:text-lg  leading-[1.6] text-[#8d8d8d]'>{event.description}</p>
-                  </div>
-                </div>
-                
-                <div className='flex flex-col lg:flex-row lg:items-start lg:justify-between lg:gap-4 lg:col-start-2 lg:row-start-2'>
-
-                  {(event.venueFull || event.time) && (
-                  <div className='mt-5 space-y-1 text-xs uppercase leading-tight text-white'>
-                    <span className='text-lg md:text-xl font-bold'>{event.time && <p>{event.time}</p>}</span>
-                    {event.venueFull && <p className='text-[#8d8d8d]'>{event.venueFull}</p>}
-                  </div>
-                )}
-                <div>
-                {(event.isTeamEvent) && (
-                  <div className='mt-4 space-y-1  lg:text-center lg:text-lg lg:bg-[#3B82C4] rounded-2xl  lg:p-3 font-bold uppercase leading-tight text-white'>
-                    {event.isTeamEvent && (
-                      <p>
-                        Team event
-                        {event.teamSize ? ` · up to ${event.teamSize} members` : ''}
-                      </p>
-                    )}
-                  </div>
-                )}
-                </div>
-                
-
-                {event.extraInfo && (
-                  <div className='mt-6'>
-                    <h3 className='text-sm font-bold uppercase text-white'>Details :</h3>
-                    <p className='mt-2 whitespace-pre-line text-lg leading-[1.6] text-[#8d8d8d]'>
-                      {event.extraInfo}
-                    </p>
-                  </div>
-                )}
-                
+                <div className='mt-2 [&_button]:py-3 [&_button]:text-base [&_dl]:text-xs'>
+                  <Checkout event={event} />
                 </div>
               </div>
             </div>
