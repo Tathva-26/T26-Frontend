@@ -13,6 +13,10 @@ const imageHost = process.env.NEXT_PUBLIC_IMAGE_HOST || 'cdn.tathva.org'
 const nextConfig = {
   devIndicators: false,
   images: {
+    // Serve images straight from the CDNs below instead of through Vercel's
+    // image optimiser: the plan's optimisation quota ran out and /_next/image
+    // started answering 402 (OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED).
+    unoptimized: true,
     remotePatterns: [
       // Event covers and profile pictures, served from R2.
       { protocol: 'https', hostname: imageHost },
