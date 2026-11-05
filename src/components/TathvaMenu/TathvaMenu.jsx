@@ -28,6 +28,7 @@ const rightMenu = [
   { label: 'WORKSHOPS', href: '/workshops' },
   { label: 'PASSES', href: '/passes' },
   { label: 'COMPETITIONS', href: '/competitions' },
+  { label: 'CERTIFICATES', href: '/certificates' },
 ]
 
 /* -----------------------------------------------------------------------

@@ -23,6 +23,11 @@ const nextConfig = {
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
     ],
   },
+  // The certificates API reads its (encrypted) data from disk at runtime, which
+  // file tracing can't see on its own.
+  outputFileTracingIncludes: {
+    '/api/certificates/*': ['./certificates-data/**/*'],
+  },
 }
 
 export default nextConfig
