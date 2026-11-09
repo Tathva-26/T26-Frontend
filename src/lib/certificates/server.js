@@ -29,11 +29,16 @@ function data() {
 
 // Gmail ignores dots and anything after "+", and googlemail.com is the same
 // inbox, so "a.b+x@gmail.com" finds the certificates registered as "ab@gmail.com".
+// Must match normaliseEmail in certificate-tathva/web/export-site.mjs.
 export function normaliseEmail(email) {
   const [local, domain] = String(email).trim().toLowerCase().split('@')
   if (domain === 'gmail.com' || domain === 'googlemail.com') {
     return `${local.split('+')[0].replace(/\./g, '')}@gmail.com`
   }
+  // NIT Calicut addresses are firstname_rollno@nitc.ac.in and the roll number is
+  // unique, so match on it alone (some sheets give only a roll number).
+  const roll = domain === 'nitc.ac.in' && /_([a-z]\d{6}[a-z]{2})$/.exec(local)
+  if (roll) return `${roll[1]}@nitc.ac.in`
   return `${local}@${domain}`
 }
 
